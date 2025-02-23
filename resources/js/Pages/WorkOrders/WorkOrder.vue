@@ -56,7 +56,7 @@
                         <textarea v-model="form.description" id="description" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
                       </div>
                       <div class="mb-4">
-                        <label for="date_time" class="block text-sm font-medium text-green-400">Scheduled Date and Time</label>
+                        <label for="date_time" class="block text-sm font-medium text-green-400">Scheduled For:</label>
                         <input type="datetime-local" v-model="form.date_time" id="date_time" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                       </div>
                       <div class="mb-4">
@@ -76,6 +76,10 @@
                       <div class="mb-4">
                         <label for="notes" class="block text-sm font-medium text-green-400">Notes</label>
                         <textarea v-model="form.notes" id="notes" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm"></textarea>
+                      </div>
+                      <div class="mb-4">
+                        <label for="images" class="block text-sm font-medium text-green-400">Images</label>
+                        <input type="file" id="images" multiple @change="handleImageUpload" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
                       </div>
                       <div class="px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse sm:mt-6 rounded">
                         <button type="submit" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
@@ -139,6 +143,7 @@ export default {
       status: props.workOrder.status,
       price: props.workOrder.price,
       notes: props.workOrder.notes,
+      images: [],
     });
 
     const formatDate = (date) => {
@@ -190,6 +195,13 @@ export default {
       });
     };
 
+    const handleImageUpload = (event) => {
+      const files = event.target.files;
+      if (files.length) {
+        form.images = Array.from(files);
+      }
+    };
+
     watch(() => props.showModal, (newVal) => {
       if (!newVal) {
         closeModal();
@@ -205,6 +217,7 @@ export default {
       cancelEdit,
       updateWorkOrder,
       duplicateWorkOrder,
+      handleImageUpload,
     };
   },
 };

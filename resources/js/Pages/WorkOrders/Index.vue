@@ -13,7 +13,7 @@
         </div>
       </div>
       <div class="mt-8 flow-root">
-        <div class="scrollable-container -mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
             <div class="overflow-hidden border-b border-accent shadow sm:rounded-lg">
               <div class="table-wrapper">
@@ -54,19 +54,21 @@
                         <div class="text-green-400 truncate">{{ workOrder.description }}</div>
                       </td>
                       <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                        <div class="text-green-400">{{ formatDate(workOrder.scheduled_at) }}</div>
+                        <div class="text-green-400">{{ formatDate(workOrder.date_time) }}</div>
                       </td>
                       <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
                         <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">{{ workOrder.status }}</span>
                       </td>
                       <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                        <div class="text-green-400">{{ workOrder.customer?.name || 'N/A' }}</div>
+                        <div class="text-green-400">{{ workOrder.customer_id }}</div>
                       </td>
                       <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                        <div class="text-green-400">{{ getUserId(workOrder.user) }}</div>
+                        <div class="text-green-400">{{ getUserName(workOrder.user_id) }}</div>
                       </td>
                       <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                        <div class="text-green-400 truncate">{{ getImages(workOrder.images) }}</div>
+                        <div class="flex space-x-2">
+                          <img v-for="(image, index) in getImages(workOrder.images)" :key="index" :src="`/storage/${image}`" alt="Work Order Image" class="w-10 h-10 object-cover rounded">
+                        </div>
                       </td>
                       <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
                         <div class="text-green-400 truncate">{{ workOrder.notes }}</div>
@@ -111,6 +113,7 @@ export default {
   setup() {
     const { props } = usePage();
     const workOrders = ref(props.workOrders || []);
+    const users = ref(props.users || []);
 
     // Sort workOrders by creation date in descending order
     workOrders.value.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -142,12 +145,13 @@ export default {
       }
     };
 
-    const getUserId = (user) => {
-      return user ? user.id : 'N/A';
+    const getUserName = (userId) => {
+      const user = users.value.find(user => user.id === userId);
+      return user ? user.name : 'N/A';
     };
 
     const getImages = (images) => {
-      return images ? images.join(', ') : 'N/A';
+      return Array.isArray(images) ? images : [];
     };
 
     const deleteWorkOrder = (id) => {
@@ -166,12 +170,13 @@ export default {
 
     return {
       workOrders,
+      users,
       selectedWorkOrder,
       showModal,
       openModal,
       closeModal,
       formatDate,
-      getUserId,
+      getUserName,
       getImages,
       deleteWorkOrder,
     };
@@ -210,5 +215,10 @@ td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+img {
+  display: inline-block;
+  margin-right: 0.5rem;
 }
 </style>

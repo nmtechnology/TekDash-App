@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\WorkOrder;
+use App\Models\User;
 use Inertia\Inertia;
 
 class WorkOrderController extends Controller
@@ -11,7 +12,11 @@ class WorkOrderController extends Controller
     public function index()
     {
         $workOrders = WorkOrder::all();
-        return Inertia::render('WorkOrders/Index', ['workOrders' => $workOrders]);
+        $users = User::all();
+        return Inertia::render('WorkOrders/Index', [
+            'workOrders' => $workOrders,
+            'users' => $users,
+        ]);
     }
 
     // Show the form for creating a new resource
@@ -32,6 +37,7 @@ class WorkOrderController extends Controller
             'price' => 'required|numeric',
             'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'notes' => 'nullable|string',
         ]);
 
@@ -52,6 +58,15 @@ class WorkOrderController extends Controller
                 $fileAttachments[] = $path;
             }
             $workOrder->file_attachments = json_encode($fileAttachments);
+        }
+
+        if ($request->hasFile('images')) {
+            $images = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('work_orders', 'public');
+                $images[] = $path;
+            }
+            $workOrder->images = json_encode($images);
         }
 
         $workOrder->save();
@@ -85,6 +100,7 @@ class WorkOrderController extends Controller
             'price' => 'required|numeric',
             'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'notes' => 'nullable|string',
         ]);
 
@@ -97,6 +113,15 @@ class WorkOrderController extends Controller
         $workOrder->price = $validatedData['price'];
         $workOrder->status = $validatedData['status'];
         $workOrder->notes = $validatedData['notes'];
+
+        if ($request->hasFile('file_attachments')) {
+            $fileAttachments = [];
+            foreach ($request->file('file_attachments') as $file) {
+                $path = $file->store('work_orders', 'public');
+                $fileAttachments[] = $path;
+            }
+            $workOrder->file_attachments = json_encode($fileAttachments);
+        }
 
         if ($request->hasFile('images')) {
             $images = [];
