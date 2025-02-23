@@ -111,6 +111,10 @@ export default {
   setup() {
     const { props } = usePage();
     const workOrders = ref(props.workOrders || []);
+
+    // Sort workOrders by creation date in descending order
+    workOrders.value.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
     const selectedWorkOrder = ref(null);
     const showModal = ref(false);
 
