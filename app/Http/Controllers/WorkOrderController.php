@@ -124,27 +124,27 @@ class WorkOrderController extends Controller
 
     // Duplicate the specified resource
     public function duplicate($id)
-{
-    $workOrder = WorkOrder::findOrFail($id);
-    $newWorkOrder = $workOrder->replicate();
-    $newWorkOrder->user_id = auth()->id();
-    $newWorkOrder->title = $workOrder->title . ' (Copy)';
+    {
+        $workOrder = WorkOrder::findOrFail($id);
+        $newWorkOrder = $workOrder->replicate();
+        $newWorkOrder->user_id = auth()->id();
+        $newWorkOrder->title = $workOrder->title . ' (Copy)';
 
-    // Handle file attachments
-    if ($workOrder->file_attachments) {
-        $fileAttachments = json_decode($workOrder->file_attachments, true);
-        $newFileAttachments = [];
-        foreach ($fileAttachments as $file) {
-            $newPath = 'work_orders/' . basename($file);
-            \Storage::disk('public')->copy($file, $newPath);
-            $newFileAttachments[] = $newPath;
+        // Handle file attachments
+        if ($workOrder->file_attachments) {
+            $fileAttachments = json_decode($workOrder->file_attachments, true);
+            $newFileAttachments = [];
+            foreach ($fileAttachments as $file) {
+                $newPath = 'work_orders/' . basename($file);
+                \Storage::disk('public')->copy($file, $newPath);
+                $newFileAttachments[] = $newPath;
+            }
+            $newWorkOrder->file_attachments = json_encode($newFileAttachments);
         }
-        $newWorkOrder->file_attachments = json_encode($newFileAttachments);
+
+        $newWorkOrder->save();
+
+        $userName = auth()->user()->name;
+        return redirect()->route('dashboard')->with('message', "Work order duplicated successfully by $userName");
     }
-
-    $newWorkOrder->save();
-
-    $userName = auth()->user()->name;
-    return redirect()->route('dashboard')->with('message', "Work order duplicated successfully by $userName");
-}
 }

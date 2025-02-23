@@ -99,6 +99,9 @@
                 <button @click="enableEdit" type="button" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
                   Update
                 </button>
+                <button @click="duplicateWorkOrder" type="button" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
+                  Duplicate
+                </button>
               </div>
             </div>
           </div>
@@ -176,6 +179,17 @@ export default {
       });
     };
 
+    const duplicateWorkOrder = () => {
+      form.post(`/work-orders/${props.workOrder.id}/duplicate`, {
+        onSuccess: () => {
+          emit('close');
+        },
+        onError: (errors) => {
+          console.error('Error duplicating work order:', errors);
+        },
+      });
+    };
+
     watch(() => props.showModal, (newVal) => {
       if (!newVal) {
         closeModal();
@@ -190,6 +204,7 @@ export default {
       enableEdit,
       cancelEdit,
       updateWorkOrder,
+      duplicateWorkOrder,
     };
   },
 };
