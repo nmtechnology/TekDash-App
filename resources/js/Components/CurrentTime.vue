@@ -38,28 +38,18 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Digital-7+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=roboto+Mono&display=swap');
 
 .digital-clock {
-  font-family: 'Digital-7 Mono', monospace;
-  color: #00ff00;
-  text-shadow: 0 0 10px #00ff00;
+  font-family: 'roboto Mono', monospace;
+  color: #14ff7a;
+  text-shadow: 0 0 10px #42fb5b;
 }
 
 .time {
   font-size: 2rem;
   margin-top: 2rem;
   pointer-events: none; /* Disable pointer events */
-}
-
-.time::after {
-  content: '';
-  display: inline-block;
-  width: 0.1em;
-  height: 1em;
-  background: #00ff00;
-  margin-left: 0.1em;
-  animation: blink 1s steps(1) infinite;
 }
 
 @keyframes blink {

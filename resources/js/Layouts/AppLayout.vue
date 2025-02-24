@@ -8,11 +8,12 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
-import CurrentTime from '@/Components/CurrentTime.vue';
 
 defineProps({
     title: String,
 });
+
+const searchQuery = ref('');
 
 const showingNavigationDropdown = ref(false);
 
@@ -64,7 +65,15 @@ const logout = () => {
                         <!-- Search section -->
                         <div class="flex flex-1 justify-center lg:justify-end p-4">
                             <div class="relative w-full max-w-lg lg:max-w-xs">
-                                <input type="search" name="search" aria-label="Search projects" class="peer block w-full rounded-md bg-indigo-400/25 py-1 pl-8 pr-3 text-base text-indigo-100 outline-none placeholder:text-indigo-200 focus:bg-white focus:text-gray-900 focus:placeholder:text-gray-400 sm:text-sm" placeholder="Search projects" />
+                                <input 
+                                    type="search" 
+                                    name="search" 
+                                    aria-label="Search work orders" 
+                                    class="peer block w-full rounded-md bg-indigo-400/25 py-1 pl-8 pr-3 text-base text-indigo-100 outline-none placeholder:text-indigo-200 focus:bg-white focus:text-gray-900 focus:placeholder:text-gray-400 sm:text-sm" 
+                                    placeholder="Search work orders" 
+                                    v-model="searchQuery"
+                                    @input="searchWorkOrders"
+                                />
                                 <MagnifyingGlassIcon class="pointer-events-none absolute left-2 top-1/2 transform -translate-y-1/2 size-5 text-indigo-200 peer-focus:text-gray-400" aria-hidden="true" />
                             </div>
                         </div>

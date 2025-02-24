@@ -12,9 +12,9 @@
                 <div v-if="workOrder">
                   <div v-if="!isEditing">
                     <div class="mt-6 border-t border-gray-100">
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0 container">
                         <dt class="text-sm font-medium text-white">Description</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-wrap">{{ workOrder.description }}</dd>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-scroll contain-layout">{{ workOrder.description }}</dd>
                       </div>
                       <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Scheduled For</dt>

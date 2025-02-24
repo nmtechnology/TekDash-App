@@ -27,7 +27,7 @@
                   </div>
                   <div class="mb-4">
                     <label for="title" class="block text-sm font-medium text-green-400 bg-slate-900">Title</label>
-                    <input placeholder="CCTV / WO######-## / CITY" type="text" v-model="form.title" id="title" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                    <input placeholder="WorkType / Location / WO######-## " type="text" v-model="form.title" id="title" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                   </div>
                   <div class="mb-4">
                     <label for="description" class="block text-sm font-medium text-green-400">Description</label>

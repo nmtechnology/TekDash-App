@@ -44,7 +44,14 @@ class WorkOrderController extends Controller
         $workOrder = new WorkOrder();
         $workOrder->user_id = $validatedData['user_id'];
         $workOrder->customer_id = $validatedData['customer_id'];
-        $workOrder->title = $validatedData['title'];
+        $latestWorkOrder = WorkOrder::where('title', 'like', $validatedData['title'] . '-%')->orderBy('id', 'desc')->first();
+        if ($latestWorkOrder) {
+            preg_match('/\-(\d+)$/', $latestWorkOrder->title, $matches);
+            $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 1;
+        } else {
+            $copyNumber = 1;
+        }
+        $workOrder->title = $validatedData['title'] . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT);
         $workOrder->description = $validatedData['description'];
         $workOrder->date_time = $validatedData['date_time'];
         $workOrder->price = $validatedData['price'];
@@ -153,7 +160,14 @@ class WorkOrderController extends Controller
         $workOrder = WorkOrder::findOrFail($id);
         $newWorkOrder = $workOrder->replicate();
         $newWorkOrder->user_id = auth()->id();
-        $newWorkOrder->title = $workOrder->title . ' (Copy)';
+        $latestDuplicate = WorkOrder::where('title', 'like', $workOrder->title . ' -% ')->orderBy('id', 'desc')->first();
+        if ($latestDuplicate) {
+            preg_match('/\-(\d+) \(Copy\)$/', $latestDuplicate->title, $matches);
+            $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 2;
+        } else {
+            $copyNumber = 2;
+        }
+        $newWorkOrder->title = $workOrder->title . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (RT)';
 
         // Handle file attachments
         if ($workOrder->file_attachments) {
