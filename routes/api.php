@@ -10,3 +10,5 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/api/groq/query', [GroqController::class, 'query']);
 Route::post('groq/query', [GroqController::class, 'query'])->name('groq.query');
+
+Route::get('show-events', [CalendarController::class, 'showEvents']);

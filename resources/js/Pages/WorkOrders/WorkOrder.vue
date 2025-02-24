@@ -6,26 +6,59 @@
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
               <h3 class="text-2xl leading-6 font-medium text-green-400" id="modal-title">
-                Work Order Details
+                {{ workOrder.title }}
               </h3>
               <div class="mt-2">
                 <div v-if="workOrder">
                   <div v-if="!isEditing">
-                    <h1>{{ workOrder.title }}</h1>
-                    <p>{{ workOrder.description }}</p>
-                    <p>{{ formatDate(workOrder.scheduled_at) }}</p>
-                    <p>{{ workOrder.status }}</p>
-                    <p>{{ workOrder.price }}</p>
-                    <p>{{ workOrder.customer_id }}</p>
-                    <p>{{ workOrder.user_id }}</p>
-                    <p>{{ workOrder.notes }}</p>
-                    <div v-if="workOrder.images && workOrder.images.length">
-                      <h4>Images:</h4>
-                      <ul>
-                        <li v-for="(image, index) in workOrder.images" :key="index">
-                          <img :src="`/storage/${image}`" alt="Work Order Image" class="max-w-full h-auto" />
-                        </li>
-                      </ul>
+                    <div class="mt-6 border-t border-gray-100">
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Description</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-wrap">{{ workOrder.description }}</dd>
+                      </div>
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Scheduled For</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ formatDate(workOrder.date_time) }}</dd>
+                      </div>
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Status</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.status }}</dd>
+                      </div>
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Price</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.price }}</dd>
+                      </div>
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Customer</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.customer_id }}</dd>
+                      </div>
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">User</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ getUserName(workOrder.user_id) }}</dd>
+                      </div>
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Notes</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.notes }}</dd>
+                      </div>
+                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Attachments</dt>
+                        <dd class="mt-2 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                          <ul role="list" class="divide-y divide-gray-100 rounded-md border border-gray-200">
+                            <li v-for="(image, index) in workOrder.images" :key="index" class="flex items-center justify-between py-4 pr-5 pl-4 text-sm">
+                              <div class="flex w-0 flex-1 items-center">
+                                <PaperClipIcon class="size-5 shrink-0 text-gray-400" aria-hidden="true" />
+                                <div class="ml-4 flex min-w-0 flex-1 gap-2">
+                                  <span class="truncate font-medium">{{ image }}</span>
+                                  <span class="shrink-0 text-gray-400">Image</span>
+                                </div>
+                              </div>
+                              <div class="ml-4 shrink-0">
+                                <a :href="`/storage/${image}`" class="font-medium text-indigo-600 hover:text-indigo-500" download>Download</a>
+                              </div>
+                            </li>
+                          </ul>
+                        </dd>
+                      </div>
                     </div>
                   </div>
                   <div v-else>
@@ -119,6 +152,7 @@
 import { ref, watch } from 'vue';
 import { format } from 'date-fns';
 import { useForm } from '@inertiajs/vue3';
+import { PaperClipIcon } from '@heroicons/vue/20/solid';
 
 export default {
   name: 'WorkOrder',
@@ -195,6 +229,26 @@ export default {
       });
     };
 
+    const users = ref([]);
+
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        users.value = await response.json();
+        console.log('Fetched users:', users.value); // Debugging line
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+
+    const getUserName = (userId) => {
+      const user = users.value.find(user => user.id === userId);
+      console.log('Finding user:', userId, user); // Debugging line
+      return user ? user.name : 'N/A';
+    };
+
     const handleImageUpload = (event) => {
       const files = event.target.files;
       if (files.length) {
@@ -213,6 +267,7 @@ export default {
       form,
       formatDate,
       closeModal,
+      getUserName,
       enableEdit,
       cancelEdit,
       updateWorkOrder,
@@ -224,6 +279,12 @@ export default {
 </script>
 
 <style scoped>
+.description {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
 .btn {
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;

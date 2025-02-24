@@ -61,8 +61,6 @@ const logout = () => {
                             </div>
                         </div>
 
-                        <CurrentTime class="p-4"></CurrentTime>
-
                         <!-- Search section -->
                         <div class="flex flex-1 justify-center lg:justify-end p-4">
                             <div class="relative w-full max-w-lg lg:max-w-xs">
@@ -108,7 +106,7 @@ const logout = () => {
                                             <template v-if="$page.props.auth.user.all_teams.length > 1">
                                                 <div class="border-t border-gray-200" />
 
-                                                <div class="block px-4 py-2 text-xs text-gray-400">
+                                                <div class="block px-4 py-2 text-xs text-lime-400">
                                                     Switch Teams
                                                 </div>
 
@@ -179,7 +177,7 @@ const logout = () => {
 
                         <!-- Hamburger -->
                         <div class="-me-2 flex items-center sm:hidden">
-                            <button class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out" @click="showingNavigationDropdown = ! showingNavigationDropdown">
+                            <button class="inline-flex items-center justify-center p-2 rounded-md text-lime-400 hover:text-gray-800 hover:bg-gray-900 focus:outline-none focus:bg-gray-800 focus:text-gray-500 transition duration-150 ease-in-out" @click="showingNavigationDropdown = ! showingNavigationDropdown">
                                 <svg
                                     class="size-6"
                                     stroke="currentColor"
@@ -211,6 +209,9 @@ const logout = () => {
                     <div class="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('work-orders.index')" :active="route().current('work-orders.index')">
+                            Work Orders
                         </ResponsiveNavLink>
                     </div>
 

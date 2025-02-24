@@ -85,15 +85,19 @@ async function fetchEvents() {
     const response = await axios.get('/api/work-orders'); // Use GET method to fetch work orders
     const workOrders = response.data.workOrders;
 
-    // Format work orders as events
-    const events = workOrders.map(workOrder => ({
-      title: workOrder.title,
-      start: workOrder.scheduled_at,
-      description: workOrder.description
-    }));
+    if (workOrders && Array.isArray(workOrders)) {
+      // Format work orders as events
+      const events = workOrders.map(workOrder => ({
+        title: workOrder.title,
+        start: workOrder.scheduled_at,
+        description: workOrder.description
+      }));
 
-    // Update the calendar options with the fetched events
-    calendarOptions.events = events;
+      // Update the calendar options with the fetched events
+      calendarOptions.events = events;
+    } else {
+      console.error('Invalid work orders data:', workOrders);
+    }
   } catch (error) {
     console.error('Error fetching work orders:', error);
     if (error.response && error.response.data) {

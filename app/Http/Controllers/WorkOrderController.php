@@ -92,7 +92,7 @@ class WorkOrderController extends Controller
     public function update(Request $request, $id)
     {
         $validatedData = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
             'customer_id' => 'required|string|max:255',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -172,4 +172,5 @@ class WorkOrderController extends Controller
         $userName = auth()->user()->name;
         return redirect()->route('dashboard')->with('message', "Work order duplicated successfully by $userName");
     }
+    
 }
