@@ -186,5 +186,21 @@ class WorkOrderController extends Controller
         $userName = auth()->user()->name;
         return redirect()->route('dashboard')->with('message', "Work order duplicated successfully by $userName");
     }
+
+    public function addNote(Request $request, WorkOrder $workOrder)
+    {
+        $request->validate([
+            'text' => 'required|string',
+        ]);
+
+        $note = new Note([
+            'text' => $request->input('text'),
+            'user_id' => auth()->id(),
+        ]);
+
+        $workOrder->notes()->save($note);
+
+        return response()->json($note, 201);
+    }
     
 }

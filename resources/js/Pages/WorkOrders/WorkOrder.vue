@@ -110,6 +110,7 @@
                         <label for="notes" class="block text-sm font-medium text-green-400">Notes</label>
                         <textarea v-model="form.notes" id="notes" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm"></textarea>
                       </div>
+                      <Messenger :initialNotes="workOrder.notes" :workOrderId="workOrder.id" :userId="form.user_id" :getUserName="getUserName" />
                       <div class="mb-4">
                         <label for="images" class="block text-sm font-medium text-green-400">Images</label>
                         <input type="file" id="images" multiple @change="handleImageUpload" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
@@ -153,9 +154,11 @@ import { ref, watch } from 'vue';
 import { format } from 'date-fns';
 import { useForm } from '@inertiajs/vue3';
 import { PaperClipIcon } from '@heroicons/vue/20/solid';
+import Messenger from '@/Components/Messenger.vue';
 
 export default {
   name: 'WorkOrder',
+  components: Messenger,
   props: {
     workOrder: {
       type: Object,

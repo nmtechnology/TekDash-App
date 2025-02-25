@@ -42,3 +42,13 @@ Route::get('/work-orders/{id}/edit', [WorkOrderController::class, 'edit']);
 Route::get('/work-orders/create', [WorkOrderController::class, 'create']);
 Route::get('/work-orders/{id}', [WorkOrderController::class, 'show']);
     
+
+// Messenger ROuting
+
+// Route::get('/messenger', function () {
+//     return Inertia::render('Messenger');
+// })->name('messenger');
+
+// Notes Routing
+
+Route::post('/work-orders/{workOrder}/notes', [WorkOrderController::class, 'addNote'])->middleware('auth');

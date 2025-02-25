@@ -1,5 +1,5 @@
 <?php
-
+// filepath: app/Models/WorkOrder.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,14 +9,12 @@ class WorkOrder extends Model
 {
     use HasFactory;
 
-    // Define the table associated with the model
     protected $table = 'work_orders';
 
-    // Define the attributes that are mass assignable
     protected $fillable = [
         'title',
         'description',
-        'scheduled_at',
+        'date_time',
         'status',
         'user_id',
         'images',
@@ -25,14 +23,12 @@ class WorkOrder extends Model
         'customer_id',
     ];
 
-    // Define the attributes that should be cast to native types
     protected $casts = [
         'scheduled_at' => 'datetime',
         'images' => 'array',
         'price' => 'decimal:2',
     ];
 
-    // Define the possible statuses
     const STATUSES = [
         'Scheduled',
         'In Progress',
@@ -41,7 +37,6 @@ class WorkOrder extends Model
         'Cancelled',
     ];
 
-    // Define the NM Technology Customers Options
     const CUSTOMERS = [
         'APS',
         'Barrister Global',
@@ -55,21 +50,23 @@ class WorkOrder extends Model
         'Work Market',
     ];
 
-    // Define the relationship with the User model
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Define the relationship with the Customer model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
     }
 
-    // Check if the work order has a specific status
     public function hasStatus($status)
     {
         return $this->status === $status;
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(Note::class);
     }
 }
