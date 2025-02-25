@@ -12,33 +12,33 @@
                 <div v-if="workOrder">
                   <div v-if="!isEditing">
                     <div class="mt-6 border-t border-gray-100">
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0 container">
-                        <dt class="text-sm font-medium text-white">Description</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-scroll contain-layout">{{ workOrder.description }}</dd>
-                      </div>
                       <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm font-medium text-white">Description</dt>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-y-auto h-40 w-75 description">{{ workOrder.description }}</dd>
+                      </div>
+                      <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Scheduled For</dt>
                         <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ formatDate(workOrder.date_time) }}</dd>
                       </div>
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Status</dt>
                         <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.status }}</dd>
                       </div>
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Price</dt>
                         <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.price }}</dd>
                       </div>
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Customer</dt>
                         <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.customer_id }}</dd>
                       </div>
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">User</dt>
                         <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ getUserName(workOrder.user_id) }}</dd>
                       </div>
                       <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Notes</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.notes }}</dd>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-y-auto h-40 w-75 description">{{ workOrder.notes }}</dd>
                       </div>
                       <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Attachments</dt>
@@ -282,6 +282,7 @@ export default {
 .description {
   word-wrap: break-word;
   overflow-wrap: break-word;
+  white-space: normal;
   max-width: 100%;
 }
 
@@ -400,5 +401,13 @@ export default {
 
 .mr-2 {
   margin-right: 0.5rem;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.max-h-32 {
+  max-height: 8rem; /* Adjust the height as needed */
 }
 </style>

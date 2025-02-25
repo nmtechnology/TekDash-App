@@ -44,8 +44,9 @@ const logout = () => {
                         <div class="flex">
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link :href="route('dashboard')">
+                                <Link :href="route('dashboard')" class="flex items-center">
                                     <ApplicationMark class="block h-9 w-auto" />
+                                    <p class="italic font-extrabold text-white ms-2 -ml-3">Technology</p>
                                 </Link>
                             </div>
 

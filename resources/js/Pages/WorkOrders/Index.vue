@@ -22,17 +22,11 @@
                   <table class="min-w-full divide-y divide-accent table-fixed outline outline-green-400">
                     <thead class="bg-gray-900 backdrop-blur-md opacity-95">
                       <tr>
-                        <th scope="col" class="sticky top-0 z-10 py-3.5 pl-4 pr-3 text-left text-xl font-semibold text-white sm:pl-0"></th>
-                        <th scope="col" class="sticky top-0 z-10 py-3.5 pl-4 pr-3 text-left text-xl font-semibold text-white sm:pl-0">Title</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Description</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Scheduled Time</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Status</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white customer-column">Customer</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">User</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Images</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Notes</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Price</th>
                         <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Actions</th>
+                        <th scope="col" class="sticky top-0 z-10 py-3.5 pl-4 pr-3 text-left text-xl font-semibold text-white sm:pl-0">Title</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Scheduled Time</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Customer</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">User</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-accent bg-transparent">
@@ -52,31 +46,14 @@
                             </div>
                           </div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent description-column">
-                          <div class="text-green-400 truncate">{{ workOrder.description }}</div>
-                        </td>
                         <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
                           <div class="text-green-400">{{ formatDate(workOrder.date_time) }}</div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                          <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">{{ workOrder.status }}</span>
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent customer-column">
+                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
                           <div class="text-green-400">{{ workOrder.customer_id }}</div>
                         </td>
                         <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
                           <div class="text-green-400">{{ getUserName(workOrder.user_id) }}</div>
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="flex space-x-2">
-                            <img v-for="(image, index) in getImages(workOrder.images)" :key="index" :src="`/storage/${image}`" alt="Work Order Image" class="w-10 h-10 object-cover rounded">
-                          </div>
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="text-green-400 truncate">{{ workOrder.notes }}</div>
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="text-green-400">{{ workOrder.price }}</div>
                         </td>
                       </tr>
                     </tbody>
@@ -162,10 +139,6 @@ export default {
       return user ? user.name : 'N/A';
     };
 
-    const getImages = (images) => {
-      return Array.isArray(images) ? images : [];
-    };
-
     const deleteWorkOrder = (id) => {
       if (confirm('Are you sure you want to delete this work order?')) {
         axios.delete(`/work-orders/${id}`)
@@ -231,7 +204,6 @@ export default {
       closeModal,
       formatDate,
       getUserName,
-      getImages,
       deleteWorkOrder,
       currentPage,
       totalPages,
@@ -254,6 +226,8 @@ export default {
 .table-wrapper {
   max-height: 400px; /* Adjust the height as needed */
   overflow-y: auto;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
   position: relative;
 }
 
@@ -264,30 +238,9 @@ thead th {
   z-index: 1;
 }
 
-.description-column {
-  max-width: 150px; /* Adjust the max-width as needed */
-  word-wrap: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.customer-column {
-  max-width: 100px; /* Adjust the max-width as needed */
-  word-wrap: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-img {
-  display: inline-block;
-  margin-right: 0.5rem;
 }
 </style>

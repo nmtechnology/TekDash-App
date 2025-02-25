@@ -167,7 +167,7 @@ class WorkOrderController extends Controller
         } else {
             $copyNumber = 2;
         }
-        $newWorkOrder->title = $workOrder->title . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (RT)';
+        $newWorkOrder->title = $workOrder->title . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
 
         // Handle file attachments
         if ($workOrder->file_attachments) {

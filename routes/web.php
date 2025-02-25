@@ -41,3 +41,4 @@ Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplica
 Route::get('/work-orders/{id}/edit', [WorkOrderController::class, 'edit']);
 Route::get('/work-orders/create', [WorkOrderController::class, 'create']);
 Route::get('/work-orders/{id}', [WorkOrderController::class, 'show']);
+    

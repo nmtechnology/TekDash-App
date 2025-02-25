@@ -78,7 +78,7 @@ function handleImageError() {
                             </div>
                             <div class="text-center">
                                 <h1 class="text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl">TekDash</h1>
-                                <p class="mt-8 text-lg font-medium text-gray-500 sm:text-xl">CMS system for NM Technology</p>
+                                <p class="mt-8 text-lg font-medium text-gray-500 sm:text-xl">CMS for NM Technology</p>
                                 <div class="mt-10 flex items-center justify-center gap-x-6">
                                     <Link :href="route('login')" class="rounded-md bg-lime-400 px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-lime-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Log in</Link>
                                     <Link :href="route('register')" class="rounded-md bg-lime-400 px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-lime-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Register</Link>
