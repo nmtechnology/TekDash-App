@@ -38,7 +38,9 @@
                       </div>
                       <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Notes</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-y-auto h-40 w-75 description">{{ workOrder.notes }}</dd>
+                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-y-auto h-40 w-75 description">
+                          <Messenger :initialNotes="workOrder.notes" :workOrderId="workOrder.id" :userId="form.user_id" :getUserName="getUserName" />
+                        </dd>
                       </div>
                       <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                         <dt class="text-sm font-medium text-white">Attachments</dt>
@@ -110,8 +112,14 @@
                         <label for="notes" class="block text-sm font-medium text-green-400">Notes</label>
                         <textarea v-model="form.notes" id="notes" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm"></textarea>
                       </div>
-                      <Messenger :initialNotes="workOrder.notes" :workOrderId="workOrder.id" :userId="form.user_id" :getUserName="getUserName" />
-                      <div class="mb-4">
+                      <Messenger 
+  :initialNotes="workOrder.notes || []"
+  :workOrderId="workOrder.id"
+  :userId="$page.props.auth.user.id"
+  :getUserName="getUserName"
+  :getUserAvatar="getUserAvatar"
+  :currentUserAvatar="$page.props.auth.user.profile_photo_url"
+/>                      <div class="mb-4">
                         <label for="images" class="block text-sm font-medium text-green-400">Images</label>
                         <input type="file" id="images" multiple @change="handleImageUpload" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
                       </div>
@@ -158,7 +166,9 @@ import Messenger from '@/Components/Messenger.vue';
 
 export default {
   name: 'WorkOrder',
-  components: Messenger,
+  components: {
+    Messenger,
+  },
   props: {
     workOrder: {
       type: Object,

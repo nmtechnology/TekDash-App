@@ -38,7 +38,6 @@ class WorkOrderController extends Controller
             'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'notes' => 'nullable|string',
         ]);
 
         $workOrder = new WorkOrder();
@@ -56,7 +55,6 @@ class WorkOrderController extends Controller
         $workOrder->date_time = $validatedData['date_time'];
         $workOrder->price = $validatedData['price'];
         $workOrder->status = $validatedData['status'];
-        $workOrder->notes = $validatedData['notes'];
 
         if ($request->hasFile('file_attachments')) {
             $fileAttachments = [];
@@ -108,7 +106,6 @@ class WorkOrderController extends Controller
             'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'notes' => 'nullable|string',
         ]);
 
         $workOrder = WorkOrder::findOrFail($id);
@@ -119,7 +116,6 @@ class WorkOrderController extends Controller
         $workOrder->date_time = $validatedData['date_time'];
         $workOrder->price = $validatedData['price'];
         $workOrder->status = $validatedData['status'];
-        $workOrder->notes = $validatedData['notes'];
 
         if ($request->hasFile('file_attachments')) {
             $fileAttachments = [];
@@ -187,20 +183,35 @@ class WorkOrderController extends Controller
         return redirect()->route('dashboard')->with('message', "Work order duplicated successfully by $userName");
     }
 
-    public function addNote(Request $request, WorkOrder $workOrder)
+    public function addNote(Request $request, $workOrderId)
+{
+    $request->validate([
+        'text' => 'required|string',
+    ]);
+
+    $workOrder = WorkOrder::findOrFail($workOrderId);
+    $user = auth()->user();
+
+    $note = new Note([
+        'text' => $request->input('text'),
+        'user_id' => $user->id,
+    ]);
+
+    $workOrder->notes()->save($note);
+
+    // Return note with user info for the frontend
+    return response()->json([
+        'id' => $note->id,
+        'text' => $note->text,
+        'user_id' => $user->id,
+        'user_name' => $user->name,
+        'created_at' => $note->created_at,
+    ], 201);
+}
+
+public function notes()
     {
-        $request->validate([
-            'text' => 'required|string',
-        ]);
-
-        $note = new Note([
-            'text' => $request->input('text'),
-            'user_id' => auth()->id(),
-        ]);
-
-        $workOrder->notes()->save($note);
-
-        return response()->json($note, 201);
+        return $this->hasMany(Note::class);
     }
     
 }

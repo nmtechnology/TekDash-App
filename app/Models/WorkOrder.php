@@ -18,7 +18,6 @@ class WorkOrder extends Model
         'status',
         'user_id',
         'images',
-        'notes',
         'price',
         'customer_id',
     ];

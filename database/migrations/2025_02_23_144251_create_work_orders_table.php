@@ -21,7 +21,6 @@ return new class extends Migration
         $table->decimal('price', 8, 2);
         $table->enum('status', ['Scheduled', 'In Progress', 'Part/Return', 'Complete', 'Cancelled']);
         $table->json('file_attachments')->nullable(); // Add this line to store file paths for .pdf and .jpg files
-        $table->text('notes')->nullable();
         $table->timestamps();
     });
 }
