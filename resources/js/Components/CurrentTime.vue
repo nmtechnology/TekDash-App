@@ -1,5 +1,5 @@
 <template>
-  <div class="digital-clock">
+  <div class="digital-clock mb-10">
     <p class="time">{{ formattedDateTime }}</p>
   </div>
 </template>
@@ -12,9 +12,9 @@ let timer = null;
 
 const formattedDateTime = computed(() => {
   return new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
+    weekday: 'short',
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
@@ -38,12 +38,11 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=roboto+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 .digital-clock {
-  font-family: 'roboto Mono', monospace;
-  color: #14ff7a;
-  text-shadow: 0 0 10px #42fb5b;
+  font-family: "Press Start 2P", system-ui;
+  color: #ffc902;
 }
 
 .time {

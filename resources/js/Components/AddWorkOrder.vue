@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button @click="openCreateModal" class="btn btn-green-400 outline hover:btn-green-600">Add Workorder</button>
+    <button @click="openCreateModal" class="btn outline text-lime-400 rounded-md hover:bg-lime-400 dark:hover:bg-lime-400 hover:text-gray-900 transition z-30">Add Workorder</button>
 
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div class="bg-gray-900 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">

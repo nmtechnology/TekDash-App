@@ -114,7 +114,7 @@ const logout = () => {
 
                                             <!-- Team Switcher -->
                                             <template v-if="$page.props.auth.user.all_teams.length > 1">
-                                                <div class="border-t border-gray-200" />
+                                                <div class="border-t border-gray-900" />
 
                                                 <div class="block px-4 py-2 text-xs text-lime-400">
                                                     Switch Teams

@@ -1,9 +1,9 @@
 <template>
   <div>
-    <button @click="toggleWeekends" class="mb-4 px-4 py-2 outline text-lime-400 rounded-md hover:bg-indigo-500 dark:hover:bg-lime-500 transition">
+    <button @click="toggleWeekends" class="mb-4 px-4 py-2 outline text-lime-400 rounded-md hover:bg-lime-500 dark:hover:bg-lime-400 hover:text-gray-900 transition">
       Toggle Weekends
     </button>
-    <div class="bg-gray-900 p-4 rounded-lg shadow">
+    <div class="bg-gray-900 outline p-4 rounded-lg shadow opacity-75">
       <FullCalendar :options="calendarOptions">
         <!-- Custom event rendering as cards -->
         <template v-slot:eventContent="arg">
@@ -284,79 +284,77 @@ function toggleWeekends() {
 </script>
 
 <style>
+/* Your existing styles */
 .fc-event {
   cursor: pointer;
-  padding: 0 !important; /* Remove default padding */
-  border: none !important; /* Remove default borders */
-  background: transparent !important; /* Remove default background */
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
 }
 
-/* Make the full event area clickable but transparent */
-.fc-event-main {
-  padding: 1px;
+/* Add these new styles for list view hover colors */
+.fc .fc-list-event:hover td {
+  background-color: #53415c !important; /* Dark hover color */
 }
 
-/* Event card specific styling */
-.event-card {
-  max-height: 36px;
-  width: 100%;
-  margin: 1px 0;
-  overflow: hidden;
+.dark .fc .fc-list-event:hover td {
+  background-color: #020617 !important; /* Even darker hover color for dark mode */
 }
 
-/* Small tweaks for different views */
-.fc-timeGridWeek-view .event-card,
-.fc-timeGridDay-view .event-card {
-  max-width: calc(100% - 4px);
+/* Optional: Style the list event titles and headers */
+.fc .fc-list-event-title a {
+  color: #f8fafc !important; /* Light text color */
 }
 
-/* Limit event height in day grid */
-.fc-daygrid-event-harness {
-  margin-bottom: 2px !important;
+.dark .fc .fc-list-event-title a {
+  color: #f1f5f9 !important; /* Light text color for dark mode */
 }
 
-/* Rest of your existing styles */
-.fc-daygrid-event {
-  white-space: normal !important;
-  max-width: 100% !important;
-  overflow: hidden;
+.fc .fc-list-day-cushion {
+  background-color: #1e293b !important; /* Header background color */
 }
 
-/* Dark mode styles - keep your existing ones */
-.dark .fc-theme-standard .fc-scrollgrid,
-.dark .fc-theme-standard td,
-.dark .fc-theme-standard th {
-  border-color: #374151;
+.dark .fc .fc-list-day-cushion {
+  background-color: #0f172a !important; /* Darker header background for dark mode */
 }
 
-.dark .fc-theme-standard .fc-toolbar-title,
-.dark .fc-col-header-cell-cushion {
-  color: #f3f4f6;
+/* Add these new styles for day grid customization */
+/* Day grid background colors */
+.fc .fc-daygrid-day {
+  background-color: #141b2a; /* Light theme background */
 }
 
-.dark .fc-daygrid-day-number {
-  color: #d1d5db;
+/* Current day highlighting */
+.fc .fc-day-today {
+  background-color: rgba(80, 200, 246, 0.1) !important; /* Light blue highlight */
 }
 
-.dark .fc-button-primary {
-  background-color: #4b5563;
-  border-color: #6b7280;
+/* Days from other months */
+.fc .fc-day-other {
+  background-color: #141b2a; /* Slightly darker for "other" days */
 }
 
-.dark .fc-button-primary:hover {
-  background-color: #374151;
+/* Dark mode overrides */
+.dark .fc .fc-daygrid-day {
+  background-color: #1e293b; /* Dark theme background */
 }
 
-.dark .fc-button-active {
-  background-color: #111827 !important;
+.dark .fc .fc-day-today {
+  background-color: rgba(59, 130, 246, 0.2) !important; /* Darker blue highlight */
 }
 
-/* Adjust event content for better visibility */
-.fc-event-title {
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+.dark .fc .fc-day-other {
+  background-color: #141b2a; /* Even darker for "other" days in dark mode */
 }
+
+/* Optional: customize the header row background */
+.fc .fc-col-header-cell {
+  background-color: #141b2a; /* Light header background */
+}
+
+.dark .fc .fc-col-header-cell {
+  background-color: #141b2a; /* Dark header background */
+}
+
+/* Your other existing styles... */
 </style>

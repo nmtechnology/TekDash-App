@@ -437,4 +437,87 @@ public function calendarEvents()
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    public function getStats()
+{
+    try {
+        // Get current month's data
+        $currentMonthOrders = WorkOrder::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->get();
+            
+        // Get previous month's data for comparison
+        $previousMonthOrders = WorkOrder::whereMonth('created_at', now()->subMonth()->month)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->get();
+            
+        // Calculate totals for current month
+        $currentTotalRevenue = $currentMonthOrders->sum('price');
+        $currentCompletedCount = $currentMonthOrders->where('status', 'Complete')->count();
+        $currentPendingCount = $currentMonthOrders->whereIn('status', ['Scheduled', 'In Progress'])->count();
+        $currentAvgPrice = $currentMonthOrders->count() > 0 
+            ? $currentTotalRevenue / $currentMonthOrders->count() 
+            : 0;
+            
+        // Calculate totals for previous month
+        $previousTotalRevenue = $previousMonthOrders->sum('price');
+        $previousCompletedCount = $previousMonthOrders->where('status', 'Complete')->count();
+        $previousPendingCount = $previousMonthOrders->whereIn('status', ['Scheduled', 'In Progress'])->count();
+        $previousAvgPrice = $previousMonthOrders->count() > 0 
+            ? $previousTotalRevenue / $previousMonthOrders->count() 
+            : 0;
+            
+        // Calculate percentage changes
+        $revenueChange = $previousTotalRevenue > 0 
+            ? (($currentTotalRevenue - $previousTotalRevenue) / $previousTotalRevenue) * 100 
+            : 0;
+            
+        $completedChange = $previousCompletedCount > 0 
+            ? (($currentCompletedCount - $previousCompletedCount) / $previousCompletedCount) * 100 
+            : 0;
+            
+        $pendingChange = $previousPendingCount > 0 
+            ? (($currentPendingCount - $previousPendingCount) / $previousPendingCount) * 100 
+            : 0;
+            
+        $avgPriceChange = $previousAvgPrice > 0 
+            ? (($currentAvgPrice - $previousAvgPrice) / $previousAvgPrice) * 100 
+            : 0;
+            
+        // Format the stats array
+        $stats = [
+            [
+                'name' => 'Total Revenue',
+                'value' => '$' . number_format($currentTotalRevenue, 2),
+                'change' => ($revenueChange >= 0 ? '+' : '') . number_format($revenueChange, 2) . '%',
+                'changeType' => $revenueChange >= 0 ? 'positive' : 'negative'
+            ],
+            [
+                'name' => 'Completed Orders',
+                'value' => $currentCompletedCount,
+                'change' => ($completedChange >= 0 ? '+' : '') . number_format($completedChange, 2) . '%',
+                'changeType' => $completedChange >= 0 ? 'positive' : 'negative'
+            ],
+            [
+                'name' => 'Pending Orders',
+                'value' => $currentPendingCount,
+                'change' => ($pendingChange >= 0 ? '+' : '') . number_format($pendingChange, 2) . '%',
+                'changeType' => $pendingChange <= 0 ? 'positive' : 'negative' // Less pending is positive
+            ],
+            [
+                'name' => 'Average Price',
+                'value' => '$' . number_format($currentAvgPrice, 2),
+                'change' => ($avgPriceChange >= 0 ? '+' : '') . number_format($avgPriceChange, 2) . '%',
+                'changeType' => $avgPriceChange >= 0 ? 'positive' : 'negative'
+            ]
+        ];
+        
+        return response()->json($stats);
+    } catch (\Exception $e) {
+        \Log::error('Error calculating work order stats: ' . $e->getMessage());
+        return response()->json([
+            ['name' => 'Error', 'value' => 'Could not load stats', 'change' => '', 'changeType' => 'neutral']
+        ], 500);
+    }
+}
 }

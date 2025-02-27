@@ -139,37 +139,29 @@ export default {
       return user ? user.name : 'N/A';
     };
 
-    const deleteWorkOrder = (id) => {
+    function deleteWorkOrder(id) {
   if (confirm('Are you sure you want to delete this work order?')) {
     // Get CSRF token from meta tag
-    const token = document.head.querySelector('meta[name="csrf-token"]');
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
     axios.delete(`/work-orders/${id}`, {
       headers: {
-        'X-CSRF-TOKEN': token ? token.content : '',
+        'X-CSRF-TOKEN': token,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'Accept': 'application/json'
       }
     })
     .then(response => {
-      console.log('Delete response:', response);
-      workOrders.value = workOrders.value.filter(workOrder => workOrder.id !== id);
-      alert('Work order deleted successfully.');
+      // Remove from the UI
+      workOrders.value = workOrders.value.filter(wo => wo.id !== id);
+      alert('Work order deleted successfully');
     })
     .catch(error => {
       console.error('Error deleting work order:', error);
-      
-      // Show more detailed error info
-      if (error.response) {
-        console.error('Status:', error.response.status);
-        console.error('Data:', error.response.data);
-      }
-      
-      alert('Failed to delete work order. Please try again.');
+      alert('Failed to delete work order: ' + (error.response?.data?.error || 'Unknown error'));
     });
   }
-};
+}
 
     // Pagination logic
     const currentPage = ref(1);

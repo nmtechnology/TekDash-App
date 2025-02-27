@@ -91,12 +91,21 @@ Route::post('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteContr
     ->middleware(['auth'])
     ->name('work-orders.show');
 
-    // Get complete work order details for the modal
-Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'getDetails'])
-->middleware(['auth'])
-->name('work-orders.details');
 
 // Get detailed work order for calendar clicks
 Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'getDetails'])
     ->middleware(['auth'])
     ->name('work-orders.details');
+
+    Route::delete('/work-orders/{id}', [WorkOrderController::class, 'destroy'])
+    ->middleware(['auth'])
+    ->name('work-orders.destroy');
+
+    // Get work order statistics for dashboard
+Route::get('/work-order-stats', [WorkOrderController::class, 'getStats'])
+->middleware(['auth'])
+->name('work-orders.stats');
+
+Route::delete('/work-orders/{id}', [WorkOrderController::class, 'destroy'])
+    ->middleware(['auth'])
+    ->name('work-orders.destroy');
