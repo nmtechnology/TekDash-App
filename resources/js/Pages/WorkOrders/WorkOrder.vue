@@ -208,19 +208,38 @@ export default {
       images: false
       // Removed user_id from editable fields
     });
-    
-    const form = useForm({
-      customer_id: props.workOrder.customer_id,
-      title: props.workOrder.title,
-      description: props.workOrder.description,
-      date_time: props.workOrder.date_time,
-      status: props.workOrder.status,
-      price: props.workOrder.price,
-      notes: props.workOrder.notes,
+
+       // Define form first before using it in the watch function
+       const form = useForm({
+      customer_id: props.workOrder?.customer_id || '',
+      title: props.workOrder?.title || '',
+      description: props.workOrder?.description || '',
+      date_time: props.workOrder?.date_time || '',
+      status: props.workOrder?.status || 'Scheduled',
+      price: props.workOrder?.price || 0,
+      notes: props.workOrder?.notes || [],
       images: [],
       // Keep user_id in the form for data consistency but don't make it editable
-      user_id: props.workOrder.user_id
+      user_id: props.workOrder?.user_id || ''
     });
+
+    // Watch for changes to the workOrder prop
+    watch(() => props.workOrder, (newVal) => {
+  if (newVal) {
+    // Initialize form with the new work order data
+    form.customer_id = newVal.customer_id || '';
+    form.title = newVal.title || '';
+    form.description = newVal.description || '';
+    form.date_time = newVal.date_time || '';
+    form.status = newVal.status || 'Scheduled';
+    form.price = newVal.price || 0;
+    form.notes = newVal.notes || [];
+    form.user_id = newVal.user_id || '';
+    
+    // Log the data for debugging
+    console.log('Work order data in modal:', newVal);
+  }
+}, { immediate: true });
 
     const formatDate = (date) => {
       if (!date) return 'Invalid date';

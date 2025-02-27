@@ -86,3 +86,17 @@ Route::post('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteContr
     Route::get('/calendar-events', [WorkOrderController::class, 'calendarEvents'])
     ->middleware(['auth'])
     ->name('calendar.events');
+
+    Route::get('/work-orders/{id}', [WorkOrderController::class, 'show'])
+    ->middleware(['auth'])
+    ->name('work-orders.show');
+
+    // Get complete work order details for the modal
+Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'getDetails'])
+->middleware(['auth'])
+->name('work-orders.details');
+
+// Get detailed work order for calendar clicks
+Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'getDetails'])
+    ->middleware(['auth'])
+    ->name('work-orders.details');

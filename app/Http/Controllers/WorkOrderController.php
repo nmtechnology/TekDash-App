@@ -95,6 +95,41 @@ public function show($id)
     ]);
 }
 
+/**
+ * Get complete details of a work order for the modal
+ */
+public function getDetails($id)
+{
+    try {
+        // Log the request for debugging
+        \Log::info("Fetching work order details for ID: $id");
+        
+        // Get the work order without relationships first
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        // Load only the safe relationships
+        try {
+            // Only load notes if the relationship exists
+            $workOrder->load('user:id,name,email');
+            
+            // Cautiously try to load notes
+            if (method_exists($workOrder, 'notes')) {
+                $workOrder->load('notes');
+            }
+        } catch (\Exception $relationException) {
+            \Log::warning("Non-critical error loading relationships: " . $relationException->getMessage());
+            // Continue without the relationships
+        }
+        
+        // Return the work order data
+        return response()->json($workOrder);
+    } catch (\Exception $e) {
+        \Log::error("Error retrieving work order details: " . $e->getMessage());
+        \Log::error("Stack trace: " . $e->getTraceAsString());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
     // Show the form for editing the specified resource
     public function edit($id)
     {

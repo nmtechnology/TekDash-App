@@ -5,13 +5,24 @@
     </button>
     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
       <FullCalendar :options="calendarOptions">
+        <!-- Custom event rendering as cards -->
         <template v-slot:eventContent="arg">
-          <div>
-            <div class="font-bold text-sm">{{ arg.event.title }}</div>
-            <div class="text-xs mt-1">
-              <span class="font-medium">{{ formatEventTime(arg.event) }}</span>
+          <div class="w-full flex rounded-md shadow-sm event-card overflow-hidden">
+            <!-- Left colored section with status indicator -->
+            <div 
+              :style="{ backgroundColor: getStatusColor(arg.event.extendedProps.status) }" 
+              class="flex w-8 shrink-0 items-center justify-center rounded-l-md text-xs font-medium text-white border-r border-white/20"
+            >
+              {{ getStatusColor(arg.event.extendedProps.status) }}
             </div>
-            <div class="text-xs mt-1">{{ arg.event.extendedProps.customer_id }}</div>
+            
+            <!-- Right content section -->
+            <div class="flex flex-1 items-center justify-between truncate rounded-r-md bg-white/10 dark:bg-gray-700/40 backdrop-blur-sm">
+              <div class="flex-1 truncate px-2 py-1 text-xs">
+                <p class="font-medium text-gray-800 dark:text-white truncate">{{ arg.event.title }}</p>
+                <p class="text-gray-600 dark:text-gray-300 truncate text-xs">{{ formatEventTime(arg.event) }}</p>
+              </div>
+            </div>
           </div>
         </template>
       </FullCalendar>
@@ -204,47 +215,43 @@ function toggleWeekends() {
 <style>
 .fc-event {
   cursor: pointer;
-  padding: 4px;
-  overflow: hidden;
-  max-width: 100%;
+  padding: 0 !important; /* Remove default padding */
+  border: none !important; /* Remove default borders */
+  background: transparent !important; /* Remove default background */
 }
 
+/* Make the full event area clickable but transparent */
+.fc-event-main {
+  padding: 1px;
+}
+
+/* Event card specific styling */
+.event-card {
+  max-height: 36px;
+  width: 100%;
+  margin: 1px 0;
+  overflow: hidden;
+}
+
+/* Small tweaks for different views */
+.fc-timeGridWeek-view .event-card,
+.fc-timeGridDay-view .event-card {
+  max-width: calc(100% - 4px);
+}
+
+/* Limit event height in day grid */
+.fc-daygrid-event-harness {
+  margin-bottom: 2px !important;
+}
+
+/* Rest of your existing styles */
 .fc-daygrid-event {
   white-space: normal !important;
   max-width: 100% !important;
   overflow: hidden;
 }
 
-/* Event content container */
-.event-content-wrapper {
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Limit event height in day grid */
-.fc-daygrid-event-harness {
-  max-height: 5em;
-  overflow: hidden;
-}
-
-/* For month view */
-.fc-dayGridMonth-view .fc-event-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-}
-
-/* For week/day view */
-.fc-timeGrid-view .fc-event-title {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-/* Dark mode styles */
+/* Dark mode styles - keep your existing ones */
 .dark .fc-theme-standard .fc-scrollgrid,
 .dark .fc-theme-standard td,
 .dark .fc-theme-standard th {
