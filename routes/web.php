@@ -45,10 +45,14 @@ Route::get('/work-orders/{id}', [WorkOrderController::class, 'show']);
 
 // Messenger ROuting
 
-// Route::get('/messenger', function () {
-//     return Inertia::render('Messenger');
-// })->name('messenger');
+Route::get('/messenger', function () {
+    return Inertia::render('Messenger');
+})->name('messenger');
 
 // Notes Routing
 
 Route::post('/work-orders/{workOrder}/notes', [WorkOrderController::class, 'addNote'])->middleware('auth');
+
+// In your web.php routes file
+Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
+Route::post('/work-orders/{id}/update-images', [WorkOrderController::class, 'updateImages'])->name('work-orders.update-images');

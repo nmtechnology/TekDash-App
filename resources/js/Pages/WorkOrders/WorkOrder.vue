@@ -1,154 +1,177 @@
 <template>
-  <div>
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div class="bg-gray-700 rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-lg mx-4 sm:mx-auto">
-        <div class="bg-gray-700 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="sm:flex sm:items-start">
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 class="text-2xl leading-6 font-medium text-green-400" id="modal-title">
-                {{ workOrder.title }}
-              </h3>
-              <div class="mt-2">
-                <div v-if="workOrder">
-                  <div v-if="!isEditing">
-                    <div class="mt-6 border-t border-gray-100">
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">Description</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-y-auto h-40 w-75 description">{{ workOrder.description }}</dd>
-                      </div>
-                      <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">Scheduled For</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ formatDate(workOrder.date_time) }}</dd>
-                      </div>
-                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">Status</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.status }}</dd>
-                      </div>
-                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">Price</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.price }}</dd>
-                      </div>
-                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">Customer</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ workOrder.customer_id }}</dd>
-                      </div>
-                      <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">User</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0">{{ getUserName(workOrder.user_id) }}</dd>
-                      </div>
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">Notes</dt>
-                        <dd class="mt-1 text-sm text-lime-400 sm:col-span-2 sm:mt-0 overflow-y-auto h-40 w-75 description">
-                          <Messenger :initialNotes="workOrder.notes" :workOrderId="workOrder.id" :userId="form.user_id" :getUserName="getUserName" />
-                        </dd>
-                      </div>
-                      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium text-white">Attachments</dt>
-                        <dd class="mt-2 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                          <ul role="list" class="divide-y divide-gray-100 rounded-md border border-gray-200">
-                            <li v-for="(image, index) in workOrder.images" :key="index" class="flex items-center justify-between py-4 pr-5 pl-4 text-sm">
-                              <div class="flex w-0 flex-1 items-center">
-                                <PaperClipIcon class="size-5 shrink-0 text-gray-400" aria-hidden="true" />
-                                <div class="ml-4 flex min-w-0 flex-1 gap-2">
-                                  <span class="truncate font-medium">{{ image }}</span>
-                                  <span class="shrink-0 text-gray-400">Image</span>
-                                </div>
-                              </div>
-                              <div class="ml-4 shrink-0">
-                                <a :href="`/storage/${image}`" class="font-medium text-indigo-600 hover:text-indigo-500" download>Download</a>
-                              </div>
-                            </li>
-                          </ul>
-                        </dd>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else>
-                    <form @submit.prevent="updateWorkOrder">
-                      <div class="mb-4">
-                        <label for="customer_id" class="text-green-400 block text-sm font-medium text-accent">Customer</label>
-                        <select v-model="form.customer_id" id="customer_id" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                          <option value="Advanced Project Solutions">Advanced Project Solutions</option>
-                          <option value="Barrister Global Service Network">Barrister Global Service Network</option>
-                          <option value="DarAlIslam">DarAlIslam</option>
-                          <option value="Field Nation">Field Nation</option>
-                          <option value="Navco">Navco</option>
-                          <option value="NEW CUSTOMER">NEW CUSTOMER</option>
-                          <option value="NuTech National">NuTech National</option>
-                          <option value="Telaid">Telaid</option>
-                        </select>
-                      </div>
-                      <div class="mb-4">
-                        <label for="user_id" class="block text-sm font-medium text-green-400">User ID</label>
-                        <input type="text" v-model="form.user_id" id="user_id" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                      </div>
-                      <div class="mb-4">
-                        <label for="title" class="block text-sm font-medium text-green-400">Title</label>
-                        <input type="text" v-model="form.title" id="title" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                      </div>
-                      <div class="mb-4">
-                        <label for="description" class="block text-sm font-medium text-green-400">Description</label>
-                        <textarea v-model="form.description" id="description" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
-                      </div>
-                      <div class="mb-4">
-                        <label for="date_time" class="block text-sm font-medium text-green-400">Scheduled For:</label>
-                        <input type="datetime-local" v-model="form.date_time" id="date_time" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                      </div>
-                      <div class="mb-4">
-                        <label for="status" class="block text-sm font-medium text-green-400">Status</label>
-                        <select v-model="form.status" id="status" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                          <option value="Scheduled">Scheduled</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Part/Return">Part/Return</option>
-                          <option value="Complete">Complete</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                      </div>
-                      <div class="mb-4">
-                        <label for="price" class="block text-sm font-medium text-green-400">Price</label>
-                        <input type="number" v-model="form.price" id="price" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                      </div>
-                      <div class="mb-4">
-                        <label for="notes" class="block text-sm font-medium text-green-400">Notes</label>
-                        <textarea v-model="form.notes" id="notes" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm"></textarea>
-                      </div>
-                      <Messenger 
-  :initialNotes="workOrder.notes || []"
-  :workOrderId="workOrder.id"
-  :userId="$page.props.auth.user.id"
-  :getUserName="getUserName"
-  :getUserAvatar="getUserAvatar"
-  :currentUserAvatar="$page.props.auth.user.profile_photo_url"
-/>                      <div class="mb-4">
-                        <label for="images" class="block text-sm font-medium text-green-400">Images</label>
-                        <input type="file" id="images" multiple @change="handleImageUpload" class="mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
-                      </div>
-                      <div class="px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse sm:mt-6 rounded">
-                        <button type="submit" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
-                          Save
-                        </button>
-                        <button @click="cancelEdit" type="button" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  </div>
+  <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+    <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl mx-4 sm:mx-auto">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+        <div>
+          <h3 class="text-xl/7 font-semibold text-gray-900 dark:text-lime-400">{{ workOrder.title }}</h3>
+          <p class="mt-1 max-w-2xl text-sm/6 text-gray-500 dark:text-gray-400">Work Order Details</p>
+        </div>
+        <button @click="closeModal" type="button" class="rounded-md bg-white dark:bg-gray-700 p-2">
+          <svg class="h-5 w-5 text-gray-400 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="px-6 py-4">
+        <div v-if="workOrder">
+          <!-- View mode -->
+          <div>
+            <div class="mt-2 border-t border-gray-100 dark:border-gray-700">
+              <dl class="divide-y divide-gray-100 dark:divide-gray-700">
+                <!-- Description -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Description</dt>
+                  <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
+                    <span v-if="!editingField.description" class="grow overflow-y-auto max-h-40 description">{{ workOrder.description }}</span>
+                    <textarea v-else v-model="form.description" rows="4" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm"></textarea>
+                    <span class="ml-4 shrink-0">
+                      <button v-if="!editingField.description" @click="startEditing('description')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
+                      <button v-else @click="saveField('description')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
+                    </span>
+                  </dd>
                 </div>
-                <div v-else>
-                  <p>Loading...</p>
+                
+                <!-- Scheduled For -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Scheduled For</dt>
+                  <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
+                    <span v-if="!editingField.date_time" class="grow">{{ formatDate(workOrder.date_time) }}</span>
+                    <input v-else type="datetime-local" v-model="form.date_time" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
+                    <span class="ml-4 shrink-0">
+                      <button v-if="!editingField.date_time" @click="startEditing('date_time')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
+                      <button v-else @click="saveField('date_time')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
+                    </span>
+                  </dd>
                 </div>
-              </div>
-              <div v-if="!isEditing" class="px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse sm:mt-6 rounded">
-                <button @click="closeModal" type="button" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
-                  Close
-                </button>
-                <button @click="enableEdit" type="button" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
-                  Update
-                </button>
-                <button @click="duplicateWorkOrder" type="button" class="mt-6 w-full inline-flex justify-center rounded border border-gray-300 shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success sm:text-sm">
-                  Duplicate
-                </button>
-              </div>
+                
+                <!-- Status -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Status</dt>
+                  <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
+                    <span v-if="!editingField.status" class="grow">{{ workOrder.status }}</span>
+                    <select v-else v-model="form.status" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Part/Return">Part/Return</option>
+                      <option value="Complete">Complete</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <span class="ml-4 shrink-0">
+                      <button v-if="!editingField.status" @click="startEditing('status')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
+                      <button v-else @click="saveField('status')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
+                    </span>
+                  </dd>
+                </div>
+                
+                <!-- Price -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Price</dt>
+                  <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
+                    <span v-if="!editingField.price" class="grow">${{ workOrder.price }}</span>
+                    <input v-else type="number" v-model="form.price" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
+                    <span class="ml-4 shrink-0">
+                      <button v-if="!editingField.price" @click="startEditing('price')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
+                      <button v-else @click="saveField('price')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
+                    </span>
+                  </dd>
+                </div>
+                
+                <!-- Customer -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Customer</dt>
+                  <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
+                    <span v-if="!editingField.customer_id" class="grow">{{ workOrder.customer_id }}</span>
+                    <select v-else v-model="form.customer_id" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
+                      <option value="Advanced Project Solutions">Advanced Project Solutions</option>
+                      <option value="Barrister Global Service Network">Barrister Global Service Network</option>
+                      <option value="DarAlIslam">DarAlIslam</option>
+                      <option value="Field Nation">Field Nation</option>
+                      <option value="Navco">Navco</option>
+                      <option value="NEW CUSTOMER">NEW CUSTOMER</option>
+                      <option value="NuTech National">NuTech National</option>
+                      <option value="Telaid">Telaid</option>
+                    </select>
+                    <span class="ml-4 shrink-0">
+                      <button v-if="!editingField.customer_id" @click="startEditing('customer_id')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
+                      <button v-else @click="saveField('customer_id')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
+                    </span>
+                  </dd>
+                </div>
+                
+                <!-- User -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">User</dt>
+                  <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
+                    <span v-if="!editingField.user_id" class="grow">{{ getUserName(workOrder.user_id) }}</span>
+                    <input v-else type="text" v-model="form.user_id" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
+                    <span class="ml-4 shrink-0">
+                      <button v-if="!editingField.user_id" @click="startEditing('user_id')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
+                      <button v-else @click="saveField('user_id')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
+                    </span>
+                  </dd>
+                </div>
+                
+                <!-- Attachments -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Attachments</dt>
+                  <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">
+                    <ul role="list" class="divide-y divide-gray-100 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700">
+                      <li v-for="(image, index) in workOrder.images" :key="index" class="flex items-center justify-between py-4 pl-4 pr-5 text-sm/6">
+                        <div class="flex w-0 flex-1 items-center">
+                          <PaperClipIcon class="size-5 shrink-0 text-gray-400" aria-hidden="true" />
+                          <div class="ml-4 flex min-w-0 flex-1 gap-2">
+                            <span class="truncate font-medium dark:text-lime-400">{{ image }}</span>
+                            <span class="shrink-0 text-gray-400">Image</span>
+                          </div>
+                        </div>
+                        <div class="ml-4 flex shrink-0 space-x-4">
+                          <a :href="`/storage/${image}`" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500" download>Download</a>
+                        </div>
+                      </li>
+                      <li v-if="!editingField.images && (!workOrder.images || workOrder.images.length === 0)" class="flex items-center justify-between py-4 pl-4 pr-5 text-sm/6">
+                        <div class="text-gray-500 dark:text-gray-400">No attachments</div>
+                        <span class="ml-4 shrink-0">
+                          <button @click="startEditing('images')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Add</button>
+                        </span>
+                      </li>
+                      <li v-if="editingField.images" class="flex items-center justify-between py-4 pl-4 pr-5 text-sm/6">
+                        <input type="file" id="images" multiple @change="handleImageUpload" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
+                        <span class="ml-4 shrink-0">
+                          <button @click="saveField('images')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
+                        </span>
+                      </li>
+                    </ul>
+                  </dd>
+                </div>
+                
+                <!-- Notes -->
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                  <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Notes</dt>
+                  <dd class="mt-1 sm:col-span-2 sm:mt-0 dark:text-lime-400">
+                    <Messenger 
+                      :initialNotes="workOrder.notes || []"
+                      :workOrderId="workOrder.id"
+                      :userId="$page.props.auth.user.id"
+                      :getUserName="getUserName"
+                      :getUserAvatar="getUserAvatar"
+                      :currentUserAvatar="$page.props.auth.user.profile_photo_url"
+                    />
+                  </dd>
+                </div>
+                
+                
+              </dl>
+            </div>
+            
+            <!-- Actions -->
+            <div class="px-4 py-6 sm:px-0 flex flex-wrap justify-end gap-4">
+              <button @click="duplicateWorkOrder" type="button" class="inline-flex items-center rounded-md bg-indigo-50 dark:bg-blue-900 px-3 py-2 text-sm font-semibold text-indigo-600 dark:text-blue-300 shadow-sm hover:bg-indigo-100">
+                Duplicate
+              </button>
+              <button @click="closeModal" type="button" class="inline-flex items-center rounded-md bg-red-50 dark:bg-red-900 px-3 py-2 text-sm font-semibold text-red-600 dark:text-red-300 shadow-sm hover:bg-red-100">
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -167,6 +190,7 @@ import Messenger from '@/Components/Messenger.vue';
 export default {
   name: 'WorkOrder',
   components: {
+    PaperClipIcon,
     Messenger,
   },
   props: {
@@ -181,12 +205,22 @@ export default {
   },
   setup(props, { emit }) {
     const isEditing = ref(false);
+    const editingField = ref({
+      description: false,
+      date_time: false,
+      status: false,
+      price: false,
+      customer_id: false,
+      user_id: false,
+      images: false
+    });
+    
     const form = useForm({
       customer_id: props.workOrder.customer_id,
       user_id: props.workOrder.user_id,
       title: props.workOrder.title,
       description: props.workOrder.description,
-      date_time: props.workOrder.scheduled_at,
+      date_time: props.workOrder.date_time,
       status: props.workOrder.status,
       price: props.workOrder.price,
       notes: props.workOrder.notes,
@@ -211,12 +245,72 @@ export default {
       emit('close');
     };
 
-    const enableEdit = () => {
-      isEditing.value = true;
+    const startEditing = (field) => {
+      // Reset all fields to not editing
+      Object.keys(editingField.value).forEach(key => {
+        editingField.value[key] = false;
+      });
+      // Set the current field to editing
+      editingField.value[field] = true;
     };
 
-    const cancelEdit = () => {
-      isEditing.value = false;
+    const saveField = (field) => {
+      const data = {};
+      data[field] = form[field];
+      
+      // For images, we need to use FormData
+      if (field === 'images') {
+        const formData = new FormData();
+        if (form.images.length) {
+          form.images.forEach((file, index) => {
+            formData.append(`images[${index}]`, file);
+          });
+        }
+        
+        // Save only the images
+        fetch(`/work-orders/${props.workOrder.id}/update-images`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            editingField.value[field] = false;
+            // Update the workOrder object with new images
+            if (data.images) {
+              props.workOrder.images = data.images;
+            }
+          } else {
+            console.error('Error updating images:', data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+        
+        return;
+      }
+      
+      // For regular fields, use Inertia's put method with only the changed field
+      const fieldData = {};
+      fieldData[field] = form[field];
+      
+      // Use axios to update just this field
+      axios.put(`/work-orders/${props.workOrder.id}/update-field`, fieldData)
+        .then(response => {
+          if (response.data.success) {
+            // Update the local workOrder object
+            props.workOrder[field] = form[field];
+            // Exit editing mode for this field
+            editingField.value[field] = false;
+          }
+        })
+        .catch(error => {
+          console.error('Error updating field:', error);
+        });
     };
 
     const updateWorkOrder = () => {
@@ -244,23 +338,27 @@ export default {
 
     const users = ref([]);
 
+    const getUserName = (userId) => {
+      const user = users.value.find(user => user.id === userId);
+      return user ? user.name : 'N/A';
+    };
+
+    const getUserAvatar = (userId) => {
+      const user = users.value.find(user => user.id === userId);
+      const userName = user ? user.name : 'Unknown User';
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(userName.replace(/\s+/g, '+'))}&color=7F9CF5&background=EBF4FF`;
+    };
+
     const fetchUsers = async () => {
       try {
         const response = await fetch('/api/users');
         users.value = await response.json();
-        console.log('Fetched users:', users.value); // Debugging line
       } catch (error) {
         console.error('Error fetching users:', error);
       }
     };
 
     fetchUsers();
-
-    const getUserName = (userId) => {
-      const user = users.value.find(user => user.id === userId);
-      console.log('Finding user:', userId, user); // Debugging line
-      return user ? user.name : 'N/A';
-    };
 
     const handleImageUpload = (event) => {
       const files = event.target.files;
@@ -277,12 +375,14 @@ export default {
 
     return {
       isEditing,
+      editingField,
       form,
       formatDate,
       closeModal,
       getUserName,
-      enableEdit,
-      cancelEdit,
+      getUserAvatar,
+      startEditing,
+      saveField,
       updateWorkOrder,
       duplicateWorkOrder,
       handleImageUpload,
@@ -297,130 +397,5 @@ export default {
   overflow-wrap: break-word;
   white-space: normal;
   max-width: 100%;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background-color: hsl(90, 100%, 50%);
-  color: white;
-}
-
-.fixed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.bg-white {
-  background-color: white;
-}
-
-.p-6 {
-  padding: 1.5rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.text-xl {
-  font-size: 1.25rem;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.block {
-  display: block;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-
-.text-gray-700 {
-  color: #4a5568;
-}
-
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.border {
-  border-width: 1px;
-}
-
-.border-gray-300 {
-  border-color: #d2d6dc;
-}
-
-.rounded-md {
-  border-radius: 0.375rem;
-}
-
-.shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.focus\:ring-indigo-500:focus {
-  --tw-ring-color: #6cae00;
-}
-
-.focus\:border-indigo-500:focus {
-  border-color: #6cae00
-}
-
-.sm\:text-sm {
-  font-size: 0.875rem;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-end {
-  justify-content: flex-end;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.overflow-y-auto {
-  overflow-y: auto;
-}
-
-.max-h-32 {
-  max-height: 8rem; /* Adjust the height as needed */
 }
 </style>

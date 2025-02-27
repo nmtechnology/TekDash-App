@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\WorkOrder;
 use App\Models\User;
 use Inertia\Inertia;
+use App\Models\Note;
 
 class WorkOrderController extends Controller
 {
@@ -156,14 +157,20 @@ class WorkOrderController extends Controller
         $workOrder = WorkOrder::findOrFail($id);
         $newWorkOrder = $workOrder->replicate();
         $newWorkOrder->user_id = auth()->id();
-        $latestDuplicate = WorkOrder::where('title', 'like', $workOrder->title . ' -% ')->orderBy('id', 'desc')->first();
+        
+        // Fix the pattern to search for duplicates
+        $baseTitle = preg_replace('/ -\d+ \(Return\)$/', '', $workOrder->title);
+        $latestDuplicate = WorkOrder::where('title', 'like', $baseTitle . ' -%')->orderBy('id', 'desc')->first();
+        
         if ($latestDuplicate) {
-            preg_match('/\-(\d+) \(Copy\)$/', $latestDuplicate->title, $matches);
+            // Extract the number from the latest duplicate
+            preg_match('/ -(\d+) \(Return\)$/', $latestDuplicate->title, $matches);
             $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 2;
         } else {
             $copyNumber = 2;
         }
-        $newWorkOrder->title = $workOrder->title . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
+        
+        $newWorkOrder->title = $baseTitle . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
 
         // Handle file attachments
         if ($workOrder->file_attachments) {
@@ -175,6 +182,18 @@ class WorkOrderController extends Controller
                 $newFileAttachments[] = $newPath;
             }
             $newWorkOrder->file_attachments = json_encode($newFileAttachments);
+        }
+        
+        // Copy images if they exist
+        if ($workOrder->images) {
+            $images = json_decode($workOrder->images, true);
+            $newImages = [];
+            foreach ($images as $image) {
+                $newPath = 'work_orders/' . basename($image);
+                \Storage::disk('public')->copy($image, $newPath);
+                $newImages[] = $newPath;
+            }
+            $newWorkOrder->images = json_encode($newImages);
         }
 
         $newWorkOrder->save();
@@ -195,9 +214,10 @@ class WorkOrderController extends Controller
     $note = new Note([
         'text' => $request->input('text'),
         'user_id' => $user->id,
+        'work_order_id' => $workOrderId
     ]);
 
-    $workOrder->notes()->save($note);
+    $note->save();
 
     // Return note with user info for the frontend
     return response()->json([
@@ -209,9 +229,66 @@ class WorkOrderController extends Controller
     ], 201);
 }
 
-public function notes()
-    {
-        return $this->hasMany(Note::class);
-    }
+// Removed duplicate getWorkOrdersForCalendar method
+
+public function getWorkOrdersForDashboard()
+{
+    $workOrders = WorkOrder::with('user')->orderBy('date_time', 'desc')->get();
     
+    return response()->json($workOrders);
+    
+}
+
+public function getWorkOrder($id)
+{
+    $workOrder = WorkOrder::with('user')->findOrFail($id);
+    
+    return response()->json($workOrder);
+}
+
+public function updateStatus(Request $request, $id)
+{
+    $validatedData = $request->validate([
+        'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
+    ]);
+
+    $workOrder = WorkOrder::findOrFail($id);
+    $workOrder->status = $validatedData['status'];
+    $workOrder->save();
+
+    return response()->json(['message' => 'Work order status updated successfully.']);
+}
+
+public function getWorkOrdersForCalendar()
+{
+    $workOrders = WorkOrder::select(
+        'id', 
+        'title', 
+        'description', 
+        'date_time as start', 
+        'status', 
+        'user_id', 
+        'customer_id'
+    )->get();
+    
+    // Get users for resources 
+    $users = User::select('id', 'name')->get()->map(function ($user) {
+        return [
+            'id' => 'user-' . $user->id,
+            'title' => $user->name
+        ];
+    });
+    
+    // Assign each work order to its user as a resource
+    $workOrders = $workOrders->map(function ($workOrder) {
+        $data = $workOrder->toArray();
+        $data['resourceId'] = 'user-' . $workOrder->user_id;
+        return $data;
+    });
+    
+    return response()->json([
+        'events' => $workOrders,
+        'resources' => $users
+    ]);
+}
 }
