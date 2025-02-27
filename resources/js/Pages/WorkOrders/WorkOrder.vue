@@ -5,8 +5,19 @@
      <!-- Modal content with transparency -->
      <div class="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl mx-4 sm:mx-auto border border-gray-200 dark:border-gray-700">
       <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-        <div>
-          <h3 class="text-xl/7 font-semibold text-gray-900 dark:text-lime-400">{{ workOrder.title }}</h3>
+        <div class="flex items-center gap-3">
+          <!-- Title with status indicator -->
+          <div class="flex items-center">
+            <h3 class="text-xl/7 font-semibold text-gray-900 dark:text-lime-400">{{ workOrder.title }}</h3>
+            
+            <!-- Status badge -->
+            <span 
+              class="ml-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
+              :class="getStatusClasses(workOrder.status)"
+            >
+              {{ workOrder.status }}
+            </span>
+          </div>
           <p class="mt-1 max-w-2xl text-sm/6 text-gray-500 dark:text-gray-400">Work Order Details</p>
         </div>
         <button @click="closeModal" type="button" class="rounded-md bg-white dark:bg-gray-700 p-2">
@@ -436,7 +447,74 @@ export default {
       }
     });
 
+     // Add this new function to get status styling classes
+     const getStatusClasses = (status) => {
+      if (!status) return {
+        'bg-gray-100': true,
+        'text-gray-600': true,
+        'ring-gray-500/10': true
+      };
+      
+      switch (status.toLowerCase()) {
+        case 'scheduled':
+          return {
+            'bg-blue-50': true, 
+            'text-blue-700': true, 
+            'ring-blue-600/20': true,
+            'dark:bg-blue-900/30': true,
+            'dark:text-blue-300': true,
+            'dark:ring-blue-500/20': true
+          };
+        case 'in progress':
+          return {
+            'bg-yellow-50': true, 
+            'text-yellow-800': true, 
+            'ring-yellow-600/20': true,
+            'dark:bg-yellow-900/30': true,
+            'dark:text-yellow-300': true,
+            'dark:ring-yellow-500/20': true
+          };
+        case 'part/return':
+          return {
+            'bg-purple-50': true, 
+            'text-purple-700': true, 
+            'ring-purple-700/10': true,
+            'dark:bg-purple-900/30': true,
+            'dark:text-purple-300': true,
+            'dark:ring-purple-500/20': true
+          };
+        case 'complete':
+          return {
+            'bg-green-50': true, 
+            'text-green-700': true, 
+            'ring-green-600/20': true,
+            'dark:bg-green-900/30': true,
+            'dark:text-green-300': true,
+            'dark:ring-green-500/20': true
+          };
+        case 'cancelled':
+          return {
+            'bg-red-50': true, 
+            'text-red-700': true, 
+            'ring-red-600/10': true,
+            'dark:bg-red-900/30': true,
+            'dark:text-red-300': true,
+            'dark:ring-red-500/20': true
+          };
+        default:
+          return {
+            'bg-gray-50': true, 
+            'text-gray-600': true, 
+            'ring-gray-500/10': true,
+            'dark:bg-gray-800/50': true,
+            'dark:text-gray-300': true,
+            'dark:ring-gray-500/20': true
+          };
+      }
+    };
+
     return {
+      getStatusClasses,
       users,
       isLoading,
       getUserName,

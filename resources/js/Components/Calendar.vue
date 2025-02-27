@@ -1,20 +1,24 @@
 <template>
   <div>
-    <button @click="toggleWeekends" class="mb-4 px-4 py-2 bg-indigo-600 dark:bg-lime-600 text-white rounded-md hover:bg-indigo-500 dark:hover:bg-lime-500 transition">
+    <button @click="toggleWeekends" class="mb-4 px-4 py-2 outline text-lime-400 rounded-md hover:bg-indigo-500 dark:hover:bg-lime-500 transition">
       Toggle Weekends
     </button>
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+    <div class="bg-gray-900 p-4 rounded-lg shadow">
       <FullCalendar :options="calendarOptions">
         <!-- Custom event rendering as cards -->
         <template v-slot:eventContent="arg">
           <div class="w-full flex rounded-md shadow-sm event-card overflow-hidden">
             <!-- Left colored section with status indicator -->
             <div 
-              :style="{ backgroundColor: getStatusColor(arg.event.extendedProps.status) }" 
-              class="flex w-8 shrink-0 items-center justify-center rounded-l-md text-xs font-medium text-white border-r border-white/20"
-            >
-              {{ getStatusColor(arg.event.extendedProps.status) }}
-            </div>
+  :style="{ 
+    backgroundColor: getStatusColor(arg.event.extendedProps.status),
+    color: getTextColorForStatus(arg.event.extendedProps.status)
+  }" 
+  class="flex w-8 shrink-0 items-center justify-center rounded-l-md text-xs font-bold border-r border-white/20"
+  :title="arg.event.extendedProps.status"
+>
+  {{ getStatusText(arg.event.extendedProps.status) }}
+</div>
             
             <!-- Right content section -->
             <div class="flex flex-1 items-center justify-between truncate rounded-r-md bg-white/10 dark:bg-gray-700/40 backdrop-blur-sm">
@@ -90,6 +94,39 @@ if (csrf) {
 // Track loading state
 const isLoading = ref(true);
 
+// Define selected work order
+const selectedWorkOrder = ref(null);
+
+// Define showWorkOrderModal
+const showWorkOrderModal = ref(false);
+
+async function openWorkOrderModal(workOrderId) {
+  try {
+    console.log('Opening work order with ID:', workOrderId);
+    
+    const response = await axios.get(`/work-orders/${workOrderId}/details`, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    selectedWorkOrder.value = response.data;
+    showWorkOrderModal.value = true;
+  } catch (error) {
+    console.error('Error loading work order:', error);
+    
+    if (error.response) {
+      if (error.response.status === 404) {
+        alert('This work order no longer exists. It may have been deleted.');
+      } else {
+        alert(`Error: ${error.response.data.message || 'Something went wrong'}`);
+      }
+    } else {
+      alert('Network error. Please check your connection and try again.');
+    }
+  }
+}
+
 // Use the web route instead of the API route
 async function fetchEvents() {
   try {
@@ -139,6 +176,40 @@ async function fetchEvents() {
     calendarOptions.events = [];
   } finally {
     isLoading.value = false;
+  }
+}
+
+// Function to get text color based on background color for optimal contrast
+function getTextColorForStatus(status: string): string {
+  // Dark backgrounds need white text, light backgrounds need dark text
+  switch (status?.toLowerCase()) {
+    case 'cancelled':
+    case 'complete':
+    case 'in progress':
+      return 'white'; // For darker backgrounds
+    default:
+      return '#1a202c'; // Dark text for lighter backgrounds
+  }
+}
+
+// Function to get status text for display
+function getStatusText(status: string): string {
+  if (!status) return 'N/A';
+  
+  // Format the status text (capitalize first letter or use abbreviations)
+  switch (status.toLowerCase()) {
+    case 'complete':
+      return 'C';
+    case 'scheduled':
+      return 'S';
+    case 'in progress':
+      return 'IP';
+    case 'cancelled':
+      return 'X';
+    case 'part/return':
+      return 'PR';
+    default:
+      return status.charAt(0).toUpperCase();
   }
 }
 
@@ -197,7 +268,7 @@ const calendarOptions = reactive({
   eventTimeFormat: {
     hour: 'numeric',
     minute: '2-digit',
-    meridiem: 'short'
+    meridiem: 'short' as 'short'
   }
 });
 
