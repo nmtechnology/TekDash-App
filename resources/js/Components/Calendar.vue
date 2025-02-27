@@ -1,17 +1,26 @@
 <template>
   <div>
-    <button @click="toggleWeekends">Toggle Weekends</button>
-    <FullCalendar :options="calendarOptions">
-      <template v-slot:eventContent="arg">
-        <b>{{ arg.event.title }}</b>
-        <b>{{ arg.event.extendedProps.description }}</b>
-      </template>
-    </FullCalendar>
+    <button @click="toggleWeekends" class="mb-4 px-4 py-2 bg-indigo-600 dark:bg-lime-600 text-white rounded-md hover:bg-indigo-500 dark:hover:bg-lime-500 transition">
+      Toggle Weekends
+    </button>
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+      <FullCalendar :options="calendarOptions">
+        <template v-slot:eventContent="arg">
+          <div>
+            <div class="font-bold text-sm">{{ arg.event.title }}</div>
+            <div class="text-xs mt-1">
+              <span class="font-medium">{{ formatEventTime(arg.event) }}</span>
+            </div>
+            <div class="text-xs mt-1">{{ arg.event.extendedProps.customer_id }}</div>
+          </div>
+        </template>
+      </FullCalendar>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue';
+import { reactive, ref, onMounted, defineEmits } from 'vue';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -19,9 +28,19 @@ import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import axios from 'axios';
+import { usePage } from '@inertiajs/inertia-vue3';
+
+// Define the emits for component communication
+const emit = defineEmits(['workOrderSelected']);
+
+// Get CSRF token from Inertia page props
+const page = usePage();
+const csrf = (page.props as any).csrf || '';
 
 // Setup axios to include CSRF token
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true; // Include cookies with requests
+
 const token = document.head.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
 if (token) {
   axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
@@ -29,144 +48,147 @@ if (token) {
   console.error('CSRF token not found');
 }
 
-// Rest of your code remains the same...
+// Add this function to format the time
+function formatEventTime(event: any): string {
+  if (!event.start) return '';
+  
+  const start = new Date(event.start);
+  let timeString = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  
+  if (event.end) {
+    const end = new Date(event.end);
+    timeString += ' - ' + end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  
+  return timeString;
+}
 
-// Fetch events from the backend
+// Add the CSRF token using Inertia's page props first, then try meta tag
+if (csrf) {
+  axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;
+} else {
+  // Fallback to meta tag
+  const token = document.head.querySelector('meta[name="csrf-token"]');
+  if (token) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = (token as HTMLMetaElement).content;
+  } else {
+    console.warn('CSRF token not found! This could cause CSRF protection issues.');
+  }
+}
+
+// Track loading state
+const isLoading = ref(true);
+
+// Use the web route instead of the API route
 async function fetchEvents() {
   try {
-    // Changed the API endpoint to include the full URL
-    const response = await axios.get('/api/work-orders', {
+    isLoading.value = true;
+    
+    // Use the web route instead of the API route
+    const response = await fetch('/calendar-data', {
       headers: {
-        'Accept': 'application/json'  // Explicitly request JSON
-      }
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
     });
     
-    console.log('API response:', response.data); // Debugging line
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Calendar events response:', data);
 
-    if (response.data && Array.isArray(response.data)) {
+
+    if (data && Array.isArray(data)) {
       // Format work orders as events
-      const events = response.data.map(workOrder => ({
+      const events = data.map((workOrder) => ({
         id: workOrder.id,
         title: workOrder.title,
-        start: workOrder.start, // This already comes from date_time in the backend
-        description: workOrder.description,
+        start: workOrder.start, // This comes from date_time in the backend
+        description: workOrder.description || '',
         status: workOrder.status,
         user_id: workOrder.user_id,
-        customer_id: workOrder.customer_id
+        customer_id: workOrder.customer_id,
+        backgroundColor: getStatusColor(workOrder.status), // Add color based on status
+        borderColor: getStatusColor(workOrder.status),
+        extendedProps: {
+          description: workOrder.description || '',
+          status: workOrder.status,
+          customer_id: workOrder.customer_id
+        }
       }));
 
       // Update the calendar options with the fetched events
       calendarOptions.events = events;
-      console.log('Formatted events:', events); // Debugging line
-    } else if (response.data && response.data.workOrders && Array.isArray(response.data.workOrders)) {
-      // Alternative structure
-      const events = response.data.workOrders.map((workOrder: any) => ({
-        id: workOrder.id,
-        title: workOrder.title,
-        start: workOrder.date_time || workOrder.start,
-        description: workOrder.description,
-        status: workOrder.status,
-        user_id: workOrder.user_id,
-        customer_id: workOrder.customer_id
-      }));
-
-      // Update the calendar options with the fetched events
-      calendarOptions.events = events;
-    } else {
-      console.error('Invalid work orders data:', response.data);
     }
   } catch (error) {
-    console.error('Error fetching work orders:', error);
-    if (error.response) {
-      console.error('Response status:', error.response.status);
-      console.error('Response data:', error.response.data);
-    }
+    console.error('Error fetching work orders for calendar:', error);
+    calendarOptions.events = [];
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// Function to get color based on work order status
+function getStatusColor(status: string): string {
+  switch (status?.toLowerCase()) {
+    case 'complete':
+      return '#4ade80'; // green
+    case 'scheduled':
+      return '#3b82f6'; // blue
+    case 'in progress':
+      return '#f59e0b'; // amber
+    case 'cancelled':
+      return '#ef4444'; // red
+    case 'part/return':
+      return '#8b5cf6'; // purple
+    default:
+      return '#64748b'; // slate
   }
 }
 
 // Define the event handlers
 function handleDateClick(arg: any) {
   const clickedDate = arg.dateStr;
-  const workOrder = calendarOptions.events.find(event => event.start === clickedDate);
-  if (workOrder) {
-    alert(`Work Order: ${workOrder.title}\nDescription: ${workOrder.description}`);
-  } else {
-    alert('No work order on this date.');
-  }
+  // You can implement date click handling here
 }
 
+// Update the handleEventClick function to emit event with the work order ID
 function handleEventClick(arg: any) {
-  alert(`Event: ${arg.event.title}`);
-}
-
-function handleEventDrop(arg: any) {
-  alert(`Event dropped: ${arg.event.title}`);
-}
-
-function handleEventResize(arg: any) {
-  alert(`Event resized: ${arg.event.title}`);
-}
-
-function handleEventAdd(arg: any) {
-  alert(`Event added: ${arg.event.title}`);
-}
-
-function handleEventChange(arg: any) {
-  alert(`Event changed: ${arg.event.title}`);
-}
-
-function handleEventRemove(arg: any) {
-  alert(`Event removed: ${arg.event.title}`);
-}
-
-function handleEventContent(arg: any) {
-  return {
-    html: `<b>${arg.event.title}</b><br><b>${arg.event.extendedProps.description}</b>`
-  };
+  // Get the work order ID from the clicked event
+  const workOrderId = arg.event.id;
+  
+  // Emit an event to the parent component with the work order ID
+  emit('workOrderSelected', workOrderId);
+  
+  // For debugging
+  console.log('Event clicked, opening work order:', workOrderId);
 }
 
 // Define the calendar options
 const calendarOptions = reactive({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, resourceTimelinePlugin],
-  initialView: 'resourceTimelineMonth',
+  initialView: 'dayGridMonth',
   editable: true,
   headerToolbar: {
-    left: 'promptResource prev,next today',
+    left: 'prev,next today',
     center: 'title',
-    right: 'resourceMonth,dayGridMonth,timeGridWeek,timeGridDay,listMonth'
-  },
-  views: {
-    resourceMonth: {
-      type: 'resourceTimelineMonth',
-      buttonText: 'personnel'
-    }
-  },
-  customButtons: {
-    promptResource: {
-      text: '+ personnel',
-      click: function() {
-        var title = prompt('Name');
-        if (title) {
-          calendarOptions.resources.push({ title });
-        }
-      }
-    }
+    right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
   },
   dateClick: handleDateClick,
-  events: [],
+  events: [], // Will be populated by fetchEvents
   eventClick: handleEventClick,
-  eventDrop: handleEventDrop,
-  eventResize: handleEventResize,
-  eventAdd: handleEventAdd,
-  eventChange: handleEventChange,
-  eventRemove: handleEventRemove,
-  eventContent: handleEventContent,
   weekends: true,
-  resources: [],
-  schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives'
+  height: 'auto',
+  themeSystem: 'standard',
+  eventTimeFormat: {
+    hour: 'numeric',
+    minute: '2-digit',
+    meridiem: 'short'
+  }
 });
-
-// Removed duplicate fetchEvents function
 
 // Fetch events when the component is mounted
 onMounted(() => {
@@ -179,6 +201,84 @@ function toggleWeekends() {
 }
 </script>
 
-<style scoped>
-/* Add any styles you need here */
+<style>
+.fc-event {
+  cursor: pointer;
+  padding: 4px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.fc-daygrid-event {
+  white-space: normal !important;
+  max-width: 100% !important;
+  overflow: hidden;
+}
+
+/* Event content container */
+.event-content-wrapper {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Limit event height in day grid */
+.fc-daygrid-event-harness {
+  max-height: 5em;
+  overflow: hidden;
+}
+
+/* For month view */
+.fc-dayGridMonth-view .fc-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* For week/day view */
+.fc-timeGrid-view .fc-event-title {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Dark mode styles */
+.dark .fc-theme-standard .fc-scrollgrid,
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+  border-color: #374151;
+}
+
+.dark .fc-theme-standard .fc-toolbar-title,
+.dark .fc-col-header-cell-cushion {
+  color: #f3f4f6;
+}
+
+.dark .fc-daygrid-day-number {
+  color: #d1d5db;
+}
+
+.dark .fc-button-primary {
+  background-color: #4b5563;
+  border-color: #6b7280;
+}
+
+.dark .fc-button-primary:hover {
+  background-color: #374151;
+}
+
+.dark .fc-button-active {
+  background-color: #111827 !important;
+}
+
+/* Adjust event content for better visibility */
+.fc-event-title {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
 </style>

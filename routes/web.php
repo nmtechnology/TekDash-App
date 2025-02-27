@@ -56,3 +56,33 @@ Route::post('/work-orders/{workOrder}/notes', [WorkOrderController::class, 'addN
 // In your web.php routes file
 Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
 Route::post('/work-orders/{id}/update-images', [WorkOrderController::class, 'updateImages'])->name('work-orders.update-images');
+
+// Work order field and image updates
+Route::put('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])
+    ->name('work-orders.update-field')
+    ->middleware(['auth']);
+    
+Route::post('/work-orders/{id}/update-images', [WorkOrderController::class, 'updateImages'])
+    ->name('work-orders.update-images')
+    ->middleware(['auth']);
+
+    // Note routes
+    Route::get('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'index'])
+    ->name('work-order.notes.index')
+    ->middleware(['auth']);
+
+Route::post('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'store'])
+    ->name('work-order.notes.store')
+    ->middleware(['auth']);
+
+    Route::get('/users-list', function () {
+        return response()->json(App\Models\User::select('id', 'name', 'email')->get());
+    })->middleware(['auth']);
+
+    Route::get('/calendar-data', [WorkOrderController::class, 'calendarEvents'])
+    ->middleware(['auth'])
+    ->name('calendar.data');
+
+    Route::get('/calendar-events', [WorkOrderController::class, 'calendarEvents'])
+    ->middleware(['auth'])
+    ->name('calendar.events');

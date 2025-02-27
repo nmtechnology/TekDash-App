@@ -1,5 +1,4 @@
 <?php
-// filepath: /Users/nmtechnology/Herd/nmtis-dash/app/Models/Note.php
 
 namespace App\Models;
 
@@ -16,17 +15,11 @@ class Note extends Model
         'work_order_id'
     ];
 
-    /**
-     * Get the work order that owns the note.
-     */
     public function workOrder()
     {
         return $this->belongsTo(WorkOrder::class);
     }
 
-    /**
-     * Get the user that owns the note.
-     */
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -8,12 +8,14 @@ class CreateNotesTable extends Migration
 {
     public function up()
     {
+        
+        // In your migrations folder, check that your notes table has this structure
         Schema::create('notes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('work_order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->text('text');
-            $table->timestamps();
+        $table->id();
+        $table->text('text');
+        $table->foreignId('user_id')->constrained();
+        $table->foreignId('work_order_id')->constrained(); // This is crucial
+        $table->timestamps();
         });
     }
 

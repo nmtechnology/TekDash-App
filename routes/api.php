@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GroqController;
+use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -81,27 +82,9 @@ Route::post('delete-task-attendee-attachment', [CalendarController::class, 'dele
 Route::post('add-appointment-attendee-attachment', [CalendarController::class, 'addAppointmentAttendeeAttachment']);
 Route::post('update-appointment-attendee-attachment', [CalendarController::class, 'updateAppointmentAttendeeAttachment']);
 Route::post('delete-appointment-attendee-attachment', [CalendarController::class, 'deleteAppointmentAttendeeAttachment']);
-Route::post('add-meeting-attendee-attachment', [CalendarController::class, 'addMeetingAttendeeAttachment']);
+Route::post('add-meeting-attendee-attachment', [CalendarController::class, 'addMeetingAttendeeAttachment']);    
 Route::post('update-meeting-attendee-attachment', [CalendarController::class, 'updateMeetingAttendeeAttachment']);
 Route::post('delete-meeting-attendee-attachment', [CalendarController::class, 'deleteMeetingAttendeeAttachment']);
-Route::post('add-event-attachment-attendee', [CalendarController::class, 'addEventAttachmentAttendee']);
-Route::post('update-event-attachment-attendee', [CalendarController::class, 'updateEventAttachmentAttendee']);
-Route::post('delete-event-attachment-attendee', [CalendarController::class, 'deleteEventAttachmentAttendee']);
-Route::post('add-reminder-attachment-attendee', [CalendarController::class, 'addReminderAttachmentAttendee']);
-Route::post('update-reminder-attachment-attendee', [CalendarController::class, 'updateReminderAttachmentAttendee']);
-Route::post('delete-reminder-attachment-attendee', [CalendarController::class, 'deleteReminderAttachmentAttendee']);
-Route::post('add-note-attachment-attendee', [CalendarController::class, 'addNoteAttachmentAttendee']);
-Route::post('update-note-attachment-attendee', [CalendarController::class, 'updateNoteAttachmentAttendee']);
-Route::post('delete-note-attachment-attendee', [CalendarController::class, 'deleteNoteAttachmentAttendee']);
-Route::post('add-task-attachment-attendee', [CalendarController::class, 'addTaskAttachmentAttendee']);
-Route::post('update-task-attachment-attendee', [CalendarController::class, 'updateTaskAttachmentAttendee']);
-Route::post('delete-task-attachment-attendee', [CalendarController::class, 'deleteTaskAttachmentAttendee']);
-Route::post('add-appointment-attachment-attendee', [CalendarController::class, 'addAppointmentAttachmentAttendee']);
-Route::post('update-appointment-attachment-attendee', [CalendarController::class, 'updateAppointmentAttachmentAttendee']);
-Route::post('delete-appointment-attachment-attendee', [CalendarController::class, 'deleteAppointmentAttachmentAttendee']);
-Route::post('add-meeting-attachment-attendee', [CalendarController::class, 'addMeetingAttachmentAttendee']);    
-Route::post('update-meeting-attachment-attendee', [CalendarController::class, 'updateMeetingAttachmentAttendee']);
-Route::post('delete-meeting-attachment-attendee', [CalendarController::class, 'deleteMeetingAttachmentAttendee']);
 Route::post('add-event-attendee-attachment-attendee', [CalendarController::class, 'addEventAttendeeAttachmentAttendee']);
 Route::post('update-event-attendee-attachment-attendee', [CalendarController::class, 'updateEventAttendeeAttachmentAttendee']);
 Route::post('delete-event-attendee-attachment-attendee', [CalendarController::class, 'deleteEventAttendeeAttachmentAttendee']);
@@ -177,7 +160,7 @@ Route::post('/work-orders/{id}/attendee-attachment-attendee-attachments', [WorkO
 Route::delete('/work-orders/{id}/attendee-attachment-attendee-attachments/{attendeeAttachmentAttendeeAttachmentId}', [WorkOrderController::class, 'deleteAttendeeAttachmentAttendeeAttachment']);
 Route::get('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments', [WorkOrderController::class, 'getAttachmentAttendeeAttachmentAttendeeAttachments']);
 Route::post('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments', [WorkOrderController::class, 'addAttachmentAttendeeAttachmentAttendeeAttachment']);
-Route::delete('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments/{attachmentAttendeeAttachmentAttendeeId}', [WorkOrderController::class, 'deleteAttachmentAttendeeAttachmentAttendeeAttachment']);
+Route::delete('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments/{attachmentAttendeeAttachmentId}', [WorkOrderController::class, 'deleteAttachmentAttendeeAttachmentAttendeeAttachment']);
 Route::get('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees', [WorkOrderController::class, 'getAttendeeAttachmentAttendeeAttachmentAttendees']);
 Route::post('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees', [WorkOrderController::class, 'addAttendeeAttachmentAttendeeAttachmentAttendee']);
 Route::delete('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees/{attendeeAttachmentAttendeeId}', [WorkOrderController::class, 'deleteAttendeeAttachmentAttendeeAttachmentAttendee']);
@@ -188,9 +171,16 @@ Route::get('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees'
 Route::post('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees', [WorkOrderController::class, 'addAttendeeAttachmentAttendeeAttachmentAttendee']);
 Route::delete('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees/{attendeeAttachmentAttendeeId}', [WorkOrderController::class, 'deleteAttendeeAttachmentAttendeeAttachmentAttendee']);
 Route::get('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments', [WorkOrderController::class, 'getAttachmentAttendeeAttachmentAttendeeAttachments']);
-Route::post('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments', [WorkOrderController::class, 'addAttachmentAttendeeAttachmentAttendeeAttachment']);
-Route::delete('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments/{attachmentAttendeeAttachmentId}', [WorkOrderController::class, 'deleteAttachmentAttendeeAttachmentAttendeeAttachment']);      
-Route::get('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees', [WorkOrderController::class, 'getAttendeeAttachmentAttendeeAttachmentAttendees']);
-Route::post('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees', [WorkOrderController::class, 'addAttendeeAttachmentAttendeeAttachmentAttendee']);
-Route::delete('/work-orders/{id}/attendee-attachment-attendee-attachment-attendees/{attendeeAttachmentAttendeeId}', [WorkOrderController::class, 'deleteAttendeeAttachmentAttendeeAttachmentAttendee']);
-Route::get('/work-orders/{id}/attachment-attendee-attachment-attendee-attachments', [WorkOrderController::class, 'getAttachmentAttendeeAttachmentAttendeeAttachments']);
+
+Route::middleware('auth:sanctum')->get('/users', [UserController::class, 'index']);
+
+// routes/api.php
+Route::middleware('auth:sanctum')->get('/users', function () {
+    return App\Models\User::select('id', 'name', 'email')->get();
+});
+
+Route::middleware('auth:sanctum')->get('/work-orders', function () {
+    return WorkOrder::select('id', 'title', 'description', 'date_time as start', 'status', 'user_id', 'customer_id')
+                   ->orderBy('date_time', 'asc')
+                   ->get();
+});

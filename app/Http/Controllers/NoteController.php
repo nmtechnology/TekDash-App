@@ -1,72 +1,62 @@
 <?php
-// filepath: /Users/nmtechnology/Herd/nmtis-dash/app/Http/Controllers/NoteController.php
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Note;
 use App\Models\WorkOrder;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class NoteController extends Controller
 {
     /**
-     * Store a newly created note in storage.
+     * Display notes for a work order
+     */
+    public function index($workOrderId)
+    {
+        try {
+            $workOrder = WorkOrder::findOrFail($workOrderId);
+            $notes = $workOrder->notes()->with('user:id,name')->get();
+            
+            return response()->json($notes);
+        } catch (\Exception $e) {
+            Log::error('Error fetching notes: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Store a new note
      */
     public function store(Request $request, $workOrderId)
     {
-        $request->validate([
-            'text' => 'required|string',
-        ]);
+        try {
+            $request->validate([
+                'text' => 'required|string',
+                'user_id' => 'required|exists:users,id',
+            ]);
 
-        $workOrder = WorkOrder::findOrFail($workOrderId);
-        $user = auth()->user();
+            $workOrder = WorkOrder::findOrFail($workOrderId);
+            $user = \App\Models\User::findOrFail($request->user_id);
 
-        $note = new Note([
-            'text' => $request->input('text'),
-            'user_id' => $user->id,
-            'work_order_id' => $workOrderId
-        ]);
+            $note = new Note([
+                'text' => $request->input('text'),
+                'user_id' => $user->id,
+                'work_order_id' => $workOrderId,
+            ]);
+            
+            $note->save();
 
-        $note->save();
-
-        return response()->json([
-            'id' => $note->id,
-            'text' => $note->text,
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'created_at' => $note->created_at,
-        ], 201);
-    }
-    
-    /**
-     * Update the specified note in storage.
-     */
-    public function update(Request $request, Note $note)
-    {
-        $request->validate([
-            'text' => 'required|string',
-        ]);
-
-        $note->update([
-            'text' => $request->input('text'),
-        ]);
-
-        return response()->json([
-            'id' => $note->id,
-            'text' => $note->text,
-            'user_id' => $note->user_id,
-            'user_name' => $note->user->name,
-            'created_at' => $note->created_at,
-        ]);
-    }
-
-    /**
-     * Remove the specified note from storage.
-     */
-    public function destroy(Note $note)
-    {
-        $note->delete();
-
-        return response()->json(['message' => 'Note deleted successfully']);
+            return response()->json([
+                'id' => $note->id,
+                'text' => $note->text,
+                'user_id' => $note->user_id,
+                'user_name' => $user->name,
+                'created_at' => $note->created_at,
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Error storing note: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

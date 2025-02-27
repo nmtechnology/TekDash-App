@@ -49,6 +49,12 @@ class WorkOrder extends Model
         'Work Market',
     ];
 
+    // Eager load notes with each work order
+    protected $with = ['notes'];
+
+        // Make sure to add notes to visible attributes if using API resources
+        protected $appends = ['notes'];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -67,5 +73,11 @@ class WorkOrder extends Model
     public function notes()
     {
         return $this->hasMany(Note::class);
+    }
+
+    // Add a custom accessor to always return notes
+    public function getNotesAttribute()
+    {
+        return $this->notes()->with('user')->get();
     }
 }

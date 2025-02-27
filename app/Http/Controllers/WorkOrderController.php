@@ -81,11 +81,19 @@ class WorkOrderController extends Controller
     }
 
     // Display the specified resource
-    public function show($id)
-    {
-        $workOrder = WorkOrder::findOrFail($id);
-        return view('work_orders.show', compact('workOrder'));
-    }
+// app/Http/Controllers/WorkOrderController.php
+// Make sure work orders are loaded with their notes when shown
+
+public function show($id)
+{
+    $workOrder = WorkOrder::with(['notes.user'])->findOrFail($id);
+    $users = User::all();
+    
+    return Inertia::render('WorkOrders/Show', [
+        'workOrder' => $workOrder,
+        'users' => $users,
+    ]);
+}
 
     // Show the form for editing the specified resource
     public function edit($id)
@@ -291,4 +299,91 @@ public function getWorkOrdersForCalendar()
         'resources' => $users
     ]);
 }
+
+public function updateImages(Request $request, $id)
+{
+    $request->validate([
+        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+    ]);
+    
+    $workOrder = WorkOrder::findOrFail($id);
+    
+    try {
+        $newImages = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('work_orders', 'public');
+                $newImages[] = $path;
+            }
+        }
+        
+        // If work order already has images, merge them
+        $existingImages = $workOrder->images ? json_decode($workOrder->images, true) : [];
+        if (!is_array($existingImages)) {
+            $existingImages = [];
+        }
+        
+        $allImages = array_merge($existingImages, $newImages);
+        $workOrder->images = json_encode($allImages);
+        $workOrder->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Images updated successfully',
+            'images' => $allImages
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function updateField(Request $request, $id)
+{
+    $workOrder = WorkOrder::findOrFail($id);
+    $field = key($request->all());
+    $value = $request->input($field);
+    
+    // Validate field name to prevent mass assignment vulnerabilities
+    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'price'];
+    
+    if (!in_array($field, $allowedFields)) {
+        return response()->json([
+            'success' => false,
+            'error' => 'Invalid field name'
+        ], 422);
+    }
+    
+    try {
+        $workOrder->{$field} = $value;
+        $workOrder->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Field updated successfully',
+            'field' => $field,
+            'value' => $value
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function calendarEvents()
+    {
+        try {
+            $workOrders = WorkOrder::select('id', 'title', 'description', 'date_time as start', 'status', 'user_id', 'customer_id')
+                ->orderBy('date_time', 'asc')
+                ->get();
+                
+            return response()->json($workOrders);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

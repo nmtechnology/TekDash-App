@@ -33,7 +33,7 @@
                 </div>
                 
                 <!-- Scheduled For -->
-                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Scheduled For</dt>
                   <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
                     <span v-if="!editingField.date_time" class="grow">{{ formatDate(workOrder.date_time) }}</span>
@@ -46,7 +46,7 @@
                 </div>
                 
                 <!-- Status -->
-                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Status</dt>
                   <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
                     <span v-if="!editingField.status" class="grow">{{ workOrder.status }}</span>
@@ -65,7 +65,7 @@
                 </div>
                 
                 <!-- Price -->
-                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Price</dt>
                   <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
                     <span v-if="!editingField.price" class="grow">${{ workOrder.price }}</span>
@@ -78,7 +78,7 @@
                 </div>
                 
                 <!-- Customer -->
-                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Customer</dt>
                   <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
                     <span v-if="!editingField.customer_id" class="grow">{{ workOrder.customer_id }}</span>
@@ -99,21 +99,16 @@
                   </dd>
                 </div>
                 
-                <!-- User -->
-                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <!-- User (non-editable) -->
+                <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">User</dt>
-                  <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
-                    <span v-if="!editingField.user_id" class="grow">{{ getUserName(workOrder.user_id) }}</span>
-                    <input v-else type="text" v-model="form.user_id" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
-                    <span class="ml-4 shrink-0">
-                      <button v-if="!editingField.user_id" @click="startEditing('user_id')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
-                      <button v-else @click="saveField('user_id')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>
-                    </span>
+                  <dd class="mt-1 text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
+                    {{ getUserName(workOrder.user_id) }}
                   </dd>
                 </div>
                 
                 <!-- Attachments -->
-                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Attachments</dt>
                   <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">
                     <ul role="list" class="divide-y divide-gray-100 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700">
@@ -144,9 +139,9 @@
                     </ul>
                   </dd>
                 </div>
-                
+
                 <!-- Notes -->
-                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <div class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Notes</dt>
                   <dd class="mt-1 sm:col-span-2 sm:mt-0 dark:text-lime-400">
                     <Messenger 
@@ -159,8 +154,6 @@
                     />
                   </dd>
                 </div>
-                
-                
               </dl>
             </div>
             
@@ -181,11 +174,12 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { useForm } from '@inertiajs/vue3';
 import { PaperClipIcon } from '@heroicons/vue/20/solid';
 import Messenger from '@/Components/Messenger.vue';
+import axios from 'axios';
 
 export default {
   name: 'WorkOrder',
@@ -211,13 +205,12 @@ export default {
       status: false,
       price: false,
       customer_id: false,
-      user_id: false,
       images: false
+      // Removed user_id from editable fields
     });
     
     const form = useForm({
       customer_id: props.workOrder.customer_id,
-      user_id: props.workOrder.user_id,
       title: props.workOrder.title,
       description: props.workOrder.description,
       date_time: props.workOrder.date_time,
@@ -225,6 +218,8 @@ export default {
       price: props.workOrder.price,
       notes: props.workOrder.notes,
       images: [],
+      // Keep user_id in the form for data consistency but don't make it editable
+      user_id: props.workOrder.user_id
     });
 
     const formatDate = (date) => {
@@ -267,12 +262,16 @@ export default {
           });
         }
         
+        // Get CSRF token safely
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        
         // Save only the images
         fetch(`/work-orders/${props.workOrder.id}/update-images`, {
           method: 'POST',
           body: formData,
           headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken
           }
         })
         .then(response => response.json())
@@ -293,13 +292,18 @@ export default {
         
         return;
       }
-      
-      // For regular fields, use Inertia's put method with only the changed field
+          
+      // For regular fields, use axios with only the changed field
       const fieldData = {};
       fieldData[field] = form[field];
-      
+
+      const headers = {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json'
+      };
+          
       // Use axios to update just this field
-      axios.put(`/work-orders/${props.workOrder.id}/update-field`, fieldData)
+      axios.put(`/work-orders/${props.workOrder.id}/update-field`, fieldData, { headers })
         .then(response => {
           if (response.data.success) {
             // Update the local workOrder object
@@ -337,28 +341,65 @@ export default {
     };
 
     const users = ref([]);
-
+    const isLoading = ref(true);
+    
+    // Enhanced getUserName function
     const getUserName = (userId) => {
-      const user = users.value.find(user => user.id === userId);
-      return user ? user.name : 'N/A';
-    };
+  if (!userId) return 'Guest';
+  
+  // Parse userId to ensure it's treated as a number for comparison
+  const numericUserId = parseInt(userId, 10);
+  
+  // Check if users are loaded
+  if (users.value && users.value.length) {
+    // Find the user in our users array
+    const user = users.value.find(user => user.id === numericUserId);
+    if (user && user.name) {
+      return user.name;
+    }
+  }
+  
+  // If specific work order user, get from props
+  if (props.workOrder && props.workOrder.user && props.workOrder.user.name) {
+    return props.workOrder.user.name;
+  }
+  
+  // Last resort fallback
+  return `User ${userId}`;
+};
 
     const getUserAvatar = (userId) => {
-      const user = users.value.find(user => user.id === userId);
-      const userName = user ? user.name : 'Unknown User';
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(userName.replace(/\s+/g, '+'))}&color=7F9CF5&background=EBF4FF`;
+      if (!userId) return getDefaultAvatar('Guest');
+      
+      const user = users.value.find(user => user.id === parseInt(userId, 10));
+      const userName = user ? user.name : `User ${userId}`;
+      
+      return getDefaultAvatar(userName);
+    };
+    
+    const getDefaultAvatar = (name) => {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(name.replace(/\s+/g, '+'))}&color=7F9CF5&background=EBF4FF`;
     };
 
     const fetchUsers = async () => {
-      try {
-        const response = await fetch('/api/users');
-        users.value = await response.json();
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
+  try {
+    isLoading.value = true;
+    const response = await axios.get('/users-list');
+    
+    if (response.data && Array.isArray(response.data)) {
+      users.value = response.data;
+    }
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    // Fallback implementation as above
+  } finally {
+    isLoading.value = false;
+  }
+};
 
-    fetchUsers();
+    onMounted(() => {
+      fetchUsers();
+    });
 
     const handleImageUpload = (event) => {
       const files = event.target.files;
@@ -374,13 +415,15 @@ export default {
     });
 
     return {
+      users,
+      isLoading,
+      getUserName,
+      getUserAvatar,
       isEditing,
       editingField,
       form,
       formatDate,
       closeModal,
-      getUserName,
-      getUserAvatar,
       startEditing,
       saveField,
       updateWorkOrder,
