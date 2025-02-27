@@ -1,6 +1,9 @@
 <template>
   <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
-    <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl mx-4 sm:mx-auto">
+     <!-- Semi-transparent overlay with blur -->
+     <div class="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+     <!-- Modal content with transparency -->
+     <div class="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl mx-4 sm:mx-auto border border-gray-200 dark:border-gray-700">
       <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
         <div>
           <h3 class="text-xl/7 font-semibold text-gray-900 dark:text-lime-400">{{ workOrder.title }}</h3>
@@ -37,7 +40,7 @@
                   <dt class="text-sm/6 font-medium text-gray-900 dark:text-white">Scheduled For</dt>
                   <dd class="mt-1 flex text-sm/6 text-gray-700 dark:text-lime-400 sm:col-span-2 sm:mt-0">
                     <span v-if="!editingField.date_time" class="grow">{{ formatDate(workOrder.date_time) }}</span>
-                    <input v-else type="datetime-local" v-model="form.date_time" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
+                    <input v-else type="datetime-local" v-model="form.date_time" class="grow mt-1 block w-full rounded-md bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-700 shadow-sm focus:border-lime-600 focus:ring-lime-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 dark:text-lime-400 sm:text-sm">
                     <span class="ml-4 shrink-0">
                       <button v-if="!editingField.date_time" @click="startEditing('date_time')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Edit</button>
                       <button v-else @click="saveField('date_time')" type="button" class="rounded-md bg-white dark:bg-transparent font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-500">Save</button>

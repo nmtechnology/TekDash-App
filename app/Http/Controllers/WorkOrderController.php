@@ -101,34 +101,32 @@ public function show($id)
 public function getDetails($id)
 {
     try {
-        // Log the request for debugging
-        \Log::info("Fetching work order details for ID: $id");
+        // Try to find the work order
+        $workOrder = WorkOrder::find($id);
         
-        // Get the work order without relationships first
-        $workOrder = WorkOrder::findOrFail($id);
-        
-        // Load only the safe relationships
-        try {
-            // Only load notes if the relationship exists
-            $workOrder->load('user:id,name,email');
-            
-            // Cautiously try to load notes
-            if (method_exists($workOrder, 'notes')) {
-                $workOrder->load('notes');
-            }
-        } catch (\Exception $relationException) {
-            \Log::warning("Non-critical error loading relationships: " . $relationException->getMessage());
-            // Continue without the relationships
+        // If not found, return a 404 with a clear message
+        if (!$workOrder) {
+            return response()->json([
+                'error' => 'Work order not found',
+                'message' => "No work order exists with ID {$id}"
+            ], 404);
         }
         
-        // Return the work order data
+        // Load relationships safely
+        $workOrder->load(['user:id,name,email']);
+        
+        // Format dates if needed
+        if ($workOrder->date_time) {
+            $workOrder->formatted_date = \Carbon\Carbon::parse($workOrder->date_time)->format('Y-m-d\TH:i');
+        }
+        
         return response()->json($workOrder);
     } catch (\Exception $e) {
-        \Log::error("Error retrieving work order details: " . $e->getMessage());
-        \Log::error("Stack trace: " . $e->getTraceAsString());
+        \Log::error('Error retrieving work order: ' . $e->getMessage());
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+
 
     // Show the form for editing the specified resource
     public function edit($id)
@@ -187,12 +185,30 @@ public function getDetails($id)
 
     // Remove the specified resource from storage
     public function destroy($id)
-    {
+{
+    try {
         $workOrder = WorkOrder::findOrFail($id);
+        
+        // Optional: Add authorization check
+        // if (auth()->id() !== $workOrder->user_id) {
+        //     return response()->json(['error' => 'Unauthorized'], 403);
+        // }
+        
+        // Delete associated records if needed
+        // For example, if work orders have notes:
+        if (method_exists($workOrder, 'notes')) {
+            $workOrder->notes()->delete();
+        }
+        
+        // Delete the work order
         $workOrder->delete();
-
-        return response()->json(['message' => 'Work order deleted successfully.']);
+        
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+        \Log::error('Error deleting work order: ' . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 
     // Duplicate the specified resource
     public function duplicate($id)

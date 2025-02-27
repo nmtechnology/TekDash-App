@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
+use App\Models\Customer;
+use App\Models\Note;
+
 
 class WorkOrder extends Model
 {
@@ -21,6 +25,9 @@ class WorkOrder extends Model
         'price',
         'customer_id',
     ];
+
+    protected $with = ['notes'];
+
 
     protected $casts = [
         'scheduled_at' => 'datetime',
@@ -49,16 +56,9 @@ class WorkOrder extends Model
         'Work Market',
     ];
 
-    // Eager load notes with each work order
-    protected $with = ['notes'];
+    // Make sure to add notes to visible attributes if using API resources
+    protected $appends = ['notes'];
 
-        // Make sure to add notes to visible attributes if using API resources
-        protected $appends = ['notes'];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function customer()
     {
@@ -76,8 +76,19 @@ class WorkOrder extends Model
     }
 
     // Add a custom accessor to always return notes
-    public function getNotesAttribute()
+    public function notesWithUsers()
     {
         return $this->notes()->with('user')->get();
+    }
+
+    public function getNotesAttribute()
+    {
+        // This is what will be returned when accessing $workOrder->notes
+        return $this->notes()->with('user')->get();
+    }
+    
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
