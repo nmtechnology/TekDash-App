@@ -5,6 +5,7 @@ import Stats from '@/Components/Stats.vue';
 import RevenueStats from '@/Components/RevenueStats.vue';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import CurrentTime from '@/Components/CurrentTime.vue';
 
 
 // Define reactive state
@@ -40,9 +41,13 @@ onMounted(() => {
 <template>
   <AppLayout title="Dashboard">
     <template #header>
-      <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
-        Dashboard
-      </h2>
+      <div class="fixed mt-16 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/50 shadow">
+      <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
+        Dashboard <CurrentTime />
+        </h2>
+      </div>
+      </div>
     </template>
 
     <div class="py-12">
