@@ -16,6 +16,11 @@ return [
     'groqcloud' => [
         'api_key' => env('GROQCLOUD_API_KEY'),
     ],
+
+    'quickbooks' => [
+        'client_id' => env('QUICKBOOKS_CLIENT_ID'),
+        'client_secret' => env('QUICKBOOKS_CLIENT_SECRET'),
+    ],
     
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),

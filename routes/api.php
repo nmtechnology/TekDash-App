@@ -206,6 +206,17 @@ Route::middleware('auth:sanctum')->get('/revenue-stats', function (Request $requ
     ];
 });
 
+// Public routes
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+        'server_time' => now()->format('Y-m-d H:i:s'),
+        'environment' => config('app.env'),
+        'php_version' => PHP_VERSION
+    ]);
+});
+
     // Quickbooks Routes
     Route::get('/quickbooks/connect', [QuickBooksAuthController::class, 'connect'])->name('quickbooks.connect');
     Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');

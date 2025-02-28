@@ -91,3 +91,19 @@ Route::middleware([
         ];
     });
 });
+
+// QuickBooks Integration Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/quickbooks/connect', [App\Http\Controllers\QuickBooksController::class, 'connect'])->name('quickbooks.connect');
+    Route::get('/quickbooks/callback', [App\Http\Controllers\QuickBooksController::class, 'callback'])->name('quickbooks.callback');
+    Route::get('/quickbooks/disconnect', [App\Http\Controllers\QuickBooksController::class, 'disconnect'])->name('quickbooks.disconnect');
+});
+
+// QuickBooks OAuth routes
+Route::get('/quickbooks/authorize', [App\Http\Controllers\QuickBooksController::class, 'authorize'])
+    ->middleware(['auth'])
+    ->name('quickbooks.authorize');
+    
+Route::get('/quickbooks/callback', [App\Http\Controllers\QuickBooksController::class, 'callback'])
+    ->middleware(['auth'])
+    ->name('quickbooks.callback');

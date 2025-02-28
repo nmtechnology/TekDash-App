@@ -5,7 +5,6 @@ import Stats from '@/Components/Stats.vue';
 import RevenueStats from '@/Components/RevenueStats.vue';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import { Link } from '@inertiajs/vue3';
 
 
 // Define reactive state
@@ -63,12 +62,7 @@ onMounted(() => {
     <!-- Stats component -->
     <Stats v-else :stats="statsData" /><RevenueStats /><div class="flex justify-between items-start mb-3">
       <h1 class="text-2xl font-semibold text-gray-900 dark:text-white"></h1>
-      <Link 
-    href="/quickbooks/connect" 
-    class="btn rounded outline text-lime-400 p-2 justify-between mt-2"
-  >
-    Connect QuickBooks
-  </Link>
+     
       
 </div>
                 <div class="relative bg-transparent opacity-75 overflow-hidden shadow-xl sm:rounded-lg bg-cover bg-center bg-no-repeat" 

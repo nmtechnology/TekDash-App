@@ -1,8 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import axios from 'axios';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -20,6 +22,9 @@ const revenueData = ref({
 // Add a debug flag
 const showDebug = ref(false);
 const debugInfo = ref(null);
+// Add collapsed state
+const isCollapsed = ref(false);
+const chartRef = ref(null);
 
 const chartData = computed(() => {
   const labels = revenueData.value.monthly.map(item => item.month);
@@ -74,22 +79,100 @@ const chartOptions = {
 };
 
 const isLoading = ref(true);
+const errorMessage = ref(null);
 
 async function fetchRevenueData() {
   try {
     isLoading.value = true;
-    const response = await axios.get('/revenue-stats');
+    errorMessage.value = null;
+    
+    // Try using the fetch API first (more reliable for some network issues)
+    try {
+      const response = await fetch('/revenue-stats', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Cache-Control': 'no-cache',
+        },
+        credentials: 'same-origin'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        revenueData.value = data;
+        
+        if (data._debug) {
+          debugInfo.value = data._debug;
+          delete revenueData.value._debug;
+        }
+        
+        // Make sure to resize the chart when data is loaded
+        if (!isCollapsed.value) {
+          nextTick(() => {
+            if (chartRef.value && chartRef.value.chart) {
+              chartRef.value.chart.resize();
+            }
+          });
+        }
+        
+        console.log('Revenue data loaded with fetch API');
+        isLoading.value = false;
+        return; // Exit early if fetch was successful
+      }
+    } catch (fetchError) {
+      console.warn('Fetch API failed, falling back to Axios', fetchError);
+      // Continue with axios as fallback
+    }
+    
+    // Fallback to Axios
+    const response = await axios.get('/revenue-stats', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+      timeout: 15000, // 15 seconds should be enough 
+      withCredentials: true,
+    });
+    
     if (response.data) {
       revenueData.value = response.data;
-      console.log('Revenue data loaded:', revenueData.value);
+      console.log('Revenue data loaded with Axios');
+      
       if (response.data._debug) {
         debugInfo.value = response.data._debug;
         delete revenueData.value._debug;
       }
+      
+      // Resize chart
+      if (!isCollapsed.value) {
+        nextTick(() => {
+          if (chartRef.value && chartRef.value.chart) {
+            chartRef.value.chart.resize();
+          }
+        });
+      }
     }
   } catch (error) {
     console.error('Error fetching revenue data:', error);
-    alert('Failed to load revenue data. Please check console for details.');
+    
+    // Better error handling with specific messages
+    if (error.code === 'ERR_NETWORK') {
+      errorMessage.value = "Network error: Unable to connect to the server. Please check your internet connection.";
+    } else if (error.response) {
+      // The server responded with a status code outside the 2xx range
+      errorMessage.value = `Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`;
+    } else if (error.request) {
+      // The request was made but no response was received
+      errorMessage.value = "No response received from server. Please try again later.";
+    } else {
+      // Something else happened while setting up the request
+      errorMessage.value = `Error: ${error.message}`;
+    }
   } finally {
     isLoading.value = false;
   }
@@ -103,115 +186,213 @@ onMounted(() => {
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 }
+
+// Toggle collapsed state
+function toggleCollapse() {
+  isCollapsed.value = !isCollapsed.value;
+  
+  // If expanding, wait for DOM to update then resize chart
+  if (!isCollapsed.value) {
+    nextTick(() => {
+      if (chartRef.value && chartRef.value.chart) {
+        chartRef.value.chart.resize();
+      }
+    });
+  }
+}
+
+// Add a new method to handle QuickBooks connection
+function connectToQuickBooks() {
+  window.location.href = '/quickbooks/authorize';
+}
 </script>
 
 <template>
-  <div class="revenue-stats-container bg-white/10 dark:bg-gray-800/70 overflow-hidden shadow-lg rounded-lg p-5 mb-6">
+  <div class="revenue-stats-container opacity-75 bg-white/50 dark:bg-gray-800/70 overflow-hidden shadow-lg rounded-lg p-5 mb-6">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Revenue Statistics</h2>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2">
         <button
-          @click="showDebug = !showDebug"
-          class="flex items-center gap-1 px-2 py-1 text-sm btn outline text-gray-400 rounded hover:bg-gray-700 transition"
+          @click="toggleCollapse"
+          class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-700 text-lime-400 hover:bg-lime-500 hover:text-gray-900 transition"
+          :title="isCollapsed ? 'Expand' : 'Collapse'"
         >
-          Debug
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isCollapsed }" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+          NM Technology's Revenue Statistics
+          <NetworkStatusIndicator class="inline-block ml-2" />
+        </h2>
+      </div>
+      <div class="flex gap-2">
+        <button 
+          @click="connectToQuickBooks" 
+          class="flex items-center gap-1 px-2 py-1 text-sm btn outline text-lime-400 rounded hover:bg-lime-500 hover:text-gray-900 transition"
+          title="Connect with QuickBooks"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 015.656 0l4 4a4 4 0 11-5.656 5.656l-1.102-1.101" />
+          </svg>
+          Connect QuickBooks
         </button>
         <button
           @click="fetchRevenueData" 
+          :disabled="isLoading"
           class="flex items-center gap-1 px-2 py-1 text-sm btn outline text-lime-400 rounded hover:bg-lime-500 hover:text-gray-900 transition"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Refresh
+          <span v-if="isLoading" class="animate-spin h-3 w-3 border-2 border-white border-t-lime-400 rounded-full"></span>
+          {{ isLoading ? 'Loading...' : 'Refresh' }}
+        </button>
+        <button
+          v-if="!isCollapsed"
+          @click="showDebug = !showDebug"
+          class="flex items-center gap-1 px-2 py-1 text-sm btn outline text-lime-400 rounded hover:bg-lime-500 hover:text-gray-900 transition"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>{{ showDebug ? 'Hide Debug' : 'Show Debug' }}</span>
         </button>
       </div>
     </div>
 
-    <!-- Debug panel -->
-    <div v-if="showDebug" class="bg-gray-900 text-gray-200 p-4 rounded-lg mb-4 overflow-auto max-h-64 text-sm font-mono">
-      <h3 class="text-lime-400 mb-2">Debug Information:</h3>
-      <div v-if="debugInfo">
-        <p>Completed Status: <span class="text-cyan-300">{{ debugInfo.completedStatus }}</span></p>
-        <p>Date Column: <span class="text-cyan-300">{{ debugInfo.completedDateColumn }}</span></p>
-        <p>Available Statuses: <span class="text-cyan-300">{{ debugInfo.availableStatuses?.join(', ') }}</span></p>
-        <p>Current Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.currentMonthRevenue) }}</span></p>
-        <p>Last Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.lastMonthRevenue) }}</span></p>
+    <!-- Summary when collapsed -->
+    <div v-if="isCollapsed && !isLoading" class="flex justify-between items-center bg-gray-900/50 p-3 rounded-lg">
+      <div class="flex items-center gap-4">
+        <div>
+          <span class="text-gray-400 text-xs">Last 30 Days</span>
+          <p class="text-lime-400 text-lg font-bold">{{ formatCurrency(revenueData.last30DaysRevenue) }}</p>
+        </div>
+        <div>
+          <span class="text-gray-400 text-xs">Growth</span>
+          <p :class="[
+            'text-lg font-bold', 
+            revenueData.comparedToLastMonth > 0 ? 'text-green-500' : 'text-red-500'
+          ]">
+            {{ revenueData.comparedToLastMonth > 0 ? '+' : '' }}{{ revenueData.comparedToLastMonth }}%
+          </p>
+        </div>
       </div>
-      <div v-else>No debug information available</div>
-      
-      <h3 class="text-lime-400 mt-4 mb-2">Quick Check:</h3>
-      <div>
-        <a href="/debug/work-orders" target="_blank" class="text-cyan-300 underline">
-          Check Work Orders Data
-        </a>
-      </div>
+      <p class="text-gray-400 text-xs">Click to expand for full details</p>
     </div>
 
-    <!-- Loading indicator -->
-    <div v-if="isLoading" class="flex justify-center items-center h-64">
-      <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-lime-400"></div>
-    </div>
-
-    <div v-else>
-      <!-- Recent time period stats cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
-          <p class="text-gray-400 text-sm font-medium">Last 7 Days</p>
-          <p class="text-lime-400 text-2xl font-bold">{{ formatCurrency(revenueData.last7DaysRevenue) }}</p>
-        </div>
-
-        <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
-          <p class="text-gray-400 text-sm font-medium">Last 30 Days</p>
-          <p class="text-lime-400 text-2xl font-bold">{{ formatCurrency(revenueData.last30DaysRevenue) }}</p>
-        </div>
-        
-        <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
-          <p class="text-gray-400 text-sm font-medium">Total Revenue</p>
-          <p class="text-lime-400 text-2xl font-bold">{{ formatCurrency(revenueData.totalRevenue) }}</p>
-        </div>
-
-        <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
-          <p class="text-gray-400 text-sm font-medium">Growth vs. Last Month</p>
-          <div class="flex items-center">
-            <span :class="[
-              'text-xl font-bold', 
-              revenueData.comparedToLastMonth > 0 ? 'text-green-500' : 'text-red-500'
-            ]">
-              {{ revenueData.comparedToLastMonth > 0 ? '+' : '' }}{{ revenueData.comparedToLastMonth }}%
-            </span>
+    <!-- Content section with transition -->
+    <transition
+      name="collapse"
+      @enter="el => el.style.height = el.scrollHeight + 'px'"
+      @leave="el => el.style.height = '0'"
+    >
+      <div v-if="!isCollapsed" class="content-wrapper">
+        <!-- Error message display -->
+        <div v-if="errorMessage" class="bg-red-500/20 border border-red-500 text-white p-4 rounded-lg mb-4">
+          <h3 class="font-bold mb-1">Error Loading Data</h3>
+          <p>{{ errorMessage }}</p>
+          <div class="mt-2">
+            <button 
+              @click="fetchRevenueData" 
+              class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
+            >
+              Retry
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Chart and additional stats grid layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <!-- Chart takes up 3/4 of space on large screens -->
-        <div class="lg:col-span-3 h-64 bg-gray-900/50 p-3 rounded-lg">
-          <Line v-if="revenueData.monthly.length > 0" :data="chartData" :options="chartOptions" />
+        <!-- Debug panel -->
+        <div v-if="showDebug" class="bg-gray-900 text-gray-200 p-4 rounded-lg mb-4 overflow-auto max-h-64 text-sm font-mono">
+          <h3 class="text-lime-400 mb-2">Debug Information:</h3>
+          <div v-if="debugInfo">
+            <p>Completed Status: <span class="text-cyan-300">{{ debugInfo.completedStatus }}</span></p>
+            <p>Date Column: <span class="text-cyan-300">{{ debugInfo.completedDateColumn }}</span></p>
+            <p>Available Statuses: <span class="text-cyan-300">{{ debugInfo.availableStatuses?.join(', ') }}</span></p>
+            <p>Current Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.currentMonthRevenue) }}</span></p>
+            <p>Last Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.lastMonthRevenue) }}</span></p>
+          </div>
+          <div v-else>No debug information available</div>
+          
+          <h3 class="text-lime-400 mt-4 mb-2">Quick Check:</h3>
+          <div>
+            <a href="/debug/work-orders" target="_blank" class="text-cyan-300 underline">
+              Check Work Orders Data
+            </a>
+          </div>
         </div>
 
-        <!-- Stats column takes up 1/4 of space -->
-        <div class="lg:col-span-1 flex flex-col gap-4">
-          <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
-            <p class="text-gray-400 text-sm font-medium">Year Over Year</p>
-            <div class="flex items-center">
-              <span :class="[
-                'text-xl font-bold', 
-                revenueData.comparedToLastYear > 0 ? 'text-green-500' : 'text-red-500'
-              ]">
-                {{ revenueData.comparedToLastYear > 0 ? '+' : '' }}{{ revenueData.comparedToLastYear }}%
-              </span>
+        <!-- Loading indicator -->
+        <div v-if="isLoading" class="flex justify-center items-center h-64">
+          <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-lime-400"></div>
+        </div>
+
+        <div v-else>
+          <!-- Recent time period stats cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
+              <p class="text-gray-400 text-sm font-medium">Last 7 Days</p>
+              <p class="text-lime-400 text-2xl font-bold">{{ formatCurrency(revenueData.last7DaysRevenue) }}</p>
+            </div>
+
+            <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
+              <p class="text-gray-400 text-sm font-medium">Last 30 Days</p>
+              <p class="text-lime-400 text-2xl font-bold">{{ formatCurrency(revenueData.last30DaysRevenue) }}</p>
+            </div>
+            
+            <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
+              <p class="text-gray-400 text-sm font-medium">Total Revenue</p>
+              <p class="text-lime-400 text-2xl font-bold">{{ formatCurrency(revenueData.totalRevenue) }}</p>
+            </div>
+
+            <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
+              <p class="text-gray-400 text-sm font-medium">Growth vs. Last Month</p>
+              <div class="flex items-center">
+                <span :class="[
+                  'text-xl font-bold', 
+                  revenueData.comparedToLastMonth > 0 ? 'text-green-500' : 'text-red-500'
+                ]">
+                  {{ revenueData.comparedToLastMonth > 0 ? '+' : '' }}{{ revenueData.comparedToLastMonth }}%
+                </span>
+              </div>
             </div>
           </div>
 
-          <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
-            <p class="text-gray-400 text-sm font-medium">Next Month Forecast</p>
-            <p class="text-cyan-400 text-xl font-bold">{{ formatCurrency(revenueData.forecastNextMonth) }}</p>
+          <!-- Chart and additional stats grid layout -->
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <!-- Chart takes up 3/4 of space on large screens -->
+            <div class="lg:col-span-3 h-64 bg-gray-900/50 p-3 rounded-lg">
+              <Line 
+                v-if="revenueData.monthly.length > 0" 
+                :data="chartData" 
+                :options="chartOptions" 
+                ref="chartRef"
+              />
+            </div>
+
+            <!-- Stats column takes up 1/4 of space -->
+            <div class="lg:col-span-1 flex flex-col gap-4">
+              <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
+                <p class="text-gray-400 text-sm font-medium">Year Over Year</p>
+                <div class="flex items-center">
+                  <span :class="[
+                    'text-xl font-bold', 
+                    revenueData.comparedToLastYear > 0 ? 'text-green-500' : 'text-red-500'
+                  ]">
+                    {{ revenueData.comparedToLastYear > 0 ? '+' : '' }}{{ revenueData.comparedToLastYear }}%
+                  </span>
+                </div>
+              </div>
+
+              <div class="stat-card bg-gray-900/50 p-4 rounded-lg">
+                <p class="text-gray-400 text-sm font-medium">Next Month Forecast</p>
+                <p class="text-cyan-400 text-xl font-bold">{{ formatCurrency(revenueData.forecastNextMonth) }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -223,5 +404,22 @@ function formatCurrency(value) {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Collapse animation styles */
+.content-wrapper {
+  overflow: hidden;
+}
+
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: height 0.3s ease-in-out, opacity 0.3s ease;
+  overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  height: 0;
+  opacity: 0;
 }
 </style>
