@@ -17,18 +17,36 @@
                     <select v-model="form.customer_id" id="customer_id" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                       <option value="Advanced Project Solutions">Advanced Project Solutions</option>
                       <option value="Barrister Global Service Network">Barrister Global Service Network</option>
+                      <option value="Bass-Security">Bass-Security</option>
                       <option value="DarAlIslam">DarAlIslam</option>
                       <option value="Field Nation">Field Nation</option>
                       <option value="Navco">Navco</option>
-                      <option value="NEW CUSTOMER">NEW CUSTOMER</option>
                       <option value="NuTech National">NuTech National</option>
                       <option value="Telaid">Telaid</option>
                     </select>
                   </div>
-                  <div class="mb-4">
-                    <label for="title" class="block text-sm font-medium text-green-400 bg-slate-900">Title</label>
-                    <input placeholder="WorkType / Location / WO######-## " type="text" v-model="form.title" id="title" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                  </div>
+                  <!-- Replace the existing title field with these three fields -->
+<div class="flex gap-2">
+  <div class="mb-4 flex-1">
+    <label for="workType" class="block text-sm font-medium text-green-400 bg-slate-900">Work Type</label>
+    <input placeholder="Installation" type="text" v-model="workType" id="workType" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+  </div>
+  <div class="mb-4 flex-1">
+    <label for="workOrderNumber" class="block text-sm font-medium text-green-400 bg-slate-900">WO Number</label>
+    <input placeholder="WO123456-01" type="text" v-model="workOrderNumber" id="workOrderNumber" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+  </div>
+  <div class="mb-4 flex-1">
+    <label for="location" class="block text-sm font-medium text-green-400 bg-slate-900">Location</label>
+    <input placeholder="Boston, MA" type="text" v-model="location" id="location" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+  </div>
+</div>
+<!-- Preview of combined title -->
+<div class="mb-4">
+  <label class="block text-sm font-medium text-green-400">Generated Title</label>
+  <div class="text-lime-400 mt-1 px-3 py-2 rounded-md bg-slate-800 border border-gray-300">
+    {{ formattedTitle }}
+  </div>
+</div>
                   <div class="mb-4">
                     <label for="description" class="block text-sm font-medium text-green-400">Description</label>
                     <textarea v-model="form.description" id="description" placeholder="What is the Field Technician doing onsite?" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
@@ -54,10 +72,6 @@
                   <div class="mb-4">
                     <label for="file_attachments" class="block text-sm font-medium text-green-400">Attachments</label>
                     <input type="file" @change="handleFileUpload" id="file_attachments" class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" multiple>
-                  </div>
-                  <div class="mb-4">
-                    <label for="notes" class="block text-sm font-medium text-green-400">Notes</label>
-                    <textarea v-model="form.notes" id="notes" placeholder="Field Technician Notes Go Here..." class="text-lime-400 mt-1 block w-full rounded-md bg-slate-800 border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm"></textarea>
                   </div>
                   <input type="hidden" v-model="form.user_id" />
                   <progress v-if="form.progress" :value="form.progress.percentage" min="0" max="100">
@@ -93,6 +107,9 @@ export default {
     return {
       showModal: false,
       mode: 'create',
+      workType: '',
+      workOrderNumber: '',
+      location: '',
       form: useForm({
         customer_id: '',
         title: '',
@@ -107,11 +124,22 @@ export default {
       }),
     };
   },
+  computed: {
+    formattedTitle() {
+      // Combine the three fields into one title string
+      if (!this.workType && !this.workOrderNumber && !this.location) return '';
+      
+      return `${this.workType || 'Unknown'} / ${this.workOrderNumber || 'No WO#'} / ${this.location || 'No Location'}`;
+    }
+  },
   methods: {
     openCreateModal() {
       this.mode = 'create';
       this.form.reset();
-      this.form.user_id = this.$page.props.auth.user.id; // Set the user_id field
+      this.workType = '';
+      this.workOrderNumber = '';
+      this.location = '';
+      this.form.user_id = this.$page.props.auth.user.id;
       this.showModal = true;
     },
     openEditModal(workOrder) {
@@ -125,36 +153,42 @@ export default {
       this.showModal = true;
     },
     submitForm() {
-      if (this.mode === 'create') {
-        this.form.post('/work-orders', {
-          onSuccess: () => {
-            this.showModal = false;
-            this.resetForm();
-            this.$emit('formSubmitted', 'Work order created successfully.');
-          },
-          onError: (errors) => {
-            console.error('Error creating work order. Please try again:', errors);
-          },
-        });
-      } else {
-        this.form.put(`/work-orders/${this.form.id}`, {
-          onSuccess: () => {
-            this.showModal = false;
-            this.resetForm();
-            this.$emit('formSubmitted', 'Work order updated successfully.');
-          },
-          onError: (errors) => {
-            console.error('Error updating work order. Please try again:', errors);
-          },
-        });
-      }
-    },
+    // Set the combined title before submitting
+    this.form.title = this.formattedTitle;
+    
+    if (this.mode === 'create') {
+      this.form.post('/work-orders', {
+        onSuccess: () => {
+          this.showModal = false;
+          this.resetForm();
+          this.$emit('formSubmitted', 'Work order created successfully.');
+        },
+        onError: (errors) => {
+          console.error('Error creating work order. Please try again:', errors);
+        },
+      });
+    } else {
+      this.form.put(`/work-orders/${this.form.id}`, {
+        onSuccess: () => {
+          this.showModal = false;
+          this.resetForm();
+          this.$emit('formSubmitted', 'Work order updated successfully.');
+        },
+        onError: (errors) => {
+          console.error('Error updating work order. Please try again:', errors);
+        },
+      });
+    }
+  },
     handleFileUpload(event) {
       this.form.file_attachments = Array.from(event.target.files);
     },
     resetForm() {
-      this.form.reset();
-    },
+    this.form.reset();
+    this.workType = '';
+    this.workOrderNumber = '';
+    this.location = '';
+  },
     duplicateWorkOrder() {
       Inertia.post(`/work-orders/${this.form.id}/duplicate`, {}, {
         onSuccess: () => {

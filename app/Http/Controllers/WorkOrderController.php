@@ -520,4 +520,26 @@ public function calendarEvents()
         ], 500);
     }
 }
+
+/**
+ * Search for work orders
+ */
+public function search(Request $request)
+{
+    $query = $request->input('query');
+    
+    if (empty($query)) {
+        return response()->json([]);
+    }
+    
+    $workOrders = WorkOrder::where('title', 'like', "%{$query}%")
+        ->orWhere('customer_id', 'like', "%{$query}%")
+        ->orWhere('description', 'like', "%{$query}%")
+        ->orderBy('created_at', 'desc')
+        ->limit(10)
+        ->get(['id', 'title', 'status', 'customer_id']);
+        
+    return response()->json($workOrders);
+}
+
 }

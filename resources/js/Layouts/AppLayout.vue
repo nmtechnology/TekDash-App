@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Banner from '@/Components/Banner.vue';
@@ -8,15 +8,84 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
+import axios from 'axios';
 
 defineProps({
     title: String,
 });
 
+// Search functionality variables
 const searchQuery = ref('');
-
+const searchResults = ref([]);
+const isSearching = ref(false);
+const showSearchResults = ref(false);
+const selectedWorkOrder = ref(null);
+const showWorkOrderModal = ref(false);
 const showingNavigationDropdown = ref(false);
 
+// Search functionality
+let searchTimeout;
+function searchWorkOrders() {
+    clearTimeout(searchTimeout);
+    
+    if (searchQuery.value.length < 2) {
+        searchResults.value = [];
+        showSearchResults.value = false;
+        return;
+    }
+    
+    isSearching.value = true;
+    showSearchResults.value = true;
+    
+    searchTimeout = setTimeout(async () => {
+        try {
+            const response = await axios.get('/api/search-work-orders', {
+                params: { query: searchQuery.value }
+            });
+            searchResults.value = response.data;
+        } catch (error) {
+            console.error('Error searching work orders:', error);
+        } finally {
+            isSearching.value = false;
+        }
+    }, 300);
+}
+
+// Work order modal functionality
+function openWorkOrderModal(workOrderId) {
+    showSearchResults.value = false;
+    
+    axios.get(`/api/work-orders/${workOrderId}/details`)
+        .then(response => {
+            selectedWorkOrder.value = response.data;
+            showWorkOrderModal.value = true;
+        })
+        .catch(error => {
+            console.error('Error fetching work order details:', error);
+        });
+}
+
+function closeModal() {
+    showWorkOrderModal.value = false;
+    selectedWorkOrder.value = null;
+}
+
+// Close search results when clicking outside
+function handleClickOutside(event) {
+    if (!event.target.closest('.search-container')) {
+        showSearchResults.value = false;
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
+// Existing functions
 const switchToTeam = (team) => {
     router.put(route('current-team.update'), {
         team_id: team.id,
@@ -63,21 +132,35 @@ const logout = () => {
                             </div>
                         </div>
 
-                        <!-- Search section -->
-                        <div class="flex flex-1 justify-center lg:justify-end p-4">
-                            <div class="relative w-full max-w-lg lg:max-w-xs">
-                                <input 
-                                    type="search" 
-                                    name="search" 
-                                    aria-label="Search work orders" 
-                                    class="peer block w-full rounded-md bg-indigo-400/25 py-1 pl-8 pr-3 text-base text-indigo-100 outline-none placeholder:text-indigo-200 focus:bg-white focus:text-gray-900 focus:placeholder:text-gray-400 sm:text-sm" 
-                                    placeholder="Search work orders" 
-                                    v-model="searchQuery"
-                                    @input="searchWorkOrders"
-                                />
-                                <MagnifyingGlassIcon class="pointer-events-none absolute left-2 top-1/2 transform -translate-y-1/2 size-5 text-indigo-200 peer-focus:text-gray-400" aria-hidden="true" />
-                            </div>
-                        </div>
+       <!-- Search section -->
+<div class="flex flex-1 justify-center lg:justify-end p-4 search-container relative">
+    <div class="relative w-full max-w-lg lg:max-w-xs">
+        <input 
+            type="search" 
+            name="search" 
+            aria-label="Search work orders" 
+            class="peer block w-full rounded-md bg-indigo-400/25 py-1 pl-8 pr-3 text-base text-indigo-100 outline-none placeholder:text-indigo-200 focus:bg-white focus:text-gray-900 focus:placeholder:text-gray-400 sm:text-sm" 
+            placeholder="Search work orders" 
+            v-model="searchQuery"
+            @input="searchWorkOrders"
+        />
+        <MagnifyingGlassIcon class="pointer-events-none absolute left-2 top-1/2 transform -translate-y-1/2 size-5 text-indigo-200 peer-focus:text-gray-400" aria-hidden="true" />
+        
+        <!-- Search Results Dropdown -->
+        <div v-if="showSearchResults && (searchResults.length > 0 || isSearching)" class="absolute mt-1 w-full bg-gray-800 shadow-lg rounded-md z-30 max-h-60 overflow-y-auto">
+            <div v-if="isSearching" class="p-2 text-gray-300 text-sm">Searching...</div>
+            <div v-else-if="searchResults.length === 0" class="p-2 text-gray-300 text-sm">No results found</div>
+            <ul v-else>
+                <li v-for="result in searchResults" :key="result.id" 
+                    @click="openWorkOrderModal(result.id)"
+                    class="p-2 hover:bg-gray-700 cursor-pointer text-gray-200 text-sm border-b border-gray-700 flex justify-between">
+                    <span class="font-medium">{{ result.title }}</span>
+                    <span class="text-xs bg-gray-600 rounded px-2 py-1">{{ result.status }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
                         <div class="flex lg:hidden"></div>
 
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
@@ -319,5 +402,83 @@ const logout = () => {
                 <slot />
             </main>
         </div>
+        <!-- Add this right before the final </div> closing tag -->
+
+<!-- Work Order Modal -->
+<div v-if="showWorkOrderModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-800 bg-opacity-75 transition-opacity" aria-hidden="true" @click="closeModal"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <!-- Header with close button -->
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">
+                                {{ selectedWorkOrder?.title || 'Work Order Details' }}
+                            </h3>
+                            <button @click="closeModal" class="text-gray-400 hover:text-gray-200">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Work order details -->
+                        <div v-if="selectedWorkOrder" class="text-gray-300 space-y-3">
+                            <div class="flex justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-400">Status:</p>
+                                    <span class="inline-flex px-2 py-1 text-xs rounded" 
+                                          :class="{
+                                            'bg-green-800 text-green-100': selectedWorkOrder.status === 'Complete',
+                                            'bg-blue-800 text-blue-100': selectedWorkOrder.status === 'Scheduled',
+                                            'bg-yellow-800 text-yellow-100': selectedWorkOrder.status === 'In Progress',
+                                            'bg-red-800 text-red-100': selectedWorkOrder.status === 'Cancelled',
+                                            'bg-purple-800 text-purple-100': selectedWorkOrder.status === 'Part/Return'
+                                          }">
+                                        {{ selectedWorkOrder.status }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Price:</p>
+                                    <span>${{ selectedWorkOrder.price }}</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm text-gray-400">Customer ID:</p>
+                                <p>{{ selectedWorkOrder.customer_id }}</p>
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm text-gray-400">Date:</p>
+                                <p>{{ new Date(selectedWorkOrder.date_time).toLocaleString() }}</p>
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm text-gray-400">Description:</p>
+                                <p class="whitespace-pre-line">{{ selectedWorkOrder.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal footer -->
+            <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Link :href="`/work-orders/${selectedWorkOrder?.id}`" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">
+                    View Work Order
+                </Link>
+                <button @click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
     </div>
 </template>

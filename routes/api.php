@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GroqController;
 use App\Http\Controllers\UserController;
+use App\Models\WorkOrder;
+use Carbon\Carbon;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -126,3 +128,84 @@ Route::middleware('auth:sanctum')->get('/work-orders', function () {
                    ->orderBy('date_time', 'asc')
                    ->get();
 });
+
+// Search work orders
+Route::get('/search-work-orders', [WorkOrderController::class, 'search'])
+    ->middleware(['auth:sanctum']);
+
+// Get work order details
+Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'getDetails'])
+    ->middleware(['auth:sanctum']);
+
+// Revenue statistics
+Route::middleware('auth:sanctum')->get('/revenue-stats', function (Request $request) {
+    // Get current date ranges
+    $now = Carbon::now();
+    $weekStart = $now->copy()->startOfWeek();
+    $weekEnd = $now->copy()->endOfWeek();
+    $monthStart = $now->copy()->startOfMonth();
+    $monthEnd = $now->copy()->endOfMonth();
+    
+    // Previous periods for comparison
+    $lastWeekStart = $weekStart->copy()->subWeek();
+    $lastWeekEnd = $weekEnd->copy()->subWeek();
+    $lastMonthStart = $monthStart->copy()->subMonth();
+    $lastMonthEnd = $monthEnd->copy()->subMonth();
+    
+    // Current week statistics
+    $weeklyWorkOrders = WorkOrder::whereBetween('date_time', [$weekStart, $weekEnd])->get();
+    $weeklyRevenue = $weeklyWorkOrders->sum('price');
+    $weeklyCompleted = $weeklyWorkOrders->where('status', 'Complete')->count();
+    $weeklyCompletionRate = $weeklyWorkOrders->count() > 0 
+                           ? round(($weeklyCompleted / $weeklyWorkOrders->count()) * 100) 
+                           : 0;
+    $weeklyAveragePrice = $weeklyWorkOrders->count() > 0 
+                         ? $weeklyRevenue / $weeklyWorkOrders->count() 
+                         : 0;
+    
+    // Previous week for comparison
+    $lastWeekWorkOrders = WorkOrder::whereBetween('date_time', [$lastWeekStart, $lastWeekEnd])->get();
+    $lastWeekRevenue = $lastWeekWorkOrders->sum('price');
+    $weeklyChangePercent = $lastWeekRevenue > 0 
+                          ? round((($weeklyRevenue - $lastWeekRevenue) / $lastWeekRevenue) * 100, 1) . '%' 
+                          : '0%';
+    
+    // Current month statistics
+    $monthlyWorkOrders = WorkOrder::whereBetween('date_time', [$monthStart, $monthEnd])->get();
+    $monthlyRevenue = $monthlyWorkOrders->sum('price');
+    $monthlyCompleted = $monthlyWorkOrders->where('status', 'Complete')->count();
+    $monthlyCompletionRate = $monthlyWorkOrders->count() > 0 
+                            ? round(($monthlyCompleted / $monthlyWorkOrders->count()) * 100) 
+                            : 0;
+    $monthlyAveragePrice = $monthlyWorkOrders->count() > 0 
+                          ? $monthlyRevenue / $monthlyWorkOrders->count() 
+                          : 0;
+    
+    // Previous month for comparison
+    $lastMonthWorkOrders = WorkOrder::whereBetween('date_time', [$lastMonthStart, $lastMonthEnd])->get();
+    $lastMonthRevenue = $lastMonthWorkOrders->sum('price');
+    $monthlyChangePercent = $lastMonthRevenue > 0 
+                           ? round((($monthlyRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1) . '%' 
+                           : '0%';
+    
+    return [
+        'weekly' => [
+            'revenue' => $weeklyRevenue,
+            'workOrders' => $weeklyWorkOrders->count(),
+            'completionRate' => $weeklyCompletionRate,
+            'averagePrice' => $weeklyAveragePrice,
+            'changePercent' => $weeklyChangePercent
+        ],
+        'monthly' => [
+            'revenue' => $monthlyRevenue,
+            'workOrders' => $monthlyWorkOrders->count(),
+            'completionRate' => $monthlyCompletionRate,
+            'averagePrice' => $monthlyAveragePrice,
+            'changePercent' => $monthlyChangePercent
+        ]
+    ];
+});
+
+    // Quickbooks Routes
+    Route::get('/quickbooks/connect', [QuickBooksAuthController::class, 'connect'])->name('quickbooks.connect');
+    Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');

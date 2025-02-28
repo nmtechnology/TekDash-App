@@ -36,7 +36,9 @@
         "@headlessui/vue": "^1.7.23",
         "@heroicons/vue": "^2.2.0",
         "@inertiajs/inertia-vue3": "^0.6.0",
+        "chart.js": "^4.4.8",
         "date-fns": "^4.1.0",
-        "daypilot-pro-vue": "https://npm.daypilot.org/daypilot-pro-vue/trial/2024.4.6180.tar.gz"
+        "daypilot-pro-vue": "https://npm.daypilot.org/daypilot-pro-vue/trial/2024.4.6180.tar.gz",
+        "vue-chartjs": "^5.3.2"
     }
 }
