@@ -26,6 +26,218 @@ const debugInfo = ref(null);
 const isCollapsed = ref(false);
 const chartRef = ref(null);
 
+// Internet speed test variables
+const isTestingSpeed = ref(false);
+const speedTestResults = ref(null);
+
+// Function to test internet speed with improved calculation
+async function testInternetSpeed() {
+  try {
+    isTestingSpeed.value = true;
+    speedTestResults.value = null;
+    
+    // First measure latency with a small HEAD request
+    const pingStartTime = performance.now();
+    await fetch('/favicon.ico?t=' + new Date().getTime(), {
+      method: 'HEAD',
+      cache: 'no-store'
+    });
+    const pingEndTime = performance.now();
+    const latency = pingEndTime - pingStartTime;
+    
+    // For better accuracy, we'll repeatedly download a file to get more data
+    const iterations = 5;
+    let totalBytes = 0;
+    let startTime = performance.now();
+    
+    // Download the same file multiple times for more data
+    for (let i = 0; i < iterations; i++) {
+      // Use a different URL each time to avoid caching
+      const url = `/favicon.ico?noc=${Date.now()}-${i}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Get the file data and add to our total
+      const data = await response.arrayBuffer();
+      totalBytes += data.byteLength;
+    }
+    
+    // Calculate time taken in seconds (excluding initial latency)
+    const endTime = performance.now();
+    // We subtract the latency for one request, as the rest is actual download time
+    const downloadTime = (endTime - startTime - latency) / 1000; // Convert to seconds
+    
+    // Now we have total bytes and download time. File size in bits (8 bits = 1 byte)
+    const fileSizeInBits = totalBytes * 8;
+    
+    // FIXED: Calculate speed in Mbps (megabits per second) = bits / seconds / 1,000,000
+    const speedMbps = fileSizeInBits / downloadTime / 1000000;
+    
+    // Store results
+    speedTestResults.value = {
+      fileSize: totalBytes,
+      duration: downloadTime * 1000, // Back to ms for display
+      speedMbps: speedMbps,
+      latency: latency,
+      timestamp: new Date().toISOString(),
+      iterations: iterations
+    };
+    
+    // If the result seems implausible, try a second approach
+    if (speedMbps > 1000 || speedMbps < 0.1) {
+      console.warn('Speed result seems unusual, trying alternative test method');
+      await testWithLargerFile();
+    }
+    
+  } catch (error) {
+    console.error('Speed test failed:', error);
+    
+    // Try fallback method
+    await testWithLargerFile();
+  } finally {
+    isTestingSpeed.value = false;
+  }
+}
+
+// Try with a single larger file download
+async function testWithLargerFile() {
+  try {
+    // Try to find a larger file for more accurate test
+    // Check if app.js exists (typically larger)
+    const fileUrls = [
+      '/build/assets/app.js',  // Try Laravel Vite assets
+      '/js/app.js',            // Try Laravel Mix assets
+      '/css/app.css',          // Try CSS file
+      '/favicon.ico'           // Fallback to favicon
+    ];
+    
+    let testFileUrl = null;
+    for (const url of fileUrls) {
+      try {
+        // Try a HEAD request to see if the file exists
+        const response = await fetch(url, { 
+          method: 'HEAD',
+          cache: 'no-store'
+        });
+        
+        if (response.ok) {
+          testFileUrl = url;
+          break;
+        }
+      } catch(e) {
+        // Ignore 404 errors and try next file
+      }
+    }
+    
+    // If no file was found, use a fixed URL
+    if (!testFileUrl) {
+      testFileUrl = '/favicon.ico'; // Last resort
+    }
+    
+    console.log(`Using ${testFileUrl} for speed test`);
+    
+    // Now do the actual speed test
+    const pingStartTime = performance.now();
+    await fetch(testFileUrl, {
+      method: 'HEAD',
+      cache: 'no-store'
+    });
+    const pingEndTime = performance.now();
+    const latency = pingEndTime - pingStartTime;
+    
+    // Download the file 3 times for more data
+    let totalBytes = 0;
+    let iterations = 3;
+    const startTime = performance.now();
+    
+    for (let i = 0; i < iterations; i++) {
+      const response = await fetch(`${testFileUrl}?nocache=${Date.now()}-${i}`, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      
+      const data = await response.blob(); // Use blob for more accurate size
+      totalBytes += data.size;
+    }
+    
+    const endTime = performance.now();
+    // Remove one latency period from total time
+    const downloadTime = (endTime - startTime - latency) / 1000; // in seconds
+    
+    // Calculate in bits per second, then convert to Mbps
+    const bitsTransferred = totalBytes * 8;
+    const bitsPerSecond = bitsTransferred / downloadTime;
+    const megabitsPerSecond = bitsPerSecond / 1000000;
+    
+    speedTestResults.value = {
+      fileSize: totalBytes,
+      duration: downloadTime * 1000,
+      speedMbps: megabitsPerSecond,
+      latency: latency,
+      timestamp: new Date().toISOString(),
+      iterations: iterations,
+      testFile: testFileUrl,
+      method: 'multi-download'
+    };
+  } catch (error) {
+    console.error('Alternative speed test failed:', error);
+    fallbackSpeedTest();
+  }
+}
+
+// Simplified fallback test for when other methods fail
+async function fallbackSpeedTest() {
+  try {
+    // Use a simple test with minimal overhead
+    const testFile = '/favicon.ico';
+    const iterations = 5;
+    let totalBytes = 0;
+    const startTime = performance.now();
+    
+    // Do multiple requests
+    for (let i = 0; i < iterations; i++) {
+      const response = await fetch(`${testFile}?t=${Date.now()}-${i}`, { 
+        cache: 'no-store' 
+      });
+      
+      if (!response.ok) continue;
+      
+      const data = await response.blob();
+      totalBytes += data.size;
+    }
+    
+    const endTime = performance.now();
+    const durationSeconds = (endTime - startTime) / 1000;
+    
+    // Convert bytes to bits and calculate Mbps
+    const bitsTransferred = totalBytes * 8;
+    const mbps = bitsTransferred / durationSeconds / 1000000;
+    
+    speedTestResults.value = {
+      fileSize: totalBytes,
+      duration: durationSeconds * 1000, // ms
+      speedMbps: mbps,
+      latency: durationSeconds * 1000 / iterations, // simple estimate
+      timestamp: new Date().toISOString(),
+      iterations: iterations,
+      method: 'fallback'
+    };
+  } catch (error) {
+    console.error('All speed tests failed:', error);
+    speedTestResults.value = {
+      error: 'Internet speed measurement failed. Please check your connection and try again.',
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
 const chartData = computed(() => {
   const labels = revenueData.value.monthly.map(item => item.month);
   const values = revenueData.value.monthly.map(item => item.revenue);
@@ -313,6 +525,38 @@ function connectToQuickBooks() {
             <p>Last Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.lastMonthRevenue) }}</span></p>
           </div>
           <div v-else>No debug information available</div>
+          
+          <!-- Internet Speed Test Section -->
+          <div class="mt-4 border-t border-gray-700 pt-4">
+            <h3 class="text-lime-400 mb-2">Internet Speed Test:</h3>
+            <button 
+              @click="testInternetSpeed" 
+              :disabled="isTestingSpeed"
+              class="px-3 py-1 bg-lime-600 text-white rounded hover:bg-lime-700 mb-2 flex items-center gap-1"
+            >
+              <span v-if="isTestingSpeed" class="inline-block w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin mr-1"></span>
+              {{ isTestingSpeed ? 'Testing...' : 'Test Connection Speed' }}
+            </button>
+            
+            <div v-if="speedTestResults" class="mt-2">
+              <div v-if="speedTestResults.error" class="text-red-400">
+                Error: {{ speedTestResults.error }}
+              </div>
+              <div v-else class="grid grid-cols-2 gap-2">
+                <div>
+                  <p>Download Speed: <span class="text-cyan-300 font-bold">{{ speedTestResults.speedMbps.toFixed(2) }} Mbps</span></p>
+                  <p>Latency: <span class="text-cyan-300 font-bold">{{ speedTestResults.latency.toFixed(0) }} ms</span></p>
+                </div>
+                <div>
+                  <p>Data Transferred: <span class="text-cyan-300">{{ (speedTestResults.fileSize / 1024).toFixed(2) }} KB</span></p>
+                  <p>Test Duration: <span class="text-cyan-300">{{ speedTestResults.duration.toFixed(0) }} ms</span></p>
+                  <p v-if="speedTestResults.iterations">Files Downloaded: <span class="text-cyan-300">{{ speedTestResults.iterations }}</span></p>
+                  <p v-if="speedTestResults.method">Method: <span class="text-cyan-300">{{ speedTestResults.method }}</span></p>
+                  <p>Timestamp: <span class="text-cyan-300">{{ new Date(speedTestResults.timestamp).toLocaleTimeString() }}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <h3 class="text-lime-400 mt-4 mb-2">Quick Check:</h3>
           <div>

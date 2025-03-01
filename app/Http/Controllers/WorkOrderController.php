@@ -6,6 +6,8 @@ use App\Models\WorkOrder;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\Note;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class WorkOrderController extends Controller
 {
@@ -522,24 +524,122 @@ public function calendarEvents()
 }
 
 /**
- * Search for work orders
+ * Search for work orders based on the query
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\Http\Response
  */
 public function search(Request $request)
 {
-    $query = $request->input('query');
-    
-    if (empty($query)) {
-        return response()->json([]);
-    }
-    
-    $workOrders = WorkOrder::where('title', 'like', "%{$query}%")
-        ->orWhere('customer_id', 'like', "%{$query}%")
-        ->orWhere('description', 'like', "%{$query}%")
-        ->orderBy('created_at', 'desc')
-        ->limit(10)
-        ->get(['id', 'title', 'status', 'customer_id']);
+    try {
+        $query = $request->input('query');
         
-    return response()->json($workOrders);
+        if (empty($query) || strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        // Check if our search columns exist in the database
+        $workOrderColumns = Schema::getColumnListing('work_orders');
+        
+        // Start building the query
+        $searchQuery = WorkOrder::query();
+        
+        // Add OR conditions for all searchable fields that exist in the database
+        $searchQuery->where(function($q) use ($query, $workOrderColumns) {
+            if (in_array('title', $workOrderColumns)) {
+                $q->orWhere('title', 'like', "%{$query}%");
+            }
+            
+            if (in_array('description', $workOrderColumns)) {
+                $q->orWhere('description', 'like', "%{$query}%");
+            }
+            
+            if (in_array('customer_id', $workOrderColumns)) {
+                $q->orWhere('customer_id', 'like', "%{$query}%");
+            }
+            
+            if (in_array('customer_name', $workOrderColumns)) {
+                $q->orWhere('customer_name', 'like', "%{$query}%");
+            }
+            
+            // Also match on direct ID if it's numeric
+            if (is_numeric($query)) {
+                $q->orWhere('id', $query);
+            }
+        });
+        
+        // Select only the fields we need for the search results list
+        $selectFields = ['id'];
+        foreach(['title', 'status', 'customer_id', 'customer_name', 'created_at'] as $field) {
+            if (in_array($field, $workOrderColumns)) {
+                $selectFields[] = $field;
+            }
+        }
+        
+        $workOrders = $searchQuery->select($selectFields)
+            ->limit(10)
+            ->get();
+            
+        // Add fallback values for fields that may not exist
+        $workOrders = $workOrders->map(function($order) {
+            // Make sure these key properties are defined even if null
+            if (!isset($order->title)) $order->title = 'Work Order #' . $order->id;
+            if (!isset($order->status)) $order->status = 'Unknown';
+            if (!isset($order->customer_id) && !isset($order->customer_name)) {
+                $order->customer_id = 'Unknown';
+            }
+            return $order;
+        });
+        
+        return response()->json($workOrders);
+        
+    } catch (\Exception $e) {
+        Log::error('Error in search method: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'An error occurred while searching',
+            'message' => config('app.debug') ? $e->getMessage() : 'Search failed. Please try again later.'
+        ], 500);
+    }
+}
+
+/**
+ * Get details for a specific work order
+ *
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function details($id)
+{
+    try {
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        // Make sure essential properties are present
+        $responseData = $workOrder->toArray();
+        
+        // Add any necessary computed fields or formatting
+        if (isset($responseData['created_at'])) {
+            $responseData['formatted_date'] = date('Y-m-d H:i:s', strtotime($responseData['created_at']));
+        }
+        
+        return response()->json($responseData);
+        
+    } catch (\Exception $e) {
+        Log::error('Error in details method: ' . $e->getMessage());
+        
+        // If the work order doesn't exist
+        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return response()->json([
+                'error' => 'Work order not found',
+                'message' => "No work order exists with ID {$id}"
+            ], 404);
+        }
+        
+        // For any other error
+        return response()->json([
+            'error' => 'An error occurred',
+            'message' => config('app.debug') ? $e->getMessage() : 'Failed to retrieve work order details.'
+        ], 500);
+    }
 }
 
 }

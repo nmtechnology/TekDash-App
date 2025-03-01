@@ -1,8 +1,11 @@
 <template>
   <div>
-    <button @click="toggleWeekends" class="mb-4 px-4 py-2 outline text-lime-400 rounded-md hover:bg-lime-500 dark:hover:bg-lime-400 hover:text-gray-900 transition">
-      Toggle Weekends
-    </button>
+    <div class="flex justify-between items-center mb-4">
+      <button @click="toggleWeekends" class="px-4 py-2 rounded-md bg-gray-800 text-lime-400 border border-lime-400 hover:bg-lime-500 hover:text-gray-900 transition-colors duration-200">
+        Toggle Weekends
+      </button>
+      <AddWorkorder class="text-lime-400" />
+    </div>
     <div class="bg-gray-900 outline p-4 rounded-lg shadow opacity-75">
       <FullCalendar :options="calendarOptions">
         <!-- Custom event rendering as cards -->
@@ -44,6 +47,7 @@ import listPlugin from '@fullcalendar/list';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import axios from 'axios';
 import { usePage } from '@inertiajs/inertia-vue3';
+import AddWorkorder from '@/Components/AddWorkOrder.vue';
 
 // Define the emits for component communication
 const emit = defineEmits(['workOrderSelected']);
@@ -340,11 +344,11 @@ function toggleWeekends() {
 }
 
 .dark .fc .fc-day-today {
-  background-color: rgba(59, 130, 246, 0.2) !important; /* Darker blue highlight */
+  background-color: #0091ff6f !important; /* Darker blue highlight */
 }
 
 .dark .fc .fc-day-other {
-  background-color: #141b2a; /* Even darker for "other" days in dark mode */
+  background-color: #0f1523; /* Even darker for "other" days in dark mode */
 }
 
 /* Optional: customize the header row background */
@@ -353,7 +357,7 @@ function toggleWeekends() {
 }
 
 .dark .fc .fc-col-header-cell {
-  background-color: #141b2a; /* Dark header background */
+  background-color: #1d3872; /* Dark header background */
 }
 
 /* Your other existing styles... */

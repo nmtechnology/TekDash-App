@@ -90,6 +90,73 @@ Route::middleware([
             'availableStatuses' => \App\Models\WorkOrder::distinct()->pluck('status'),
         ];
     });
+    
+    // Add this route if it doesn't exist
+    Route::get('/work-order-stats', function () {
+        // This is a simple example. Replace with your actual data fetching logic
+        $completedCount = DB::table('work_orders')->where('status', 'Complete')->count();
+        $pendingCount = DB::table('work_orders')->whereIn('status', ['Scheduled', 'In Progress', 'Part/Return'])->count();
+        $totalRevenue = DB::table('work_orders')->where('status', 'Complete')->sum('price');
+        $avgPrice = $completedCount > 0 
+            ? number_format(DB::table('work_orders')->where('status', 'Complete')->avg('price'), 2) 
+            : 0;
+        
+        // Get last month's data for comparison
+        $lastMonth = now()->subMonth();
+        $lastMonthCompletedCount = DB::table('work_orders')
+            ->where('status', 'Complete')
+            ->whereMonth('created_at', $lastMonth->month)
+            ->whereYear('created_at', $lastMonth->year)
+            ->count();
+        
+        $lastMonthRevenue = DB::table('work_orders')
+            ->where('status', 'Complete')
+            ->whereMonth('created_at', $lastMonth->month)
+            ->whereYear('created_at', $lastMonth->year)
+            ->sum('price');
+        
+        // Calculate changes
+        $revenueChange = $lastMonthRevenue > 0 
+            ? round((($totalRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100) 
+            : 0;
+        $completedChange = $lastMonthCompletedCount > 0 
+            ? round((($completedCount - $lastMonthCompletedCount) / $lastMonthCompletedCount) * 100) 
+            : 0;
+        
+        return [
+            [
+                'name' => 'Total Revenue', 
+                'value' => '$' . number_format($totalRevenue, 2), 
+                'change' => $revenueChange . '%', 
+                'changeType' => $revenueChange > 0 ? 'increase' : ($revenueChange < 0 ? 'decrease' : 'neutral')
+            ],
+            [
+                'name' => 'Completed Orders', 
+                'value' => $completedCount, 
+                'change' => $completedChange . '%', 
+                'changeType' => $completedChange > 0 ? 'increase' : ($completedChange < 0 ? 'decrease' : 'neutral')
+            ],
+            [
+                'name' => 'Pending Orders', 
+                'value' => $pendingCount, 
+                'change' => '0%', // No comparison yet
+                'changeType' => 'neutral'
+            ],
+            [
+                'name' => 'Average Price', 
+                'value' => '$' . $avgPrice, 
+                'change' => '0%', // No comparison yet
+                'changeType' => 'neutral'
+            ],
+        ];
+    });
+
+    // Work Order Search Routes - fixed controller references
+    Route::get('/search-work-orders', [WorkOrderController::class, 'search'])
+        ->name('search.work-orders');
+
+    Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'details'])
+        ->name('work-orders.details');
 });
 
 // QuickBooks Integration Routes

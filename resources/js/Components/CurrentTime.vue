@@ -42,7 +42,7 @@ onBeforeUnmount(() => {
 
 .digital-clock {
   font-family: "Press Start 2P", system-ui;
-  color: #00de89ee;
+  color: #00de3b;
 }
 
 .time {
