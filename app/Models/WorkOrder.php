@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 use App\Models\Customer;
 use App\Models\Note;
@@ -24,6 +25,7 @@ class WorkOrder extends Model
         'images',
         'price',
         'customer_id',
+        'file_attachments',
     ];
 
     protected $with = ['notes'];
@@ -33,6 +35,7 @@ class WorkOrder extends Model
         'scheduled_at' => 'datetime',
         'images' => 'array',
         'price' => 'decimal:2',
+        'file_attachments' => 'array',
     ];
 
     const STATUSES = [
@@ -57,7 +60,7 @@ class WorkOrder extends Model
     ];
 
     // Make sure to add notes to visible attributes if using API resources
-    protected $appends = ['notes'];
+    protected $appends = ['notes', 'all_attachments'];
 
 
     public function customer()
@@ -90,5 +93,39 @@ class WorkOrder extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get all attachments, combining file_attachments and images
+     */
+    public function getAllAttachmentsAttribute()
+    {
+        $allAttachments = [];
+        
+        // Add file_attachments if they exist
+        if (!empty($this->file_attachments)) {
+            if (is_string($this->file_attachments)) {
+                $decoded = json_decode($this->file_attachments, true);
+                if (is_array($decoded)) {
+                    $allAttachments = array_merge($allAttachments, $decoded);
+                }
+            } elseif (is_array($this->file_attachments)) {
+                $allAttachments = array_merge($allAttachments, $this->file_attachments);
+            }
+        }
+        
+        // Add images if the column exists and they're set
+        if (Schema::hasColumn('work_orders', 'images') && !empty($this->images)) {
+            if (is_string($this->images)) {
+                $decoded = json_decode($this->images, true);
+                if (is_array($decoded)) {
+                    $allAttachments = array_merge($allAttachments, $decoded);
+                }
+            } elseif (is_array($this->images)) {
+                $allAttachments = array_merge($allAttachments, $this->images);
+            }
+        }
+        
+        return $allAttachments;
     }
 }

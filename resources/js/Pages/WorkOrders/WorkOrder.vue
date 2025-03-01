@@ -19,6 +19,7 @@
                     :class="getStatusClasses(workOrder.status)"
                   >
                     {{ workOrder.status }}
+                  
                   </span>
                 </span>
                 <input 
@@ -181,30 +182,68 @@
                 <p class="text-white">{{ getUserName(workOrder.user_id) }}</p>
               </div>
               
-              <!-- Attachments section -->
+              <!-- Attachments section - Updated to handle multiple attachment fields -->
               <div>
                 <p class="text-sm text-gray-400">Attachments:</p>
                 <ul role="list" class="mt-1 divide-y divide-gray-700 rounded-md border border-gray-700">
-                  <li v-for="(image, index) in workOrder.images" :key="index" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
+                  <li v-for="(attachment, index) in getAllAttachments()" :key="index" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                     <div class="flex w-0 flex-1 items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      <!-- Different icons for different file types -->
+                      <svg v-if="isPdfFile(attachment)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
-                      <span class="ml-2 flex-1 truncate text-white">{{ image }}</span>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span class="ml-2 flex-1 truncate text-white">{{ getFileName(attachment) }}</span>
                     </div>
-                    <div class="ml-4 flex-shrink-0">
-                      <a :href="`/storage/${image}`" class="text-lime-400 hover:text-lime-300" download>Download</a>
+                    <div class="ml-4 flex-shrink-0 flex space-x-2">
+                      <!-- Preview button for images only -->
+                      <button 
+                        v-if="isImageFile(attachment)" 
+                        @click="previewAttachment(attachment)" 
+                        class="text-lime-400 hover:text-lime-300"
+                      >
+                        View
+                      </button>
+                      <a :href="`/storage/${attachment}`" class="text-lime-400 hover:text-lime-300" download>Download</a>
                     </div>
                   </li>
-                  <li v-if="!editingField.images && (!workOrder.images || workOrder.images.length === 0)" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
+                  <li v-if="!editingField.images && getAllAttachments().length === 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                     <span class="text-gray-400">No attachments</span>
                     <button @click="startEditing('images')" class="text-lime-400 hover:text-lime-300">Add</button>
                   </li>
                   <li v-if="editingField.images" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                    <input type="file" id="images" multiple @change="handleImageUpload" class="text-white" />
+                    <input 
+                      type="file" 
+                      id="images" 
+                      multiple 
+                      @change="handleImageUpload" 
+                      class="text-white" 
+                      accept=".jpg,.jpeg,.png,.gif,.pdf"
+                    />
+                    <div class="text-xs text-gray-400 ml-2">
+                      Supports: PDF, JPG, PNG, GIF
+                    </div>
                     <button @click="saveField('images')" class="text-lime-400 hover:text-lime-300">Save</button>
                   </li>
                 </ul>
+              </div>
+
+              <!-- Image preview modal -->
+              <div v-if="previewImage" class="fixed inset-0 z-[100] flex items-center justify-center">
+                <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="closePreview"></div>
+                <div class="relative max-w-4xl max-h-[90vh] overflow-auto">
+                  <img :src="`/storage/${previewImage}`" class="max-w-full max-h-full object-contain" />
+                  <button 
+                    @click="closePreview" 
+                    class="absolute top-2 right-2 bg-gray-800 rounded-full p-1 text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+                  >
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               
               <!-- Notes section -->
@@ -226,13 +265,13 @@
       
       <!-- Modal footer -->
       <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-        <button @click="duplicateWorkOrder" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-lime-600 text-base font-medium text-white hover:bg-lime-700 sm:ml-3 sm:w-auto sm:text-sm">
+        <button @click="duplicateWorkOrder" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-lime-700 sm:ml-3 sm:w-auto sm:text-sm">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           Duplicate
         </button>
-        <button @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+        <button @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
           Close
         </button>
       </div>
@@ -246,6 +285,7 @@ import { format } from 'date-fns';
 import { useForm } from '@inertiajs/vue3';
 import Messenger from '@/Components/Messenger.vue';
 import axios from 'axios';
+import { router } from '@inertiajs/vue3'; // Import router for navigation
 
 export default {
   name: 'WorkOrder',
@@ -370,14 +410,147 @@ export default {
     };
     
     // For image uploads, we need special handling
+    // const saveImages = () => {
+    //   if (form.images && form.images.length > 0) {
+    //     const formData = new FormData();
+    //     form.images.forEach((image, index) => {
+    //       formData.append(`images[${index}]`, image);
+    //     });
+        
+    //     // Use the correct route with hyphen: "work-orders" instead of "workorders"
+    //     axios.post(`/work-orders/${props.workOrder.id}/update-images`, formData, {
+    //       headers: {
+    //         'Content-Type': 'multipart/form-data'
+    //       }
+    //     })
+    //     .then(response => {
+    //       if (response.data.success) {
+    //         // Update work order with new images from response
+    //         props.workOrder.images = response.data.images;
+    //       }
+          
+          // Reset editing state
+    //       editingField.value.images = false;
+    //       form.images = [];
+    //     })
+    //     .catch(error => {
+    //       console.error('Error uploading images:', error);
+    //       if (error.response && error.response.data) {
+    //         console.error('Server validation errors:', error.response.data);
+    //       }
+    //     });
+    //   } else {
+    //     editingField.value.images = false;
+    //   }
+    // };
+
+    const duplicateWorkOrder = () => {
+      // Show a loading indicator or disable the button if needed
+      const button = document.querySelector('button[disabled]');
+      if (button) button.disabled = true;
+      
+      // Call the server endpoint to duplicate the work order
+      axios.post(`/work-orders/${props.workOrder.id}/duplicate`)
+        .then(response => {
+          if (response.data && response.data.success) {
+            // If the server returns a redirect URL, use it
+            if (response.data.redirect) {
+              window.location.href = response.data.redirect;
+            } else {
+              // Otherwise, just refresh the dashboard
+              router.visit('/dashboard', { 
+                replace: true,
+                onSuccess: () => {
+                  // Show success message if needed
+                  console.log('Work order duplicated successfully');
+                }
+              });
+            }
+          } else {
+            console.error('Failed to duplicate work order', response.data);
+            // Re-enable the button
+            if (button) button.disabled = false;
+          }
+        })
+        .catch(error => {
+          console.error('Error duplicating work order:', error);
+          // Re-enable the button
+          if (button) button.disabled = false;
+          
+          // Show error message to user
+          alert('Failed to duplicate work order. Please try again.');
+        });
+    };
+
+    // Add state for image preview
+    const previewImage = ref(null);
+    
+    // Helper functions for file types
+    const isPdfFile = (filename) => {
+      if (!filename) return false;
+      return filename.toLowerCase().endsWith('.pdf');
+    };
+    
+    const isImageFile = (filename) => {
+      if (!filename) return false;
+      const lowerFilename = filename.toLowerCase();
+      return lowerFilename.endsWith('.jpg') || 
+             lowerFilename.endsWith('.jpeg') || 
+             lowerFilename.endsWith('.png') || 
+             lowerFilename.endsWith('.gif') || 
+             lowerFilename.endsWith('.webp');
+    };
+    
+    // Get clean file name for display
+    const getFileName = (path) => {
+      if (!path) return '';
+      // Extract just the filename from the full path
+      return path.split('/').pop();
+    };
+    
+    // Preview attachment (for images)
+    const previewAttachment = (attachment) => {
+      if (isImageFile(attachment)) {
+        previewImage.value = attachment;
+      }
+    };
+    
+    // Close preview
+    const closePreview = () => {
+      previewImage.value = null;
+    };
+    
+    // Updated file upload handler that accepts PDFs
+    const handleFileUpload = (event) => {
+      const files = event.target.files;
+      if (files.length) {
+        form.images = Array.from(files);
+        
+        // Add validation if needed
+        const validFiles = form.images.filter(file => {
+          const isValid = file.type === 'application/pdf' || 
+                         file.type.startsWith('image/');
+          if (!isValid) {
+            console.error(`Invalid file type: ${file.type}`);
+          }
+          return isValid;
+        });
+        
+        if (validFiles.length !== form.images.length) {
+          alert('Some files were not valid and have been removed. Please only upload PDFs and images.');
+          form.images = validFiles;
+        }
+      }
+    };
+    
+    // For image/file uploads with special handling
     const saveImages = () => {
       if (form.images && form.images.length > 0) {
         const formData = new FormData();
-        form.images.forEach((image, index) => {
-          formData.append(`images[${index}]`, image);
+        form.images.forEach((file, index) => {
+          formData.append(`files[${index}]`, file);
         });
         
-        // Use the correct route with hyphen: "work-orders" instead of "workorders"
         axios.post(`/work-orders/${props.workOrder.id}/update-images`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
@@ -385,7 +558,7 @@ export default {
         })
         .then(response => {
           if (response.data.success) {
-            // Update work order with new images from response
+            // Update work order with new images/files from response
             props.workOrder.images = response.data.images;
           }
           
@@ -394,7 +567,7 @@ export default {
           form.images = [];
         })
         .catch(error => {
-          console.error('Error uploading images:', error);
+          console.error('Error uploading files:', error);
           if (error.response && error.response.data) {
             console.error('Server validation errors:', error.response.data);
           }
@@ -402,6 +575,46 @@ export default {
       } else {
         editingField.value.images = false;
       }
+    };
+
+    // Function to get all attachments from both images and file_attachments fields
+    const getAllAttachments = () => {
+      const attachments = [];
+      
+      // Add images if they exist
+      if (props.workOrder.images) {
+        if (typeof props.workOrder.images === 'string') {
+          try {
+            const parsed = JSON.parse(props.workOrder.images);
+            if (Array.isArray(parsed)) {
+              attachments.push(...parsed);
+            }
+          } catch (e) {
+            console.error('Error parsing images JSON:', e);
+          }
+        } else if (Array.isArray(props.workOrder.images)) {
+          attachments.push(...props.workOrder.images);
+        }
+      }
+      
+      // Add file_attachments if they exist
+      if (props.workOrder.file_attachments) {
+        if (typeof props.workOrder.file_attachments === 'string') {
+          try {
+            const parsed = JSON.parse(props.workOrder.file_attachments);
+            if (Array.isArray(parsed)) {
+              attachments.push(...parsed);
+            }
+          } catch (e) {
+            console.error('Error parsing file_attachments JSON:', e);
+          }
+        } else if (Array.isArray(props.workOrder.file_attachments)) {
+          attachments.push(...props.workOrder.file_attachments);
+        }
+      }
+      
+      // Remove duplicates
+      return [...new Set(attachments)];
     };
 
     return {
@@ -445,15 +658,15 @@ export default {
           saveField(field);
         }
       },
-      duplicateWorkOrder: () => {
-        // Existing duplicateWorkOrder function
-      },
-      handleImageUpload: (event) => {
-        const files = event.target.files;
-        if (files.length) {
-          form.images = Array.from(files);
-        }
-      }
+      duplicateWorkOrder,
+      handleImageUpload: handleFileUpload,
+      isPdfFile,
+      isImageFile,
+      getFileName,
+      previewImage,
+      previewAttachment,
+      closePreview,
+      getAllAttachments
     };
   }
 };
@@ -471,5 +684,28 @@ export default {
 /* Add lime focus styles */
 :focus {
   outline-color: theme('colors.lime.400');
+}
+
+/* Add styles for file type icons */
+.file-icon {
+  @apply flex-shrink-0 h-5 w-5;
+}
+
+.pdf-icon {
+  @apply text-red-400;
+}
+
+.image-icon {
+  @apply text-blue-400;
+}
+
+/* Preview modal animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+[v-if="previewImage"] {
+  animation: fadeIn 0.2s ease-out;
 }
 </style>

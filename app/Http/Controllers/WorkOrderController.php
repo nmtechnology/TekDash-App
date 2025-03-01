@@ -213,54 +213,77 @@ public function getDetails($id)
 }
 
     // Duplicate the specified resource
+    /**
+     * Duplicate the specified work order
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function duplicate($id)
     {
-        $workOrder = WorkOrder::findOrFail($id);
-        $newWorkOrder = $workOrder->replicate();
-        $newWorkOrder->user_id = auth()->id();
-        
-        // Fix the pattern to search for duplicates
-        $baseTitle = preg_replace('/ -\d+ \(Return\)$/', '', $workOrder->title);
-        $latestDuplicate = WorkOrder::where('title', 'like', $baseTitle . ' -%')->orderBy('id', 'desc')->first();
-        
-        if ($latestDuplicate) {
-            // Extract the number from the latest duplicate
-            preg_match('/ -(\d+) \(Return\)$/', $latestDuplicate->title, $matches);
-            $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 2;
-        } else {
-            $copyNumber = 2;
-        }
-        
-        $newWorkOrder->title = $baseTitle . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
-
-        // Handle file attachments
-        if ($workOrder->file_attachments) {
-            $fileAttachments = json_decode($workOrder->file_attachments, true);
-            $newFileAttachments = [];
-            foreach ($fileAttachments as $file) {
-                $newPath = 'work_orders/' . basename($file);
-                \Storage::disk('public')->copy($file, $newPath);
-                $newFileAttachments[] = $newPath;
+        try {
+            $workOrder = WorkOrder::findOrFail($id);
+            $newWorkOrder = $workOrder->replicate();
+            $newWorkOrder->user_id = auth()->id();
+            
+            // Fix the pattern to search for duplicates
+            $baseTitle = preg_replace('/ -\d+ \(Return\)$/', '', $workOrder->title);
+            $latestDuplicate = WorkOrder::where('title', 'like', $baseTitle . ' -%')->orderBy('id', 'desc')->first();
+            
+            if ($latestDuplicate) {
+                // Extract the number from the latest duplicate
+                preg_match('/ -(\d+) \(Return\)$/', $latestDuplicate->title, $matches);
+                $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 2;
+            } else {
+                $copyNumber = 2;
             }
-            $newWorkOrder->file_attachments = json_encode($newFileAttachments);
-        }
-        
-        // Copy images if they exist
-        if ($workOrder->images) {
-            $images = json_decode($workOrder->images, true);
-            $newImages = [];
-            foreach ($images as $image) {
-                $newPath = 'work_orders/' . basename($image);
-                \Storage::disk('public')->copy($image, $newPath);
-                $newImages[] = $newPath;
+            
+            $newWorkOrder->title = $baseTitle . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
+
+            // Handle file attachments
+            if ($workOrder->file_attachments) {
+                $fileAttachments = json_decode($workOrder->file_attachments, true);
+                $newFileAttachments = [];
+                foreach ($fileAttachments as $file) {
+                    $newPath = 'work_orders/' . basename($file);
+                    \Storage::disk('public')->copy($file, $newPath);
+                    $newFileAttachments[] = $newPath;
+                }
+                $newWorkOrder->file_attachments = json_encode($newFileAttachments);
             }
-            $newWorkOrder->images = json_encode($newImages);
+            
+            // Copy images if they exist
+            if ($workOrder->images) {
+                $images = json_decode($workOrder->images, true);
+                $newImages = [];
+                foreach ($images as $image) {
+                    $newPath = 'work_orders/' . basename($image);
+                    \Storage::disk('public')->copy($image, $newPath);
+                    $newImages[] = $newPath;
+                }
+                $newWorkOrder->images = json_encode($newImages);
+            }
+
+            $newWorkOrder->save();
+
+            // Modified to return a JSON response for API use
+            return response()->json([
+                'success' => true,
+                'message' => 'Work order duplicated successfully',
+                'workOrder' => $newWorkOrder,
+                'redirect' => route('dashboard')
+            ]);
+        } catch (\Exception $e) {
+            // Log the error
+            Log::error('Error duplicating work order: ' . $e->getMessage());
+            
+            // Return error response
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to duplicate work order',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $newWorkOrder->save();
-
-        $userName = auth()->user()->name;
-        return redirect()->route('dashboard')->with('message', "Work order duplicated successfully by $userName");
     }
 
     public function addNote(Request $request, $workOrderId)
@@ -353,39 +376,67 @@ public function getWorkOrdersForCalendar()
     ]);
 }
 
+/**
+ * Update images and files for the work order
+ */
 public function updateImages(Request $request, $id)
 {
     $request->validate([
-        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+        'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,pdf',  // Allow PDFs and increased max size to 10MB
     ]);
     
     $workOrder = WorkOrder::findOrFail($id);
     
     try {
-        $newImages = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('work_orders', 'public');
-                $newImages[] = $path;
+        $newFiles = [];
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                // Store in the appropriate directory based on file type
+                $isPdf = $file->getClientMimeType() === 'application/pdf';
+                $subDir = $isPdf ? 'documents' : 'images';
+                
+                // Store the file and get the path
+                $path = $file->store("work_orders/{$subDir}", 'public');
+                $newFiles[] = $path;
             }
         }
         
-        // If work order already has images, merge them
-        $existingImages = $workOrder->images ? json_decode($workOrder->images, true) : [];
-        if (!is_array($existingImages)) {
-            $existingImages = [];
+        // Check if the images column exists in the database
+        $hasImagesColumn = \Schema::hasColumn('work_orders', 'images');
+        
+        if ($hasImagesColumn) {
+            // Standard approach when images column exists
+            // If work order already has files/images, merge them
+            $existingFiles = $workOrder->images ? json_decode($workOrder->images, true) : [];
+            if (!is_array($existingFiles)) {
+                $existingFiles = [];
+            }
+            
+            $allFiles = array_merge($existingFiles, $newFiles);
+            $workOrder->images = json_encode($allFiles);
+        } else {
+            // Fallback - use file_attachments column if images doesn't exist
+            $existingFiles = $workOrder->file_attachments ? json_decode($workOrder->file_attachments, true) : [];
+            if (!is_array($existingFiles)) {
+                $existingFiles = [];
+            }
+            
+            $allFiles = array_merge($existingFiles, $newFiles);
+            $workOrder->file_attachments = json_encode($allFiles);
+            
+            // Let the frontend know we used file_attachments instead
+            \Log::info('Images column not found, using file_attachments instead.');
         }
         
-        $allImages = array_merge($existingImages, $newImages);
-        $workOrder->images = json_encode($allImages);
         $workOrder->save();
         
         return response()->json([
             'success' => true,
-            'message' => 'Images updated successfully',
-            'images' => $allImages
+            'message' => 'Files updated successfully',
+            'images' => $allFiles
         ]);
     } catch (\Exception $e) {
+        \Log::error('Error uploading files: ' . $e->getMessage());
         return response()->json([
             'success' => false,
             'error' => $e->getMessage()

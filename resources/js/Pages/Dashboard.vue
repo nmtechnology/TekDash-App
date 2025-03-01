@@ -10,7 +10,6 @@ import CurrentTime from '@/Components/CurrentTime.vue';
 // Define reactive state
 const statsData = ref([]);
 const isLoading = ref(true);
-const searchQuery = ref('');
 const filteredData = ref([]);
 
 // Fetch stats from the backend
@@ -52,21 +51,6 @@ function getFallbackStats() {
   ];
 }
 
-// Handle search functionality
-function handleSearch(query) {
-  searchQuery.value = query;
-  if (!query) {
-    filteredData.value = statsData.value;
-    return;
-  }
-  
-  // Filter the data based on the search query
-  filteredData.value = statsData.value.filter(item => 
-    item.name.toLowerCase().includes(query.toLowerCase()) || 
-    item.value.toString().toLowerCase().includes(query.toLowerCase())
-  );
-}
-
 // Load stats when component mounts
 onMounted(() => {
   fetchStats();
@@ -82,9 +66,6 @@ onMounted(() => {
             <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
               Dashboard <CurrentTime />
             </h2>
-            <div class="w-64">
-             
-            </div>
           </div>
         </div>
       </div>
@@ -103,7 +84,6 @@ onMounted(() => {
               
               <!-- Stats component -->
               <div v-else>
-                
                 <Stats :stats="filteredData" />
                 <RevenueStats />
               </div>
