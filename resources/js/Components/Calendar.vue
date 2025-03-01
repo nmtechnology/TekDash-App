@@ -26,7 +26,13 @@
             <!-- Right content section -->
             <div class="flex flex-1 items-center justify-between truncate rounded-r-md bg-white/10 dark:bg-gray-700/40 backdrop-blur-sm">
               <div class="flex-1 truncate px-2 py-1 text-xs">
-                <p class="font-medium text-gray-800 dark:text-white truncate">{{ arg.event.title }}</p>
+                <p class="font-medium text-gray-800 dark:text-white truncate">
+                  {{ arg.event.title }}
+                  <span v-if="arg.event.extendedProps.isMultiDayEvent && arg.event.extendedProps.visitNumber" 
+                        class="ml-1 text-xs text-gray-400 dark:text-gray-300">
+                    ({{ arg.event.extendedProps.visitNumber }}/{{ arg.event.extendedProps.totalVisits }})
+                  </span>
+                </p>
                 <p class="text-gray-600 dark:text-gray-300 truncate text-xs">{{ formatEventTime(arg.event) }}</p>
               </div>
             </div>
@@ -76,7 +82,21 @@ function formatEventTime(event: any): string {
   
   if (event.end) {
     const end = new Date(event.end);
-    timeString += ' - ' + end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (event.extendedProps.isMultiDayEvent) {
+      // Format for multi-day events
+      const startDate = start.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      const endDate = end.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      timeString = `${startDate} - ${endDate}`;
+    } else {
+      // Same day event with end time
+      timeString += ' - ' + end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+  }
+  
+  // If it's a multi-visit event without end time, show visit number
+  if (event.extendedProps.isMultiDayEvent && event.extendedProps.visitNumber && !event.end) {
+    const date = start.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    timeString = `${date} ${timeString}`;
   }
   
   return timeString;
@@ -132,6 +152,7 @@ async function openWorkOrderModal(workOrderId) {
 }
 
 // Use the web route instead of the API route
+// Update the fetchEvents function to handle multiple dates and date ranges
 async function fetchEvents() {
   try {
     isLoading.value = true;
@@ -152,27 +173,60 @@ async function fetchEvents() {
     const data = await response.json();
     console.log('Calendar events response:', data);
 
-
     if (data && Array.isArray(data)) {
-      // Format work orders as events
-      const events = data.map((workOrder) => ({
-        id: workOrder.id,
-        title: workOrder.title,
-        start: workOrder.start, // This comes from date_time in the backend
-        description: workOrder.description || '',
-        status: workOrder.status,
-        user_id: workOrder.user_id,
-        customer_id: workOrder.customer_id,
-        backgroundColor: getStatusColor(workOrder.status), // Add color based on status
-        borderColor: getStatusColor(workOrder.status),
-        extendedProps: {
-          description: workOrder.description || '',
-          status: workOrder.status,
-          customer_id: workOrder.customer_id
+      // Process work orders into calendar events
+      const events = [];
+      
+      data.forEach((workOrder) => {
+        // Check if we have visit_dates array for multiple dates
+        if (workOrder.visit_dates && Array.isArray(workOrder.visit_dates) && workOrder.visit_dates.length > 0) {
+          // Create separate event for each visit date
+          workOrder.visit_dates.forEach((visitDate, index) => {
+            events.push({
+              id: workOrder.id,
+              title: workOrder.title,
+              start: visitDate,
+              description: workOrder.description || '',
+              status: workOrder.status,
+              user_id: workOrder.user_id,
+              customer_id: workOrder.customer_id,
+              backgroundColor: getStatusColor(workOrder.status),
+              borderColor: getStatusColor(workOrder.status),
+              extendedProps: {
+                description: workOrder.description || '',
+                status: workOrder.status,
+                customer_id: workOrder.customer_id,
+                isMultiDayEvent: workOrder.visit_dates.length > 1,
+                visitNumber: index + 1,
+                totalVisits: workOrder.visit_dates.length
+              }
+            });
+          });
         }
-      }));
+        // Fall back to regular start date if no visit_dates
+        else {
+          events.push({
+            id: workOrder.id,
+            title: workOrder.title,
+            start: workOrder.start || workOrder.date_time,
+            end: workOrder.end || workOrder.end_date,
+            description: workOrder.description || '',
+            status: workOrder.status,
+            user_id: workOrder.user_id,
+            customer_id: workOrder.customer_id,
+            backgroundColor: getStatusColor(workOrder.status),
+            borderColor: getStatusColor(workOrder.status),
+            extendedProps: {
+              description: workOrder.description || '',
+              status: workOrder.status,
+              customer_id: workOrder.customer_id,
+              isMultiDayEvent: workOrder.end_date ? true : false
+            }
+          });
+        }
+      });
 
-      // Update the calendar options with the fetched events
+      // Update the calendar options with the processed events
       calendarOptions.events = events;
     }
   } catch (error) {

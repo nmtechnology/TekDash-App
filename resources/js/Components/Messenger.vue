@@ -3,30 +3,20 @@
     <!-- Messages list -->
     <div class="messages p-4 space-y-4 max-h-96 overflow-y-auto">
       <div v-for="note in notes" :key="note.id" class="flex items-start">
-        <!-- User avatar with improved error handling -->
+        <!-- User avatar - Always show initials for consistent UI -->
         <div class="flex-shrink-0 mr-3">
           <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700">
-            <template v-if="shouldShowInitialsForNote(note)">
-              <span class="text-white text-xl font-bold">
-                {{ getUserInitials(note.user_id) }}
-              </span>
-            </template>
-            <template v-else>
-              <img 
-                :src="getAvatarUrl(note.user_id)" 
-                :alt="getUserName(note.user_id)"
-                class="h-full w-full object-cover"
-                @error="(e) => handleNoteAvatarError(e, note.id, note.user_id)"
-                @load="markAvatarAsLoaded(note.id, note.user_id)"
-              />
-            </template>
+            <div class="avatar-initials text-white text-lg font-bold">
+              {{ getUserInitials(note.user_id) }}
+            </div>
           </div>
         </div>
         
         <!-- Message content -->
         <div class="flex-1 bg-gray-700 rounded-lg p-3">
-          <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-white">{{ getUserName(note.user_id) }}</p>
+          <!-- Improved header with clearer separation between name and timestamp -->
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-sm font-medium text-lime-400">{{ getUserName(note.user_id) }}</p>
             <p class="text-xs text-gray-400">{{ formatTimestamp(note.created_at) }}</p>
           </div>
           <p class="text-sm text-gray-300 mt-1 whitespace-pre-wrap">{{ note.text }}</p>
@@ -37,23 +27,12 @@
     <!-- Input area -->
     <div class="border-t border-gray-700 p-4">
       <div class="flex items-start space-x-3">
-        <!-- Current user avatar with improved fallback -->
+        <!-- Current user avatar - Always show initials for consistency -->
         <div class="flex-shrink-0">
           <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700">
-            <!-- Show either the avatar or the initials, never both -->
-            <template v-if="currentUserAvatarError">
-              <span class="text-white text-lg font-medium">
-                {{ getCurrentUserInitials() }}
-              </span>
-            </template>
-            <template v-else>
-              <img 
-                :src="currentUserAvatar" 
-                :alt="getUserName(userId)"
-                class="h-full w-full object-cover"
-                @error="handleCurrentUserAvatarError"
-              />
-            </template>
+            <div class="avatar-initials text-white text-lg font-bold">
+              {{ getCurrentUserInitials() }}
+            </div>
           </div>
         </div>
         
@@ -143,7 +122,7 @@
 </template>
 
 <script>
-import { ref, onMounted, reactive, computed, nextTick } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
 
@@ -178,10 +157,6 @@ export default {
   setup(props) {
     const notes = ref([...props.initialNotes]);
     const newNoteText = ref('');
-    const noteAvatarErrors = reactive({});
-    const currentUserAvatarError = ref(false);
-    const userAvatarCache = reactive({}); // Cache to track which users have avatar errors
-    const avatarLoadedStatus = reactive({});
     
     // Emoji picker state
     const showEmojiPicker = ref(false);
@@ -232,18 +207,38 @@ export default {
       }
     };
     
-    // Get user initials for avatar fallback
+    // Get user initials for avatar - improved to focus on first and last initials
     const getUserInitials = (userId) => {
-      const name = props.getUserName(userId);
-      if (!name) return '??';
-      
-      return name
-        .split(' ')
-        .filter(part => part.length > 0)
-        .map(part => part[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2);
+      try {
+        const name = props.getUserName(userId);
+        
+        // Handle invalid inputs
+        if (!name || typeof name !== 'string' || name === 'undefined' || name === 'null') {
+          return userId?.toString().substring(0, 2) || '??';
+        }
+        
+        // Split the name and filter out empty parts
+        const nameParts = name.split(' ').filter(part => part.trim().length > 0);
+        
+        // If we couldn't extract any parts, use a fallback
+        if (nameParts.length === 0) {
+          return userId?.toString().substring(0, 2) || '??';
+        }
+        
+        // If there's only one name part, take the first two letters
+        if (nameParts.length === 1) {
+          return nameParts[0].substring(0, 2).toUpperCase();
+        }
+        
+        // Take the first letter of the first name and the first letter of the last name
+        const firstInitial = nameParts[0][0].toUpperCase();
+        const lastInitial = nameParts[nameParts.length - 1][0].toUpperCase();
+        
+        return firstInitial + lastInitial;
+      } catch (error) {
+        console.error('Error generating initials:', error);
+        return userId?.toString().substring(0, 2) || '??';
+      }
     };
     
     // Get current user initials
@@ -251,229 +246,27 @@ export default {
       return getUserInitials(props.userId);
     };
     
-    // Process avatar URL to ensure it's complete
-    const getAvatarUrl = (userId) => {
-      try {
-        // If we have this user's avatar URL cached, return it immediately
-        if (userAvatarCache[userId] && userAvatarCache[userId].url) {
-          return userAvatarCache[userId].url;
-        }
-        
-        const avatarUrl = props.getUserAvatar(userId);
-        
-        if (!avatarUrl || avatarUrl === 'undefined') {
-          if (!userAvatarCache[userId]) {
-            userAvatarCache[userId] = { status: 'error', url: '/default-avatar.png' };
-          }
-          return '/default-avatar.png';
-        }
-        
-        let processedUrl;
-        
-        if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
-          processedUrl = avatarUrl;
-        } else if (avatarUrl.startsWith('/')) {
-          processedUrl = avatarUrl;
-        } else {
-          processedUrl = `/${avatarUrl}`;
-        }
-        
-        // Cache the URL
-        if (!userAvatarCache[userId]) {
-          userAvatarCache[userId] = { status: 'pending', url: processedUrl };
-        }
-        
-        return processedUrl;
-      } catch (error) {
-        console.error('Error getting avatar URL for user', userId, error);
-        return '/default-avatar.png';
+    // Add a function to get the current CSRF token
+    const getCsrfToken = () => {
+      // Try to get from meta tag
+      const metaToken = document.head.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (metaToken) return metaToken;
+      
+      // Try to get from form input
+      const inputToken = document.querySelector('input[name="_token"]')?.value;
+      if (inputToken) return inputToken;
+      
+      // Try from cookie
+      const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+      const xsrfCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
+      if (xsrfCookie) {
+        return decodeURIComponent(xsrfCookie.split('=')[1]);
       }
+      
+      return '';
     };
 
-    // Enhanced check to determine if we should show initials
-    const shouldShowInitialsForNote = (note) => {
-      // Safety check for note with missing ID or user_id
-      if (!note || !note.id || !note.user_id) {
-        console.log('Invalid note object', note);
-        return true;
-      }
-      
-      // If we have a specific note avatar error
-      if (noteAvatarErrors[note.id]) {
-        return true;
-      }
-      
-      // If user's avatar has failed to load
-      if (userAvatarCache[note.user_id] && userAvatarCache[note.user_id].status === 'error') {
-        return true;
-      }
-      
-      // For new notes from current user, use the current user avatar error state
-      if (note.user_id === props.userId && note.isNew) {
-        return currentUserAvatarError.value;
-      }
-      
-      return false;
-    };
-    
-    // Handle avatar successful load
-    const markAvatarAsLoaded = (noteId, userId) => {
-      if (userId) {
-        if (!userAvatarCache[userId]) {
-          userAvatarCache[userId] = { status: 'loaded' };
-        } else {
-          userAvatarCache[userId].status = 'loaded';
-        }
-      }
-      
-      // Mark this specific note's avatar as successfully loaded
-      if (noteId) {
-        avatarLoadedStatus[noteId] = true;
-        
-        // Make sure there's no error for this note
-        if (noteAvatarErrors[noteId]) {
-          delete noteAvatarErrors[noteId];
-        }
-      }
-    };
-    
-    // Improved error handler with more detailed logging
-    const handleNoteAvatarError = (e, noteId, userId) => {
-      console.log(`Avatar for note ${noteId} failed to load for user ${userId}`);
-      
-      // Mark this specific note as having an avatar error
-      if (noteId) {
-        noteAvatarErrors[noteId] = true;
-      }
-      
-      // Also mark the user's avatar status as error
-      if (userId) {
-        if (!userAvatarCache[userId]) {
-          userAvatarCache[userId] = { status: 'error' };
-        } else {
-          userAvatarCache[userId].status = 'error';
-        }
-        
-        // Find all notes from this user and mark them for avatar failure
-        nextTick(() => {
-          notes.value.forEach(note => {
-            if (note.user_id === userId && !avatarLoadedStatus[note.id]) {
-              noteAvatarErrors[note.id] = true;
-            }
-          });
-        });
-      }
-      
-      // Hide the broken image
-      if (e && e.target) {
-        e.target.style.display = 'none';
-      }
-    };
-    
-    // Handle current user avatar loading errors with improved logic
-    const handleCurrentUserAvatarError = (e) => {
-      console.log('Current user avatar failed to load');
-      currentUserAvatarError.value = true;
-      
-      if (props.userId) {
-        if (!userAvatarCache[props.userId]) {
-          userAvatarCache[props.userId] = { status: 'error' };
-        } else {
-          userAvatarCache[props.userId].status = 'error';
-        }
-      }
-      
-      if (e && e.target) {
-        e.target.style.display = 'none';
-      }
-    };
-    
-    // More thorough preloading of avatars
-    const preloadAvatarForUser = (userId) => {
-      if (!userId || userAvatarCache[userId]) return;
-      
-      const avatarUrl = getAvatarUrl(userId);
-      if (!avatarUrl) return;
-      
-      const img = new Image();
-      
-      img.onload = () => {
-        if (!userAvatarCache[userId]) {
-          userAvatarCache[userId] = { status: 'loaded', url: avatarUrl };
-        } else {
-          userAvatarCache[userId].status = 'loaded';
-          userAvatarCache[userId].url = avatarUrl;
-        }
-      };
-      
-      img.onerror = () => {
-        if (!userAvatarCache[userId]) {
-          userAvatarCache[userId] = { status: 'error', url: avatarUrl };
-        } else {
-          userAvatarCache[userId].status = 'error';
-        }
-        
-        // Find all notes from this user and mark them
-        nextTick(() => {
-          notes.value.forEach(note => {
-            if (note.user_id === userId) {
-              noteAvatarErrors[note.id] = true;
-            }
-          });
-        });
-      };
-      
-      img.src = avatarUrl;
-    };
-    
     onMounted(() => {
-      // Preload current user avatar first
-      if (props.currentUserAvatar) {
-        const img = new Image();
-        img.src = props.currentUserAvatar;
-        
-        img.onload = () => {
-          currentUserAvatarError.value = false;
-          if (!userAvatarCache[props.userId]) {
-            userAvatarCache[props.userId] = { status: 'loaded', url: props.currentUserAvatar };
-          } else {
-            userAvatarCache[props.userId].status = 'loaded';
-            userAvatarCache[props.userId].url = props.currentUserAvatar;
-          }
-        };
-        
-        img.onerror = () => {
-          currentUserAvatarError.value = true;
-          if (!userAvatarCache[props.userId]) {
-            userAvatarCache[props.userId] = { status: 'error' };
-          } else {
-            userAvatarCache[props.userId].status = 'error';
-          }
-        };
-      } else {
-        currentUserAvatarError.value = true;
-        if (props.userId) {
-          userAvatarCache[props.userId] = { status: 'error' };
-        }
-      }
-      
-      // Collect all unique user IDs from notes
-      const userIds = new Set();
-      if (notes.value && notes.value.length > 0) {
-        notes.value.forEach(note => {
-          if (note && note.user_id) {
-            userIds.add(note.user_id);
-          }
-        });
-      }
-      
-      // Preload avatars for all users
-      userIds.forEach(userId => {
-        if (userId !== props.userId) { // We already handled the current user
-          preloadAvatarForUser(userId);
-        }
-      });
-      
       // Scroll to the most recent message
       setTimeout(() => {
         const messagesContainer = document.querySelector('.messages');
@@ -483,7 +276,7 @@ export default {
       }, 100);
     });
     
-    // Add a new note with improved handling
+    // Add a new note with improved CSRF handling
     const addNote = () => {
       if (!newNoteText.value.trim()) return;
       
@@ -506,11 +299,6 @@ export default {
       // Clear the input
       newNoteText.value = '';
       
-      // For current user avatar, apply cached status
-      if (userAvatarCache[props.userId] && userAvatarCache[props.userId].status === 'error') {
-        noteAvatarErrors[tempId] = true;
-      }
-      
       // Scroll to bottom to show new message
       setTimeout(() => {
         const messagesContainer = document.querySelector('.messages');
@@ -519,59 +307,41 @@ export default {
         }
       }, 100);
       
-      // Send to server
-      axios.post(`/work-orders/${props.workOrderId}/notes`, {
-        text: newNote.text,
-      })
-      .then(response => {
-        // Update the note with the real ID from server
-        const noteIndex = notes.value.findIndex(n => n.id === tempId);
-        if (noteIndex !== -1) {
-          const newId = response.data.id || tempId;
-          
-          // Update the note ID
-          notes.value[noteIndex].id = newId;
-          
-          // Transfer any avatar error status to the new ID
-          if (noteAvatarErrors[tempId]) {
-            noteAvatarErrors[newId] = true;
-            delete noteAvatarErrors[tempId];
+      // Get fresh CSRF token
+      const token = getCsrfToken();
+      
+      // Create FormData with text and token
+      const formData = new FormData();
+      formData.append('text', newNote.text);
+      formData.append('_token', token);
+      
+      // Send to server with FormData to avoid CSRF issues
+      axios.post(`/work-orders/${props.workOrderId}/notes`, formData)
+        .then(response => {
+          // Update the note with the real ID from server
+          const noteIndex = notes.value.findIndex(n => n.id === tempId);
+          if (noteIndex !== -1 && response.data && response.data.id) {
+            notes.value[noteIndex].id = response.data.id;
+            console.log('Note saved successfully with ID:', response.data.id);
           }
+        })
+        .catch(error => {
+          console.error('Error adding note:', error);
           
-          // Transfer any loaded status
-          if (avatarLoadedStatus[tempId]) {
-            avatarLoadedStatus[newId] = true;
-            delete avatarLoadedStatus[tempId];
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error adding note:', error);
-        // Remove the temp note on failure
-        notes.value = notes.value.filter(n => n.id !== tempId);
-        
-        // Also clean up any avatar status
-        if (noteAvatarErrors[tempId]) {
-          delete noteAvatarErrors[tempId];
-        }
-        if (avatarLoadedStatus[tempId]) {
-          delete avatarLoadedStatus[tempId];
-        }
-      });
+          // Remove the temp note on failure
+          notes.value = notes.value.filter(n => n.id !== tempId);
+          
+          // Show error to user
+          alert('Failed to save your note. Please try again.');
+        });
     };
     
     return {
       notes,
       newNoteText,
-      noteAvatarErrors,
-      currentUserAvatarError,
       formatTimestamp,
-      getAvatarUrl,
       getUserInitials,
       getCurrentUserInitials,
-      handleNoteAvatarError,
-      handleCurrentUserAvatarError,
-      shouldShowInitialsForNote,
       addNote,
       showEmojiPicker,
       selectedCategory,
@@ -581,7 +351,6 @@ export default {
       toggleEmojiPicker,
       selectEmojiCategory,
       addEmoji,
-      markAvatarAsLoaded,
     };
   }
 };
@@ -632,5 +401,31 @@ export default {
 .emoji-grid::-webkit-scrollbar-thumb {
   background-color: rgba(115, 115, 115, 0.4);
   border-radius: 20px;
+}
+
+/* Enhanced styling for user initials in avatar */
+.avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #4B5563;
+  color: white;
+  user-select: none;
+}
+
+/* Make messenger height more adaptable */
+.messenger {
+  display: flex;
+  flex-direction: column;
+}
+
+.messages {
+  flex: 1;
+  min-height: 150px;
+  max-height: 300px;
 }
 </style>

@@ -124,9 +124,23 @@ const switchToTeam = (team) => {
     });
 };
 
-const logout = () => {
-    router.post(route('logout'));
-};
+// Update the logout method
+function logout() {
+  // Instead of using axios directly, use Inertia's router for form submission
+  // This automatically handles CSRF tokens for you
+  router.post('/logout', {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // Handle successful logout
+      console.log('Logout successful');
+      // Optionally redirect
+      window.location.href = '/login';
+    },
+    onError: (errors) => {
+      console.error('Logout failed:', errors);
+    },
+  });
+}
 </script>
 
 <template>

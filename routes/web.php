@@ -157,6 +157,11 @@ Route::middleware([
 
     Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'details'])
         ->name('work-orders.details');
+
+    // PDF viewer route for secure PDF loading
+    Route::get('/pdf-viewer/{path}', [App\Http\Controllers\PdfController::class, 'show'])
+        ->where('path', '.*') // Allow slashes in path
+        ->name('pdf.show');
 });
 
 // QuickBooks Integration Routes
@@ -174,3 +179,8 @@ Route::get('/quickbooks/authorize', [App\Http\Controllers\QuickBooksController::
 Route::get('/quickbooks/callback', [App\Http\Controllers\QuickBooksController::class, 'callback'])
     ->middleware(['auth'])
     ->name('quickbooks.callback');
+
+// Add a CSRF token refresh route
+Route::get('/csrf-token', function () {
+    return response()->json(['csrf_token' => csrf_token()]);
+})->middleware('web');
