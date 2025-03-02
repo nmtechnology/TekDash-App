@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Response;
+use App\Services\QuickBooksService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,6 +15,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+        
+        // Register QuickBooksService
+        $this->app->singleton(QuickBooksService::class, function ($app) {
+            return new QuickBooksService();
+        });
     }
 
     /**

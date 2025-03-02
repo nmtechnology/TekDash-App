@@ -20,6 +20,10 @@ return [
     'quickbooks' => [
         'client_id' => env('QUICKBOOKS_CLIENT_ID'),
         'client_secret' => env('QUICKBOOKS_CLIENT_SECRET'),
+        'redirect_uri' => env('QUICKBOOKS_REDIRECT_URI'),
+        'scope' => env('QUICKBOOKS_SCOPE', 'com.intuit.quickbooks.accounting'),
+        'api_url' => env('QUICKBOOKS_API_URL', 'https://quickbooks.api.intuit.com/v3/company/'),
+        'company_id' => env('QUICKBOOKS_COMPANY_ID'),
     ],
     
     'postmark' => [

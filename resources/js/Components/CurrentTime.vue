@@ -64,21 +64,21 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1199px) {
   .time {
-    font-size: 1.5rem;
+    font-size: 1rem;
   }
 }
 
 @media (max-width: 768px) {
   .time {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 }
 
 @media (max-width: 576px) {
   .time {
-    font-size: 1rem;
+    font-size: .80rem;
   }
 }
 </style>

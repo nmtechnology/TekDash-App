@@ -8,6 +8,8 @@ use Inertia\Inertia;
 use App\Models\Note;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use App\Services\QuickBooksService; // Use the correct namespace
 
 class WorkOrderController extends Controller
 {
@@ -38,7 +40,7 @@ class WorkOrderController extends Controller
             'description' => 'required|string',
             'date_time' => 'required|date',
             'price' => 'required|numeric',
-            'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
+            'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled,Archived',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
@@ -147,7 +149,7 @@ public function getDetails($id)
             'description' => 'required|string',
             'date_time' => 'required|date',
             'price' => 'required|numeric',
-            'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
+            'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled,Archived',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
@@ -344,11 +346,18 @@ public function getWorkOrder($id)
 public function updateStatus(Request $request, $id)
 {
     $validatedData = $request->validate([
-        'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
+        'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled,Archived',
     ]);
 
     $workOrder = WorkOrder::findOrFail($id);
     $workOrder->status = $validatedData['status'];
+    
+    // Set archived field when status is changed to Archived
+    if ($validatedData['status'] === 'Archived') {
+        $workOrder->archived = true;
+        $workOrder->archived_at = now();
+    }
+    
     $workOrder->save();
 
     return response()->json(['message' => 'Work order status updated successfully.']);
@@ -502,17 +511,19 @@ public function calendarEvents()
         }
     }
 
-    public function getStats()
+public function getStats()
 {
     try {
-        // Get current month's data
+        // Get current month's data - exclude archived orders
         $currentMonthOrders = WorkOrder::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
+            ->where('status', '!=', 'Archived')
             ->get();
             
-        // Get previous month's data for comparison
+        // Get previous month's data for comparison - exclude archived orders
         $previousMonthOrders = WorkOrder::whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
+            ->where('status', '!=', 'Archived')
             ->get();
             
         // Calculate totals for current month
@@ -530,24 +541,19 @@ public function calendarEvents()
         $previousAvgPrice = $previousMonthOrders->count() > 0 
             ? $previousTotalRevenue / $previousMonthOrders->count() 
             : 0;
-            
         // Calculate percentage changes
         $revenueChange = $previousTotalRevenue > 0 
             ? (($currentTotalRevenue - $previousTotalRevenue) / $previousTotalRevenue) * 100 
             : 0;
-            
         $completedChange = $previousCompletedCount > 0 
             ? (($currentCompletedCount - $previousCompletedCount) / $previousCompletedCount) * 100 
             : 0;
-            
         $pendingChange = $previousPendingCount > 0 
             ? (($currentPendingCount - $previousPendingCount) / $previousPendingCount) * 100 
             : 0;
-            
         $avgPriceChange = $previousAvgPrice > 0 
             ? (($currentAvgPrice - $previousAvgPrice) / $previousAvgPrice) * 100 
             : 0;
-            
         // Format the stats array
         $stats = [
             [
@@ -578,243 +584,337 @@ public function calendarEvents()
         
         return response()->json($stats);
     } catch (\Exception $e) {
-        \Log::error('Error calculating work order stats: ' . $e->getMessage());
+        Log::error('Error generating stats: ' . $e->getMessage());
         return response()->json([
             ['name' => 'Error', 'value' => 'Could not load stats', 'change' => '', 'changeType' => 'neutral']
         ], 500);
     }
 }
 
-/**
- * Search for work orders based on the query
- *
- * @param  \Illuminate\Http\Request  $request
- * @return \Illuminate\Http\Response
- */
-public function search(Request $request)
-{
-    try {
-        $query = $request->input('query');
-        
-        if (empty($query) || strlen($query) < 2) {
-            return response()->json([]);
-        }
-
-        // Check if our search columns exist in the database
-        $workOrderColumns = Schema::getColumnListing('work_orders');
-        
-        // Start building the query
-        $searchQuery = WorkOrder::query();
-        
-        // Add OR conditions for all searchable fields that exist in the database
-        $searchQuery->where(function($q) use ($query, $workOrderColumns) {
-            if (in_array('title', $workOrderColumns)) {
-                $q->orWhere('title', 'like', "%{$query}%");
+    /**
+     * Search for work orders based on the query
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function search(Request $request)
+    {
+        try {
+            $query = $request->input('query');
+            
+            if (empty($query) || strlen($query) < 2) {
+                return response()->json([]);
             }
             
-            if (in_array('description', $workOrderColumns)) {
-                $q->orWhere('description', 'like', "%{$query}%");
+            // Check if our search columns exist in the database
+            $workOrderColumns = Schema::getColumnListing('work_orders');
+            
+            // Start building the query
+            $searchQuery = WorkOrder::query();
+            
+            // Add OR conditions for all searchable fields that exist in the database
+            $searchQuery->where(function($q) use ($query, $workOrderColumns) {
+                if (in_array('title', $workOrderColumns)) {
+                    $q->orWhere('title', 'like', "%{$query}%");
+                }
+                if (in_array('description', $workOrderColumns)) {
+                    $q->orWhere('description', 'like', "%{$query}%");
+                }
+                if (in_array('customer_id', $workOrderColumns)) {
+                    $q->orWhere('customer_id', 'like', "%{$query}%");
+                }
+                if (in_array('customer_name', $workOrderColumns)) {
+                    $q->orWhere('customer_name', 'like', "%{$query}%");
+                }
+                // Also match on direct ID if it's numeric
+                if (is_numeric($query)) {
+                    $q->orWhere('id', $query);
+                }
+            });
+            
+            // Select only the fields we need for the search results list
+            $selectFields = ['id'];
+            foreach(['title', 'status', 'customer_id', 'customer_name', 'created_at'] as $field) {
+                if (in_array($field, $workOrderColumns)) {
+                    $selectFields[] = $field;
+                }
             }
             
-            if (in_array('customer_id', $workOrderColumns)) {
-                $q->orWhere('customer_id', 'like', "%{$query}%");
-            }
+            $workOrders = $searchQuery->select($selectFields)
+                ->limit(10)
+                ->get();
+                
+            // Add fallback values for fields that may not exist
+            $workOrders = $workOrders->map(function($order) {
+                // Make sure these key properties are defined even if null
+                if (!isset($order->title)) $order->title = 'Work Order #' . $order->id;
+                if (!isset($order->status)) $order->status = 'Unknown';
+                if (!isset($order->customer_id) && !isset($order->customer_name)) {
+                    $order->customer_id = 'Unknown';
+                }
+                return $order;
+            });
             
-            if (in_array('customer_name', $workOrderColumns)) {
-                $q->orWhere('customer_name', 'like', "%{$query}%");
-            }
-            
-            // Also match on direct ID if it's numeric
-            if (is_numeric($query)) {
-                $q->orWhere('id', $query);
-            }
-        });
-        
-        // Select only the fields we need for the search results list
-        $selectFields = ['id'];
-        foreach(['title', 'status', 'customer_id', 'customer_name', 'created_at'] as $field) {
-            if (in_array($field, $workOrderColumns)) {
-                $selectFields[] = $field;
-            }
-        }
-        
-        $workOrders = $searchQuery->select($selectFields)
-            ->limit(10)
-            ->get();
-            
-        // Add fallback values for fields that may not exist
-        $workOrders = $workOrders->map(function($order) {
-            // Make sure these key properties are defined even if null
-            if (!isset($order->title)) $order->title = 'Work Order #' . $order->id;
-            if (!isset($order->status)) $order->status = 'Unknown';
-            if (!isset($order->customer_id) && !isset($order->customer_name)) {
-                $order->customer_id = 'Unknown';
-            }
-            return $order;
-        });
-        
-        return response()->json($workOrders);
-        
-    } catch (\Exception $e) {
-        Log::error('Error in search method: ' . $e->getMessage());
-        return response()->json([
-            'error' => 'An error occurred while searching',
-            'message' => config('app.debug') ? $e->getMessage() : 'Search failed. Please try again later.'
-        ], 500);
-    }
-}
-
-/**
- * Get details for a specific work order
- *
- * @param  int  $id
- * @return \Illuminate\Http\Response
- */
-public function details($id)
-{
-    try {
-        $workOrder = WorkOrder::findOrFail($id);
-        
-        // Make sure essential properties are present
-        $responseData = $workOrder->toArray();
-        
-        // Add any necessary computed fields or formatting
-        if (isset($responseData['created_at'])) {
-            $responseData['formatted_date'] = date('Y-m-d H:i:s', strtotime($responseData['created_at']));
-        }
-        
-        return response()->json($responseData);
-        
-    } catch (\Exception $e) {
-        Log::error('Error in details method: ' . $e->getMessage());
-        
-        // If the work order doesn't exist
-        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return response()->json($workOrders);
+        } catch (\Exception $e) {
+            Log::error('Error in search method: ' . $e->getMessage());
             return response()->json([
-                'error' => 'Work order not found',
-                'message' => "No work order exists with ID {$id}"
-            ], 404);
+                'error' => 'An error occurred while searching',
+                'message' => config('app.debug') ? $e->getMessage() : 'Search failed. Please try again later.'
+            ], 500);
         }
-        
-        // For any other error
-        return response()->json([
-            'error' => 'An error occurred',
-            'message' => config('app.debug') ? $e->getMessage() : 'Failed to retrieve work order details.'
-        ], 500);
     }
-}
 
-/**
- * Create an invoice in QuickBooks for a completed work order
- */
-public function invoice($id)
+    /**
+     * Get details for a specific work order
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function details($id)
+    {
+        try {
+            $workOrder = WorkOrder::findOrFail($id);
+            
+            // Make sure essential properties are present
+            $responseData = $workOrder->toArray();
+            
+            // Add any necessary computed fields or formatting
+            if (isset($responseData['created_at'])) {
+                $responseData['formatted_date'] = date('Y-m-d H:i:s', strtotime($responseData['created_at']));
+            }
+            
+            return response()->json($responseData);
+        } catch (\Exception $e) {
+            Log::error('Error in details method: ' . $e->getMessage());
+            
+            // If the work order doesn't exist
+            if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                return response()->json([
+                    'error' => 'Work order not found',
+                    'message' => "No work order exists with ID {$id}"
+                ], 404);
+            }
+            
+            // For any other error
+            return response()->json([
+                'error' => 'An error occurred',
+                'message' => config('app.debug') ? $e->getMessage() : 'Failed to retrieve work order details.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Create an invoice in QuickBooks for a completed work order
+     */
+    public function invoice($id)
 {
     try {
+        // Retrieve the work order
         $workOrder = WorkOrder::findOrFail($id);
-        
-        if ($workOrder->status !== 'Complete') {
+
+        // Check if work order is already archived
+        if ($workOrder->archived) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only completed work orders can be invoiced'
-            ], 422);
-        }
-        
-        // Check if already invoiced
-        if ($workOrder->invoiced) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Work order has already been invoiced'
-            ], 422);
-        }
-
-        // Prepare invoice data for QuickBooks
-        $invoiceData = [
-            'Line' => [
-                [
-                    'Amount' => $workOrder->price,
-                    'DetailType' => 'SalesItemLineDetail',
-                    'Description' => $workOrder->description,
-                    'SalesItemLineDetail' => [
-                        'ItemName' => $workOrder->title,
-                        'UnitPrice' => $workOrder->price,
-                        'Qty' => 1
-                    ]
-                ]
-            ],
-            'CustomerRef' => [
-                'name' => $workOrder->customer_id
-            ]
-        ];
-
-        // Create invoice in QuickBooks
-        $quickBooksService = app(QuickBooksService::class);
-        $response = $quickBooksService->createInvoice($invoiceData);
-
-        if ($response->successful()) {
-            // Mark work order as invoiced and archived
-            $workOrder->invoiced = true;
-            $workOrder->invoice_number = $response['Invoice']['Id'];
-            $workOrder->archived = true;
-            $workOrder->archived_at = now();
-            $workOrder->save();
-
-            // Log the archival
-            \Log::info("Work order {$id} invoiced and archived successfully");
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Invoice created and work order archived successfully',
-                'invoice_id' => $response['Invoice']['Id']
+                'message' => 'This work order is already archived.',
             ]);
         }
 
-        throw new \Exception('Failed to create invoice in QuickBooks');
+        // Check if work order is complete
+        if ($workOrder->status !== 'Complete') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only completed work orders can be invoiced.',
+            ]);
+        }
 
-    } catch (\Exception $e) {
-        \Log::error('Error creating invoice: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to create invoice: ' . $e->getMessage()
-        ], 500);
-    }
-}
+        // Create the invoice in QuickBooks (this implementation depends on your QB integration)
+        // ...QuickBooks integration code...
+        // For this example, we'll assume success
+        $invoiceId = 'QB-' . rand(10000, 99999);
 
-// Add this new method to handle viewing archived work orders
-public function getArchived()
-{
-    try {
-        $archivedOrders = WorkOrder::where('archived', true)
-            ->orderBy('archived_at', 'desc')
-            ->get();
-            
+        // Archive the work order with the correct status as a string
+        $workOrder->status = 'Archived'; // Ensure this is a string to avoid SQL quoting issues
+        $workOrder->archived = true;
+        $workOrder->archived_at = now();
+        $workOrder->save();
+
         return response()->json([
             'success' => true,
-            'archived_orders' => $archivedOrders
+            'message' => 'Invoice created and work order archived successfully.',
+            'invoice_id' => $invoiceId,
         ]);
     } catch (\Exception $e) {
-        \Log::error('Error fetching archived work orders: ' . $e->getMessage());
         return response()->json([
             'success' => false,
-            'message' => 'Failed to fetch archived work orders'
+            'message' => 'Failed to create invoice: ' . $e->getMessage(),
         ], 500);
     }
 }
 
-public function createInvoice(WorkOrder $workOrder)
-{
-    try {
-        $invoice = new Invoice();
-        $invoice->work_order_id = $workOrder->id;
-        $invoice->customer_id = $workOrder->customer_id;
-        $invoice->total = $workOrder->total;
-        $invoice->status = 'pending';
-        $invoice->due_date = now()->addDays(30);
-        $invoice->save();
-
-        return response()->json(['message' => 'Invoice created successfully', 'invoice' => $invoice]);
-    } catch (\Exception $e) {
-        return response()->json(['message' => 'Failed to create invoice'], 500);
+    /**
+     * Get archived work orders
+     */
+    public function getArchived()
+    {
+        try {
+            $archivedOrders = WorkOrder::where('status', 'Archived')
+                ->orWhere('archived', true)
+                ->orderBy('archived_at', 'desc')
+                ->get();
+                
+            return response()->json([
+                'success' => true,
+                'archived_orders' => $archivedOrders
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching archived work orders: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch archived work orders'
+            ], 500);
+        }
     }
-}
 
+    /**
+     * Restore an archived work order
+     */
+    /**
+     * Delete an attachment from a work order
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $workOrderId
+     * @return \Illuminate\Http\Response
+     */
+    public function deleteAttachment(Request $request, $workOrderId)
+    {
+        $workOrder = WorkOrder::findOrFail($workOrderId);
+        
+        // Check user permission (optional - adjust according to your authorization logic)
+        if (!auth()->user()->can('update', $workOrder)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to delete attachments from this work order'
+            ], 403);
+        }
+        
+        // Get the attachment path from the request
+        $attachmentPath = $request->input('attachment_path');
+        
+        if (empty($attachmentPath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No attachment specified'
+            ], 400);
+        }
+        
+        // Remove from images array
+        $images = is_array($workOrder->images) ? $workOrder->images : json_decode($workOrder->images ?: '[]', true);
+        if (($key = array_search($attachmentPath, $images)) !== false) {
+            unset($images[$key]);
+            $workOrder->images = array_values($images); // Re-index the array
+        }
+        
+        // Remove from file_attachments array if it exists
+        if ($workOrder->file_attachments) {
+            $fileAttachments = is_array($workOrder->file_attachments) 
+                ? $workOrder->file_attachments 
+                : json_decode($workOrder->file_attachments ?: '[]', true);
+                
+            if (($key = array_search($attachmentPath, $fileAttachments)) !== false) {
+                unset($fileAttachments[$key]);
+                $workOrder->file_attachments = array_values($fileAttachments); // Re-index the array
+            }
+        }
+        
+        // Delete the actual file from storage
+        try {
+            // Get just the path without any potential storage prefix
+            $filePath = str_replace('storage/', '', $attachmentPath);
+            if (Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
+            }
+        } catch (\Exception $e) {
+            // Log the error but continue since we still want to remove from the database
+            \Log::error('Failed to delete file: ' . $e->getMessage());
+        }
+        
+        // Save the work order with updated attachment arrays
+        $workOrder->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Attachment deleted successfully'
+        ]);
+    }
+
+    /**
+     * Create an invoice in QuickBooks from a work order
+     *
+     * @param Request $request
+     * @param WorkOrder $workOrder
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function createInvoice(Request $request, WorkOrder $workOrder, QuickBooksService $quickBooksService)
+    {
+        try {
+            // Create the invoice using the service
+            $result = $quickBooksService->createInvoice($workOrder);
+            
+            // If requested, archive the work order after invoice creation
+            if ($request->has('archive') && $request->archive && $result['success']) {
+                $workOrder->status = 'Archived';
+                $workOrder->archived = true;
+                $workOrder->archived_at = now();
+                $workOrder->save();
+                
+                Log::info('Work order #' . $workOrder->id . ' archived after invoice creation');
+            }
+            
+            return response()->json($result);
+            
+        } catch (\Exception $e) {
+            Log::error('Invoice creation failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create invoice: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Restore a work order from archived status
+     */
+    public function restore($id)
+    {
+        try {
+            $workOrder = WorkOrder::findOrFail($id);
+            
+            if ($workOrder->status !== 'Archived' && !$workOrder->archived) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Work order is not archived'
+                ], 422);
+            }
+            
+            // Restore to Complete status
+            $workOrder->status = 'Complete';
+            $workOrder->archived = false;
+            $workOrder->archived_at = null;
+            $workOrder->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Work order restored successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error restoring work order: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore work order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

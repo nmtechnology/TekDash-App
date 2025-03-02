@@ -4,9 +4,9 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
     
     <!-- Modal container using the provided styling -->
-    <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl mx-4 sm:mx-auto border border-gray-700 relative z-[10000]">
+    <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl mx-4 sm:mx-auto border border-gray-700 relative z-[10000] mt-16 max-h-[80vh]">
       <!-- Modal header -->
-      <div class="bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700">
+      <div class="bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700 overflow-auto max-h-[70vh]">
         <div class="sm:flex sm:items-start">
           <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
             <!-- Header with close button -->
@@ -45,7 +45,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </button>
-                <button @click="closeModal" class="text-red-500 outline-dotted hover:text-gray-200">
+                <button @click="closeModal" class="text-red-500 outline-dotted hover:text-gray-900 hover:bg-red-500">
                   <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -282,7 +282,33 @@
               <!-- User section -->
               <div>
                 <p class="text-sm text-gray-400">Assigned to:</p>
-                <p class="text-white">{{ getUserName(workOrder.user_id) }}</p>
+                <div class="flex items-center">
+                  <span v-if="!editingField.user_id" class="text-white">
+                  {{ getUserName(workOrder.user_id) || 'Unassigned' }}
+                  </span>
+                  <select 
+                  v-else 
+                  v-model="form.user_id" 
+                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
+                  >
+                  <option value="">Unassigned</option>
+                  <option v-for="user in $page.props.users" :key="user.id" :value="user.id">
+                    {{ user.name }}
+                  </option>
+                  </select>
+                  <span class="ml-2">
+                  <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 hover:text-lime-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button v-else @click="saveField('user_id')" class="text-green-400 hover:text-green-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  </span>
+                </div>
               </div>
               
               <!-- Attachments section - Updated to handle multiple attachment fields -->
@@ -305,16 +331,23 @@
                       <button 
                         v-if="isImageFile(attachment) || isPdfFile(attachment)" 
                         @click="handlePreviewAttachment(attachment)" 
-                        class="text-lime-400 hover:text-lime-300"
+                        class="text-lime-400 btn outline rounded p-1 hover:text-gray-900 hover:bg-lime-400"
                       >
                         View
                       </button>
-                      <a :href="`/storage/${attachment}`" class="text-lime-400 hover:text-lime-300" download>Download</a>
+                      <a :href="`/storage/${attachment}`" class="text-yellow-500 text-sm hover:bg-yellow-500 outline btn rounded p-1 hover:text-gray-900" download>Download</a>
+                      <!-- Add delete button -->
+                      <button 
+                        @click="deleteAttachment(attachment)" 
+                        class="text-red-500 hover:bg-red-400 hover:text-gray-900 btn rounded p-1 outline"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </li>
                   <li v-if="!editingField.images && getAllAttachments().length === 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                     <span class="text-gray-400">No attachments</span>
-                    <button @click="startEditing('images')" class="text-lime-400 hover:text-lime-300">Add</button>
+                    <button @click="startEditing('images')" class="text-lime-400 btn outline rounded hover:text-lime-300">Add</button>
                   </li>
                   <li v-if="editingField.images" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                     <input 
@@ -328,7 +361,7 @@
                     <div class="text-xs text-gray-400 ml-2">
                       Supports: PDF, JPG, PNG, GIF
                     </div>
-                    <button @click="saveField('images')" class="text-lime-400 hover:text-lime-300">Save</button>
+                    <button @click="saveField('images')" class="text-lime-400 hover:text-lime-500">Save</button>
                   </li>
                 </ul>
               </div>
@@ -387,21 +420,26 @@
           @click="createInvoice" 
           :disabled="workOrder.status !== 'Complete'"
           :class="{'opacity-50 cursor-not-allowed': workOrder.status !== 'Complete'}"
-          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-blue-400 font-medium hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-blue-400 hover:text-gray-900 hover:bg-blue-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
           Create Invoice
         </button>
-        <!-- Existing buttons -->
-        <button @click="duplicateWorkOrder" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-lime-700 sm:ml-3 sm:w-auto sm:text-sm">
+        <!-- Updated duplicate button with disabled state when status is Complete -->
+        <button 
+          @click="duplicateWorkOrder" 
+          :disabled="workOrder.status === 'Complete'"
+          :class="{'opacity-50 cursor-not-allowed': workOrder.status === 'Complete'}"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-green-400 hover:text-gray-900 sm:ml-3 sm:w-auto sm:text-sm"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           Duplicate
         </button>
-        <button @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+        <button @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-red-400 hover:text-gray-900 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
           Close
         </button>
       </div>
@@ -885,52 +923,107 @@ if (token) {
       return [...new Set(attachments)];
     };
 
-    const createInvoice = async () => {
+    const createInvoice = async (event) => {
+      // Define variables outside try block so they're accessible in finally
+      const button = event.target.closest('button');
+      const originalText = button.innerHTML;
+      
       try {
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Creating Invoice...';
+        
         // Get CSRF token from meta tag
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         
-        const response = await axios.post(`/api/work-orders/${props.workOrder.id}/invoice`, {}, {
+        // Use web route instead of API route for better Laravel session handling
+        // Add explicit status parameter to ensure it's properly quoted in SQL
+        const response = await axios.post(`/work-orders/${props.workOrder.id}/invoice`, {
+          archive: true, // Explicitly request archiving
+          status: 'Archived' // Explicitly set status as a string
+        }, {
           headers: {
             'X-CSRF-TOKEN': csrf,
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          withCredentials: true // Important for sending cookies
+          withCredentials: true
         });
     
         if (response.data.success) {
-          alert('Invoice created successfully in QuickBooks!');
+          // Close current modal first
+          emit('close');
           
-          // Redirect to the invoice show page instead
-          // Check if there's an invoice ID in the response
-          if (response.data.invoice_id) {
-            window.location.href = `/invoices/${response.data.invoice_id}`;
-          } else if (response.data.redirect_url) {
-            // Use redirect URL if provided
-            window.location.href = response.data.redirect_url;
-          } else {
-            // Fallback to archived work orders if no specific redirect
-            window.location.href = '/archived-work-orders';
-          }
+          // Show success message
+          const invoiceId = response.data.invoice_id || '';
+          
+          // Emit event to show the archived work order modal with this work order
+          emit('invoice-created', {
+            workOrderId: props.workOrder.id,
+            invoiceId: invoiceId,
+            message: 'Invoice created successfully in QuickBooks! The work order has been archived.'
+          });
+          
+          // Optionally refresh the main work order list to reflect the change
+          router.reload({ only: ['workOrders'] });
         } else {
           throw new Error(response.data.message || 'Failed to create invoice');
         }
       } catch (error) {
         console.error('Error creating invoice:', error);
-        // Log more detailed error information
+        
+        // Detailed error logging
         if (error.response) {
           console.error('Response data:', error.response.data);
           console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers); // Log response headers
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+        } else {
+          console.error('Error setting up request:', error.message);
         }
         
+        // Handle auth errors
         if (error.response?.status === 401) {
-          // Redirect to login if unauthorized
           window.location.href = '/login';
         } else {
-          alert(error.response?.data?.message || 'Failed to create invoice');
+          alert(`Failed to create invoice: ${error.response?.data?.message || error.message}`);
         }
+      } finally {
+        // Reset button state - originalText now in scope
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }
+      }
+    };
+
+    const deleteAttachment = async (attachmentPath) => {
+      if (!confirm('Are you sure you want to delete this attachment?')) {
+        return;
+      }
+      
+      try {
+        const response = await axios.delete(`/work-orders/${props.workOrder.id}/delete-attachment`, {
+          data: { attachment_path: attachmentPath }
+        });
+        
+        if (response.data.success) {
+          // Update local state to remove the attachment
+          if (props.workOrder.images && Array.isArray(props.workOrder.images)) {
+            props.workOrder.images = props.workOrder.images.filter(img => img !== attachmentPath);
+          }
+          
+          if (props.workOrder.file_attachments && Array.isArray(props.workOrder.file_attachments)) {
+            props.workOrder.file_attachments = props.workOrder.file_attachments.filter(file => file !== attachmentPath);
+          }
+        } else {
+          throw new Error(response.data.message || 'Failed to delete attachment');
+        }
+      } catch (error) {
+        console.error('Error deleting attachment:', error);
+        alert(error.response?.data?.message || 'Failed to delete attachment');
       }
     };
 
@@ -978,7 +1071,8 @@ if (token) {
       selectedDates,
       addNewDate,
       removeDate,
-      createInvoice
+      createInvoice,
+      deleteAttachment
     };
   }
 };

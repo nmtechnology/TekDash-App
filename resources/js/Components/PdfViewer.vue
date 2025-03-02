@@ -10,10 +10,13 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
       <p>{{ errorMessage }}</p>
-      <div class="mt-4">
-        <a :href="`/storage/${pdfUrl}`" download class="text-lime-400 hover:text-lime-300 underline">
-          Download PDF instead
+      <div class="mt-4 flex flex-col gap-2">
+        <a :href="viewerUrl" target="_blank" class="text-lime-400 hover:text-lime-300 underline">
+          Open PDF directly in new tab
         </a>
+        <button @click="handleError" class="text-lime-500 hover:text-lime-400 underline">
+          Try again
+        </button>
       </div>
     </div>
 
@@ -72,16 +75,28 @@ export default {
         
         // If URL doesn't start with http/https, assume it's a relative path
         if (!pdfFullUrl.startsWith('http://') && !pdfFullUrl.startsWith('https://')) {
-          // Ensure it starts with a slash
-          if (!pdfFullUrl.startsWith('/')) {
-            pdfFullUrl = '/' + pdfFullUrl;
+          // Handle both storage URLs and direct URLs
+          if (pdfFullUrl.includes('storage/')) {
+            // URL already contains storage path, just ensure it starts with /
+            if (!pdfFullUrl.startsWith('/')) {
+              pdfFullUrl = '/' + pdfFullUrl;
+            }
+          } else {
+            // Add storage prefix if not already included
+            if (!pdfFullUrl.startsWith('/')) {
+              pdfFullUrl = '/storage/' + pdfFullUrl;
+            } else {
+              pdfFullUrl = '/storage' + pdfFullUrl;
+            }
           }
           
           // Add full domain if in browser context
           if (typeof window !== 'undefined') {
-            pdfFullUrl = `${window.location.origin}/storage${pdfFullUrl}`;
+            pdfFullUrl = `${window.location.origin}${pdfFullUrl}`;
           }
         }
+        
+        console.log('PDF URL:', pdfFullUrl);
         
         // Use the browser's built-in PDF viewer if available
         // Otherwise fall back to Google Docs viewer as a reliable option

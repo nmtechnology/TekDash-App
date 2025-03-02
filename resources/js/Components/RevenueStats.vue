@@ -356,9 +356,13 @@ async function fetchRevenueData() {
     isLoading.value = true;
     errorMessage.value = null;
     
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    const url = `/revenue-stats?t=${timestamp}`;
+    
     // Try using the fetch API first (more reliable for some network issues)
     try {
-      const response = await fetch('/revenue-stats', {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -395,8 +399,8 @@ async function fetchRevenueData() {
       // Continue with axios as fallback
     }
     
-    // Fallback to Axios
-    const response = await axios.get('/revenue-stats', {
+    // Fallback to Axios with timestamp
+    const response = await axios.get(url, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',

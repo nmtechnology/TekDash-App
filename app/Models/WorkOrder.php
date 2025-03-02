@@ -26,6 +26,7 @@ class WorkOrder extends Model
         'price',
         'customer_id',
         'file_attachments',
+        'archived',
         'archived_at',
     ];
 
@@ -38,6 +39,7 @@ class WorkOrder extends Model
         'price' => 'decimal:2',
         'file_attachments' => 'array',
         'archived_at' => 'datetime',
+        'status' => 'string',
     ];
 
     const STATUSES = [
@@ -46,6 +48,7 @@ class WorkOrder extends Model
         'Part Needed',
         'Complete',
         'Cancelled',
+        'Archived'
     ];
 
     const CUSTOMERS = [

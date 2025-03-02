@@ -110,7 +110,7 @@
           <div class="flex justify-end mt-2">
             <button 
               @click="addNote" 
-              class="inline-flex items-center rounded-md outline px-3 py-2 text-sm font-semibold text-lime-400 shadow-sm hover:bg-lime-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
+              class="inline-flex items-center rounded-md outline px-3 py-2 text-sm font-semibold text-lime-400 shadow-sm hover:text-gray-900 hover:bg-lime-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
             >
               Send
             </button>

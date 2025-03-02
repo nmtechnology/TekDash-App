@@ -169,10 +169,37 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
 
     Route::get('/archived-work-orders', [WorkOrderController::class, 'archived'])->name('archived-work-orders');
+
+    // Add this route with your other routes
+    Route::get('/pdf-debug', function () {
+        return view('pdf-debug');
+    });
+
+    // Add this route to your web routes
+    Route::delete('/work-orders/{workOrder}/delete-attachment', [App\Http\Controllers\WorkOrderController::class, 'deleteAttachment'])
+        ->middleware(['auth:sanctum', 'verified'])
+        ->name('work-orders.delete-attachment');
+
+    // Add this route to handle invoice creation
+    Route::post('/work-orders/{workOrder}/invoice', [App\Http\Controllers\WorkOrderController::class, 'createInvoice'])
+        ->middleware(['auth', 'verified'])
+        ->name('work-orders.create-invoice');
+
+    // Work Order invoice creation
+    Route::post('/work-orders/{workOrder}/invoice', [App\Http\Controllers\WorkOrderController::class, 'createInvoice'])
+        ->middleware(['auth', 'verified'])
+        ->name('work-orders.invoice');
 });
 
 // QuickBooks Integration Routes
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    // ...existing routes...
+    
+    // Work order invoice creation
+    Route::post('/work-orders/{id}/invoice', [App\Http\Controllers\WorkOrderController::class, 'invoice'])
+        ->name('work-orders.invoice');
+    
+    // ...existing code...
     Route::get('/quickbooks/connect', [App\Http\Controllers\QuickBooksController::class, 'connect'])->name('quickbooks.connect');
     Route::get('/quickbooks/callback', [App\Http\Controllers\QuickBooksController::class, 'callback'])->name('quickbooks.callback');
     Route::get('/quickbooks/disconnect', [App\Http\Controllers\QuickBooksController::class, 'disconnect'])->name('quickbooks.disconnect');
