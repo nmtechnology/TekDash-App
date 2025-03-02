@@ -141,6 +141,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate']);
     Route::post('work-orders/{id}/update-field', [WorkOrderController::class, 'updateField']);
     Route::put('work-orders/{id}', [WorkOrderController::class, 'update']);
+    Route::post('/work-orders/{workOrder}/invoice', [WorkOrderController::class, 'invoice'])
+        ->name('work-orders.invoice');
+    Route::post('work-orders/{workOrder}/invoice', [WorkOrderController::class, 'createInvoice'])->name('api.work-orders.create-invoice');
+    
+    // Archived work orders
+    Route::get('/work-orders/archived', [WorkOrderController::class, 'getArchived']);
+    
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('work-orders/{workOrder}/invoice', [WorkOrderController::class, 'createInvoice']);
+    });
 });
 
 // Quickbooks Routes (if needed)

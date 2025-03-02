@@ -8,25 +8,28 @@ use QuickBooksOnline\API\DataService\DataService;
 class QuickBooksAuthController extends Controller
 {
     public function connect()
-{
-    try {
-        $dataService = DataService::Configure([
-            'auth_mode' => 'oauth2',
-            'ClientID' => config('quickbooks.client_id'),
-            'ClientSecret' => config('quickbooks.client_secret'),
-            'RedirectURI' => route('quickbooks.callback'),
-            'scope' => 'com.intuit.quickbooks.accounting',
-            'baseUrl' => config('quickbooks.environment') == 'sandbox' ? "Development" : "Production"
-        ]);
-        
-        $authUrl = $dataService->getOAuth2LoginHelper()->getAuthorizationCodeURL();
-        
-        return redirect($authUrl);
-    } catch (\Exception $e) {
-        \Log::error('QuickBooks Connect Error: ' . $e->getMessage());
-        return redirect()->route('dashboard')->with('error', 'Error connecting to QuickBooks: ' . $e->getMessage());
+    {
+        try {
+            $dataService = DataService::Configure([
+                'auth_mode' => 'oauth2',
+                'ClientID' => config('quickbooks.client_id'),
+                'ClientSecret' => config('quickbooks.client_secret'),
+                
+                // Use the exact same string that's in the QuickBooks Developer Console
+                'RedirectURI' => config('quickbooks.redirect_uri'),
+                
+                'scope' => 'com.intuit.quickbooks.accounting',
+                'baseUrl' => config('quickbooks.environment') == 'sandbox' ? "Development" : "Production"
+            ]);
+            
+            $authUrl = $dataService->getOAuth2LoginHelper()->getAuthorizationCodeURL();
+            
+            return redirect($authUrl);
+        } catch (\Exception $e) {
+            \Log::error('QuickBooks Connect Error: ' . $e->getMessage());
+            return redirect()->route('dashboard')->with('error', 'Error connecting to QuickBooks: ' . $e->getMessage());
+        }
     }
-}
     
     public function callback(Request $request)
     {
@@ -35,7 +38,10 @@ class QuickBooksAuthController extends Controller
                 'auth_mode' => 'oauth2',
                 'ClientID' => config('quickbooks.client_id'),
                 'ClientSecret' => config('quickbooks.client_secret'),
-                'RedirectURI' => route('quickbooks.callback'),
+                
+                // Use the exact same string that's in the QuickBooks Developer Console
+                'RedirectURI' => config('quickbooks.redirect_uri'),
+                
                 'baseUrl' => config('quickbooks.environment') == 'sandbox' ? "Development" : "Production"
             ]);
             

@@ -382,6 +382,19 @@
       
       <!-- Modal footer -->
       <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <!-- Add this new invoice button -->
+        <button 
+          @click="createInvoice" 
+          :disabled="workOrder.status !== 'Complete'"
+          :class="{'opacity-50 cursor-not-allowed': workOrder.status !== 'Complete'}"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-blue-400 font-medium hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          Create Invoice
+        </button>
+        <!-- Existing buttons -->
         <button @click="duplicateWorkOrder" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-lime-700 sm:ml-3 sm:w-auto sm:text-sm">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -872,6 +885,55 @@ if (token) {
       return [...new Set(attachments)];
     };
 
+    const createInvoice = async () => {
+      try {
+        // Get CSRF token from meta tag
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        const response = await axios.post(`/api/work-orders/${props.workOrder.id}/invoice`, {}, {
+          headers: {
+            'X-CSRF-TOKEN': csrf,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          withCredentials: true // Important for sending cookies
+        });
+    
+        if (response.data.success) {
+          alert('Invoice created successfully in QuickBooks!');
+          
+          // Redirect to the invoice show page instead
+          // Check if there's an invoice ID in the response
+          if (response.data.invoice_id) {
+            window.location.href = `/invoices/${response.data.invoice_id}`;
+          } else if (response.data.redirect_url) {
+            // Use redirect URL if provided
+            window.location.href = response.data.redirect_url;
+          } else {
+            // Fallback to archived work orders if no specific redirect
+            window.location.href = '/archived-work-orders';
+          }
+        } else {
+          throw new Error(response.data.message || 'Failed to create invoice');
+        }
+      } catch (error) {
+        console.error('Error creating invoice:', error);
+        // Log more detailed error information
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+        }
+        
+        if (error.response?.status === 401) {
+          // Redirect to login if unauthorized
+          window.location.href = '/login';
+        } else {
+          alert(error.response?.data?.message || 'Failed to create invoice');
+        }
+      }
+    };
+
     return {
       getStatusClasses,
       // ... rest of existing return values ...
@@ -915,7 +977,8 @@ if (token) {
       dateSelectionType,
       selectedDates,
       addNewDate,
-      removeDate
+      removeDate,
+      createInvoice
     };
   }
 };

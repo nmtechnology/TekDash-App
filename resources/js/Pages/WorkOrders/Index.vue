@@ -9,8 +9,17 @@
             <p class="mt-2 text-sm text-green-400 p-4">Here you can add, update, duplicate and delete work orders.</p>
           </div>
           <div class="mt-4 sm:ml-16 sm:mt-0">
-            <div class="p-4">
+            <div class="p-4 flex space-x-4">
               <AddWorkorder class="justify-end" />
+              <Link 
+                :href="route('archived-work-orders')"
+                class="inline-flex items-center px-4 py-2 outline border border-transparent rounded-md font-semibold text-xs text-gray-200 uppercase tracking-widest hover:bg-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-14 0h14" />
+                </svg>
+                Archived Orders
+              </Link>
             </div>
           </div>
         </div>
@@ -77,7 +86,7 @@
 <script>
 import { ref, computed } from 'vue';
 import format from 'date-fns/format';
-import { usePage } from '@inertiajs/vue3';
+import { usePage, Link } from '@inertiajs/vue3';
 import AddWorkorder from '@/Components/AddWorkOrder.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Alert from '@/Components/Alert.vue';

@@ -15,14 +15,10 @@
             </p>
         </div>
 
-        <div class="bg-gray-800 mb-10 bg-opacity-65 grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 p-6 lg:p-8 rounded-lg top-1">
-            <div>
-                <div class="flex items-center">
-                   <GroqQuery class="mb-5"/> <!-- Add any additional content here -->
-                   </div>
-               
-            </div>
-        </div>
+        
+           
+                   <GroqQuery class="bg-gray-900 mb-10 bg-opacity-65 grid grid-cols-1 gap-4 lg:gap-8 p-6 lg:p-8 rounded-lg top-1"/> <!-- Add any additional content here -->
+      
     </div>
 </template>
 

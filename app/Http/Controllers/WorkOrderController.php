@@ -704,4 +704,117 @@ public function details($id)
     }
 }
 
+/**
+ * Create an invoice in QuickBooks for a completed work order
+ */
+public function invoice($id)
+{
+    try {
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        if ($workOrder->status !== 'Complete') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only completed work orders can be invoiced'
+            ], 422);
+        }
+        
+        // Check if already invoiced
+        if ($workOrder->invoiced) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Work order has already been invoiced'
+            ], 422);
+        }
+
+        // Prepare invoice data for QuickBooks
+        $invoiceData = [
+            'Line' => [
+                [
+                    'Amount' => $workOrder->price,
+                    'DetailType' => 'SalesItemLineDetail',
+                    'Description' => $workOrder->description,
+                    'SalesItemLineDetail' => [
+                        'ItemName' => $workOrder->title,
+                        'UnitPrice' => $workOrder->price,
+                        'Qty' => 1
+                    ]
+                ]
+            ],
+            'CustomerRef' => [
+                'name' => $workOrder->customer_id
+            ]
+        ];
+
+        // Create invoice in QuickBooks
+        $quickBooksService = app(QuickBooksService::class);
+        $response = $quickBooksService->createInvoice($invoiceData);
+
+        if ($response->successful()) {
+            // Mark work order as invoiced and archived
+            $workOrder->invoiced = true;
+            $workOrder->invoice_number = $response['Invoice']['Id'];
+            $workOrder->archived = true;
+            $workOrder->archived_at = now();
+            $workOrder->save();
+
+            // Log the archival
+            \Log::info("Work order {$id} invoiced and archived successfully");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice created and work order archived successfully',
+                'invoice_id' => $response['Invoice']['Id']
+            ]);
+        }
+
+        throw new \Exception('Failed to create invoice in QuickBooks');
+
+    } catch (\Exception $e) {
+        \Log::error('Error creating invoice: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to create invoice: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+// Add this new method to handle viewing archived work orders
+public function getArchived()
+{
+    try {
+        $archivedOrders = WorkOrder::where('archived', true)
+            ->orderBy('archived_at', 'desc')
+            ->get();
+            
+        return response()->json([
+            'success' => true,
+            'archived_orders' => $archivedOrders
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error fetching archived work orders: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch archived work orders'
+        ], 500);
+    }
+}
+
+public function createInvoice(WorkOrder $workOrder)
+{
+    try {
+        $invoice = new Invoice();
+        $invoice->work_order_id = $workOrder->id;
+        $invoice->customer_id = $workOrder->customer_id;
+        $invoice->total = $workOrder->total;
+        $invoice->status = 'pending';
+        $invoice->due_date = now()->addDays(30);
+        $invoice->save();
+
+        return response()->json(['message' => 'Invoice created successfully', 'invoice' => $invoice]);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Failed to create invoice'], 500);
+    }
+}
+
 }

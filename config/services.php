@@ -43,4 +43,10 @@ return [
         ],
     ],
 
+    'groq' => [
+        'api_key' => env('GROQCLOUD_API_KEY'),
+        'model' => env('GROQ_DEFAULT_MODEL', 'llama2-70b-4096'),
+        'timeout' => env('GROQ_TIMEOUT', 30),
+    ],
+
 ];

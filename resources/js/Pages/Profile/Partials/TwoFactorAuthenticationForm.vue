@@ -145,7 +145,7 @@ const disableTwoFactorAuthentication = () => {
                         </p>
                     </div>
 
-                    <div class="mt-4 p-2 inline-block bg-white" v-html="qrCode" />
+                    <div class="mt-4 p-2 inline-block bg-gray-900" v-html="qrCode" />
 
                     <div v-if="setupKey" class="mt-4 max-w-xl text-sm text-gray-600">
                         <p class="font-semibold">
@@ -179,7 +179,7 @@ const disableTwoFactorAuthentication = () => {
                         </p>
                     </div>
 
-                    <div class="grid gap-1 max-w-xl mt-4 px-4 py-4 font-mono text-sm bg-gray-100 rounded-lg">
+                    <div class="grid gap-1 max-w-xl mt-4 px-4 py-4 font-mono text-sm bg-gray-800 rounded-lg">
                         <div v-for="code in recoveryCodes" :key="code">
                             {{ code }}
                         </div>

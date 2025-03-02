@@ -26,6 +26,7 @@ class WorkOrder extends Model
         'price',
         'customer_id',
         'file_attachments',
+        'archived_at',
     ];
 
     protected $with = ['notes'];
@@ -36,6 +37,7 @@ class WorkOrder extends Model
         'images' => 'array',
         'price' => 'decimal:2',
         'file_attachments' => 'array',
+        'archived_at' => 'datetime',
     ];
 
     const STATUSES = [

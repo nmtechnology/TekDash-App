@@ -18,8 +18,12 @@ Route::get('/', function () {
     ]);
 });
 
+// Groq diagnostic routes - no auth required for debugging
+Route::get('/groq/diagnose', [App\Http\Controllers\GroqDiagnosticController::class, 'diagnose']);
+Route::get('/groq/test-direct', [App\Http\Controllers\GroqDiagnosticController::class, 'testDirectAccessKey']);
+
 // Protected routes
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
@@ -27,6 +31,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Groq API
     Route::post('/groq/query', [GroqController::class, 'query'])->name('groq.query');
     Route::post('/api/groq/query', [GroqController::class, 'query']);
+    
+    // Groq test routes
+    Route::get('/groq/test', [App\Http\Controllers\GroqTestController::class, 'test']);
+    Route::post('/groq/chat', [App\Http\Controllers\GroqTestController::class, 'chat']);
     
     // Work Orders (using resource route)
     Route::resource('work-orders', WorkOrderController::class);
@@ -159,6 +167,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
     Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate'])->name('work-orders.duplicate');
     Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
+
+    Route::get('/archived-work-orders', [WorkOrderController::class, 'archived'])->name('archived-work-orders');
 });
 
 // QuickBooks Integration Routes
@@ -174,9 +184,7 @@ Route::get('/quickbooks/authorize', [App\Http\Controllers\QuickBooksController::
     ->middleware(['auth'])
     ->name('quickbooks.authorize');
     
-Route::get('/quickbooks/callback', [App\Http\Controllers\QuickBooksController::class, 'callback'])
-    ->middleware(['auth'])
-    ->name('quickbooks.callback');
+Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');
 
 // Add a CSRF token refresh route
 Route::get('/csrf-token', function () {

@@ -3,9 +3,10 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Welcome from '@/Components/Welcome.vue';
 import Stats from '@/Components/Stats.vue';
 import RevenueStats from '@/Components/RevenueStats.vue';
+import CurrentTime from '@/Components/CurrentTime.vue';
+import TeamDropdown from '@/Components/TeamDropdown.vue';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import CurrentTime from '@/Components/CurrentTime.vue';
 
 // Define reactive state
 const statsData = ref([]);
@@ -66,6 +67,7 @@ onMounted(() => {
             <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
               Dashboard <CurrentTime />
             </h2>
+            <TeamDropdown />  <!-- Add this line -->
           </div>
         </div>
       </div>
