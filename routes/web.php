@@ -19,12 +19,7 @@ Route::get('/', function () {
 });
 
 // Protected routes
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
-    
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
@@ -37,6 +32,8 @@ Route::middleware([
     Route::resource('work-orders', WorkOrderController::class);
     
     // Additional work order routes
+    Route::put('/api/work-orders/{id}', [WorkOrderController::class, 'update']);
+
     Route::get('/api/work-orders', [WorkOrderController::class, 'index']);
     Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate']);
     Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
@@ -67,9 +64,6 @@ Route::middleware([
         return Inertia::render('Messenger');
     })->name('messenger');
     
-    // QuickBooks integration
-    Route::get('/quickbooks/connect', [QuickBooksAuthController::class, 'connect'])->name('quickbooks.connect');
-    Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');
     
     // Revenue stats
     Route::get('/revenue-stats', [\App\Http\Controllers\RevenueController::class, 'getStats']);
@@ -162,6 +156,9 @@ Route::middleware([
     Route::get('/pdf-viewer/{path}', [App\Http\Controllers\PdfController::class, 'show'])
         ->where('path', '.*') // Allow slashes in path
         ->name('pdf.show');
+
+    Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate'])->name('work-orders.duplicate');
+    Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
 });
 
 // QuickBooks Integration Routes
@@ -169,6 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/quickbooks/connect', [App\Http\Controllers\QuickBooksController::class, 'connect'])->name('quickbooks.connect');
     Route::get('/quickbooks/callback', [App\Http\Controllers\QuickBooksController::class, 'callback'])->name('quickbooks.callback');
     Route::get('/quickbooks/disconnect', [App\Http\Controllers\QuickBooksController::class, 'disconnect'])->name('quickbooks.disconnect');
+    Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate'])->name('work-orders.duplicate');
 });
 
 // QuickBooks OAuth routes

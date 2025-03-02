@@ -423,7 +423,41 @@ export default {
       required: true,
     },
   },
+  methods: {
+    updateWorkOrder() {
+        // Check authentication before making request
+        if (!this.$page.props.auth.user) {
+            // Redirect to login if not authenticated
+            window.location.href = route('login');
+            return;
+        }
+        
+        axios.put(`/api/work-orders/${this.workOrder.id}`, this.workOrder)
+            .then(response => {
+                // Success handling
+            })
+            .catch(error => {
+                console.error('Error updating work order:', error);
+                if (error.response && error.response.status === 401) {
+                    // Handle auth error - maybe redirect to login
+                    window.location.href = route('login');
+                } else {
+                    console.error('Server validation errors:', error.response?.data);
+                }
+            });
+    }
+},
   setup(props, { emit }) {
+    // Configure Axios - Add this at the top of setup()
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    axios.defaults.withCredentials = true;
+    axios.defaults.headers.common = {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-TOKEN': csrf,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+
     // ...existing code...
 
     // Enhanced getStatusClasses function to match the color scheme in the example
@@ -522,10 +556,12 @@ export default {
     };
 
     // Save field with appropriate date structure based on selection type
-    const saveField = (field) => {
-      // Create a proper data object that matches what the controller expects
+    const saveField = async (field) => {
+      if (field === 'images') {
+        return saveImages();
+      }
+
       let data = {};
-      
       // Special handling for date fields
       if (field === 'date_time') {
         if (dateSelectionType.value === 'single') {
@@ -558,29 +594,39 @@ export default {
       // Log what we're sending for debugging
       console.log(`Updating ${field} with:`, data);
       
-      // Use the correct route with hyphen: "work-orders" instead of "workorders"
-      axios.post(`/work-orders/${props.workOrder.id}/update-field`, data)
-        .then(response => {
-          if (response.data.success) {
-            // Update the local work order object to reflect changes
-            Object.keys(data).forEach(key => {
-              props.workOrder[key] = data[key];
-            });
-            console.log('Field updated successfully:', response.data);
-          } else {
-            console.error('Update returned success: false');
-          }
-          
-          // Reset editing state
+      try {
+        // Use web route instead of API route
+        const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, data);
+        
+        if (response.data.success) {
+          Object.keys(data).forEach(key => {
+            props.workOrder[key] = data[key];
+          });
           editingField.value[field] = false;
-        })
-        .catch(error => {
-          console.error('Error updating work order:', error);
-          if (error.response && error.response.data) {
-            console.error('Server validation errors:', error.response.data);
-          }
-        });
+        } else {
+          throw new Error(response.data.message || 'Update failed');
+        }
+      } catch (error) {
+        console.error('Error updating work order:', error);
+        if (error.response?.status === 401) {
+          window.location.href = '/login';
+        } else {
+          alert(error.response?.data?.message || 'Failed to update field');
+        }
+      }
     };
+
+    // Set axios defaults
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true;  // Important for maintaining session cookies
+
+// Get CSRF token from the meta tag
+const token = document.head.querySelector('meta[name="csrf-token"]');
+if (token) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+} else {
+    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
+}
 
     // Generate array of dates between start and end for range selection
     const generateDateRange = (start, end) => {
@@ -659,47 +705,40 @@ export default {
     
     // ... rest of existing functions ...
 
-    const duplicateWorkOrder = () => {
-      // Show a loading indicator or disable the button if needed
-      const button = document.querySelector('button[disabled]');
-      if (button) button.disabled = true;
+    const duplicateWorkOrder = async (event) => {
+      const button = event.target.closest('button');
+      const originalText = button.innerHTML;
       
-      // Call the server endpoint to duplicate the work order
-      axios.post(`/work-orders/${props.workOrder.id}/duplicate`)
-        .then(response => {
-          if (response.data && response.data.success) {
-            // If the server returns a redirect URL, use it
-            if (response.data.redirect) {
-              window.location.href = response.data.redirect;
-            } else {
-              // Otherwise, just refresh the dashboard
-              router.visit('/dashboard', { 
-                replace: true,
-                onSuccess: () => {
-                  // Show success message if needed
-                  console.log('Work order duplicated successfully');
-                }
-              });
-            }
-          } else {
-            console.error('Failed to duplicate work order', response.data);
-            // Re-enable the button
-            if (button) button.disabled = false;
+      try {
+        button.disabled = true;
+        button.innerHTML = 'Duplicating...';
+        
+        // Add the leading slash to ensure it's from the root path
+        const response = await axios.post(`/work-orders/${props.workOrder.id}/duplicate`, {}, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrf
           }
-        })
-        .catch(error => {
-          console.error('Error duplicating work order:', error);
-          // Re-enable the button
-          if (button) button.disabled = false;
-          
-          // Show error message to user
-          alert('Failed to duplicate work order. Please try again.');
         });
+        
+        if (response.data.success) {
+          window.location.reload();
+        } else {
+          throw new Error(response.data.message || 'Failed to duplicate work order');
+        }
+      } catch (error) {
+        console.error('Error duplicating work order:', error);
+        alert(error.response?.data?.message || 'Failed to duplicate work order');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+      }
     };
 
     // Add state for image preview
     const previewAttachment = ref(null);
-    
+
     // Helper functions for file types
     const isPdfFile = (filename) => {
       if (!filename) return false;
@@ -786,6 +825,7 @@ export default {
           if (error.response && error.response.data) {
             console.error('Server validation errors:', error.response.data);
           }
+          editingField.value.images = false;
         });
       } else {
         editingField.value.images = false;

@@ -12,8 +12,8 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        // Keep any existing exceptions
-        // You may need to add '/api/*' here if you're having CSRF issues with API endpoints
-        // '/api/*',
+        'api/*',
+        'work-orders/*/duplicate',
+        'work-orders/*/update-field',
     ];
 }

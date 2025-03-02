@@ -224,64 +224,75 @@ public function getDetails($id)
         try {
             $workOrder = WorkOrder::findOrFail($id);
             $newWorkOrder = $workOrder->replicate();
+            
+            // Set the user to current user
             $newWorkOrder->user_id = auth()->id();
             
-            // Fix the pattern to search for duplicates
-            $baseTitle = preg_replace('/ -\d+ \(Return\)$/', '', $workOrder->title);
-            $latestDuplicate = WorkOrder::where('title', 'like', $baseTitle . ' -%')->orderBy('id', 'desc')->first();
+            // Create new title with (Return) suffix
+            $baseTitle = preg_replace('/ -\d+( \(Return\))?$/', '', $workOrder->title);
+            $latestDuplicate = WorkOrder::where('title', 'like', $baseTitle . ' -%')
+                ->orderBy('id', 'desc')
+                ->first();
             
+            $copyNumber = 1;
             if ($latestDuplicate) {
-                // Extract the number from the latest duplicate
-                preg_match('/ -(\d+) \(Return\)$/', $latestDuplicate->title, $matches);
-                $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 2;
-            } else {
-                $copyNumber = 2;
+                preg_match('/ -(\d+)/', $latestDuplicate->title, $matches);
+                $copyNumber = isset($matches[1]) ? ((int)$matches[1] + 1) : 2;
             }
             
             $newWorkOrder->title = $baseTitle . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
-
+            
             // Handle file attachments
             if ($workOrder->file_attachments) {
-                $fileAttachments = json_decode($workOrder->file_attachments, true);
-                $newFileAttachments = [];
-                foreach ($fileAttachments as $file) {
-                    $newPath = 'work_orders/' . basename($file);
-                    \Storage::disk('public')->copy($file, $newPath);
-                    $newFileAttachments[] = $newPath;
+                $fileAttachments = is_string($workOrder->file_attachments) 
+                    ? json_decode($workOrder->file_attachments, true) 
+                    : $workOrder->file_attachments;
+                    
+                if (is_array($fileAttachments)) {
+                    $newAttachments = [];
+                    foreach ($fileAttachments as $file) {
+                        if (\Storage::disk('public')->exists($file)) {
+                            $newPath = 'work_orders/' . uniqid() . '_' . basename($file);
+                            \Storage::disk('public')->copy($file, $newPath);
+                            $newAttachments[] = $newPath;
+                        }
+                    }
+                    $newWorkOrder->file_attachments = json_encode($newAttachments);
                 }
-                $newWorkOrder->file_attachments = json_encode($newFileAttachments);
             }
             
-            // Copy images if they exist
+            // Handle images
             if ($workOrder->images) {
-                $images = json_decode($workOrder->images, true);
-                $newImages = [];
-                foreach ($images as $image) {
-                    $newPath = 'work_orders/' . basename($image);
-                    \Storage::disk('public')->copy($image, $newPath);
-                    $newImages[] = $newPath;
+                $images = is_string($workOrder->images) 
+                    ? json_decode($workOrder->images, true) 
+                    : $workOrder->images;
+                    
+                if (is_array($images)) {
+                    $newImages = [];
+                    foreach ($images as $image) {
+                        if (\Storage::disk('public')->exists($image)) {
+                            $newPath = 'work_orders/' . uniqid() . '_' . basename($image);
+                            \Storage::disk('public')->copy($image, $newPath);
+                            $newImages[] = $newPath;
+                        }
+                    }
+                    $newWorkOrder->images = json_encode($newImages);
                 }
-                $newWorkOrder->images = json_encode($newImages);
             }
-
+            
             $newWorkOrder->save();
-
-            // Modified to return a JSON response for API use
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Work order duplicated successfully',
-                'workOrder' => $newWorkOrder,
-                'redirect' => route('dashboard')
+                'workOrder' => $newWorkOrder
             ]);
-        } catch (\Exception $e) {
-            // Log the error
-            Log::error('Error duplicating work order: ' . $e->getMessage());
             
-            // Return error response
+        } catch (\Exception $e) {
+            \Log::error('Error duplicating work order: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to duplicate work order',
-                'error' => $e->getMessage()
+                'message' => 'Failed to duplicate work order: ' . $e->getMessage()
             ], 500);
         }
     }
