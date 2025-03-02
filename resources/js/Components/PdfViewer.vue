@@ -1,41 +1,131 @@
 <template>
-  <div class="pdf-viewer-container">
-    <div v-if="loading" class="loading-indicator">
-      <div class="animate-spin rounded-full h-12 w-12 border-4 border-lime-400 border-t-transparent"></div>
-      <p class="mt-3 text-white text-sm">Loading PDF...</p>
-    </div>
-    
-    <div v-if="error" class="error-message text-red-400 text-center p-4">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-      <p>{{ errorMessage }}</p>
-      <div class="mt-4 flex flex-col gap-2">
-        <a :href="viewerUrl" target="_blank" class="text-lime-400 hover:text-lime-300 underline">
-          Open PDF directly in new tab
+  <div class="pdf-viewer-outer-container">
+    <div class="pdf-viewer-container">
+      <!-- Header controls -->
+      <div class="pdf-header">
+        <h2 class="pdf-title">{{ title }}</h2>
+        <div class="pdf-controls">
+          <button 
+            class="action-button sign-button" 
+            @click="activateSignatureMode"
+            v-if="!signatureMode && !loading && !error"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M6.5 8a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
+              <path d="M12.354 3.646a.5.5 0 0 1 0 .708l-4.5 4.5a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 7.293l4.146-4.147a.5.5 0 0 1 .708 0z"/>
+              <path d="M11.5 0h-7A1.5 1.5 0 0 0 3 1.5v13A1.5 1.5 0 0 0 4.5 16h7a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 11.5 0zm0 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5h7z"/>
+            </svg>
+            Sign Document
+          </button>
+          <button class="action-button close-button" @click="closeViewer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+            </svg>
+            Close
+          </button>
+        </div>
+      </div>
+      
+      <!-- Loading indicator -->
+      <div v-if="loading" class="loading-indicator">
+        <div class="spinner"></div>
+        <p>Loading PDF...</p>
+      </div>
+      
+      <!-- Error display -->
+      <div v-if="error" class="error-message">
+        <h3>Error Loading PDF</h3>
+        <p>{{ errorMessage }}</p>
+        <div class="error-actions">
+          <a :href="pdfDisplayUrl" target="_blank" class="error-link">
+            Open PDF directly in new tab
+          </a>
+          <button @click="setupPdfViewer" class="error-button">
+            Try again
+          </button>
+        </div>
+      </div>
+      
+      <!-- PDF Display using object tag (better PDF support) -->
+      <div v-show="!loading && !error" class="pdf-display-container">
+        <!-- Using object tag for better PDF compatibility -->
+        <object
+          v-if="useObjectTag"
+          :data="pdfDisplayUrl"
+          type="application/pdf"
+          class="pdf-display"
+          @load="onPdfLoad"
+          @error="handleError"
+        >
+          <p>Your browser doesn't support PDF viewing. <a :href="pdfDisplayUrl" target="_blank">Download Instead</a></p>
+        </object>
+        
+        <!-- Fallback to iframe if needed -->
+        <iframe
+          v-else
+          :src="pdfDisplayUrl"
+          class="pdf-display"
+          frameborder="0"
+          @load="onPdfLoad"
+          @error="handleError"
+        ></iframe>
+      </div>
+
+      <!-- Signature overlay -->
+      <div v-if="signatureMode" class="signature-overlay">
+        <div class="signature-box">
+          <div class="signature-header">
+            <h3 class="signature-title">Please sign below</h3>
+            <button class="signature-close" @click="cancelSignature">×</button>
+          </div>
+          
+          <canvas
+            ref="signatureCanvas"
+            class="signature-canvas"
+            @mousedown="startDrawing"
+            @mousemove="draw"
+            @mouseup="stopDrawing"
+            @mouseleave="stopDrawing"
+            @touchstart.prevent="startDrawing"
+            @touchmove.prevent="draw"
+            @touchend.prevent="stopDrawing"
+          ></canvas>
+          
+          <div class="signature-actions">
+            <button @click="clearSignature" class="signature-btn clear">Clear</button>
+            <button @click="cancelSignature" class="signature-btn cancel">Cancel</button>
+            <button @click="saveSignature" class="signature-btn save">Apply Signature</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Download PDF after signature -->
+      <div v-if="modifiedPdfUrl" class="download-bar">
+        <p>Document signed successfully!</p>
+        <a :href="modifiedPdfUrl" download="signed_document.pdf" class="download-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+          </svg>
+          Download Signed PDF
         </a>
-        <button @click="handleError" class="text-lime-500 hover:text-lime-400 underline">
-          Try again
-        </button>
+      </div>
+      
+      <!-- Debug info -->
+      <div v-if="showDebugInfo" class="debug-info">
+        <p>PDF URL: {{ pdfDisplayUrl }}</p>
+        <p>Loading: {{ loading }}</p>
+        <p>Error: {{ error }}</p>
+        <p>Loaded: {{ loaded }}</p>
+        <button @click="showDebugInfo = false" class="debug-close">Close Debug</button>
       </div>
     </div>
-
-    <iframe
-      v-if="!loading && !error"
-      :src="viewerUrl"
-      class="pdf-frame"
-      frameborder="0"
-      width="100%"
-      height="100%"
-      :title="title"
-      @load="loaded = true"
-      @error="handleError"
-    ></iframe>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { PDFDocument } from 'pdf-lib';
 
 export default {
   name: 'PdfViewer',
@@ -48,74 +138,348 @@ export default {
     title: {
       type: String,
       default: 'PDF Document'
+    },
+    editable: {
+      type: Boolean,
+      default: false
+    },
+    debug: {
+      type: Boolean,
+      default: false
     }
   },
   
-  setup(props) {
+  setup(props, { emit }) {
+    // State
     const loading = ref(true);
     const loaded = ref(false);
     const error = ref(false);
     const errorMessage = ref('Failed to load PDF');
+    const pdfDisplayUrl = ref('');
+    const signatureCanvas = ref(null);
+    const signatureMode = ref(false);
+    const isDrawing = ref(false);
+    const modifiedPdfUrl = ref(null);
+    const showDebugInfo = ref(props.debug);
     
-    // Build the PDF viewer URL using browser built-in PDF viewer
-    const viewerUrl = ref('');
+    // Determine best display method based on browser
+    const useObjectTag = ref(
+      navigator.userAgent.includes('Chrome') || 
+      navigator.userAgent.includes('Firefox')
+    );
     
-    // Handle loading error
-    const handleError = () => {
+    // Drawing state variables
+    let lastX = 0;
+    let lastY = 0;
+    
+    // Methods
+    const onPdfLoad = () => {
+      console.log('PDF loaded successfully');
+      loading.value = false;
+      loaded.value = true;
+    };
+
+    const handleError = (e) => {
+      console.error('PDF loading error:', e);
       loading.value = false;
       error.value = true;
       errorMessage.value = 'Failed to load PDF. Try downloading instead.';
+      
+      // Try alternative display method
+      if (useObjectTag.value) {
+        console.log('Falling back to iframe for PDF display');
+        useObjectTag.value = false;
+        setTimeout(() => {
+          setupPdfViewer();
+        }, 500);
+      }
     };
     
-    // Setup the PDF viewer
-    onMounted(() => {
+    const closeViewer = () => {
+      emit('close');
+    };
+    
+    // Simple URL processing function - avoid complexity
+    const getFullPdfUrl = (url) => {
+      if (!url) return '';
+      
+      // If it's already a full URL, return as is
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      
+      // For local paths, simplify the logic
+      let fullPath = url;
+      
+      // Ensure path starts with slash
+      if (!fullPath.startsWith('/')) {
+        fullPath = '/' + fullPath;
+      }
+      
+      // Add storage prefix if needed and not already there
+      if (!fullPath.includes('/storage/')) {
+        fullPath = '/storage' + fullPath;
+      }
+      
+      // Add domain
+      if (typeof window !== 'undefined') {
+        fullPath = `${window.location.origin}${fullPath}`;
+      }
+      
+      return fullPath;
+    };
+    
+    // Setup the PDF viewer with proper URLs
+    const setupPdfViewer = () => {
       try {
-        // Check if we need a full URL
-        let pdfFullUrl = props.pdfUrl;
+        // Reset states
+        loading.value = true;
+        error.value = false;
+        loaded.value = false;
         
-        // If URL doesn't start with http/https, assume it's a relative path
-        if (!pdfFullUrl.startsWith('http://') && !pdfFullUrl.startsWith('https://')) {
-          // Handle both storage URLs and direct URLs
-          if (pdfFullUrl.includes('storage/')) {
-            // URL already contains storage path, just ensure it starts with /
-            if (!pdfFullUrl.startsWith('/')) {
-              pdfFullUrl = '/' + pdfFullUrl;
-            }
-          } else {
-            // Add storage prefix if not already included
-            if (!pdfFullUrl.startsWith('/')) {
-              pdfFullUrl = '/storage/' + pdfFullUrl;
-            } else {
-              pdfFullUrl = '/storage' + pdfFullUrl;
-            }
-          }
-          
-          // Add full domain if in browser context
-          if (typeof window !== 'undefined') {
-            pdfFullUrl = `${window.location.origin}${pdfFullUrl}`;
-          }
-        }
+        // Simplify URL processing to avoid potential issues
+        const fullUrl = getFullPdfUrl(props.pdfUrl);
+        console.log('Processing PDF URL:', fullUrl);
         
-        console.log('PDF URL:', pdfFullUrl);
+        // Set the URL for display
+        pdfDisplayUrl.value = fullUrl;
         
-        // Use the browser's built-in PDF viewer if available
-        // Otherwise fall back to Google Docs viewer as a reliable option
-        if (navigator.userAgent.includes('Chrome') || 
-            navigator.userAgent.includes('Firefox') || 
-            navigator.userAgent.includes('Safari')) {
-          viewerUrl.value = pdfFullUrl;
-        } else {
-          viewerUrl.value = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfFullUrl)}&embedded=true`;
-        }
-        
-        // Remove loading state after a short delay to ensure UI is ready
+        // Set timeout for loading state
         setTimeout(() => {
-          loading.value = false;
-        }, 1500);
+          if (!loaded.value && loading.value) {
+            console.log('PDF load timeout - checking display issues');
+            // Try alternative display
+            if (useObjectTag.value) {
+              useObjectTag.value = false;
+              console.log('Switching to iframe display');
+            }
+            loading.value = false;
+          }
+        }, 5000);
       } catch (e) {
         console.error('Error setting up PDF viewer:', e);
-        handleError();
+        handleError(e);
       }
+    };
+    
+    // Signature functionality - kept from your working code
+    const activateSignatureMode = () => {
+      signatureMode.value = true;
+      setTimeout(() => {
+        if (signatureCanvas.value) {
+          initCanvas();
+        }
+      }, 100);
+    };
+    
+    const initCanvas = () => {
+      const canvas = signatureCanvas.value;
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas size
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      
+      // Set drawing style
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      console.log('Canvas initialized:', canvas.width, canvas.height);
+    };
+    
+    // Drawing functions
+    const getCoordinates = (e) => {
+      // ...existing code...
+      if (!signatureCanvas.value) return { x: 0, y: 0 };
+      
+      const rect = signatureCanvas.value.getBoundingClientRect();
+      let x, y;
+      
+      if (e.touches && e.touches[0]) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+      } else {
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+      }
+      
+      return { x, y };
+    };
+    
+    const startDrawing = (e) => {
+      isDrawing.value = true;
+      const coords = getCoordinates(e);
+      lastX = coords.x;
+      lastY = coords.y;
+      console.log('Started drawing at:', lastX, lastY);
+    };
+    
+    const draw = (e) => {
+      if (!isDrawing.value || !signatureCanvas.value) return;
+      
+      const ctx = signatureCanvas.value.getContext('2d');
+      const coords = getCoordinates(e);
+      
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(coords.x, coords.y);
+      ctx.stroke();
+      
+      lastX = coords.x;
+      lastY = coords.y;
+    };
+    
+    const stopDrawing = () => {
+      isDrawing.value = false;
+    };
+    
+    const clearSignature = () => {
+      if (!signatureCanvas.value) return;
+      
+      const canvas = signatureCanvas.value;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    
+    const cancelSignature = () => {
+      signatureMode.value = false;
+    };
+    
+    const saveSignature = async () => {
+      if (!signatureCanvas.value) return;
+      
+      const canvas = signatureCanvas.value;
+      const signatureData = canvas.toDataURL('image/png');
+      
+      // Empty signature check - look for non-white pixels
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const hasDrawing = Array.from(imageData).some((pixel, index) => {
+        // Check for non-transparent pixels (every 4th value is alpha channel)
+        return index % 4 === 3 && pixel > 0;
+      });
+      
+      if (!hasDrawing) {
+        alert('Please sign the document before saving.');
+        return;
+      }
+      
+      // Show loading state
+      loading.value = true;
+      
+      try {
+        // Add signature to PDF
+        const success = await addSignatureToPdf(signatureData);
+        
+        if (success) {
+          emit('signature-captured', signatureData);
+          signatureMode.value = false;
+        } else {
+          error.value = true;
+          errorMessage.value = 'Failed to add signature to PDF';
+        }
+      } catch (err) {
+        console.error('Error saving signature:', err);
+        error.value = true;
+        errorMessage.value = 'Error processing signature: ' + err.message;
+      } finally {
+        loading.value = false;
+      }
+    };
+    
+    const addSignatureToPdf = async (signatureData) => {
+      try {
+        // Use the current display URL which we know is properly formatted
+        console.log('Fetching PDF from URL:', pdfDisplayUrl.value);
+        
+        // Fetch the original PDF with appropriate cache control
+        const pdfResponse = await fetch(pdfDisplayUrl.value, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          }
+        });
+        
+        if (!pdfResponse.ok) {
+          console.error(`HTTP error fetching PDF: ${pdfResponse.status}`);
+          throw new Error(`HTTP error! Status: ${pdfResponse.status}`);
+        }
+        
+        const pdfBuffer = await pdfResponse.arrayBuffer();
+        console.log('PDF loaded, size:', pdfBuffer.byteLength);
+        
+        if (pdfBuffer.byteLength === 0) {
+          throw new Error('Empty PDF file received');
+        }
+        
+        // Load the PDF document
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const pages = pdfDoc.getPages();
+        
+        if (pages.length === 0) {
+          throw new Error('PDF has no pages');
+        }
+        
+        const lastPage = pages[pages.length - 1];
+        
+        console.log('Processing signature image');
+        // Convert signature data URL to image (strip header)
+        const base64Data = signatureData.replace(/^data:image\/(png|jpg);base64,/, '');
+        const signatureImage = await pdfDoc.embedPng(base64Data);
+        
+        // Calculate signature position (bottom of the page)
+        const { width, height } = lastPage.getSize();
+        const signatureWidth = 200;
+        const signatureHeight = 100;
+        const signatureX = width / 2 - signatureWidth / 2;
+        const signatureY = 50; // Position from bottom
+        
+        console.log('Adding signature to PDF page');
+        // Add signature to the page
+        lastPage.drawImage(signatureImage, {
+          x: signatureX,
+          y: signatureY,
+          width: signatureWidth,
+          height: signatureHeight,
+        });
+        
+        console.log('Saving modified PDF');
+        // Save the modified PDF
+        const modifiedPdfBytes = await pdfDoc.save();
+        
+        // Create URL for the modified PDF
+        const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+        const newUrl = URL.createObjectURL(blob);
+        modifiedPdfUrl.value = newUrl;
+        
+        // Update the viewer to show the modified PDF
+        pdfDisplayUrl.value = newUrl;
+        console.log('Signature added successfully');
+        
+        return true;
+      } catch (error) {
+        console.error('Error adding signature to PDF:', error);
+        return false;
+      }
+    };
+    
+    // Watch for URL changes
+    watch(() => props.pdfUrl, (newUrl, oldUrl) => {
+      if (newUrl && newUrl !== oldUrl) {
+        console.log('PDF URL changed, reloading viewer');
+        setupPdfViewer();
+      }
+    });
+    
+    // Initialize on mount
+    onMounted(() => {
+      console.log('PDF viewer component mounted');
+      setupPdfViewer();
     });
     
     return {
@@ -123,39 +487,345 @@ export default {
       loaded,
       error,
       errorMessage,
-      viewerUrl,
-      handleError
+      pdfDisplayUrl,
+      useObjectTag,
+      signatureCanvas,
+      signatureMode,
+      modifiedPdfUrl,
+      showDebugInfo,
+      onPdfLoad,
+      handleError,
+      closeViewer,
+      setupPdfViewer,
+      activateSignatureMode,
+      startDrawing,
+      draw,
+      stopDrawing,
+      clearSignature,
+      cancelSignature,
+      saveSignature
     };
   }
 };
 </script>
 
 <style scoped>
+.pdf-viewer-outer-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
 .pdf-viewer-container {
-  width: 100%;
-  height: 80vh;
-  position: relative;
-  background-color: rgba(20, 20, 20, 0.9);
-  border-radius: 0.5rem;
+  width: 90%;
+  height: 90%;
+  background-color: white;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.pdf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.pdf-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.pdf-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
 }
 
-.pdf-frame {
+.sign-button {
+  background-color: #10B981;
+  color: white;
+}
+
+.sign-button:hover {
+  background-color: #059669;
+}
+
+.close-button {
+  background-color: #EF4444;
+  color: white;
+}
+
+.close-button:hover {
+  background-color: #DC2626;
+}
+
+.pdf-display-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  background-color: #f1f1f1; /* Light background to see if container is visible */
+}
+
+.pdf-display {
   width: 100%;
   height: 100%;
-  border-radius: 0.375rem;
+  border: none;
+  display: block;
 }
 
-.loading-indicator, .error-message {
+/* Debug info panel */
+.debug-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  max-width: 400px;
+  z-index: 1002;
+}
+
+.debug-close {
+  background: #333;
+  border: none;
+  color: white;
+  padding: 2px 6px;
+  font-size: 10px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+/* Rest of your existing styles */
+.loading-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 16px;
+  color: #6B7280;
+}
+
+.spinner {
+  border: 4px solid rgba(156, 163, 175, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid #10B981;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error-message {
-  max-width: 300px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  color: #EF4444;
+}
+
+.error-message h3 {
+  font-size: 18px;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.error-link {
+  color: #10B981;
+  text-decoration: underline;
+}
+
+.error-button {
+  padding: 8px 16px;
+  background-color: #10B981;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.error-button:hover {
+  background-color: #059669;
+}
+
+.signature-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.signature-box {
+  background-color: white;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 600px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.signature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.signature-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+  color: #1F2937;
+}
+
+.signature-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6B7280;
+}
+
+.signature-canvas {
+  width: 100%;
+  height: 200px;
+  border: 2px solid #E5E7EB;
+  border-radius: 6px;
+  touch-action: none;
+  background-color: #ffffff;
+}
+
+.signature-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.signature-btn {
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.signature-btn.clear {
+  background-color: #F3F4F6;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.signature-btn.clear:hover {
+  background-color: #E5E7EB;
+}
+
+.signature-btn.cancel {
+  background-color: #F3F4F6;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.signature-btn.cancel:hover {
+  background-color: #E5E7EB;
+}
+
+.signature-btn.save {
+  background-color: #10B981;
+  color: white;
+  border: none;
+}
+
+.signature-btn.save:hover {
+  background-color: #059669;
+}
+
+.download-bar {
+  padding: 16px 20px;
+  background-color: #ECFDF5;
+  border-top: 1px solid #A7F3D0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.download-bar p {
+  margin: 0;
+  color: #047857;
+  font-weight: 500;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #10B981;
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.download-btn:hover {
+  background-color: #059669;
 }
 </style>

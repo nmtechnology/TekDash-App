@@ -5,7 +5,7 @@ import { debounce } from 'lodash';
 const props = defineProps({
   placeholder: {
     type: String,
-    default: 'Search...'
+    default: 'Search2...'
   }
 });
 

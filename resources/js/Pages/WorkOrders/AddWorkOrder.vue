@@ -2,7 +2,7 @@
   <div>
     <button @click="openCreateModal" class="btn outline text-lime-400 rounded-md hover:bg-lime-400 dark:hover:bg-lime-400 hover:text-gray-900 transition z-30">Add Work Order</button>
 
-    <div v-if="showModal" class="fixed inset-0 top-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div v-if="showModal" class="fixed inset-0 top-0 z-50 flex items-center justify-center bg-black">
       <div class="bg-gray-900 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full mt-16">
         <div class="bg-gray-900 px-4 pt-20 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">

@@ -7,8 +7,6 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import TeamDropdown from '@/Components/TeamDropdown.vue';
-import Search from '@/Components/Search.vue';
 import axios from 'axios';
 
 defineProps({
@@ -17,19 +15,6 @@ defineProps({
 
 // Get page object using the usePage composable
 const page = usePage();
-
-// Use page in computed properties
-const hasTeams = computed(() => {
-    return page.props.jetstream?.hasTeamFeatures;
-});
-
-const currentTeam = computed(() => {
-    return page.props.auth?.user?.current_team;
-});
-
-const allTeams = computed(() => {
-    return page.props.auth?.user?.all_teams || [];
-});
 
 // Search functionality variables
 const searchQuery = ref('');
@@ -131,20 +116,6 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
 
-// Existing functions
-const switchToTeam = (team) => {
-    router.put(route('current-team.update'), {
-        team_id: team.id,
-    }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            // Optionally reload the page to ensure everything is updated
-            window.location.reload();
-        },
-    });
-};
-
 // Update the logout method
 function logout() {
   // Instead of using axios directly, use Inertia's router for form submission
@@ -197,16 +168,16 @@ function logout() {
                             </div>
                         </div>
                         
-                        <!-- Search Component with error handling -->
+                        <!-- Search Component with error handling
                         <div class="p-3 search-container relative">
-                            <Search placeholder="Search work orders..." @search="handleSearch" />
+                            <Search placeholder="Search work orders..." @search="handleSearch" /> -->
                             
                             <!-- Search Results Dropdown with error state -->
-                            <div v-if="showSearchResults" 
+                            <!-- <div v-if="showSearchResults" 
                                  class="absolute mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-md overflow-hidden z-50">
                                 <div v-if="isSearching" class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                                    Searching work orders...
-                                </div>
+                                    Searching work orders... -->
+                                <!-- </div>
                                 <ul v-else-if="workOrders.length > 0" class="max-h-80 overflow-y-auto">
                                     <li v-for="order in workOrders" :key="order.id" 
                                         class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b dark:border-gray-700 last:border-b-0"
@@ -244,64 +215,9 @@ function logout() {
                                     No work orders found matching "{{ searchQuery }}"
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
-                            <!-- Teams Dropdown -->
-                             <TeamDropdown v-if="hasTeams && currentTeam" />
-                            <Dropdown v-if="$page.props.jetstream?.hasTeamFeatures && currentTeam" align="right" width="60">
-                                <template #trigger>
-                                    <span class="inline-flex rounded-md">
-                                        <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-100 dark:text-lime-400 hover:bg-gray-700 dark:hover:bg-gray-800 focus:outline-none transition ease-in-out duration-150">
-                                            {{ currentTeam.name }}
-
-                                            <svg class="ms-2 -me-0.5 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
-                                            </svg>
-                                        </button>
-                                    </span>
-                                </template>
-
-                                <template #content>
-                                    <div class="w-60">
-                                        <!-- Team Management -->
-                                        <div class="block px-4 py-2 text-xs text-gray-400">
-                                            Manage Team
-                                        </div>
-
-                                        <!-- Team Settings -->
-                                        <DropdownLink :href="route('teams.show', currentTeam.id)">
-                                            Team Settings
-                                        </DropdownLink>
-
-                                        <DropdownLink v-if="$page.props.jetstream?.canCreateTeams" :href="route('teams.create')">
-                                            Create New Team
-                                        </DropdownLink>
-
-                                        <template v-if="allTeams.length > 1">
-                                            <div class="border-t border-gray-700 dark:border-gray-600"></div>
-
-                                            <div class="block px-4 py-2 text-xs text-gray-400">
-                                                Switch Teams
-                                            </div>
-
-                                            <template v-for="team in allTeams" :key="team.id">
-                                                <form @submit.prevent="switchToTeam(team)">
-                                                    <DropdownLink as="button">
-                                                        <div class="flex items-center">
-                                                            <svg v-if="team.id == $page.props.auth?.user?.current_team_id" class="me-2 size-5 text-lime-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            <div>{{ team.name }}</div>
-                                                        </div>
-                                                    </DropdownLink>
-                                                </form>
-                                            </template>
-                                        </template>
-                                    </div>
-                                </template>
-                            </Dropdown>
-
                             <!-- Settings Dropdown -->
                             <div class="ms-3 relative">
                                 <Dropdown align="right" width="48">
@@ -420,46 +336,6 @@ function logout() {
                                     Log Out
                                 </ResponsiveNavLink>
                             </form>
-
-                            <!-- Team Management -->
-                            <template v-if="$page.props.jetstream?.hasTeamFeatures">
-                                <div class="border-t border-gray-200" />
-
-                                <div class="block px-4 py-2 text-xs text-gray-400">
-                                    Manage Team
-                                </div>
-
-                                <!-- Team Settings -->
-                                <ResponsiveNavLink v-if="currentTeam" :href="route('teams.show', currentTeam.id)" :active="route().current('teams.show')">
-                                    Team Settings
-                                </ResponsiveNavLink>
-
-                                <ResponsiveNavLink v-if="$page.props.jetstream?.canCreateTeams" :href="route('teams.create')" :active="route().current('teams.create')">
-                                    Create New Team
-                                </ResponsiveNavLink>
-
-                                <!-- Team Switcher -->
-                                <template v-if="allTeams.length > 1">
-                                    <div class="border-t border-gray-200" />
-
-                                    <div class="block px-4 py-2 text-xs text-gray-400">
-                                        Switch Teams
-                                    </div>
-
-                                    <template v-for="team in allTeams" :key="team.id">
-                                        <form @submit.prevent="switchToTeam(team)">
-                                            <ResponsiveNavLink as="button">
-                                                <div class="flex items-center">
-                                                    <svg v-if="team.id == $page.props.auth?.user?.current_team_id" class="me-2 size-5 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    <div>{{ team.name }}</div>
-                                                </div>
-                                            </ResponsiveNavLink>
-                                        </form>
-                                    </template>
-                                </template>
-                            </template>
                         </div>
                     </div>
                 </div>
@@ -483,104 +359,12 @@ function logout() {
             </main>
         </div>
         
-        <!-- Work Order Modal - Displays data from your actual database -->
-        <div v-if="showWorkOrderModal && selectedWorkOrder" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <!-- Background overlay -->
-                <div class="fixed inset-0 bg-gray-800 bg-opacity-75 transition-opacity" aria-hidden="true" @click="closeModal"></div>
-
-                <!-- Modal panel -->
-                <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div class="bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                <!-- Header with close button -->
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">
-                                        Work Order #{{ selectedWorkOrder.id }}
-                                    </h3>
-                                    <button @click="closeModal" class="text-gray-400 hover:text-gray-200">
-                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                
-                                <!-- Work order details from your database -->
-                                <div class="text-gray-300 space-y-3">
-                                    <div v-if="selectedWorkOrder.title" class="mb-2">
-                                        <h4 class="text-lg font-medium text-white">{{ selectedWorkOrder.title }}</h4>
-                                    </div>
-                                    
-                                    <div v-if="selectedWorkOrder.status" class="flex justify-between">
-                                        <div>
-                                            <p class="text-sm text-gray-400">Status:</p>
-                                            <span class="inline-flex px-2 py-1 text-xs rounded" 
-                                                  :class="{
-                                                    'bg-green-800 text-green-100': selectedWorkOrder.status.toLowerCase().includes('complete'),
-                                                    'bg-blue-800 text-blue-100': selectedWorkOrder.status.toLowerCase().includes('scheduled'),
-                                                    'bg-yellow-800 text-yellow-100': selectedWorkOrder.status.toLowerCase().includes('progress'),
-                                                    'bg-red-800 text-red-100': selectedWorkOrder.status.toLowerCase().includes('cancel'),
-                                                    'bg-purple-800 text-purple-100': selectedWorkOrder.status.toLowerCase().includes('part') || 
-                                                                                    selectedWorkOrder.status.toLowerCase().includes('return')
-                                                  }">
-                                                {{ selectedWorkOrder.status }}
-                                            </span>
-                                        </div>
-                                        
-                                        <div v-if="selectedWorkOrder.price">
-                                            <p class="text-sm text-gray-400">Price:</p>
-                                            <span>${{ selectedWorkOrder.price }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div v-if="selectedWorkOrder.customer_id || selectedWorkOrder.customer_name" class="mt-4">
-                                        <p class="text-sm text-gray-400">Customer:</p>
-                                        <p v-if="selectedWorkOrder.customer_name">{{ selectedWorkOrder.customer_name }}</p>
-                                        <p v-if="selectedWorkOrder.customer_id" class="text-sm">ID: {{ selectedWorkOrder.customer_id }}</p>
-                                    </div>
-                                    
-                                    <div v-if="selectedWorkOrder.created_at || selectedWorkOrder.date">
-                                        <p class="text-sm text-gray-400">Date:</p>
-                                        <p>{{ new Date(selectedWorkOrder.created_at || selectedWorkOrder.date).toLocaleString() }}</p>
-                                    </div>
-                                    
-                                    <div v-if="selectedWorkOrder.description" class="mt-4">
-                                        <p class="text-sm text-gray-400">Description:</p>
-                                        <p class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md">
-                                            {{ selectedWorkOrder.description }}
-                                        </p>
-                                    </div>
-                                    
-                                    <!-- Display any additional fields from your database -->
-                                    <template v-for="(value, key) in selectedWorkOrder" :key="key">
-                                        <div v-if="!['id', 'title', 'status', 'price', 'customer_id', 'customer_name', 'created_at', 'date', 'description'].includes(key) && value">
-                                            <p class="text-sm text-gray-400">{{ key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ') }}:</p>
-                                            <p>{{ value }}</p>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Modal footer -->
-                    <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <Link :href="`/work-orders/${selectedWorkOrder.id}`" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">
-                            View Full Details
-                        </Link>
-                        <button @click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Close
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+       
     </div>
 </template>
 
 <style scoped>
-.search-container {
+/* .search-container {
     width: 300px;
     max-width: 100%;
 }
@@ -592,8 +376,8 @@ function logout() {
 }
 
 /* Add specific styling for team dropdown */
-.dark .dropdown-content {
+/* .dark .dropdown-content {
     background-color: #1f2937;
     border-color: #374151;
-}
+} */
 </style>

@@ -1,12 +1,12 @@
 <template>
-  <div v-if="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center">
+  <div v-if="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center modal-animation">
     <!-- Semi-transparent overlay with blur -->
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 bg-black backdrop-blur-lg"></div>
     
     <!-- Modal container using the provided styling -->
-    <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl mx-4 sm:mx-auto border border-gray-700 relative z-[10000] mt-16 max-h-[80vh]">
+    <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl mx-4 sm:mx-auto border border-gray-700 relative z-[10000] mt-16 mt-60 max-h-[80vh]">
       <!-- Modal header -->
-      <div class="bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700 overflow-auto max-h-[70vh]">
+      <div class="bg-gray-900 px-4 pt-6 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700 overflow-auto sm:max-h-[25] max-h-[55vh]">
         <div class="sm:flex sm:items-start">
           <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
             <!-- Header with close button -->
@@ -419,7 +419,7 @@
         <button 
           @click="createInvoice" 
           :disabled="workOrder.status !== 'Complete'"
-          :class="{'opacity-50 cursor-not-allowed': workOrder.status !== 'Complete'}"
+          :class="{'cursor-not-allowed': workOrder.status !== 'Complete'}"
           class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-blue-400 hover:text-gray-900 hover:bg-blue-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -937,10 +937,9 @@ if (token) {
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         
         // Use web route instead of API route for better Laravel session handling
-        // Add explicit status parameter to ensure it's properly quoted in SQL
+        // Removed "status" from the payload to prevent data truncation
         const response = await axios.post(`/work-orders/${props.workOrder.id}/invoice`, {
-          archive: true, // Explicitly request archiving
-          status: 'Archived' // Explicitly set status as a string
+          archive: true // Explicitly request archiving
         }, {
           headers: {
             'X-CSRF-TOKEN': csrf,
@@ -1143,5 +1142,22 @@ if (token) {
 /* Ensure scrolling works well on touch devices */
 .touch-auto {
   -webkit-overflow-scrolling: touch;
+}
+
+/* New keyframes for easing in and sliding from the top */
+@keyframes modalFadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply the animation to the modal container */
+.modal-animation {
+  animation: modalFadeInSlide 0.5s ease-out;
 }
 </style>

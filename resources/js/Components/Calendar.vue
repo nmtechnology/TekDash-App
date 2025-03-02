@@ -6,7 +6,7 @@
       </button>
       <AddWorkorder class="text-lime-400" />
     </div>
-    <div class="bg-gray-900 outline p-4 rounded-lg shadow opacity-75">
+    <div class="bg-gray-900 outline p-4 rounded-lg shadow">
       <FullCalendar :options="calendarOptions">
         <!-- Custom event rendering as cards -->
         <template v-slot:eventContent="arg">
