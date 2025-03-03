@@ -173,7 +173,7 @@ const closeArchivedWorkOrderModal = () => {
 <template>
   <AppLayout title="Active Work Orders">
     <template #header>
-      <div class="fixed mt-1 top-2 sm:top-10 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
+      <div class="fixed -mt-5 top-2 sm:top-10 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
         <div class="max-w-7xl mx-auto py-2 px-4 sm:px-2 lg:px-6">
           <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-white mt-12 leading-tight">
@@ -184,7 +184,7 @@ const closeArchivedWorkOrderModal = () => {
         </div>
       </div>
     </template>
-    <div class="bg-gray-900 min-h-screen opacity-70 py-10 flex justify-center">
+    <div class="bg-gray-900/55 min-h-screen opacity-70 py-10 flex justify-center">
       <div class="w-full max-w-6xl">
         <div class="mt-4 sm:ml-16 sm:mt-0">
           <div class="p-4 flex space-x-4">

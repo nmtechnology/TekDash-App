@@ -13,24 +13,24 @@
         </div>
         
         <!-- Message content -->
-        <div class="flex-1 bg-gray-700 rounded-lg p-3">
+        <div class="flex-1 bg-gray-800 rounded-lg p-3">
           <!-- Improved header with clearer separation between name and timestamp -->
           <div class="flex items-center justify-between mb-1">
             <p class="text-sm font-medium text-lime-400">{{ getUserName(note.user_id) }}</p>
-            <p class="text-xs text-gray-400">{{ formatTimestamp(note.created_at) }}</p>
+            <p class="text-xs text-blue-400">{{ formatTimestamp(note.created_at) }}</p>
           </div>
-          <p class="text-sm text-gray-300 mt-1 whitespace-pre-wrap">{{ note.text }}</p>
+          <p class="text-sm text-green-400 mt-1 whitespace-pre-wrap">{{ note.text }}</p>
         </div>
       </div>
     </div>
     
     <!-- Input area -->
-    <div class="border-t border-gray-700 p-4">
+    <div class="border-t border-gray-800 p-4">
       <div class="flex items-start space-x-3">
         <!-- Current user avatar - Always show initials for consistency -->
         <div class="flex-shrink-0">
-          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700">
-            <div class="avatar-initials text-white text-lg font-bold">
+          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-700">
+            <div class="avatar-initials text-lime-400 text-lg font-bold">
               {{ getCurrentUserInitials() }}
             </div>
           </div>
@@ -42,69 +42,23 @@
             <textarea 
               v-model="newNoteText" 
               placeholder="Add a note..." 
-              class="w-full rounded-md bg-gray-700 border-gray-600 shadow-sm focus:border-lime-400 focus:ring-lime-400 text-white text-sm"
+              class="w-full rounded-md bg-gray-900 border-gray-600 shadow-sm text-lime-400 text-sm"
               rows="2"
               @keydown.enter.prevent="addNote"
+              ref="messageInput"
             ></textarea>
             
-            <!-- Emoji button -->
+            <!-- Emoji button - Updated styling -->
             <button 
-              @click="toggleEmojiPicker" 
+              @click.stop="showEmojiPickerModal = true" 
               class="absolute bottom-2 right-2 text-yellow-400 hover:text-yellow-500 p-1 rounded-full"
               title="Add emoji"
+              type="button"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
-          </div>
-          
-          <!-- Emoji picker -->
-          <div v-if="showEmojiPicker" class="absolute z-10 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-2" style="width: 280px">
-            <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-700">
-              <h3 class="text-sm font-medium text-white">Emojis</h3>
-              <button @click="showEmojiPicker = false" class="text-gray-400 hover:text-gray-200">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div class="grid grid-cols-8 gap-1 max-h-40 overflow-y-auto emoji-grid">
-              <button 
-                v-for="emoji in commonEmojis" 
-                :key="emoji" 
-                @click="addEmoji(emoji)" 
-                class="text-xl hover:bg-gray-700 rounded p-1"
-              >
-                {{ emoji }}
-              </button>
-            </div>
-            
-            <!-- Emoji categories -->
-            <div class="mt-2 pt-2 border-t border-gray-700">
-              <div class="flex space-x-2 mb-2">
-                <button 
-                  v-for="(category, index) in emojiCategories" 
-                  :key="index"
-                  @click="selectEmojiCategory(index)"
-                  class="text-sm p-1 rounded"
-                  :class="selectedCategory === index ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-gray-200'"
-                >
-                  {{ category.icon }}
-                </button>
-              </div>
-              
-              <div class="grid grid-cols-8 gap-1 max-h-40 overflow-y-auto emoji-grid">
-                <button 
-                  v-for="emoji in currentCategoryEmojis" 
-                  :key="emoji" 
-                  @click="addEmoji(emoji)" 
-                  class="text-xl hover:bg-gray-700 rounded p-1"
-                >
-                  {{ emoji }}
-                </button>
-              </div>
-            </div>
           </div>
           
           <div class="flex justify-end mt-2">
@@ -118,15 +72,38 @@
         </div>
       </div>
     </div>
+    
+    <!-- Emoji Picker Modal - Add this section -->
+    <div v-if="showEmojiPickerModal" class="emoji-modal-backdrop" @click="showEmojiPickerModal = false">
+      <div class="emoji-modal-container" @click.stop>
+        <div class="emoji-modal-header">
+          <h3 class="emoji-modal-title">Select Emoji</h3>
+          <button 
+            @click="showEmojiPickerModal = false" 
+            class="emoji-modal-close"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <EmojiPicker @select="insertEmoji" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
+import EmojiPicker from './EmojiPicker.vue';
 
 export default {
+  components: {
+    EmojiPicker
+  },
+  
   props: {
     initialNotes: {
       type: Array,
@@ -157,46 +134,8 @@ export default {
   setup(props) {
     const notes = ref([...props.initialNotes]);
     const newNoteText = ref('');
-    
-    // Emoji picker state
-    const showEmojiPicker = ref(false);
-    const selectedCategory = ref(0);
-    
-    // Common emojis that appear at the top
-    const commonEmojis = [
-      '👍', '👎', '❤️', '🙏', '👌', '👏', '😊', '😂', 
-      '🎉', '🔥', '⭐', '✅', '❌', '⚠️', '❓', '💡'
-    ];
-    
-    // Emoji categories
-    const emojiCategories = [
-      { icon: '😀', emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '🫠', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🫢', '🫣', '🤫', '🤔', '🫡', '🤐', '🤨', '😐', '😑', '😶', '🫥', '😶‍🌫️', '😏', '😒', '🙄', '😬', '😮‍💨', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '😵‍💫', '🤯', '🤠', '🥳', '🥸', '😎', '🤓', '🧐', '😕', '🫤', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '🥹', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '🙈', '🙉', '🙊'] },
-      { icon: '👍', emojis: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🫰', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦵', '🦿', '🦶', '👂', '🦻', '👃', '🧠', '👣', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄', '🫦', '💋', '🩸'] },
-      { icon: '🐱', emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐻‍❄️', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐜', '🪰', '🪲', '🪳', '🦟', '🦗', '🕷️', '🕸️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🦣', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🦬', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🪶', '🐓', '🦃', '🦤', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦫', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔', '🐾', '🐉', '🐲', '🌵', '🎄', '🌲', '🌳', '🌴', '🪵', '🌱', '🌿', '☘️', '🍀', '🎍', '🪴', '🎋', '🍃', '🍂', '🍁', '🍄', '🐚', '🪨', '🌾', '💐', '🌷', '🪷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻'] },
-      { icon: '🏆', emojis: ['🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎫', '🎟️', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🪘', '🎷', '🎺', '🪗', '🎸', '🪕', '🎻', '🪩', '🎲', '🎯', '🎳', '🎮', '🎰', '🧩'] },
-      { icon: '💯', emojis: ['💯', '❓', '❔', '❕', '❗', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🈂️', '🛂', '🛃', '🛄', '🛅', '♿', '🚾', '🅿️', '🚰', '🚹', '🚺', '🚼', '⚧️', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔢', '#️⃣', '*️⃣', '⏏️', '▶️', '⏸️', '⏯️', '⏹️', '⏺️', '⏭️', '⏮️', '⏩', '⏪', '⏫', '⏬', '◀️', '🔼', '🔽', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🔁', '🔂', '🔄', '🔃', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾️', '💲', '💱', '™️', '©️', '®️', '👁️‍🗨️', '🔚', '🔙', '🔛', '🔝', '🔜', '〰️', '➰', '➿', '✔️', '☑️', '🔘', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '🔳', '🔲', '▪️', '▫️', '◾', '◽', '◼️', '◻️', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬛', '⬜', '🟫', '🔈', '🔇', '🔉', '🔊', '🔔', '🔕', '📣', '📢'] },
-      { icon: '🧠', emojis: ['👁️‍🗨️', '💭', '🗯️', '💬', '🗨️', '🗣️', '👤', '👥', '🫂', '👪', '👨‍👩‍👦', '👨‍👩‍👧', '👨‍👩‍👧‍👦', '👨‍👩‍👦‍👦', '👨‍👩‍👧‍👧', '👨‍👨‍👦', '👨‍👨‍👧', '👨‍👨‍👧‍👦', '👨‍👨‍👦‍👦', '👨‍👨‍👧‍👧', '👩‍👩‍👦', '👩‍👩‍👧', '👩‍👩‍👧‍👦', '👩‍👩‍👦‍👦', '👩‍👩‍👧‍👧', '👨‍👦', '👨‍👦‍👦', '👨‍👧', '👨‍👧‍👦', '👨‍👧‍👧', '👩‍👦', '👩‍👦‍👦', '👩‍👧', '👩‍👧‍👦', '👩‍👧‍👧', '🧑‍🤝‍🧑', '👭', '👫', '👬'] }
-    ];
-    
-    // Computed property to get current category emojis
-    const currentCategoryEmojis = computed(() => {
-      return emojiCategories[selectedCategory.value]?.emojis || [];
-    });
-
-    // Toggle emoji picker
-    const toggleEmojiPicker = () => {
-      showEmojiPicker.value = !showEmojiPicker.value;
-    };
-    
-    // Select emoji category
-    const selectEmojiCategory = (index) => {
-      selectedCategory.value = index;
-    };
-    
-    // Add emoji to text input
-    const addEmoji = (emoji) => {
-      newNoteText.value += emoji;
-    };
+    const messageInput = ref(null);
+    const showEmojiPickerModal = ref(false);
     
     // Format timestamps for display
     const formatTimestamp = (timestamp) => {
@@ -207,30 +146,25 @@ export default {
       }
     };
     
-    // Get user initials for avatar - improved to focus on first and last initials
+    // Get user initials for avatar
     const getUserInitials = (userId) => {
       try {
         const name = props.getUserName(userId);
         
-        // Handle invalid inputs
         if (!name || typeof name !== 'string' || name === 'undefined' || name === 'null') {
           return userId?.toString().substring(0, 2) || '??';
         }
         
-        // Split the name and filter out empty parts
         const nameParts = name.split(' ').filter(part => part.trim().length > 0);
         
-        // If we couldn't extract any parts, use a fallback
         if (nameParts.length === 0) {
           return userId?.toString().substring(0, 2) || '??';
         }
         
-        // If there's only one name part, take the first two letters
         if (nameParts.length === 1) {
           return nameParts[0].substring(0, 2).toUpperCase();
         }
         
-        // Take the first letter of the first name and the first letter of the last name
         const firstInitial = nameParts[0][0].toUpperCase();
         const lastInitial = nameParts[nameParts.length - 1][0].toUpperCase();
         
@@ -244,6 +178,34 @@ export default {
     // Get current user initials
     const getCurrentUserInitials = () => {
       return getUserInitials(props.userId);
+    };
+    
+    // Insert emoji at cursor position or append to end
+    const insertEmoji = (emoji) => {
+      if (messageInput.value) {
+        const textarea = messageInput.value;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        
+        // Insert emoji at cursor position or append to end
+        newNoteText.value = newNoteText.value.substring(0, start) + 
+                           emoji + 
+                           newNoteText.value.substring(end);
+        
+        // Close the modal
+        showEmojiPickerModal.value = false;
+        
+        // Focus back to textarea and place cursor after the inserted emoji
+        nextTick(() => {
+          textarea.focus();
+          const newCursorPos = start + emoji.length;
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+        });
+      } else {
+        // Fallback if ref is not available
+        newNoteText.value += emoji;
+        showEmojiPickerModal.value = false;
+      }
     };
     
     // Add a function to get the current CSRF token
@@ -276,14 +238,14 @@ export default {
       }, 100);
     });
     
-    // Add a new note with improved CSRF handling
+    // Add a new note
     const addNote = () => {
       if (!newNoteText.value.trim()) return;
       
-      // Hide emoji picker when sending
-      showEmojiPicker.value = false;
+      // Close emoji picker if open
+      showEmojiPickerModal.value = false;
       
-      // Create a temporary note with a temporary ID
+      // Create a temporary note
       const tempId = 'temp-' + Date.now();
       const newNote = {
         id: tempId,
@@ -293,13 +255,13 @@ export default {
         isNew: true
       };
       
-      // Add it to our notes array immediately for UI feedback
+      // Add it to our notes array
       notes.value.push(newNote);
       
       // Clear the input
       newNoteText.value = '';
       
-      // Scroll to bottom to show new message
+      // Scroll to bottom
       setTimeout(() => {
         const messagesContainer = document.querySelector('.messages');
         if (messagesContainer) {
@@ -307,31 +269,25 @@ export default {
         }
       }, 100);
       
-      // Get fresh CSRF token
+      // Get CSRF token
       const token = getCsrfToken();
       
-      // Create FormData with text and token
+      // Create FormData
       const formData = new FormData();
       formData.append('text', newNote.text);
       formData.append('_token', token);
       
-      // Send to server with FormData to avoid CSRF issues
+      // Send to server
       axios.post(`/work-orders/${props.workOrderId}/notes`, formData)
         .then(response => {
-          // Update the note with the real ID from server
           const noteIndex = notes.value.findIndex(n => n.id === tempId);
           if (noteIndex !== -1 && response.data && response.data.id) {
             notes.value[noteIndex].id = response.data.id;
-            console.log('Note saved successfully with ID:', response.data.id);
           }
         })
         .catch(error => {
           console.error('Error adding note:', error);
-          
-          // Remove the temp note on failure
           notes.value = notes.value.filter(n => n.id !== tempId);
-          
-          // Show error to user
           alert('Failed to save your note. Please try again.');
         });
     };
@@ -339,18 +295,13 @@ export default {
     return {
       notes,
       newNoteText,
+      messageInput,
       formatTimestamp,
       getUserInitials,
       getCurrentUserInitials,
       addNote,
-      showEmojiPicker,
-      selectedCategory,
-      commonEmojis,
-      emojiCategories,
-      currentCategoryEmojis,
-      toggleEmojiPicker,
-      selectEmojiCategory,
-      addEmoji,
+      showEmojiPickerModal,
+      insertEmoji
     };
   }
 };
@@ -427,5 +378,135 @@ export default {
   flex: 1;
   min-height: 150px;
   max-height: 300px;
+}
+
+/* Enhanced emoji picker styling */
+.emoji-picker-container {
+  position: absolute;
+  z-index: 50;
+  bottom: calc(100% + 5px);
+  left: 0;
+  width: 320px;
+  max-height: 350px;
+  background-color: #1F2937;
+  border: 1px solid #4B5563;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.25rem;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 0.25rem;
+  margin-bottom: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(115, 115, 115, 0.4) transparent;
+}
+
+.emoji-grid::-webkit-scrollbar {
+  width: 5px;
+}
+
+.emoji-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.emoji-grid::-webkit-scrollbar-thumb {
+  background-color: rgba(115, 115, 115, 0.4);
+  border-radius: 10px;
+}
+
+.emoji-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  padding: 0.375rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  height: 36px;
+  width: 36px;
+}
+
+.emoji-btn:hover {
+  background-color: #374151;
+}
+
+.emoji-btn:active {
+  background-color: #4B5563;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.category-tab {
+  padding: 0.375rem;
+  border-radius: 0.25rem;
+  transition: all 0.15s ease;
+}
+
+.category-tab:hover {
+  background-color: #374151;
+}
+
+/* New emoji modal styling */
+.emoji-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.emoji-modal-container {
+  background-color: #1F2937;
+  border-radius: 8px;
+  width: 350px;
+  max-width: 90%;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.emoji-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #4B5563;
+}
+
+.emoji-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #F3F4F6;
+}
+
+.emoji-modal-close {
+  background: none;
+  border: none;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.emoji-modal-close:hover {
+  background-color: #374151;
+  color: #F3F4F6;
 }
 </style>

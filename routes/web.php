@@ -7,6 +7,7 @@ use App\Http\Controllers\GroqController;
 use App\Http\Controllers\WorkOrderController;
 use App\Http\Controllers\QuickBooksAuthController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\DocumentController;
 
 // Public routes
 Route::get('/', function () {
@@ -189,6 +190,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('/work-orders/{workOrder}/invoice', [App\Http\Controllers\WorkOrderController::class, 'createInvoice'])
         ->middleware(['auth', 'verified'])
         ->name('work-orders.invoice');
+
+    // Add the document upload route as a web route (with session authentication)
+    Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument'])
+        ->middleware(['auth:sanctum', 'verified']);
 });
 
 // QuickBooks Integration Routes

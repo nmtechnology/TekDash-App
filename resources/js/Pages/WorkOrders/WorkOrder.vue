@@ -138,7 +138,7 @@
                 <div>
                   <p class="text-sm text-gray-400">Date(s):</p>
                   <div class="flex items-center">
-                    <div v-if="!editingField.date_time" class="text-green-400">
+                    <div v-if="!editingField.date_time" class="text-white">
                       <span v-if="workOrder.visit_dates && workOrder.visit_dates.length">
                         {{ formatMultipleDates(workOrder.visit_dates) }}
                       </span>
@@ -202,7 +202,7 @@
                           <input 
                             type="datetime-local" 
                             v-model="form.end_date" 
-                            class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                            class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
                           />
                         </div>
                       </div>
@@ -213,7 +213,7 @@
                           <input 
                             type="datetime-local" 
                             v-model="selectedDates[index]" 
-                            class="mt-1 flex-grow rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                            class="mt-1 flex-grow rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
                           />
                           <button 
                             @click="removeDate(index)" 
@@ -280,40 +280,50 @@
               </div>
               
               <!-- User section -->
-              <div>
+              <!-- <div>
                 <p class="text-sm text-gray-400">Assigned to:</p>
                 <div class="flex items-center">
-                  <span v-if="!editingField.user_id" class="text-white">
-                  {{ getUserName(workOrder.user_id) || 'Unassigned' }}
+                  <span v-if="!editingField.user_name" class="text-white">
+                    {{ getUserName(workOrder.user_name) }}
                   </span>
                   <select 
-                  v-else 
-                  v-model="form.user_id" 
-                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
+                    v-else 
+                    v-model="form.user_name" 
+                    class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
                   >
-                  <option value="">Unassigned</option>
-                  <option v-for="user in $page.props.users" :key="user.id" :value="user.id">
-                    {{ user.name }}
-                  </option>
+                    <option v-for="user in $page.props.users" :key="user.name" :value="user.name">
+                      {{ user.name }}
+                    </option>
                   </select>
                   <span class="ml-2">
-                  <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 hover:text-lime-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
-                  <button v-else @click="saveField('user_id')" class="text-green-400 hover:text-green-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
+                    <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 hover:text-lime-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button v-else @click="saveField('user_id')" class="text-green-400 hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
                   </span>
                 </div>
-              </div>
+              </div> -->
               
-              <!-- Attachments section - Updated to handle multiple attachment fields -->
+              <!-- Attachments section - Updated with persistent upload button -->
               <div>
-                <p class="text-sm text-gray-400">Attachments:</p>
+                <div class="flex justify-between items-center">
+                  <p class="text-sm text-gray-400">Attachments:</p>
+                  <button 
+                    @click="startEditing('images')" 
+                    class="text-lime-400 btn outline rounded p-1 hover:text-gray-900 hover:bg-lime-400 text-sm flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload
+                  </button>
+                </div>
                 <ul role="list" class="mt-1 divide-y divide-gray-700 rounded-md border border-gray-700">
                   <li v-for="(attachment, index) in getAllAttachments()" :key="index" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                     <div class="flex w-0 flex-1 items-center">
@@ -347,7 +357,6 @@
                   </li>
                   <li v-if="!editingField.images && getAllAttachments().length === 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                     <span class="text-gray-400">No attachments</span>
-                    <button @click="startEditing('images')" class="text-lime-400 btn outline rounded hover:text-lime-300">Add</button>
                   </li>
                   <li v-if="editingField.images" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                     <input 
@@ -382,6 +391,8 @@
                     v-else-if="isPdfFile(previewAttachment)"
                     :pdfUrl="previewAttachment"
                     :title="getFileName(previewAttachment)"
+                    :redirect-after-upload="true"
+                    @document-uploaded="handleDocumentUpload"
                   />
                   
                   <!-- Close button -->
@@ -1026,6 +1037,50 @@ if (token) {
       }
     };
 
+    // Add this function to handle document uploads from PdfViewer
+    const handleDocumentUpload = async (data) => {
+      try {
+        console.log('Document uploaded:', data);
+        
+        // Add the document to the work order's attachments
+        if (data.url && data.fileName) {
+          // Extract the path from the URL (remove domain and /storage prefix)
+          const pathMatch = data.url.match(/\/storage\/(.*)/);
+          const attachmentPath = pathMatch ? pathMatch[1] : data.url;
+          
+          // Notify parent that document was uploaded
+          emit('document-uploaded', {
+            workOrderId: props.workOrder.id,
+            filePath: attachmentPath,
+            fileName: data.fileName
+          });
+          
+          // Update local state if needed
+          if (props.workOrder.file_attachments && Array.isArray(props.workOrder.file_attachments)) {
+            // Add the new attachment to the array
+            props.workOrder.file_attachments.push(attachmentPath);
+          } else {
+            props.workOrder.file_attachments = [attachmentPath];
+          }
+          
+          // Close the preview
+          closePreview();
+          
+          // Show success message
+          alert(`Document "${data.fileName}" uploaded successfully`);
+          
+          // If a work order ID was provided, and it matches the current work order
+          if (data.workOrderId && data.workOrderId === props.workOrder.id) {
+            // Close the modal to refresh the view
+            closeModal();
+          }
+        }
+      } catch (error) {
+        console.error('Error handling document upload:', error);
+        alert('Failed to process the uploaded document.');
+      }
+    };
+
     return {
       getStatusClasses,
       // ... rest of existing return values ...
@@ -1057,6 +1112,8 @@ if (token) {
       },
       duplicateWorkOrder,
       handleImageUpload: handleFileUpload,
+      previewAttachment,
+      handleDocumentUpload,
       isPdfFile,
       isImageFile,
       getFileName,

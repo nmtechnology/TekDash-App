@@ -81,7 +81,7 @@
           
           <canvas
             ref="signatureCanvas"
-            class="signature-canvas"
+            class="signature-canvas bg-black"
             @mousedown="startDrawing"
             @mousemove="draw"
             @mouseup="stopDrawing"
@@ -90,6 +90,28 @@
             @touchmove.prevent="draw"
             @touchend.prevent="stopDrawing"
           ></canvas>
+          
+          <!-- NEW: Added input fields for first name and last name -->
+          <div class="signature-inputs">
+            <div class="input-group">
+              <label for="firstName">First Name</label>
+              <input 
+                type="text" 
+                id="firstName" 
+                v-model="firstName" 
+                placeholder="Enter first name" 
+              />
+            </div>
+            <div class="input-group">
+              <label for="lastName">Last Name</label>
+              <input 
+                type="text" 
+                id="lastName" 
+                v-model="lastName" 
+                placeholder="Enter last name" 
+              />
+            </div>
+          </div>
           
           <div class="signature-actions">
             <button @click="clearSignature" class="signature-btn clear">Clear</button>
@@ -102,13 +124,24 @@
       <!-- Download PDF after signature -->
       <div v-if="modifiedPdfUrl" class="download-bar">
         <p>Document signed successfully!</p>
-        <a :href="modifiedPdfUrl" download="signed_document.pdf" class="download-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-          </svg>
-          Download Signed PDF
-        </a>
+        <div class="download-actions">
+          <!-- Restored download button -->
+          <a :href="modifiedPdfUrl" :download="signedFilename" class="action-btn download-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+              <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+            </svg>
+            Download
+          </a>
+          <!-- New upload button -->
+          <button @click="uploadSignedDocument" class="action-btn upload-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+              <path d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
+            </svg>
+            Upload to Work Order
+          </button>
+        </div>
       </div>
       
       <!-- Debug info -->
@@ -124,8 +157,8 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue';
-import { PDFDocument } from 'pdf-lib';
+import { ref, onMounted, watch, computed } from 'vue';
+import { PDFDocument, rgb } from 'pdf-lib';
 
 export default {
   name: 'PdfViewer',
@@ -146,6 +179,21 @@ export default {
     debug: {
       type: Boolean,
       default: false
+    },
+    // Add a prop for the work order ID to redirect to after upload
+    workOrderId: {
+      type: [Number, String],
+      default: null
+    },
+    // Add a redirectAfterUpload prop to control redirection behavior
+    redirectAfterUpload: {
+      type: Boolean,
+      default: true
+    },
+    // Add an onClose prop to handle closing from parent component
+    onClose: {
+      type: Function,
+      default: null
     }
   },
   
@@ -171,6 +219,43 @@ export default {
     // Drawing state variables
     let lastX = 0;
     let lastY = 0;
+
+    // NEW: Add reactive variables for first and last name
+    const firstName = ref('');
+    const lastName = ref('');
+    
+    // Add a ref to store the original filename
+    const originalFilename = ref('document.pdf');
+    
+    // Helper function to extract filename from URL
+    const extractFilename = (url) => {
+      if (!url) return 'document.pdf';
+      
+      // Remove query parameters
+      const urlWithoutParams = url.split('?')[0];
+      
+      // Extract the filename from the URL path
+      const urlParts = urlWithoutParams.split('/');
+      const rawFilename = urlParts[urlParts.length - 1];
+      
+      // Decode URL-encoded characters
+      return decodeURIComponent(rawFilename) || 'document.pdf';
+    };
+    
+    // Compute the signed filename by appending "signed" before the extension
+    const signedFilename = computed(() => {
+      const filename = originalFilename.value;
+      const lastDotIndex = filename.lastIndexOf('.');
+      
+      if (lastDotIndex === -1) {
+        // No extension found
+        return `${filename}-signed.pdf`;
+      }
+      
+      const name = filename.substring(0, lastDotIndex);
+      const extension = filename.substring(lastDotIndex);
+      return `${name}-signed${extension}`;
+    });
     
     // Methods
     const onPdfLoad = () => {
@@ -196,7 +281,9 @@ export default {
     };
     
     const closeViewer = () => {
-      emit('close');
+      if (props.onClose) {
+        props.onClose();
+      }
     };
     
     // Simple URL processing function - avoid complexity
@@ -241,6 +328,10 @@ export default {
         const fullUrl = getFullPdfUrl(props.pdfUrl);
         console.log('Processing PDF URL:', fullUrl);
         
+        // Extract and store original filename
+        originalFilename.value = extractFilename(props.pdfUrl);
+        console.log('Original filename:', originalFilename.value);
+        
         // Set the URL for display
         pdfDisplayUrl.value = fullUrl;
         
@@ -264,6 +355,8 @@ export default {
     
     // Signature functionality - kept from your working code
     const activateSignatureMode = () => {
+      firstName.value = '';
+      lastName.value = '';
       signatureMode.value = true;
       setTimeout(() => {
         if (signatureCanvas.value) {
@@ -376,7 +469,12 @@ export default {
         const success = await addSignatureToPdf(signatureData);
         
         if (success) {
-          emit('signature-captured', signatureData);
+          // MODIFIED: Include firstName and lastName in the emitted data
+          emit('signature-captured', {
+            signature: signatureData,
+            firstName: firstName.value,
+            lastName: lastName.value
+          });
           signatureMode.value = false;
         } else {
           error.value = true;
@@ -448,6 +546,19 @@ export default {
           height: signatureHeight,
         });
         
+        // NEW: Add first and last name text to the PDF
+        if (firstName.value || lastName.value) {
+          const fullName = `${firstName.value} ${lastName.value}`.trim();
+          if (fullName) {
+            lastPage.drawText(fullName, {
+              x: signatureX,
+              y: signatureY - 20, // Position below signature
+              size: 12,
+              color: rgb(0, 0, 0), // Black color
+            });
+          }
+        }
+        
         console.log('Saving modified PDF');
         // Save the modified PDF
         const modifiedPdfBytes = await pdfDoc.save();
@@ -465,6 +576,96 @@ export default {
       } catch (error) {
         console.error('Error adding signature to PDF:', error);
         return false;
+      }
+    };
+    
+    // NEW: Method to upload the signed document to work order
+    const uploadSignedDocument = async () => {
+      try {
+        if (!modifiedPdfUrl.value) {
+          console.error('No signed document available to upload');
+          return;
+        }
+        
+        // Show loading state
+        loading.value = true;
+        
+        // Fetch the signed PDF blob from the URL
+        const response = await fetch(modifiedPdfUrl.value);
+        const blob = await response.blob();
+        
+        // Create form data for upload
+        const formData = new FormData();
+        formData.append('file', blob, signedFilename.value);
+        formData.append('firstName', firstName.value);
+        formData.append('lastName', lastName.value);
+        
+        // Add workOrderId to form data if provided
+        if (props.workOrderId) {
+          formData.append('workOrderId', props.workOrderId);
+        }
+        
+        // Get CSRF token from meta tag for Laravel security
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        console.log('Uploading document', {
+          filename: signedFilename.value,
+          size: blob.size,
+          hasToken: !!token,
+          workOrderId: props.workOrderId
+        });
+        
+        // Use the PUBLIC endpoint that doesn't require authentication
+        const uploadResponse = await fetch('/api/public/documents/upload-signed', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRF-TOKEN': token || '',
+            'Accept': 'application/json',
+          }
+        });
+        
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.text();
+          console.error('Upload response:', errorData);
+          throw new Error(`Upload failed with status: ${uploadResponse.status}`);
+        }
+        
+        const result = await uploadResponse.json();
+        console.log('Upload successful:', result);
+        
+        // Emit event to notify parent component of upload
+        emit('document-uploaded', {
+          url: result.url,
+          fileName: signedFilename.value,
+          firstName: firstName.value,
+          lastName: lastName.value,
+          workOrderId: props.workOrderId
+        });
+        
+        // Show success message
+        alert('Document successfully uploaded to work order!');
+        
+        // Redirect to work order view if ID is provided and redirectAfterUpload is true
+        if (props.workOrderId && props.redirectAfterUpload) {
+          // Small delay to ensure the alert is seen
+          setTimeout(() => {
+            // Use router if available, otherwise do a page redirect
+            if (window.Inertia) {
+              // For Inertia.js applications
+              window.Inertia.visit(`/work-orders/${props.workOrderId}`);
+            } else {
+              // Regular redirect
+              window.location.href = `/work-orders/${props.workOrderId}`;
+            }
+          }, 500);
+        }
+        
+      } catch (error) {
+        console.error('Error uploading signed document:', error);
+        alert(`Failed to upload signed document: ${error.message}`);
+      } finally {
+        loading.value = false;
       }
     };
     
@@ -503,7 +704,11 @@ export default {
       stopDrawing,
       clearSignature,
       cancelSignature,
-      saveSignature
+      saveSignature,
+      firstName,
+      lastName,
+      uploadSignedDocument,
+      signedFilename
     };
   }
 };
@@ -540,7 +745,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  background-color: #f8f9fa;
+  background-color: #000000;
   border-bottom: 1px solid #e9ecef;
 }
 
@@ -578,8 +783,9 @@ export default {
 }
 
 .close-button {
-  background-color: #EF4444;
+  background-color: #eb0000;
   color: white;
+  outline:#059669;
 }
 
 .close-button:hover {
@@ -591,7 +797,7 @@ export default {
   position: relative;
   display: flex;
   overflow: hidden;
-  background-color: #f1f1f1; /* Light background to see if container is visible */
+  background-color: #03122c; /* Light background to see if container is visible */
 }
 
 .pdf-display {
@@ -712,7 +918,7 @@ export default {
 }
 
 .signature-box {
-  background-color: white;
+  background-color: rgb(36, 37, 44);
   border-radius: 8px;
   width: 100%;
   max-width: 600px;
@@ -732,7 +938,7 @@ export default {
   font-size: 18px;
   font-weight: 500;
   margin: 0;
-  color: #1F2937;
+  color: #50fd00;
 }
 
 .signature-close {
@@ -740,16 +946,44 @@ export default {
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #6B7280;
+  color: #d20202;
 }
 
 .signature-canvas {
   width: 100%;
   height: 200px;
-  border: 2px solid #E5E7EB;
+  border: 2px solid #545454;
   border-radius: 6px;
   touch-action: none;
-  background-color: #ffffff;
+  background-color: #707070;
+}
+
+/* NEW: Styles for the signature input fields */
+.signature-inputs {
+  display: flex;
+  gap: 15px;
+  margin: 15px 0;
+  background-color: #21252d;
+}
+
+.input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.input-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #5fdb00;
+}
+
+.input-group input {
+  padding: 8px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
 .signature-actions {
@@ -788,8 +1022,8 @@ export default {
 }
 
 .signature-btn.save {
-  background-color: #10B981;
-  color: white;
+  background-color: #5fdb00;
+  color: black;
   border: none;
 }
 
@@ -812,20 +1046,40 @@ export default {
   font-weight: 500;
 }
 
-.download-btn {
+.download-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background-color: #10B981;
-  color: white;
   border-radius: 4px;
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
+  cursor: pointer;
+}
+
+.download-btn {
+  background-color: #10B981;
+  color: white;
+  border: none;
 }
 
 .download-btn:hover {
   background-color: #059669;
+}
+
+.upload-btn {
+  background-color: #5fdb00;
+  color: black;
+  border: none;
+}
+
+.upload-btn:hover {
+  background-color: #5fdb00;
 }
 </style>

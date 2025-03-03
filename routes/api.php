@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WorkOrderController;
 use App\Models\WorkOrder;
 use Carbon\Carbon;
+use App\Http\Controllers\DocumentController; // Add this import
 
 // Public routes
 Route::get('/health', function () {
@@ -18,6 +19,12 @@ Route::get('/health', function () {
         'php_version' => PHP_VERSION
     ]);
 });
+
+// Public route for uploading signed documents - no need for auth:sanctum middleware
+Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument']);
+
+// Make this route completely public with no auth requirements
+Route::post('/public/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // User routes
@@ -151,8 +158,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('work-orders/{workOrder}/invoice', [WorkOrderController::class, 'createInvoice']);
     });
+
+    // Fix the document upload endpoint (remove duplicate /api)
+    Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument']);
 });
 
 // Quickbooks Routes (if needed)
 Route::get('/quickbooks/connect', [QuickBooksAuthController::class, 'connect'])->name('quickbooks.connect');
 Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');
+
+// uplaodSignedDocument
+Route::post('/upload-signed-document', [WorkOrderController::class, 'uploadSignedDocument']);
