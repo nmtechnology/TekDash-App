@@ -12,14 +12,14 @@
           </div>
         </div>
         
-        <!-- Message content -->
-        <div class="flex-1 bg-gray-800 rounded-lg p-3">
+        <!-- Message content - Now with glossy style -->
+        <div class="flex-1 message-bubble glossy-message">
           <!-- Improved header with clearer separation between name and timestamp -->
           <div class="flex items-center justify-between mb-1">
             <p class="text-sm font-medium text-lime-400">{{ getUserName(note.user_id) }}</p>
-            <p class="text-xs text-blue-400">{{ formatTimestamp(note.created_at) }}</p>
+            <p class="text-xs text-blue-300">{{ formatTimestamp(note.created_at) }}</p>
           </div>
-          <p class="text-sm text-green-400 mt-1 whitespace-pre-wrap">{{ note.text }}</p>
+          <p class="text-sm text-white mt-1 whitespace-pre-wrap message-text">{{ note.text }}</p>
         </div>
       </div>
     </div>
@@ -508,5 +508,92 @@ export default {
 .emoji-modal-close:hover {
   background-color: #374151;
   color: #F3F4F6;
+}
+
+/* Glossy message styling */
+.message-bubble {
+  position: relative;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: rgba(30, 41, 59, 0.7);
+  box-shadow: 
+    0 2px 5px rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  z-index: 1;
+}
+
+/* Glossy reflection effect */
+.glossy-message {
+  position: relative;
+}
+
+.glossy-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.15), 
+    rgba(255, 255, 255, 0.05) 40%, 
+    rgba(255, 255, 255, 0) 100%);
+  z-index: 0;
+  pointer-events: none;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+/* Message text positioning relative to the glossy effect */
+.message-text {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom avatar styling to match the glossy theme */
+.avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%);
+  color: white;
+  user-select: none;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Input area styling to match the glossy theme */
+textarea {
+  background: rgba(17, 24, 39, 0.7) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(75, 85, 99, 0.3) !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Enhanced emoji modal styling to match glossy theme */
+.emoji-modal-container {
+  background: rgba(31, 41, 55, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.5),
+    0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+.emoji-modal-header {
+  background: rgba(17, 24, 39, 0.6);
+  border-bottom: 1px solid rgba(107, 114, 128, 0.2);
 }
 </style>

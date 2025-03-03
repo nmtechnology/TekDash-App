@@ -1,51 +1,406 @@
 <template>
   <div v-if="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center modal-animation">
-    <!-- Semi-transparent overlay with blur -->
-    <div class="absolute inset-0 bg-black backdrop-blur-lg"></div>
+    <!-- Semi-transparent overlay with enhanced blur -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
     
-    <!-- Modal container using the provided styling -->
-    <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl mx-4 sm:mx-auto border border-gray-700 relative z-[10000] mt-16 mt-60 max-h-[80vh]">
-      <!-- Modal header -->
-      <div class="bg-gray-900 px-4 pt-6 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700 overflow-auto sm:max-h-[25] max-h-[55vh]">
-        <div class="sm:flex sm:items-start">
-          <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-            <!-- Header with close button -->
-            <div class="flex justify-between items-center mb-4">
-              <div class="flex items-center space-x-3 flex-grow">
-                <h3 class="text-lg leading-6 font-medium text-lime-400" id="modal-title">
-                  <span v-if="!editingField.title" class="flex items-center">
-                     {{ workOrder.title }}
-                    <span 
-                      class="ml-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
-                      :class="getStatusClasses(workOrder.status)"
-                    >
-                      {{ workOrder.status }}
-                    </span>
+    <!-- Modal container with fixed header and scrollable content -->
+    <div class="mt-10 glossy-card flex flex-col w-full max-w-4xl mx-4 sm:mx-auto rounded-lg text-left shadow-xl transform transition-all relative z-[10000] max-h-[80vh]">
+      <!-- Fixed header -->
+      <div class="glossy-header sticky top-0 z-30 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700/50">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center space-x-3 flex-grow">
+            <h3 class="text-lg leading-6 font-medium text-lime-400" id="modal-title">
+              <span v-if="!editingField.title" class="flex items-center">
+                 {{ workOrder.title }}
+                <span 
+                  class="ml-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
+                  :class="getStatusClasses(workOrder.status)"
+                >
+                  {{ workOrder.status }}
+                </span>
+              </span>
+              <input 
+                v-else 
+                type="text" 
+                v-model="form.title" 
+                class="w-full rounded-md bg-lime-400 border-lime-400 shadow-sm focus:border-lime-600 focus:ring-lime-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 text-white text-lg font-medium"
+              />
+            </h3>
+            
+            <!-- Network Status Indicator -->
+            <NetworkStatusIndicator :workOrderId="workOrder.id" />
+          </div>
+          
+          <div class="flex space-x-2">
+            <button v-if="!editingField.title" @click="startEditing('title')" class="glossy-icon-btn text-lime-400 hover:text-lime-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+            <button v-else @click="saveField('title')" class="text-green-400 hover:text-green-300 glossy-icon-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+            <button @click="closeModal" class="text-red-500 outline-dotted hover:text-gray-900 hover:bg-red-500 glossy-close-btn">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Scrollable content -->
+      <div class="flex-1 overflow-y-auto p-4">
+        <div class="text-gray-300 space-y-4">
+          <!-- Work order details -->
+          <div class="text-gray-300 space-y-4">
+            <!-- Customer section -->
+            <div class="flex justify-between items-start glossy-section">
+              <div class="w-full">
+                <p class="text-sm text-gray-400">Customer:</p>
+                <div class="flex items-center">
+                  <span v-if="!editingField.customer_id" class="text-white">{{ workOrder.customer_id }}</span>
+                  <select v-else v-model="form.customer_id" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
+                    <option value="Advanced Project Solutions">Advanced Project Solutions</option>
+                    <option value="Barrister Global Service Network">Barrister Global Service Network</option>
+                    <option value="DarAlIslam">DarAlIslam</option>
+                    <option value="Field Nation">Field Nation</option>
+                    <option value="Navco">Navco</option>
+                    <option value="NEW CUSTOMER">NEW CUSTOMER</option>
+                    <option value="NuTech National">NuTech National</option>
+                    <option value="Telaid">Telaid</option>
+                  </select>
+                  <span class="ml-2">
+                    <button v-if="!editingField.customer_id" @click="startEditing('customer_id')" class="text-lime-400 hover:text-lime-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button v-else @click="saveField('customer_id')" class="text-green-400 hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
                   </span>
-                  <input 
-                    v-else 
-                    type="text" 
-                    v-model="form.title" 
-                    class="w-full rounded-md bg-lime-400 border-lime-400 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 text-white text-lg font-medium"
-                  />
-                </h3>
-                
-                <!-- Network Status Indicator -->
-                <NetworkStatusIndicator :workOrderId="workOrder.id" />
+                </div>
               </div>
               
-              <div class="flex space-x-2">
-                <button v-if="!editingField.title" @click="startEditing('title')" class="text-lime-400 hover:text-lime-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              <div>
+                <p class="text-sm text-gray-400">Price:</p>
+                <div class="flex items-center">
+                  <span v-if="!editingField.price" class="text-white">${{ workOrder.price }}</span>
+                  <input v-else type="number" v-model="form.price" class="mt-1 w-24 rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" />
+                  <span class="ml-2">
+                    <button v-if="!editingField.price" @click="startEditing('price')" class="text-lime-400 hover:text-lime-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button v-else @click="saveField('price')" class="text-green-400 hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Status section -->
+            <div class="flex justify-between items-start glossy-section">
+              <div class="w-full">
+                <p class="text-sm text-gray-400">Status:</p>
+                <div class="flex items-center">
+                  <span v-if="!editingField.status" :class="getStatusClasses(workOrder.status).includes('text')">{{ workOrder.status }}</span>
+                  <select v-else v-model="form.status" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Part/Return">Part/Return</option>
+                    <option value="Complete">Complete</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <span class="ml-2">
+                    <button v-if="!editingField.status" @click="startEditing('status')" class="text-lime-400 hover:text-lime-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button v-else @click="saveField('status')" class="text-green-400 hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <p class="text-sm text-gray-400">Date(s):</p>
+                <div class="flex items-center">
+                  <div v-if="!editingField.date_time" class="text-white">
+                    <span v-if="workOrder.visit_dates && workOrder.visit_dates.length">
+                      {{ formatMultipleDates(workOrder.visit_dates) }}
+                    </span>
+                    <span v-else>
+                      {{ formatDate(workOrder.date_time) }}
+                    </span>
+                  </div>
+                  <div v-else class="flex flex-col space-y-3 w-full">
+                    <!-- Date selection type toggle -->
+                    <div class="flex space-x-4 text-sm">
+                      <label class="flex items-center">
+                        <input 
+                          type="radio" 
+                          v-model="dateSelectionType" 
+                          value="single" 
+                          class="mr-2 focus:ring-lime-400 text-lime-500"
+                        >
+                        <span class="text-white">Single Date</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input 
+                          type="radio" 
+                          v-model="dateSelectionType" 
+                          value="range" 
+                          class="mr-2 focus:ring-lime-400 text-lime-500"
+                        >
+                        <span class="text-white">Date Range</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input 
+                          type="radio" 
+                          v-model="dateSelectionType" 
+                          value="multiple" 
+                          class="mr-2 focus:ring-lime-400 text-lime-500"
+                        >
+                        <span class="text-white">Multiple Dates</span>
+                      </label>
+                    </div>
+
+                    <!-- Single date selection -->
+                    <div v-if="dateSelectionType === 'single'" class="flex items-center">
+                      <input 
+                        type="datetime-local" 
+                        v-model="form.date_time" 
+                        class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                      />
+                    </div>
+
+                    <!-- Date range selection -->
+                    <div v-if="dateSelectionType === 'range'" class="space-y-2">
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-400 mr-2 w-14">Start:</span>
+                        <input 
+                          type="datetime-local" 
+                          v-model="form.date_time" 
+                          class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                        />
+                      </div>
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-400 mr-2 w-14">End:</span>
+                        <input 
+                          type="datetime-local" 
+                          v-model="form.end_date" 
+                          class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                        />
+                      </div>
+                    </div>
+
+                    <!-- Multiple date selection -->
+                    <div v-if="dateSelectionType === 'multiple'" class="space-y-2">
+                      <div v-for="(date, index) in selectedDates" :key="index" class="flex items-center">
+                        <input 
+                          type="datetime-local" 
+                          v-model="selectedDates[index]" 
+                          class="mt-1 flex-grow rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                        />
+                        <button 
+                          @click="removeDate(index)" 
+                          class="ml-2 text-red-400 hover:text-red-300"
+                          type="button"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <button 
+                        @click="addNewDate" 
+                        class="text-sm text-lime-400 hover:text-lime-300 flex items-center"
+                        type="button"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Another Date
+                      </button>
+                    </div>
+                  </div>
+                  <span class="ml-2">
+                    <button v-if="!editingField.date_time" @click="startEditing('date_time')" class="text-lime-400 hover:text-lime-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button v-else @click="saveField('date_time')" class="text-green-400 hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Description section - Updated to be smaller and scrollable -->
+            <div>
+              <p class="text-sm text-gray-400">Description:</p>
+              <div class="flex">
+                <div class="flex-grow">
+                  <div v-if="!editingField.description" 
+                    class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md text-white overflow-y-auto max-h-[120px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 touch-auto">
+                    {{ workOrder.description }}
+                  </div>
+                  <textarea v-else v-model="form.description" rows="4" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:ring-lime-600 text-white sm:text-sm"></textarea>
+                </div>
+                <span class="ml-2 flex-shrink-0">
+                  <button v-if="!editingField.description" @click="startEditing('description')" class="text-lime-400 hover:text-lime-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button v-else @click="saveField('description')" class="text-green-400 hover:text-green-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            </div>
+            
+            <!-- User section -->
+            <!-- <div>
+              <p class="text-sm text-gray-400">Assigned to:</p>
+              <div class="flex items-center">
+                <span v-if="!editingField.user_name" class="text-white">
+                  {{ getUserName(workOrder.user_name) }}
+                </span>
+                <select 
+                  v-else 
+                  v-model="form.user_name" 
+                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
+                >
+                  <option v-for="user in $page.props.users" :key="user.name" :value="user.name">
+                    {{ user.name }}
+                  </option>
+                </select>
+                <span class="ml-2">
+                  <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 hover:text-lime-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button v-else @click="saveField('user_id')" class="text-green-400 hover:text-green-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            </div> -->
+            
+            <!-- Attachments section - Updated with persistent upload button -->
+            <div class="glossy-section">
+              <div class="flex justify-between items-center">
+                <p class="text-sm text-gray-400">Attachments:</p>
+                <button 
+                  @click="startEditing('images')" 
+                  class="text-lime-400 btn outline mb-2 rounded p-1 hover:text-gray-900 hover:bg-lime-400 text-sm flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
+                  Upload
                 </button>
-                <button v-else @click="saveField('title')" class="text-green-400 hover:text-green-300">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-                <button @click="closeModal" class="text-red-500 outline-dotted hover:text-gray-900 hover:bg-red-500">
+              </div>
+              <ul role="list" class="mt-1 divide-y divide-gray-700 rounded-md border border-gray-700">
+                <li v-for="(attachment, index) in getAllAttachments()" :key="index" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
+                  <div class="flex w-0 flex-1 items-center">
+                    <!-- Different icons for different file types -->
+                    <svg v-if="isPdfFile(attachment)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
+                    </svg>
+                    <span class="ml-2 flex-1 truncate text-white">{{ getFileName(attachment) }}</span>
+                  </div>
+                  <div class="ml-4 flex-shrink-0 flex space-x-2">
+                    <!-- Preview button for images and PDFs -->
+                    <button 
+                      v-if="isImageFile(attachment) || isPdfFile(attachment)" 
+                      @click="handlePreviewAttachment(attachment)" 
+                      class="text-lime-400 btn outline rounded p-1 hover:text-gray-900 hover:bg-lime-400"
+                    >
+                      View
+                    </button>
+                    <a :href="`/storage/${attachment}`" class="text-yellow-500 text-sm hover:bg-yellow-500 outline btn rounded p-1 hover:text-gray-900" download>Download</a>
+                    <!-- Add delete button -->
+                    <button 
+                      @click="deleteAttachment(attachment)" 
+                      class="text-red-500 hover:bg-red-400 hover:text-gray-900 btn rounded p-1 outline"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+                <li v-if="!editingField.images && getAllAttachments().length === 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
+                  <span class="text-gray-400">No attachments</span>
+                </li>
+                <li v-if="editingField.images" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
+                  <input 
+                    type="file" 
+                    id="images" 
+                    multiple 
+                    @change="handleImageUpload" 
+                    class="text-white" 
+                    accept=".jpg,.jpeg,.png,.gif,.pdf"
+                  />
+                  <div class="text-xs text-gray-400 ml-2">
+                    Supports: PDF, JPG, PNG, GIF
+                  </div>
+                  <button @click="saveField('images')" class="text-lime-400 hover:text-lime-500">Save</button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Image preview modal -->
+            <div v-if="previewAttachment" class="fixed inset-0 z-[10001] flex items-center justify-center">
+              <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="closePreview"></div>
+              <div class="relative max-w-4xl max-h-[90vh] overflow-auto glossy-preview-card bg-gray-900 rounded-lg p-1 z-[10002]">
+                <!-- Image preview -->
+                <img 
+                  v-if="isImageFile(previewAttachment)" 
+                  :src="`/storage/${previewAttachment}`" 
+                  class="max-w-full max-h-full object-contain" 
+                />
+                
+                <!-- PDF preview -->
+                <PdfViewer 
+                  v-else-if="isPdfFile(previewAttachment)"
+                  :pdfUrl="previewAttachment"
+                  :title="getFileName(previewAttachment)"
+                  :redirect-after-upload="true"
+                  @document-uploaded="handleDocumentUpload"
+                />
+                
+                <!-- Close button -->
+                <button 
+                  @click="closePreview" 
+                  class="absolute top-2 right-2 bg-gray-800 rounded-full p-1 text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-lime-400 z-10"
+                >
                   <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -53,385 +408,30 @@
               </div>
             </div>
             
-            <!-- Work order details -->
-            <div class="text-gray-300 space-y-4">
-              <!-- Customer section -->
-              <div class="flex justify-between items-start">
-                <div class="w-full">
-                  <p class="text-sm text-gray-400">Customer:</p>
-                  <div class="flex items-center">
-                    <span v-if="!editingField.customer_id" class="text-white">{{ workOrder.customer_id }}</span>
-                    <select v-else v-model="form.customer_id" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
-                      <option value="Advanced Project Solutions">Advanced Project Solutions</option>
-                      <option value="Barrister Global Service Network">Barrister Global Service Network</option>
-                      <option value="DarAlIslam">DarAlIslam</option>
-                      <option value="Field Nation">Field Nation</option>
-                      <option value="Navco">Navco</option>
-                      <option value="NEW CUSTOMER">NEW CUSTOMER</option>
-                      <option value="NuTech National">NuTech National</option>
-                      <option value="Telaid">Telaid</option>
-                    </select>
-                    <span class="ml-2">
-                      <button v-if="!editingField.customer_id" @click="startEditing('customer_id')" class="text-lime-400 hover:text-lime-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button v-else @click="saveField('customer_id')" class="text-green-400 hover:text-green-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    </span>
-                  </div>
-                </div>
-                
-                <div>
-                  <p class="text-sm text-gray-400">Price:</p>
-                  <div class="flex items-center">
-                    <span v-if="!editingField.price" class="text-white">${{ workOrder.price }}</span>
-                    <input v-else type="number" v-model="form.price" class="mt-1 w-24 rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" />
-                    <span class="ml-2">
-                      <button v-if="!editingField.price" @click="startEditing('price')" class="text-lime-400 hover:text-lime-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button v-else @click="saveField('price')" class="text-green-400 hover:text-green-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Status section -->
-              <div class="flex justify-between items-start">
-                <div class="w-full">
-                  <p class="text-sm text-gray-400">Status:</p>
-                  <div class="flex items-center">
-                    <span v-if="!editingField.status" :class="getStatusClasses(workOrder.status).includes('text')">{{ workOrder.status }}</span>
-                    <select v-else v-model="form.status" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
-                      <option value="Scheduled">Scheduled</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Part/Return">Part/Return</option>
-                      <option value="Complete">Complete</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                    <span class="ml-2">
-                      <button v-if="!editingField.status" @click="startEditing('status')" class="text-lime-400 hover:text-lime-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button v-else @click="saveField('status')" class="text-green-400 hover:text-green-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    </span>
-                  </div>
-                </div>
-                
-                <div>
-                  <p class="text-sm text-gray-400">Date(s):</p>
-                  <div class="flex items-center">
-                    <div v-if="!editingField.date_time" class="text-white">
-                      <span v-if="workOrder.visit_dates && workOrder.visit_dates.length">
-                        {{ formatMultipleDates(workOrder.visit_dates) }}
-                      </span>
-                      <span v-else>
-                        {{ formatDate(workOrder.date_time) }}
-                      </span>
-                    </div>
-                    <div v-else class="flex flex-col space-y-3 w-full">
-                      <!-- Date selection type toggle -->
-                      <div class="flex space-x-4 text-sm">
-                        <label class="flex items-center">
-                          <input 
-                            type="radio" 
-                            v-model="dateSelectionType" 
-                            value="single" 
-                            class="mr-2 focus:ring-lime-400 text-lime-500"
-                          >
-                          <span class="text-white">Single Date</span>
-                        </label>
-                        <label class="flex items-center">
-                          <input 
-                            type="radio" 
-                            v-model="dateSelectionType" 
-                            value="range" 
-                            class="mr-2 focus:ring-lime-400 text-lime-500"
-                          >
-                          <span class="text-white">Date Range</span>
-                        </label>
-                        <label class="flex items-center">
-                          <input 
-                            type="radio" 
-                            v-model="dateSelectionType" 
-                            value="multiple" 
-                            class="mr-2 focus:ring-lime-400 text-lime-500"
-                          >
-                          <span class="text-white">Multiple Dates</span>
-                        </label>
-                      </div>
-
-                      <!-- Single date selection -->
-                      <div v-if="dateSelectionType === 'single'" class="flex items-center">
-                        <input 
-                          type="datetime-local" 
-                          v-model="form.date_time" 
-                          class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                        />
-                      </div>
-
-                      <!-- Date range selection -->
-                      <div v-if="dateSelectionType === 'range'" class="space-y-2">
-                        <div class="flex items-center">
-                          <span class="text-xs text-gray-400 mr-2 w-14">Start:</span>
-                          <input 
-                            type="datetime-local" 
-                            v-model="form.date_time" 
-                            class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                          />
-                        </div>
-                        <div class="flex items-center">
-                          <span class="text-xs text-gray-400 mr-2 w-14">End:</span>
-                          <input 
-                            type="datetime-local" 
-                            v-model="form.end_date" 
-                            class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                          />
-                        </div>
-                      </div>
-
-                      <!-- Multiple date selection -->
-                      <div v-if="dateSelectionType === 'multiple'" class="space-y-2">
-                        <div v-for="(date, index) in selectedDates" :key="index" class="flex items-center">
-                          <input 
-                            type="datetime-local" 
-                            v-model="selectedDates[index]" 
-                            class="mt-1 flex-grow rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                          />
-                          <button 
-                            @click="removeDate(index)" 
-                            class="ml-2 text-red-400 hover:text-red-300"
-                            type="button"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                        <button 
-                          @click="addNewDate" 
-                          class="text-sm text-lime-400 hover:text-lime-300 flex items-center"
-                          type="button"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                          </svg>
-                          Add Another Date
-                        </button>
-                      </div>
-                    </div>
-                    <span class="ml-2">
-                      <button v-if="!editingField.date_time" @click="startEditing('date_time')" class="text-lime-400 hover:text-lime-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button v-else @click="saveField('date_time')" class="text-green-400 hover:text-green-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Description section - Updated to be smaller and scrollable -->
-              <div>
-                <p class="text-sm text-gray-400">Description:</p>
-                <div class="flex">
-                  <div class="flex-grow">
-                    <div v-if="!editingField.description" 
-                      class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md text-lime-400 overflow-y-auto max-h-[120px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 touch-auto">
-                      {{ workOrder.description }}
-                    </div>
-                    <textarea v-else v-model="form.description" rows="4" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"></textarea>
-                  </div>
-                  <span class="ml-2 flex-shrink-0">
-                    <button v-if="!editingField.description" @click="startEditing('description')" class="text-lime-400 hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('description')" class="text-green-400 hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div>
-              
-              <!-- User section -->
-              <!-- <div>
-                <p class="text-sm text-gray-400">Assigned to:</p>
-                <div class="flex items-center">
-                  <span v-if="!editingField.user_name" class="text-white">
-                    {{ getUserName(workOrder.user_name) }}
-                  </span>
-                  <select 
-                    v-else 
-                    v-model="form.user_name" 
-                    class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
-                  >
-                    <option v-for="user in $page.props.users" :key="user.name" :value="user.name">
-                      {{ user.name }}
-                    </option>
-                  </select>
-                  <span class="ml-2">
-                    <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('user_id')" class="text-green-400 hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div> -->
-              
-              <!-- Attachments section - Updated with persistent upload button -->
-              <div>
-                <div class="flex justify-between items-center">
-                  <p class="text-sm text-gray-400">Attachments:</p>
-                  <button 
-                    @click="startEditing('images')" 
-                    class="text-lime-400 btn outline rounded p-1 hover:text-gray-900 hover:bg-lime-400 text-sm flex items-center"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Upload
-                  </button>
-                </div>
-                <ul role="list" class="mt-1 divide-y divide-gray-700 rounded-md border border-gray-700">
-                  <li v-for="(attachment, index) in getAllAttachments()" :key="index" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                    <div class="flex w-0 flex-1 items-center">
-                      <!-- Different icons for different file types -->
-                      <svg v-if="isPdfFile(attachment)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
-                      </svg>
-                      <span class="ml-2 flex-1 truncate text-white">{{ getFileName(attachment) }}</span>
-                    </div>
-                    <div class="ml-4 flex-shrink-0 flex space-x-2">
-                      <!-- Preview button for images and PDFs -->
-                      <button 
-                        v-if="isImageFile(attachment) || isPdfFile(attachment)" 
-                        @click="handlePreviewAttachment(attachment)" 
-                        class="text-lime-400 btn outline rounded p-1 hover:text-gray-900 hover:bg-lime-400"
-                      >
-                        View
-                      </button>
-                      <a :href="`/storage/${attachment}`" class="text-yellow-500 text-sm hover:bg-yellow-500 outline btn rounded p-1 hover:text-gray-900" download>Download</a>
-                      <!-- Add delete button -->
-                      <button 
-                        @click="deleteAttachment(attachment)" 
-                        class="text-red-500 hover:bg-red-400 hover:text-gray-900 btn rounded p-1 outline"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </li>
-                  <li v-if="!editingField.images && getAllAttachments().length === 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                    <span class="text-gray-400">No attachments</span>
-                  </li>
-                  <li v-if="editingField.images" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                    <input 
-                      type="file" 
-                      id="images" 
-                      multiple 
-                      @change="handleImageUpload" 
-                      class="text-white" 
-                      accept=".jpg,.jpeg,.png,.gif,.pdf"
-                    />
-                    <div class="text-xs text-gray-400 ml-2">
-                      Supports: PDF, JPG, PNG, GIF
-                    </div>
-                    <button @click="saveField('images')" class="text-lime-400 hover:text-lime-500">Save</button>
-                  </li>
-                </ul>
-              </div>
-
-              <!-- Image preview modal -->
-              <div v-if="previewAttachment" class="fixed inset-0 z-[10001] flex items-center justify-center">
-                <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="closePreview"></div>
-                <div class="relative max-w-4xl max-h-[90vh] overflow-auto bg-gray-900 rounded-lg p-1 z-[10002]">
-                  <!-- Image preview -->
-                  <img 
-                    v-if="isImageFile(previewAttachment)" 
-                    :src="`/storage/${previewAttachment}`" 
-                    class="max-w-full max-h-full object-contain" 
-                  />
-                  
-                  <!-- PDF preview -->
-                  <PdfViewer 
-                    v-else-if="isPdfFile(previewAttachment)"
-                    :pdfUrl="previewAttachment"
-                    :title="getFileName(previewAttachment)"
-                    :redirect-after-upload="true"
-                    @document-uploaded="handleDocumentUpload"
-                  />
-                  
-                  <!-- Close button -->
-                  <button 
-                    @click="closePreview" 
-                    class="absolute top-2 right-2 bg-gray-800 rounded-full p-1 text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-lime-400 z-10"
-                  >
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              
-              <!-- Notes section -->
-              <div v-if="workOrder.notes">
-                <p class="text-sm text-gray-400">Notes:</p>
-                <Messenger 
-                  :initialNotes="workOrder.notes" 
-                  :workOrderId="workOrder.id"
-                  :userId="$page.props.auth.user.id"
-                  :getUserName="getUserName"
-                  :getUserAvatar="getUserAvatar"
-                  :currentUserAvatar="$page.props.auth.user.profile_photo_url"
-                />
-              </div>
+            <!-- Notes section -->
+            <div v-if="workOrder.notes">
+              <p class="text-sm text-gray-400">Notes:</p>
+              <Messenger 
+                :initialNotes="workOrder.notes" 
+                :workOrderId="workOrder.id"
+                :userId="$page.props.auth.user.name"
+                :getUserName="getUserName"
+                :getUserAvatar="getUserAvatar"
+                :currentUserAvatar="$page.props.auth.user.profile_photo_url"
+              />
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Modal footer -->
-      <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+      <!-- Fixed footer -->
+      <div class="glossy-footer sticky bottom-0 z-30 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-700/50">
         <!-- Add this new invoice button -->
         <button 
           @click="createInvoice" 
           :disabled="workOrder.status !== 'Complete'"
           :class="{'cursor-not-allowed': workOrder.status !== 'Complete'}"
-          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-blue-400 hover:text-gray-900 hover:bg-blue-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
+          class="glossy-btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-blue-400 hover:text-gray-900 hover:bg-blue-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -443,14 +443,14 @@
           @click="duplicateWorkOrder" 
           :disabled="workOrder.status === 'Complete'"
           :class="{'opacity-50 cursor-not-allowed': workOrder.status === 'Complete'}"
-          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-green-400 hover:text-gray-900 sm:ml-3 sm:w-auto sm:text-sm"
+          class="glossy-btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-green-400 hover:text-gray-900 sm:ml-3 sm:w-auto sm:text-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           Duplicate
         </button>
-        <button @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-red-400 hover:text-gray-900 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+        <button @click="closeModal" class="glossy-btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-red-400 hover:text-gray-900 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
           Close
         </button>
       </div>
@@ -1135,7 +1135,7 @@ if (token) {
 </script>
 
 <style scoped>
-/* Match the styling from the example */
+/* Base styles */
 .description {
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -1143,12 +1143,11 @@ if (token) {
   max-width: 100%;
 }
 
-/* Add lime focus styles */
+/* Basic styles for focus and icons */
 :focus {
   outline-color: theme('colors.lime.400');
 }
 
-/* Add styles for file type icons */
 .file-icon {
   @apply flex-shrink-0 h-5 w-5;
 }
@@ -1161,47 +1160,12 @@ if (token) {
   @apply text-blue-400;
 }
 
-/* Preview modal animation */
+/* Animation keyframes */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-[v-if="previewAttachment"] {
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* Preview container sizing */
-.max-w-4xl {
-  max-width: 84vw; /* Adjust based on your needs */
-}
-
-/* Custom scrollbar for webkit browsers */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
-  background-color: #4B5563;
-  border-radius: 3px;
-}
-
-.scrollbar-track-gray-800::-webkit-scrollbar-track {
-  background-color: #1F2937;
-}
-
-/* For Firefox */
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: #4B5563 #1F2937;
-}
-
-/* Ensure scrolling works well on touch devices */
-.touch-auto {
-  -webkit-overflow-scrolling: touch;
-}
-
-/* New keyframes for easing in and sliding from the top */
 @keyframes modalFadeInSlide {
   from {
     opacity: 0;
@@ -1213,8 +1177,153 @@ if (token) {
   }
 }
 
-/* Apply the animation to the modal container */
+/* Glass morphism styles */
+.glossy-card {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glossy-header {
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.glossy-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.3), transparent);
+}
+
+.glossy-footer {
+  background: linear-gradient(0deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.glossy-section {
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.5), rgba(31, 41, 55, 0.3));
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glossy-content {
+  background: linear-gradient(145deg, rgba(31, 41, 55, 0.6), rgba(17, 24, 39, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Button styles */
+.glossy-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glossy-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 80%);
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Modal and scrollbar styles */
 .modal-animation {
   animation: modalFadeInSlide 0.5s ease-out;
+  align-items: center;
+  padding: 0;
+}
+
+.modal-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+  max-height: calc(80vh - 125px);
+}
+
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.5);
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background-color: rgba(17, 24, 39, 0.3);
+}
+
+/* Enhanced border styling for the header */
+.glossy-header .border-b {
+  border-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(163, 230, 53, 0.3),
+    transparent
+  ) 1;
+}
+
+/* Enhanced modal layout */
+.glossy-card {
+  display: flex;
+  flex-direction: column;
+  height: 65vh; /* Adjust this value as needed */
+  max-height: 85vh;
+}
+
+/* Fixed header styling */
+.glossy-header {
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+/* Scrollable content area */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* Fixed footer styling */
+.glossy-footer {
+  flex-shrink: 0;
+  background: linear-gradient(0deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+/* Ensure content doesn't overflow modal */
+.modal-animation {
+  padding: 1rem;
+  align-items: center;
+  justify-content: center;
 }
 </style>

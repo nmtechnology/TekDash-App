@@ -200,9 +200,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // ...existing routes...
     
-    // Work order invoice creation
-    Route::post('/work-orders/{id}/invoice', [App\Http\Controllers\WorkOrderController::class, 'invoice'])
-        ->name('work-orders.invoice');
+    // Work order invoice creation route
+    Route::post('/work-orders/{workOrder}/invoice', [InvoiceController::class, 'sendToQuickBooks']);
+    Route::post('/work-orders/{id}/invoice', [App\Http\Controllers\WorkOrderController::class, 'createInvoice'])
+        ->name('work-orders.invoice')
+        ->middleware('auth');
     
     // ...existing code...
     Route::get('/quickbooks/connect', [App\Http\Controllers\QuickBooksController::class, 'connect'])->name('quickbooks.connect');

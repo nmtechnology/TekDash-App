@@ -9,6 +9,8 @@ use App\Models\Note;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB; // Add this import
+use Illuminate\Support\Facades\File; // Also add this for File::exists() and File::makeDirectory()
 use App\Services\QuickBooksService; // Use the correct namespace
 
 class WorkOrderController extends Controller
@@ -30,58 +32,105 @@ class WorkOrderController extends Controller
         return Inertia::render('WorkOrders/Create');
     }
 
-    // Store a newly created resource in storage
+    // Store a newly created work order in storage.
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'customer_id' => 'required|string|max:255',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'date_time' => 'required|date',
-            'price' => 'required|numeric',
-            'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled,Archived',
-            'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
-
-        $workOrder = new WorkOrder();
-        $workOrder->user_id = $validatedData['user_id'];
-        $workOrder->customer_id = $validatedData['customer_id'];
-        $latestWorkOrder = WorkOrder::where('title', 'like', $validatedData['title'] . '-%')->orderBy('id', 'desc')->first();
-        if ($latestWorkOrder) {
-            preg_match('/\-(\d+)$/', $latestWorkOrder->title, $matches);
-            $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 1;
-        } else {
-            $copyNumber = 1;
-        }
-        $workOrder->title = $validatedData['title'] . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT);
-        $workOrder->description = $validatedData['description'];
-        $workOrder->date_time = $validatedData['date_time'];
-        $workOrder->price = $validatedData['price'];
-        $workOrder->status = $validatedData['status'];
-
-        if ($request->hasFile('file_attachments')) {
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'required|string',
+                'date_time' => 'required|date',
+                'price' => 'required|numeric',
+                'status' => 'required|string',
+                'customer_id' => 'required|string',
+                'file_attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:20480', // 20MB max
+                'images.*' => 'nullable|file|mimes:jpg,jpeg,png,gif|max:20480', // 20MB max
+            ]);
+            
+            // Start transaction to ensure data consistency
+            DB::beginTransaction();
+            
+            $workOrder = new WorkOrder();
+            $workOrder->title = $validated['title'];
+            $workOrder->description = $validated['description'];
+            $workOrder->date_time = $validated['date_time'];
+            $workOrder->price = $validated['price'];
+            $workOrder->status = $validated['status'];
+            $workOrder->customer_id = $validated['customer_id'];
+            $workOrder->user_id = auth()->id();
+            
+            // Initialize arrays for files
             $fileAttachments = [];
-            foreach ($request->file('file_attachments') as $file) {
-                $path = $file->store('work_orders', 'public');
-                $fileAttachments[] = $path;
-            }
-            $workOrder->file_attachments = json_encode($fileAttachments);
-        }
-
-        if ($request->hasFile('images')) {
             $images = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('work_orders', 'public');
-                $images[] = $path;
+            
+            // Process file attachments if any
+            if ($request->hasFile('file_attachments')) {
+                foreach($request->file('file_attachments') as $index => $file) {
+                    try {
+                        // Create directory if it doesn't exist
+                        $path = storage_path('app/public/uploads/work_orders');
+                        if (!File::exists($path)) {
+                            File::makeDirectory($path, 0755, true);
+                        }
+                        
+                        $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
+                        $filePath = $file->storeAs('uploads/work_orders', $filename, 'public');
+                        $fileAttachments[] = $filePath;
+                        
+                        // Log successful upload
+                        Log::info("File {$index} uploaded successfully: {$filePath}");
+                    } catch (\Exception $e) {
+                        // Log the error for debugging
+                        Log::error("File upload error for attachment {$index}: " . $e->getMessage());
+                        DB::rollBack();
+                        return back()->withErrors([
+                            'file_attachments.'.$index => 'Upload failed: ' . $e->getMessage()
+                        ])->withInput();
+                    }
+                }
+                $workOrder->file_attachments = $fileAttachments;
             }
-            $workOrder->images = json_encode($images);
+            
+            // Process images if any
+            if ($request->hasFile('images')) {
+                foreach($request->file('images') as $index => $image) {
+                    try {
+                        // Create directory if it doesn't exist
+                        $path = storage_path('app/public/uploads/work_orders');
+                        if (!File::exists($path)) {
+                            File::makeDirectory($path, 0755, true);
+                        }
+                        
+                        $filename = time() . '_img_' . $index . '_' . $image->getClientOriginalName();
+                        $imagePath = $image->storeAs('uploads/work_orders', $filename, 'public');
+                        $images[] = $imagePath;
+                        
+                        // Log successful upload
+                        Log::info("Image {$index} uploaded successfully: {$imagePath}");
+                    } catch (\Exception $e) {
+                        // Log the error for debugging
+                        Log::error("File upload error for image {$index}: " . $e->getMessage());
+                        DB::rollBack();
+                        return back()->withErrors([
+                            'images.'.$index => 'Upload failed: ' . $e->getMessage()
+                        ])->withInput();
+                    }
+                }
+                $workOrder->images = $images;
+            }
+            
+            $workOrder->save();
+            DB::commit();
+            
+            return redirect()->route('work-orders.index')
+                ->with('success', 'Work Order created successfully.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Work order creation failed: " . $e->getMessage());
+            return back()->withErrors(['error' => 'Error creating work order. Please try again: ' . $e->getMessage()])
+                ->withInput();
         }
-
-        $workOrder->save();
-
-        return redirect()->route('dashboard')->with('success', 'Work order added successfully.');
     }
 
     // Display the specified resource
@@ -753,6 +802,8 @@ public function getStats()
     }
 }
 
+
+
     /**
      * Get archived work orders
      */
@@ -856,33 +907,33 @@ public function getStats()
      * @param WorkOrder $workOrder
      * @return \Illuminate\Http\JsonResponse
      */
-    public function createInvoice(Request $request, WorkOrder $workOrder, QuickBooksService $quickBooksService)
-    {
-        try {
-            // Create the invoice using the service
-            $result = $quickBooksService->createInvoice($workOrder);
-            
-            // If requested, archive the work order after invoice creation
-            if ($request->has('archive') && $request->archive && $result['success']) {
-                $workOrder->status = 'Archived';
-                $workOrder->archived = true;
-                $workOrder->archived_at = now();
-                $workOrder->save();
-                
-                Log::info('Work order #' . $workOrder->id . ' archived after invoice creation');
-            }
-            
-            return response()->json($result);
-            
-        } catch (\Exception $e) {
-            Log::error('Invoice creation failed: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create invoice: ' . $e->getMessage()
-            ], 500);
-        }
+    public function createInvoice(Request $request, $workOrderId)
+{
+    try {
+        $workOrder = WorkOrder::findOrFail($workOrderId);
+        
+        // Create invoice record
+        $invoice = Invoice::create([
+            'work_order_id' => $workOrder->id,
+            'customer_id' => $workOrder->customer_id,
+            'amount' => $workOrder->price,
+            'status' => 'pending',
+            'issued_at' => now(),
+            'due_at' => now()->addDays(30), // Default 30-day payment term
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Invoice created successfully',
+            'invoice' => $invoice
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to create invoice: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Restore a work order from archived status
