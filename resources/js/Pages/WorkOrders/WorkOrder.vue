@@ -9,7 +9,7 @@
       <div class="glossy-header sticky top-0 z-30 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700/50">
         <div class="flex justify-between items-center">
           <div class="flex items-center space-x-3 flex-grow">
-            <h3 class="text-lg leading-6 font-medium text-lime-400" id="modal-title">
+            <h3 class="text-xl2 font-medium text-lime-400" id="modal-title">
               <span v-if="!editingField.title" class="flex items-center">
                  {{ workOrder.title }}
                 <span 
@@ -340,7 +340,7 @@
                   <div class="ml-4 flex-shrink-0 flex space-x-2">
                     <!-- Preview button for images and PDFs -->
                     <button 
-                      v-if="isImageFile(attachment) || isPdfFile(attachment)" 
+                      v-if="isImageFile(attachment) || isPdfFile(attachment) || isDocumentFile(attachment)" 
                       @click="handlePreviewAttachment(attachment)" 
                       class="text-lime-400 btn outline rounded p-1 hover:text-gray-900 hover:bg-lime-400"
                     >
@@ -349,6 +349,7 @@
                     <a :href="`/storage/${attachment}`" class="text-yellow-500 text-sm hover:bg-yellow-500 outline btn rounded p-1 hover:text-gray-900" download>Download</a>
                     <!-- Add delete button -->
                     <button 
+                      v-if="$page.props.auth.user && $page.props.auth.user.role !== 'guest'"
                       @click="deleteAttachment(attachment)" 
                       class="text-red-500 hover:bg-red-400 hover:text-gray-900 btn rounded p-1 outline"
                     >
@@ -366,10 +367,11 @@
                     multiple 
                     @change="handleImageUpload" 
                     class="text-white" 
-                    accept=".jpg,.jpeg,.png,.gif,.pdf"
+                    accept=".jpg,.jpeg,.png,.gif,.pdf,.heic,.docx"
                   />
+                  <!-- Update the supported files text -->
                   <div class="text-xs text-gray-400 ml-2">
-                    Supports: PDF, JPG, PNG, GIF
+                    Supports: PDF, JPG, JPEG, PNG, GIF, HEIC, DOCX
                   </div>
                   <button @click="saveField('images')" class="text-lime-400 hover:text-lime-500">Save</button>
                 </li>
@@ -814,7 +816,16 @@ if (token) {
              lowerFilename.endsWith('.jpeg') || 
              lowerFilename.endsWith('.png') || 
              lowerFilename.endsWith('.gif') || 
-             lowerFilename.endsWith('.webp');
+             lowerFilename.endsWith('.webp') ||
+             lowerFilename.endsWith('.heic');
+    };
+
+    // Add new function to check for document files
+    const isDocumentFile = (filename) => {
+      if (!filename) return false;
+      const lowerFilename = filename.toLowerCase();
+      return lowerFilename.endsWith('.docx') ||
+             lowerFilename.endsWith('.doc');
     };
     
     // Get clean file name for display
@@ -826,7 +837,7 @@ if (token) {
     
     // Preview attachment (for images)
     const handlePreviewAttachment = (attachment) => {
-      if (isImageFile(attachment) || isPdfFile(attachment)) {
+      if (isImageFile(attachment) || isPdfFile(attachment) || isDocumentFile(attachment)) {
         previewAttachment.value = attachment;
       }
     };
@@ -837,61 +848,108 @@ if (token) {
     };
     
     // Updated file upload handler that accepts PDFs
-    const handleFileUpload = (event) => {
-      const files = event.target.files;
-      if (files.length) {
-        form.images = Array.from(files);
-        
-        // Add validation if needed
-        const validFiles = form.images.filter(file => {
-          const isValid = file.type === 'application/pdf' || 
-                         file.type.startsWith('image/');
-          if (!isValid) {
-            console.error(`Invalid file type: ${file.type}`);
-          }
-          return isValid;
-        });
-        
-        if (validFiles.length !== form.images.length) {
-          alert('Some files were not valid and have been removed. Please only upload PDFs and images.');
-          form.images = validFiles;
+    const handleImageUpload = (event) => {
+      const files = Array.from(event.target.files);
+      const maxFileSize = 10 * 1024 * 1024; // 10MB limit
+      const validFiles = [];
+      const invalidFiles = [];
+
+      // Validate each file
+      files.forEach(file => {
+        if (file.size > maxFileSize) {
+          invalidFiles.push(`${file.name} (${Math.round(file.size/1024/1024)}MB exceeds 10MB limit)`);
+        } else {
+          validFiles.push(file);
         }
+      });
+
+      if (invalidFiles.length > 0) {
+        alert(`The following files are too large:\n${invalidFiles.join('\n')}\nMaximum size is 10MB per file.`);
+      }
+
+      if (validFiles.length) {
+        form.images = validFiles;
       }
     };
-    
+
     // For image/file uploads with special handling
-    const saveImages = () => {
-      if (form.images && form.images.length > 0) {
-        const formData = new FormData();
-        form.images.forEach((file) => {
-          // Changed from: formData.append(`files[${index}]`, file);
-          formData.append('images[]', file);
-        });
-        
-        axios.post(`/work-orders/${props.workOrder.id}/update-images`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        })
-        .then(response => {
-          if (response.data.success) {
-            // Update work order with new images/files from response
-            props.workOrder.images = response.data.images;
-          }
-          
-          // Reset editing state
-          editingField.value.images = false;
-          form.images = [];
-        })
-        .catch(error => {
-          console.error('Error uploading files:', error);
-          if (error.response && error.response.data) {
-            console.error('Server validation errors:', error.response.data);
-          }
-          editingField.value.images = false;
-        });
-      } else {
+    const saveImages = async () => {
+      if (!form.images || form.images.length === 0) {
         editingField.value.images = false;
+        return;
+      }
+    
+      const formData = new FormData();
+      // Use standard 'attachments' array name for Laravel file uploads
+      form.images.forEach((file, index) => {
+        formData.append(`attachments[${index}]`, file);
+        console.log('Uploading file:', file.name, 'type:', file.type, 'size:', file.size);
+      });
+    
+      try {
+        // Make sure we're using the correct URL and headers
+        const response = await axios.post(
+          `/work-orders/${props.workOrder.id}/attachments`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            // Add timeout to allow for larger files
+            timeout: 60000
+          }
+        );
+    
+        if (response.data.success) {
+          // Update both images and file_attachments arrays
+          if (response.data.attachments) {
+            if (!Array.isArray(props.workOrder.images)) {
+              props.workOrder.images = [];
+            }
+            if (!Array.isArray(props.workOrder.file_attachments)) {
+              props.workOrder.file_attachments = [];
+            }
+    
+            // Add new attachments
+            props.workOrder.images = [...props.workOrder.images, ...response.data.attachments];
+            props.workOrder.file_attachments = [...props.workOrder.file_attachments, ...response.data.attachments];
+          }
+    
+          // Clear the form and close edit mode
+          form.images = [];
+          editingField.value.images = false;
+        }
+      } catch (error) {
+        console.error('Error uploading files:', error);
+        
+        // Improved error handling
+        let errorMessage = 'Failed to upload files. ';
+        
+        if (error.response?.data?.errors) {
+          // Handle validation errors
+          const errors = error.response.data.errors;
+          const errorMessages = [];
+          
+          Object.keys(errors).forEach(key => {
+            errorMessages.push(...errors[key]);
+          });
+          
+          errorMessage += errorMessages.join('\n');
+        } else if (error.response?.data?.message) {
+          // Handle other API errors
+          errorMessage += error.response.data.message;
+        } else if (error.message) {
+          // Handle general errors
+          errorMessage += error.message;
+        }
+        
+        // Log detailed error info for debugging
+        console.error('Response status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+        
+        alert(errorMessage);
       }
     };
 
@@ -1014,27 +1072,37 @@ if (token) {
       if (!confirm('Are you sure you want to delete this attachment?')) {
         return;
       }
-      
+    
       try {
-        const response = await axios.delete(`/work-orders/${props.workOrder.id}/delete-attachment`, {
-          data: { attachment_path: attachmentPath }
-        });
-        
-        if (response.data.success) {
-          // Update local state to remove the attachment
-          if (props.workOrder.images && Array.isArray(props.workOrder.images)) {
-            props.workOrder.images = props.workOrder.images.filter(img => img !== attachmentPath);
+        await router.post(
+          route('work-orders.delete-attachment', props.workOrder.id),
+          {
+            attachment_path: attachmentPath
+          },
+          {
+            preserveScroll: true,
+            onSuccess: () => {
+              // Update local state for both images and file_attachments
+              if (props.workOrder.images) {
+                props.workOrder.images = Array.isArray(props.workOrder.images) 
+                  ? props.workOrder.images.filter(img => img !== attachmentPath)
+                  : [];
+              }
+              
+              if (props.workOrder.file_attachments) {
+                props.workOrder.file_attachments = Array.isArray(props.workOrder.file_attachments)
+                  ? props.workOrder.file_attachments.filter(file => file !== attachmentPath)
+                  : [];
+              }
+            },
+            onError: () => {
+              alert('Failed to delete attachment. Please try again.');
+            }
           }
-          
-          if (props.workOrder.file_attachments && Array.isArray(props.workOrder.file_attachments)) {
-            props.workOrder.file_attachments = props.workOrder.file_attachments.filter(file => file !== attachmentPath);
-          }
-        } else {
-          throw new Error(response.data.message || 'Failed to delete attachment');
-        }
+        );
       } catch (error) {
         console.error('Error deleting attachment:', error);
-        alert(error.response?.data?.message || 'Failed to delete attachment');
+        alert('Failed to delete attachment. Please try again.');
       }
     };
 
@@ -1112,11 +1180,12 @@ if (token) {
         }
       },
       duplicateWorkOrder,
-      handleImageUpload: handleFileUpload,
+      handleImageUpload,
       previewAttachment,
       handleDocumentUpload,
       isPdfFile,
       isImageFile,
+      isDocumentFile,
       getFileName,
       previewAttachment,
       handlePreviewAttachment,

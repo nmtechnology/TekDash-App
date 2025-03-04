@@ -700,66 +700,99 @@ public function details($id)
  * @param int $id
  * @return \Illuminate\Http\JsonResponse
  */
-public function deleteAttachment(Request $request, $workOrderId)
-    {
-        $workOrder = WorkOrder::findOrFail($workOrderId);
-        
-        // Check user permission (optional - adjust according to your authorization logic)
-        if (!auth()->user()->can('update', $workOrder)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorized to delete attachments from this work order'
-            ], 403);
+
+public function deleteAttachment(Request $request, WorkOrder $workOrder)
+{
+    try {
+        if (!$request->user()->can('delete', $workOrder)) {
+            return back()->with('error', 'You are not authorized to delete attachments.');
         }
-        
-        // Get the attachment path from the request
+
         $attachmentPath = $request->input('attachment_path');
         
-        if (empty($attachmentPath)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No attachment specified'
-            ], 400);
+        if (!Storage::disk('public')->exists($attachmentPath)) {
+            return back()->with('error', 'File not found.');
         }
         
-        // Remove from images array
-        $images = is_array($workOrder->images) ? $workOrder->images : json_decode($workOrder->images ?: '[]', true);
-        if (($key = array_search($attachmentPath, $images)) !== false) {
-            unset($images[$key]);
-            $workOrder->images = array_values($images); // Re-index the array
-        }
+        Storage::disk('public')->delete($attachmentPath);
         
-        // Remove from file_attachments array if it exists
-        if ($workOrder->file_attachments) {
-            $fileAttachments = is_array($workOrder->file_attachments) 
-                ? $workOrder->file_attachments 
-                : json_decode($workOrder->file_attachments ?: '[]', true);
-                
-            if (($key = array_search($attachmentPath, $fileAttachments)) !== false) {
-                unset($fileAttachments[$key]);
-                $workOrder->file_attachments = array_values($fileAttachments); // Re-index the array
-            }
-        }
+        // Remove the attachment from both images and file_attachments arrays
+        $images = is_array($workOrder->images) ? $workOrder->images : [];
+        $fileAttachments = is_array($workOrder->file_attachments) ? $workOrder->file_attachments : [];
         
-        // Delete the actual file from storage
-        try {
-            // Get just the path without any potential storage prefix
-            $filePath = str_replace('storage/', '', $attachmentPath);
-            if (Storage::disk('public')->exists($filePath)) {
-                Storage::disk('public')->delete($filePath);
-            }
-        } catch (\Exception $e) {
-            // Log the error but continue since we still want to remove from the database
-            \Log::error('Failed to delete file: ' . $e->getMessage());
-        }
+        $images = array_filter($images, fn($img) => $img !== $attachmentPath);
+        $fileAttachments = array_filter($fileAttachments, fn($file) => $file !== $attachmentPath);
         
-        // Save the work order with updated attachment arrays
+        $workOrder->images = $images;
+        $workOrder->file_attachments = $fileAttachments;
         $workOrder->save();
+
+        return back()->with('success', 'Attachment deleted successfully.');
         
-        return response()->json([
-            'success' => true,
-            'message' => 'Attachment deleted successfully'
-        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error deleting attachment: ' . $e->getMessage());
+        return back()->with('error', 'Failed to delete attachment.');
     }
+}
+
+public function uploadAttachments(Request $request, WorkOrder $workOrder)
+{
+    $request->validate([
+        'attachments.*' => 'required|file|mimes:jpeg,jpg,png,gif,pdf,heic,docx|max:10240',
+        // Make sure 'jpeg' is explicitly listed in mimes
+    ]);
+    
+    // Add some debug logging
+    \Log::info('File upload attempt', [
+        'files' => $request->file('attachments'),
+        'mimetypes' => array_map(function($file) {
+            return $file->getMimeType();
+        }, $request->file('attachments') ?? [])
+    ]);
+
+    try {
+        $attachments = [];
+        
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('work-orders/' . $workOrder->id, $filename, 'public');
+                $attachments[] = $path;
+            }
+
+            // Get existing attachments as arrays
+            $existingImages = is_array($workOrder->images) ? $workOrder->images : 
+                            (is_string($workOrder->images) ? json_decode($workOrder->images, true) : []);
+            $existingFiles = is_array($workOrder->file_attachments) ? $workOrder->file_attachments : 
+                            (is_string($workOrder->file_attachments) ? json_decode($workOrder->file_attachments, true) : []);
+
+            // Ensure arrays are not null
+            $existingImages = $existingImages ?? [];
+            $existingFiles = $existingFiles ?? [];
+
+            // Update the work order with merged arrays
+            $workOrder->images = array_values(array_merge($existingImages, $attachments));
+            $workOrder->file_attachments = array_values(array_merge($existingFiles, $attachments));
+            $workOrder->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Files uploaded successfully',
+                'attachments' => $attachments
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No files were uploaded'
+        ], 400);
+    } catch (\Exception $e) {
+        \Log::error('Error uploading attachments: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 
 }

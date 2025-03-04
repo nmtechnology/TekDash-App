@@ -195,23 +195,19 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     // Add the document upload route as a web route (with session authentication)
     Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument'])
         ->middleware(['auth:sanctum', 'verified']);
+
+    Route::post('/work-orders/{workOrder}/attachments', [WorkOrderController::class, 'uploadAttachments'])
+        ->name('work-orders.attachments');
 });
 
 // QuickBooks Integration Routes
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    // ...existing routes...
+    Route::get('/quickbooks/authorize', [QuickBooksAuthController::class, 'authorize'])
+        ->name('quickbooks.authorize');
     
-    // Work order invoice creation route
-    Route::post('/work-orders/{workOrder}/invoice', [InvoiceController::class, 'sendToQuickBooks']);
-    Route::post('/work-orders/{id}/invoice', [App\Http\Controllers\WorkOrderController::class, 'createInvoice'])
-        ->name('work-orders.invoice')
-        ->middleware('auth');
+    Route::post('/work-orders/{workOrder}/delete-attachment', [WorkOrderController::class, 'deleteAttachment'])
+        ->name('work-orders.delete-attachment');
     
-    // ...existing code...
-    Route::get('/quickbooks/connect', [App\Http\Controllers\QuickBooksController::class, 'connect'])->name('quickbooks.connect');
-    Route::get('/quickbooks/callback', [App\Http\Controllers\QuickBooksController::class, 'callback'])->name('quickbooks.callback');
-    Route::get('/quickbooks/disconnect', [App\Http\Controllers\QuickBooksController::class, 'disconnect'])->name('quickbooks.disconnect');
-    Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate'])->name('work-orders.duplicate');
 });
 
 // QuickBooks Routes
