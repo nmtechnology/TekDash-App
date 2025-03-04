@@ -232,12 +232,12 @@ export default {
         date_time: '',
         end_date: '',
         visit_dates: [],
-        price: '',
+        price: '120.00',
         status: 'Scheduled',
         file_attachments: [], // Initialize as an array
         notes: '',
         progress: null,
-        user_id: '',
+        users_name: '',
       }),
     };
   },

@@ -57,7 +57,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Notes and attachments
     Route::get('/work-orders/{id}/notes', [WorkOrderController::class, 'getNotes']);
     Route::post('/work-orders/{id}/notes', [WorkOrderController::class, 'addNote']);
-    Route::get('/work-orders/{id}/images', [WorkOrderController::class, 'getImages']);
     Route::post('/work-orders/{id}/images', [WorkOrderController::class, 'addImage']);
     Route::delete('/work-orders/{id}/images/{imageId}', [WorkOrderController::class, 'deleteImage']);
     Route::get('/work-orders/{id}/file-attachments', [WorkOrderController::class, 'getFileAttachments']);

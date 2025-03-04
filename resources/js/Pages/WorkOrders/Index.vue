@@ -247,12 +247,17 @@ const closeArchivedWorkOrderModal = () => {
           <span class="text-white">Page {{ currentPage }} of {{ totalPages }}</span>
           <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">Next</button>
         </div>
-        <WorkOrder v-if="selectedWorkOrder" :workOrder="selectedWorkOrder" :showModal="showModal" @close="closeModal" />
+        <WorkOrder v-if="selectedWorkOrder" 
+          :workOrder="selectedWorkOrder" 
+          :showModal="showModal" 
+          :users="users"
+          @close="closeModal" />
         <ArchivedWorkOrderModal
           v-if="showArchivedWorkOrderModal"
           :workOrder="archivedWorkOrder"
           :invoiceId="archivedInvoiceId"
           :message="archivedMessage"
+          :users="users"
           @close="closeArchivedWorkOrderModal"
         />
       </div>

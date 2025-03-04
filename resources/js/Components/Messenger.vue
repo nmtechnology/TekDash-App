@@ -97,6 +97,7 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
+// Remove the Inertia import
 import EmojiPicker from './EmojiPicker.vue';
 
 export default {
@@ -118,7 +119,7 @@ export default {
       required: true
     },
     getUserName: {
-      type: Function,
+      type: [String, Function],  // Allow both string and function types
       required: true
     },
     getUserAvatar: {
@@ -133,6 +134,11 @@ export default {
       type: Object,
       required: false,
       default: () => ({})
+    },
+    users: { // Modified users prop to be optional
+      type: Array,
+      required: false,
+      default: () => []
     }
   },
   
@@ -151,10 +157,12 @@ export default {
       }
     };
     
-    // Get user initials for avatar
+    // Get user initials for avatar - making this more robust
     const getUserInitials = (userId) => {
       try {
-        const name = props.getUserName(userId);
+        // First try to get name from note.user_name if available (for new/updated notes)
+        const noteWithUser = notes.value.find(n => n.user_id === userId && n.user_name);
+        const name = noteWithUser?.user_name || props.getUserName(userId);
         
         if (!name || typeof name !== 'string' || name === 'undefined' || name === 'null') {
           return userId?.toString().substring(0, 2) || '??';
@@ -251,12 +259,21 @@ export default {
       // Close emoji picker if open
       showEmojiPickerModal.value = false;
       
-      // Create a temporary note
+      // Try to get the current user name for the temporary note
+      let currentUserName;
+      try {
+        currentUserName = props.getUserName(props.userId);
+      } catch (e) {
+        currentUserName = null;
+      }
+      
+      // Create a temporary note with user_name if available
       const tempId = 'temp-' + Date.now();
       const newNote = {
         id: tempId,
         text: newNoteText.value.trim(),
         user_id: props.userId,
+        user_name: currentUserName,
         created_at: new Date().toISOString(),
         isNew: true
       };
@@ -287,35 +304,38 @@ export default {
         }
       };
       
-      // Send to server - using JSON instead of FormData for more reliable handling
-      axios.post(`/work-orders/${props.workOrderId}/notes`, { text: newNote.text }, config)
-        .then(response => {
-          console.log('Note saved successfully:', response.data);
-          const noteIndex = notes.value.findIndex(n => n.id === tempId);
-          if (noteIndex !== -1 && response.data && response.data.id) {
-            // Update the temporary note with the server data
-            notes.value[noteIndex] = { ...response.data, isNew: false };
-          }
-        })
-        .catch(error => {
-          console.error('Error adding note:', error.response || error);
-          // Show more detailed error message
-          let errorMessage = 'Failed to save your note. ';
-          
-          if (error.response) {
-            // The request was made and the server responded with a status code
-            errorMessage += `Server responded with status ${error.response.status}: ${error.response.data.message || JSON.stringify(error.response.data)}`;
-          } else if (error.request) {
-            // The request was made but no response was received
-            errorMessage += 'No response received from server. Check your network connection.';
-          } else {
-            // Something happened in setting up the request
-            errorMessage += error.message || 'Unknown error occurred';
-          }
-          
-          alert(errorMessage);
-          notes.value = notes.value.filter(n => n.id !== tempId);
-        });
+      // Use axios.post instead of Inertia.post
+      axios.post(`/work-orders/${props.workOrderId}/notes`, 
+        { text: newNote.text },
+        config
+      ).then(response => {
+        console.log('Note saved successfully:', response.data);
+        const noteIndex = notes.value.findIndex(n => n.id === tempId);
+        if (noteIndex !== -1 && response.data) {
+          // Preserve the user_name from the response or use our best guess
+          const responseName = response.data.user_name || 
+                              currentUserName || 
+                              props.getUserName(response.data.user_id);
+                              
+          // Update the temporary note with the server data but keep user_name
+          notes.value[noteIndex] = { 
+            ...response.data,
+            user_name: responseName,
+            isNew: false 
+          };
+        }
+      }).catch(error => {
+        console.error('Error adding note:', error);
+        // Show error message
+        let errorMessage = 'Failed to save your note. ';
+        if (error.response && error.response.data) {
+          errorMessage += Object.values(error.response.data).join(', ');
+        } else {
+          errorMessage += 'Please try again.';
+        }
+        alert(errorMessage);
+        notes.value = notes.value.filter(n => n.id !== tempId);
+      });
     };
 
     return {
@@ -328,7 +348,9 @@ export default {
       addNote,
       showEmojiPickerModal,
       insertEmoji,
-      getCsrfToken
+      getCsrfToken,
+      // Use the prop's getUserName function instead of a non-existent local variable
+      getUserName: props.getUserName
     };
   }
 };

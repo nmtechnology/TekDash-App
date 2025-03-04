@@ -159,6 +159,7 @@
 <script>
 import { ref, onMounted, watch, computed } from 'vue';
 import { PDFDocument, rgb } from 'pdf-lib';
+import { Inertia } from '@inertiajs/inertia';
 
 export default {
   name: 'PdfViewer',
@@ -579,96 +580,101 @@ export default {
       }
     };
     
-    // NEW: Method to upload the signed document to work order
+    // NEW: Method to upload the signed document to work order using Inertia
     const uploadSignedDocument = async () => {
       try {
         if (!modifiedPdfUrl.value) {
           console.error('No signed document available to upload');
           return;
         }
-        
+
         // Show loading state
         loading.value = true;
-        
+
         // Fetch the signed PDF blob from the URL
         const response = await fetch(modifiedPdfUrl.value);
         const blob = await response.blob();
-        
+
         // Create form data for upload
         const formData = new FormData();
         formData.append('file', blob, signedFilename.value);
         formData.append('firstName', firstName.value);
         formData.append('lastName', lastName.value);
-        
+
         // Add workOrderId to form data if provided
         if (props.workOrderId) {
           formData.append('workOrderId', props.workOrderId);
         }
-        
-        // Get CSRF token from meta tag for Laravel security
-        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        
+
         console.log('Uploading document', {
           filename: signedFilename.value,
           size: blob.size,
-          hasToken: !!token,
           workOrderId: props.workOrderId
         });
-        
-        // Use the PUBLIC endpoint that doesn't require authentication
-        const uploadResponse = await fetch('/api/public/documents/upload-signed', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-CSRF-TOKEN': token || '',
-            'Accept': 'application/json',
-          }
-        });
-        
-        if (!uploadResponse.ok) {
-          const errorData = await uploadResponse.text();
-          console.error('Upload response:', errorData);
-          throw new Error(`Upload failed with status: ${uploadResponse.status}`);
-        }
-        
-        const result = await uploadResponse.json();
-        console.log('Upload successful:', result);
-        
-        // Emit event to notify parent component of upload
-        emit('document-uploaded', {
-          url: result.url,
-          fileName: signedFilename.value,
-          firstName: firstName.value,
-          lastName: lastName.value,
-          workOrderId: props.workOrderId
-        });
-        
-        // Show success message
-        alert('Document successfully uploaded to work order!');
-        
-        // Redirect to work order view if ID is provided and redirectAfterUpload is true
-        if (props.workOrderId && props.redirectAfterUpload) {
-          // Small delay to ensure the alert is seen
-          setTimeout(() => {
-            // Use router if available, otherwise do a page redirect
-            if (window.Inertia) {
-              // For Inertia.js applications
-              window.Inertia.visit(`/work-orders/${props.workOrderId}`);
-            } else {
-              // Regular redirect
-              window.location.href = `/work-orders/${props.workOrderId}`;
+
+        // Define onSuccess and onError callbacks
+        const onSuccess = (response) => {
+          loading.value = false;
+
+          // Check if the response is a plain JSON response
+          if (response.headers['content-type']?.includes('application/json')) {
+            // Parse the JSON response
+            const result = response.data;
+
+            // Emit event to notify parent component of upload
+            emit('document-uploaded', {
+              url: result.url,
+              fileName: signedFilename.value,
+              firstName: firstName.value,
+              lastName: lastName.value,
+              workOrderId: props.workOrderId
+            });
+
+            // Show success message
+            alert('Document successfully uploaded to work order!');
+
+            // Redirect to work order view if ID is provided and redirectAfterUpload is true
+            if (props.workOrderId && props.redirectAfterUpload) {
+              // Small delay to ensure the alert is seen
+              setTimeout(() => {
+                // Use router if available, otherwise do a page redirect
+                if (window.Inertia) {
+                  // For Inertia.js applications
+                  Inertia.visit(`/work-orders/${props.workOrderId}`);
+                } else {
+                  // Regular redirect
+                  window.location.href = `/work-orders/${props.workOrderId}`;
+                }
+              }, 500);
             }
-          }, 500);
-        }
-        
+          } else {
+            console.error('Unexpected response type:', response.headers['content-type']);
+            alert('Unexpected response from server. Please check the console.');
+          }
+        };
+
+        const onError = (errors) => {
+          loading.value = false;
+          console.error('Error uploading signed document:', errors);
+          alert(`Failed to upload signed document: ${errors}`);
+        };
+
+        // Use Inertia.post to upload the file
+        Inertia.post('/api/public/documents/upload-signed', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          onSuccess: onSuccess,
+          onError: onError,
+        });
+
       } catch (error) {
         console.error('Error uploading signed document:', error);
         alert(`Failed to upload signed document: ${error.message}`);
-      } finally {
         loading.value = false;
       }
     };
-    
+
     // Watch for URL changes
     watch(() => props.pdfUrl, (newUrl, oldUrl) => {
       if (newUrl && newUrl !== oldUrl) {

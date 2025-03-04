@@ -1284,7 +1284,7 @@ if (token) {
   border-image: linear-gradient(
     to right,
     transparent,
-    rgba(163, 230, 53, 0.3),
+    rgba(255, 255, 255, 0.342),
     transparent
   ) 1;
 }
