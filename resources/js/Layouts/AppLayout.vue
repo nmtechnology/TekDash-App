@@ -24,6 +24,29 @@ const showSearchResults = ref(false);
 const selectedWorkOrder = ref(null);
 const showWorkOrderModal = ref(false);
 const showingNavigationDropdown = ref(false);
+const isScrolled = ref(false);
+
+// Add scroll event listener to detect scrolling for navbar effects
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+    
+    // Add scroll event listener for header effects
+    window.addEventListener('scroll', handleScroll);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('scroll', handleScroll);
+});
+
+// Handle scroll events
+function handleScroll() {
+    if (window.scrollY > 10) {
+        isScrolled.value = true;
+    } else {
+        isScrolled.value = false;
+    }
+}
 
 // Work order search functionality with better error handling
 let searchTimeout;
@@ -108,14 +131,6 @@ function handleClickOutside(event) {
     }
 }
 
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-});
-
 // Update the logout method
 function logout() {
   // Instead of using axios directly, use Inertia's router for form submission
@@ -142,14 +157,14 @@ function logout() {
         <Banner />
 
         <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95 bg-fixed">
-            <nav class="bg-transparent backdrop-blur-md border-b border-gray-600 fixed inset-x-0 top-0 z-20">
+            <nav :class="['fixed-navbar bg-transparent backdrop-blur-md border-b border-gray-600 fixed inset-x-0 top-0 z-50', isScrolled ? 'scrolled' : '']">
                 <!-- Primary Navigation Menu -->
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
                         <div class="flex">
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link :href="route('dashboard')" class="flex items-center">
+                                <Link :href="route('dashboard')" class="flex items-center nav-link-spotlight">
                                     <ApplicationMark class="block h-9 w-auto" />
                                     <p class="italic font-extrabold text-white ms-2 -ml-3">Technology</p>
                                 </Link>
@@ -157,65 +172,23 @@ function logout() {
 
                             <!-- Navigation Links -->
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
+                                <NavLink :href="route('dashboard')" :active="route().current('dashboard')" class="nav-link-spotlight flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                    </svg>
+                                    <span></span>
                                 </NavLink>
                             </div>
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('work-orders.index')" :active="route().current('work-orders.index')">
-                                    Work Orders
+                                <NavLink :href="route('work-orders.index')" :active="route().current('work-orders.index')" class="nav-link-spotlight flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span>Work Orders</span>
                                 </NavLink>
                             </div>
                         </div>
-                        
-                        <!-- Search Component with error handling
-                        <div class="p-3 search-container relative">
-                            <Search placeholder="Search work orders..." @search="handleSearch" /> -->
-                            
-                            <!-- Search Results Dropdown with error state -->
-                            <!-- <div v-if="showSearchResults" 
-                                 class="absolute mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-md overflow-hidden z-50">
-                                <div v-if="isSearching" class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                                    Searching work orders... -->
-                                <!-- </div>
-                                <ul v-else-if="workOrders.length > 0" class="max-h-80 overflow-y-auto">
-                                    <li v-for="order in workOrders" :key="order.id" 
-                                        class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b dark:border-gray-700 last:border-b-0"
-                                        @click="openWorkOrderModal(order.id)">
-                                        <div class="flex justify-between items-center">
-                                            <div>
-                                                <div class="font-medium text-gray-900 dark:text-white">
-                                                    {{ order.title || `Work Order #${order.id}` }}
-                                                </div>
-                                                <div class="text-sm text-gray-500 dark:text-gray-400">
-                                                    {{ order.customer_name || order.customer_id || 'No customer info' }}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <span v-if="order.status" class="text-xs px-2 py-1 rounded" 
-                                                    :class="{
-                                                        'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100': 
-                                                            order.status.toLowerCase().includes('complete'),
-                                                        'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100': 
-                                                            order.status.toLowerCase().includes('scheduled'),
-                                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100': 
-                                                            order.status.toLowerCase().includes('progress'),
-                                                        'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100': 
-                                                            order.status.toLowerCase().includes('cancel'),
-                                                        'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100': 
-                                                            order.status.toLowerCase().includes('part') || order.status.toLowerCase().includes('return')
-                                                    }">
-                                                    {{ order.status }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                                <div v-else-if="searchQuery.length >= 2" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                    No work orders found matching "{{ searchQuery }}"
-                                </div>
-                            </div>
-                        </div> -->
 
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
                             <!-- Settings Dropdown -->
@@ -227,7 +200,7 @@ function logout() {
                                         </button>
 
                                         <span v-else class="inline-flex rounded-md">
-                                            <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md outline text-lime-400 hover:bg-lime-400 hover:text-gray-900 focus:outline-none focus:bg-lime-400 active:bg-gray-900 active:text-gray-900 transition ease-in-out duration-150">
+                                            <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md outline text-lime-400 hover:bg-lime-400 hover:text-gray-900 focus:outline-none focus:bg-lime-400 active:bg-gray-900 active:text-gray-900 transition ease-in-out duration-150 glossy-btn">
                                                 {{ $page.props.auth.user.name }}
 
                                                 <svg class="ms-2 -me-0.5 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -243,11 +216,11 @@ function logout() {
                                             Manage Account
                                         </div>
 
-                                        <DropdownLink :href="route('profile.show')">
+                                        <DropdownLink :href="route('profile.show')" class="dropdown-item">
                                             Profile
                                         </DropdownLink>
 
-                                        <DropdownLink v-if="$page.props.jetstream.hasApiFeatures" :href="route('api-tokens.index')">
+                                        <DropdownLink v-if="$page.props.jetstream.hasApiFeatures" :href="route('api-tokens.index')" class="dropdown-item">
                                             API Tokens
                                         </DropdownLink>
 
@@ -255,7 +228,7 @@ function logout() {
 
                                         <!-- Authentication -->
                                         <form @submit.prevent="logout">
-                                            <DropdownLink as="button">
+                                            <DropdownLink as="button" class="dropdown-item">
                                                 Log Out
                                             </DropdownLink>
                                         </form>
@@ -266,7 +239,7 @@ function logout() {
 
                         <!-- Hamburger -->
                         <div class="-me-2 flex items-center sm:hidden">
-                            <button class="inline-flex items-center justify-center p-2 rounded-md text-lime-400 hover:text-gray-800 hover:bg-gray-900 focus:outline-none focus:bg-gray-800 focus:text-gray-500 transition duration-150 ease-in-out" @click="showingNavigationDropdown = ! showingNavigationDropdown">
+                            <button class="inline-flex items-center justify-center p-2 rounded-md text-lime-400 hover:text-gray-800 hover:bg-gray-900 focus:outline-none focus:bg-gray-800 focus:text-gray-500 transition duration-150 ease-in-out glossy-btn" @click="showingNavigationDropdown = ! showingNavigationDropdown">
                                 <svg
                                     class="size-6"
                                     stroke="currentColor"
@@ -294,13 +267,20 @@ function logout() {
                 </div>
 
                 <!-- Responsive Navigation Menu -->
-                <div :class="{'block': showingNavigationDropdown, 'hidden': ! showingNavigationDropdown}" class="sm:hidden">
+                <div :class="{'block': showingNavigationDropdown, 'hidden': ! showingNavigationDropdown}" class="sm:hidden glossy-content">
                     <div class="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                            Dashboard
+                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')" class="nav-link-spotlight flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                            </svg>
+                            <span>Dashboard</span>
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('work-orders.index')" :active="route().current('work-orders.index')">
-                            Work Orders
+                        <ResponsiveNavLink :href="route('work-orders.index')" :active="route().current('work-orders.index')" class="nav-link-spotlight flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Work Orders</span>
                         </ResponsiveNavLink>
                     </div>
 
@@ -312,27 +292,27 @@ function logout() {
                             </div>
 
                             <div>
-                                <div class="font-medium text-base text-gray-800">
+                                <div class="font-medium text-base text-gray-300">
                                     {{ $page.props.auth.user.name }}
                                 </div>
-                                <div class="font-medium text-sm text-gray-500">
+                                <div class="font-medium text-sm text-gray-400">
                                     {{ $page.props.auth.user.email }}
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.show')" :active="route().current('profile.show')">
+                            <ResponsiveNavLink :href="route('profile.show')" :active="route().current('profile.show')" class="nav-link-spotlight">
                                 Profile
                             </ResponsiveNavLink>
 
-                            <ResponsiveNavLink v-if="$page.props.jetstream.hasApiFeatures" :href="route('api-tokens.index')" :active="route().current('api-tokens.index')">
+                            <ResponsiveNavLink v-if="$page.props.jetstream.hasApiFeatures" :href="route('api-tokens.index')" :active="route().current('api-tokens.index')" class="nav-link-spotlight">
                                 API Tokens
                             </ResponsiveNavLink>
 
                             <!-- Authentication -->
                             <form method="POST" @submit.prevent="logout">
-                                <ResponsiveNavLink as="button">
+                                <ResponsiveNavLink as="button" class="nav-link-spotlight">
                                     Log Out
                                 </ResponsiveNavLink>
                             </form>
@@ -347,19 +327,17 @@ function logout() {
             </div>
 
             <!-- Page Heading -->
-            <header v-if="$slots.header" class="bg-gray-900 shadow mt-16">
+            <header v-if="$slots.header" class="glossy-header shadow pt-16">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>
             </header>
 
             <!-- Page Content -->
-            <main class="mt-16">
+            <main class="content-container">
                 <slot />
             </main>
         </div>
-        
-       
     </div>
 </template>
 
@@ -380,4 +358,292 @@ function logout() {
     background-color: #1f2937;
     border-color: #374151;
 } */
+
+/* Glass morphism styles */
+.glossy-card {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+}
+
+.fixed-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 50;
+  transition: all 0.3s ease;
+}
+
+.fixed-navbar.scrolled {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.9));
+  border-bottom: 1px solid rgba(243, 244, 246, 0.2);
+}
+
+.fixed-navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(243, 244, 246, 0.3), transparent);
+}
+
+.content-container {
+  padding-top: 64px; /* Match the height of your navbar */
+  min-height: calc(100vh - 64px); /* 100vh minus navbar height */
+  position: relative;
+  z-index: 1;
+}
+
+:deep(body) {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  scroll-padding-top: 64px; /* Height of navbar for smooth scrolling to anchors */
+}
+
+.glossy-header {
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.glossy-header.scrolled {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.glossy-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(243, 244, 246, 0.3), transparent);
+}
+
+/* Nav Link Spotlight Effect */
+.nav-link-spotlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link-spotlight::before {
+  content: '';
+  position: absolute;
+  top: -20px; /* Positioned above the link */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(
+    circle,
+    rgba(243, 244, 246, 0.4) 0%,
+    rgba(243, 244, 246, 0.1) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.5s;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.nav-link-spotlight:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) scale(1.5);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1.5);
+  }
+  100% {
+    opacity: 0.4;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* Active link style */
+.nav-link-spotlight.active::before {
+  opacity: 0.7;
+  background: radial-gradient(
+    circle,
+    rgba(243, 244, 246, 0.6) 0%,
+    rgba(243, 244, 246, 0.3) 40%,
+    transparent 70%
+  );
+  transform: translateX(-50%) scale(1.5);
+}
+
+/* Additional header glow effect */
+.glossy-header::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(180deg, rgba(243, 244, 246, 0.1), transparent);
+  pointer-events: none;
+}
+
+.glossy-footer {
+  background: linear-gradient(0deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.glossy-section {
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.5), rgba(31, 41, 55, 0.3));
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glossy-content {
+  background: linear-gradient(145deg, rgba(31, 41, 55, 0.6), rgba(17, 24, 39, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Make sure navbar sticks to the top even when scrolling */
+body {
+  padding-top: 0 !important; /* Ensure no default padding interferes */
+  scroll-padding-top: 64px; /* Height of your navbar */
+}
+
+/* Add vertical spotlight effect for dropdown items */
+.dropdown-content .dropdown-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.dropdown-content .dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(243, 244, 246, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.dropdown-content .dropdown-item:hover::before {
+  opacity: 1;
+}
+
+/* Button styling to match the glossy theme */
+.glossy-btn {
+  background: linear-gradient(135deg, rgba(243, 244, 246, 0.2), rgba(229, 231, 235, 0.1));
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(243, 244, 246, 0.3);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.glossy-btn:hover {
+  background: linear-gradient(135deg, rgba(243, 244, 246, 0.3), rgba(229, 231, 235, 0.2));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(243, 244, 246, 0.4);
+}
+
+/* Custom scrollbar for webkit browsers */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: rgba(17, 24, 39, 0.3);
+  border-radius: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(243, 244, 246, 0.3);
+  border-radius: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(243, 244, 246, 0.5);
+}
+
+/* Enhanced modal layout */
+.glossy-card {
+  display: flex;
+  flex-direction: column;
+  height: 65vh; /* Adjust this value as needed */
+  max-height: 85vh;
+}
+
+/* Fixed header styling */
+.glossy-header {
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Scrollable content area */
+.overflow-y-auto {
+  flex-grow: 1;
+  overflow-y: auto;
+  scrollbar-color: rgba(243, 244, 246, 0.3) rgba(17, 24, 39, 0.3);
+  scrollbar-width: thin;
+}
+
+/* Fixed footer styling */
+.glossy-footer {
+  background: linear-gradient(0deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Additional spotlight effect for active page */
+.active .nav-link-spotlight::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(243, 244, 246, 0.7), transparent);
+  opacity: 1;
+}
+
+/* Glass effect for cards and content areas */
+.glossy-panel {
+  background: linear-gradient(145deg, 
+    rgba(31, 41, 55, 0.7), 
+    rgba(17, 24, 39, 0.6)
+  );
+  border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
 </style>

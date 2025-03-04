@@ -863,8 +863,9 @@ if (token) {
     const saveImages = () => {
       if (form.images && form.images.length > 0) {
         const formData = new FormData();
-        form.images.forEach((file, index) => {
-          formData.append(`files[${index}]`, file);
+        form.images.forEach((file) => {
+          // Changed from: formData.append(`files[${index}]`, file);
+          formData.append('images[]', file);
         });
         
         axios.post(`/work-orders/${props.workOrder.id}/update-images`, formData, {

@@ -32,7 +32,7 @@ class DocumentController extends Controller
 
         try {
             // Store the uploaded file
-            $path = $request->file('file')->store('documents/signed', 'public');
+            $path = $request->file('file')->store('uploads/work_orders', 'public');
             
             // Get the full URL to the file
             $url = Storage::disk('public')->url($path);
@@ -49,6 +49,7 @@ class DocumentController extends Controller
                 'path' => $path,
                 'message' => 'Signed document uploaded successfully',
             ]);
+
         } catch (\Exception $e) {
             // Log the error
             Log::error('Document upload failed: ' . $e->getMessage(), [

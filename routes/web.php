@@ -213,6 +213,17 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate'])->name('work-orders.duplicate');
 });
 
+// QuickBooks Routes
+Route::prefix('quickbooks')->group(function () {
+    Route::get('/connect', 'QuickbooksController@connect')->name('quickbooks.connect');
+    Route::get('/callback', 'QuickbooksController@callback')->name('quickbooks.callback');
+    Route::get('/connection-status', 'QuickbooksController@connectionStatus')->name('quickbooks.status');
+    Route::post('/create-invoice', 'QuickbooksController@createInvoice')->name('quickbooks.create-invoice');
+});
+
+// Work Order Routes
+Route::post('/work-orders/{workOrder}/mark-invoiced', 'WorkOrderController@markInvoiced')->name('workOrders.markInvoiced');
+
 // QuickBooks OAuth routes
 Route::get('/quickbooks/authorize', [App\Http\Controllers\QuickBooksController::class, 'authorize'])
     ->middleware(['auth'])

@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use App\Models\WorkOrder;
+use App\Services\QuickBooksService;
 
 class QuickBooksController extends Controller
 {
@@ -106,5 +108,83 @@ class QuickBooksController extends Controller
         Log::info('QuickBooks disconnected', ['user_id' => Auth::id()]);
         
         return redirect()->route('dashboard')->with('success', 'Successfully disconnected from QuickBooks.');
+    }
+
+    /**
+     * Create a new invoice in QuickBooks
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function createInvoice(Request $request)
+    {
+        try {
+            // Validate request
+            $validatedData = $request->validate([
+                'workOrderId' => 'required|exists:work_orders,id',
+                'invoiceData' => 'required|array',
+            ]);
+            
+            $workOrder = WorkOrder::findOrFail($validatedData['workOrderId']);
+            $invoiceData = $validatedData['invoiceData'];
+            
+            // Use QuickBooks service to create the invoice
+            $quickbooksService = new QuickBooksService();
+            $response = $quickbooksService->createInvoice($workOrder, $invoiceData);
+            
+            // Update the work order with invoice reference if needed
+            if (isset($response['Id']) || isset($response['id']) || isset($response['invoiceId'])) {
+                $invoiceId = $response['Id'] ?? $response['id'] ?? $response['invoiceId'];
+                $workOrder->update([
+                    'invoice_id' => $invoiceId,
+                    'invoice_status' => 'created',
+                    'invoice_created_at' => now(),
+                ]);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice created successfully',
+                'invoiceId' => $response['Id'] ?? $response['id'] ?? null,
+                'invoice' => $response,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('QuickBooks invoice creation error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create invoice: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Connect to QuickBooks
+     */
+    public function connect()
+    {
+        // This would typically integrate with a QuickBooks SDK or service
+        // For now, return a view with a message
+        return view('quickbooks.connect', [
+            'title' => 'Connect to QuickBooks',
+            'message' => 'This would redirect to QuickBooks for authentication.'
+        ]);
+    }
+    
+    /**
+     * Check connection status
+     */
+    public function connectionStatus()
+    {
+        // For demonstration, we'll assume connected
+        // In a real implementation, check token validity
+        return response()->json([
+            'connected' => true,
+            'company' => 'Your QuickBooks Company',
+            'expires_at' => now()->addHours(1)->toDateTimeString()
+        ]);
     }
 }

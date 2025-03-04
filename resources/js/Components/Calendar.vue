@@ -6,25 +6,25 @@
       </button>
       <AddWorkorder class="text-lime-400" />
     </div>
-    <div class="bg-gray-900 outline p-4 rounded-lg shadow">
+    <div class="bg-gray-900 outline p-4 rounded-lg shadow glossy-section">
       <FullCalendar :options="calendarOptions">
         <!-- Custom event rendering as cards -->
         <template v-slot:eventContent="arg">
-          <div class="w-full flex rounded-md shadow-sm event-card overflow-hidden">
+          <div class="w-full flex rounded-md shadow-sm event-card overflow-hidden glossy-content">
             <!-- Left colored section with status indicator -->
             <div 
   :style="{ 
     backgroundColor: getStatusColor(arg.event.extendedProps.status),
     color: getTextColorForStatus(arg.event.extendedProps.status)
   }" 
-  class="flex w-8 shrink-0 items-center justify-center rounded-l-md text-xs font-bold border-r border-white/20"
+  class="flex w-8 shrink-0 items-center justify-center rounded-l-md text-xs font-bold border-r border-white/20 glossy-btn"
   :title="arg.event.extendedProps.status"
 >
   {{ getStatusText(arg.event.extendedProps.status) }}
 </div>
             
             <!-- Right content section -->
-            <div class="flex flex-1 items-center justify-between truncate rounded-r-md bg-white/10 dark:bg-gray-700/40 backdrop-blur-sm">
+            <div class="glossy-btn flex flex-1 items-center justify-between truncate rounded-r-md bg-white/10 dark:bg-gray-700/40 backdrop-blur-sm">
               <div class="flex-1 truncate px-2 py-1 text-xs">
                 <p class="font-medium text-gray-800 dark:text-white truncate">
                   {{ arg.event.title }}
@@ -342,6 +342,160 @@ function toggleWeekends() {
 </script>
 
 <style>
+/* Additional header glow effect */
+.glossy-header::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(180deg, rgba(163, 230, 53, 0.1), transparent);
+  pointer-events: none;
+}
+
+.glossy-footer {
+  background: linear-gradient(0deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.glossy-section {
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.5), rgba(31, 41, 55, 0.3));
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glossy-content {
+  background: linear-gradient(145deg, rgba(31, 41, 55, 0.6), rgba(17, 24, 39, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Make sure navbar sticks to the top even when scrolling */
+body {
+  padding-top: 0 !important; /* Ensure no default padding interferes */
+  scroll-padding-top: 64px; /* Height of your navbar */
+}
+
+/* Add vertical spotlight effect for dropdown items */
+.dropdown-content .dropdown-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.dropdown-content .dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: linear-gradient(to bottom, transparent, rgba(163, 230, 53, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.dropdown-content .dropdown-item:hover::before {
+  opacity: 1;
+}
+
+/* Button styling to match the glossy theme */
+.glossy-btn {
+  background: linear-gradient(135deg, rgba(24, 157, 0, 0.518), rgba(18, 138, 20, 0.1));
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(157, 255, 0, 0.3);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.glossy-btn:hover {
+  background: linear-gradient(135deg, rgba(24, 157, 0, 0.518), rgba(18, 138, 20, 0.1));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(163, 230, 53, 0.4);
+}
+
+/* Custom scrollbar for webkit browsers */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: rgba(17, 24, 39, 0.3);
+  border-radius: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(163, 230, 53, 0.3);
+  border-radius: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(163, 230, 53, 0.5);
+}
+
+/* Enhanced modal layout */
+.glossy-card {
+  display: flex;
+  flex-direction: column;
+  height: 65vh; /* Adjust this value as needed */
+  max-height: 85vh;
+}
+
+/* Fixed header styling */
+.glossy-header {
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Scrollable content area */
+.overflow-y-auto {
+  flex-grow: 1;
+  overflow-y: auto;
+  scrollbar-color: rgba(163, 230, 53, 0.3) rgba(17, 24, 39, 0.3);
+  scrollbar-width: thin;
+}
+
+/* Fixed footer styling */
+.glossy-footer {
+  background: linear-gradient(0deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Additional spotlight effect for active page */
+.active .nav-link-spotlight::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.7), transparent);
+  opacity: 1;
+}
+
+/* Glass effect for cards and content areas */
+.glossy-panel {
+  background: linear-gradient(145deg, 
+    rgba(31, 41, 55, 0.7), 
+    rgba(17, 24, 39, 0.6)
+  );
+  border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
 /* Your existing styles */
 .fc-event {
   cursor: pointer;

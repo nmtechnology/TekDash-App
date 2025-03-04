@@ -448,67 +448,58 @@ public function getWorkOrdersForCalendar()
 /**
  * Update images and files for the work order
  */
-public function updateImages(Request $request, $id)
+public function updateImages(Request $request, WorkOrder $workOrder)
 {
-    $request->validate([
-        'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,pdf',  // Allow PDFs and increased max size to 10MB
-    ]);
-    
-    $workOrder = WorkOrder::findOrFail($id);
-    
     try {
-        $newFiles = [];
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                // Store in the appropriate directory based on file type
-                $isPdf = $file->getClientMimeType() === 'application/pdf';
-                $subDir = $isPdf ? 'documents' : 'images';
+        // Validate the request
+        $request->validate([
+            'files.*' => 'required|file|mimes:jpeg,png,jpg,gif,pdf|max:10240', // 10MB max
+            'types.*' => 'nullable|string',
+        ]);
+        
+        $uploadedFiles = $request->file('files');
+        $savedFiles = [];
+
+        if ($uploadedFiles) {
+            foreach ($uploadedFiles as $index => $file) {
+                // Create a unique filename
+                $fileName = uniqid() . '_' . $file->getClientOriginalName();
                 
-                // Store the file and get the path
-                $path = $file->store("work_orders/{$subDir}", 'public');
-                $newFiles[] = $path;
+                // Store the file in the work-orders directory
+                $path = $file->storeAs('work-orders', $fileName, 'public');
+                
+                // Add to saved files array
+                $savedFiles[] = $path;
             }
         }
-        
-        // Check if the images column exists in the database
-        $hasImagesColumn = \Schema::hasColumn('work_orders', 'images');
-        
-        if ($hasImagesColumn) {
-            // Standard approach when images column exists
-            // If work order already has files/images, merge them
-            $existingFiles = $workOrder->images ? json_decode($workOrder->images, true) : [];
-            if (!is_array($existingFiles)) {
-                $existingFiles = [];
-            }
             
-            $allFiles = array_merge($existingFiles, $newFiles);
-            $workOrder->images = json_encode($allFiles);
-        } else {
-            // Fallback - use file_attachments column if images doesn't exist
-            $existingFiles = $workOrder->file_attachments ? json_decode($workOrder->file_attachments, true) : [];
-            if (!is_array($existingFiles)) {
-                $existingFiles = [];
-            }
-            
-            $allFiles = array_merge($existingFiles, $newFiles);
-            $workOrder->file_attachments = json_encode($allFiles);
-            
-            // Let the frontend know we used file_attachments instead
-            \Log::info('Images column not found, using file_attachments instead.');
+        // Get current file attachments
+        $fileAttachments = $workOrder->file_attachments;
+        if (is_string($fileAttachments)) {
+            $fileAttachments = json_decode($fileAttachments) ?: [];
+        } elseif (!is_array($fileAttachments)) {
+            $fileAttachments = [];
         }
         
+        // Add new files to existing ones
+        $updatedAttachments = array_merge($fileAttachments, $savedFiles);
+        
+        // Update the work order
+        $workOrder->file_attachments = $updatedAttachments;
         $workOrder->save();
         
         return response()->json([
             'success' => true,
-            'message' => 'Files updated successfully',
-            'images' => $allFiles
+            'message' => 'Images uploaded successfully',
+            'files' => $savedFiles
         ]);
     } catch (\Exception $e) {
-        \Log::error('Error uploading files: ' . $e->getMessage());
+        Log::error('Error uploading images: ' . $e->getMessage());
+        Log::error($e->getTraceAsString());
+        
         return response()->json([
             'success' => false,
-            'error' => $e->getMessage()
+            'message' => 'Error uploading images: ' . $e->getMessage()
         ], 500);
     }
 }
@@ -802,6 +793,37 @@ public function getStats()
     }
 }
 
+/**
+ * Mark a work order as invoiced
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function markInvoiced(Request $request, $id)
+{
+    try {
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        $validated = $request->validate([
+            'invoice_id' => 'required|string',
+        ]);
+        
+        $workOrder->invoice_id = $validated['invoice_id'];
+        $workOrder->invoiced_at = now();
+        $workOrder->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Work order marked as invoiced successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to mark work order as invoiced: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
 
     /**

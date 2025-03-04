@@ -114,7 +114,7 @@ export default {
       required: true
     },
     userId: {
-      type: Number,
+      type: [Number, String],  // Allow both number and string types
       required: true
     },
     getUserName: {
@@ -128,6 +128,11 @@ export default {
     currentUserAvatar: {
       type: String,
       default: null
+    },
+    team: {
+      type: Object,
+      required: false,
+      default: () => ({})
     }
   },
   
@@ -208,23 +213,24 @@ export default {
       }
     };
     
-    // Add a function to get the current CSRF token
+    // Improved CSRF token retrieval
     const getCsrfToken = () => {
-      // Try to get from meta tag
+      // Get from the meta tag (most reliable in Laravel)
       const metaToken = document.head.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
       if (metaToken) return metaToken;
       
-      // Try to get from form input
-      const inputToken = document.querySelector('input[name="_token"]')?.value;
-      if (inputToken) return inputToken;
-      
-      // Try from cookie
+      // Get from cookie (decode it properly)
       const cookies = document.cookie.split(';').map(cookie => cookie.trim());
       const xsrfCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
       if (xsrfCookie) {
         return decodeURIComponent(xsrfCookie.split('=')[1]);
       }
       
+      // Last resort - try from form input
+      const inputToken = document.querySelector('input[name="_token"]')?.value;
+      if (inputToken) return inputToken;
+      
+      console.error('CSRF token not found');
       return '';
     };
 
@@ -238,7 +244,7 @@ export default {
       }, 100);
     });
     
-    // Add a new note
+    // Improved add note functionality
     const addNote = () => {
       if (!newNoteText.value.trim()) return;
       
@@ -272,26 +278,46 @@ export default {
       // Get CSRF token
       const token = getCsrfToken();
       
-      // Create FormData
-      const formData = new FormData();
-      formData.append('text', newNote.text);
-      formData.append('_token', token);
+      // Set up axios with proper headers
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': token,
+          'Accept': 'application/json'
+        }
+      };
       
-      // Send to server
-      axios.post(`/work-orders/${props.workOrderId}/notes`, formData)
+      // Send to server - using JSON instead of FormData for more reliable handling
+      axios.post(`/work-orders/${props.workOrderId}/notes`, { text: newNote.text }, config)
         .then(response => {
+          console.log('Note saved successfully:', response.data);
           const noteIndex = notes.value.findIndex(n => n.id === tempId);
           if (noteIndex !== -1 && response.data && response.data.id) {
-            notes.value[noteIndex].id = response.data.id;
+            // Update the temporary note with the server data
+            notes.value[noteIndex] = { ...response.data, isNew: false };
           }
         })
         .catch(error => {
-          console.error('Error adding note:', error);
+          console.error('Error adding note:', error.response || error);
+          // Show more detailed error message
+          let errorMessage = 'Failed to save your note. ';
+          
+          if (error.response) {
+            // The request was made and the server responded with a status code
+            errorMessage += `Server responded with status ${error.response.status}: ${error.response.data.message || JSON.stringify(error.response.data)}`;
+          } else if (error.request) {
+            // The request was made but no response was received
+            errorMessage += 'No response received from server. Check your network connection.';
+          } else {
+            // Something happened in setting up the request
+            errorMessage += error.message || 'Unknown error occurred';
+          }
+          
+          alert(errorMessage);
           notes.value = notes.value.filter(n => n.id !== tempId);
-          alert('Failed to save your note. Please try again.');
         });
     };
-    
+
     return {
       notes,
       newNoteText,
@@ -301,7 +327,8 @@ export default {
       getCurrentUserInitials,
       addNote,
       showEmojiPickerModal,
-      insertEmoji
+      insertEmoji,
+      getCsrfToken
     };
   }
 };

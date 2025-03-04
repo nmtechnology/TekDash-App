@@ -166,6 +166,36 @@ Route::middleware('auth:sanctum')->group(function () {
 // Quickbooks Routes (if needed)
 Route::get('/quickbooks/connect', [QuickBooksAuthController::class, 'connect'])->name('quickbooks.connect');
 Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');
+Route::get('/quickbooks/disconnect', [QuickBooksAuthController::class, 'disconnect'])->name('quickbooks.disconnect');
+Route::get('/quickbooks/refresh', [QuickBooksAuthController::class, 'refresh'])->name('quickbooks.refresh');
+
+// Add POST route for creating invoices
+Route::post('/quickbooks/invoices', [QuickBooksController::class, 'createInvoice'])->name('quickbooks.create-invoice');
+// Existing GET route for invoices
+Route::get('/quickbooks/invoices', [QuickBooksController::class, 'getInvoices'])->name('quickbooks.invoices');
+
+Route::get('/quickbooks/invoice/{id}', [QuickBooksController::class, 'getInvoice'])->name('quickbooks.invoice');
+Route::get('/quickbooks/disconnect', [QuickBooksAuthController::class, 'disconnect'])->name('quickbooks.disconnect');
+Route::get('/quickbooks/refresh', [QuickBooksAuthController::class, 'refresh'])->name('quickbooks.refresh');
+Route::get('/quickbooks/invoices', [QuickBooksController::class, 'getInvoices'])->name('quickbooks.invoices');
+Route::get('/quickbooks/invoice/{id}', [QuickBooksController::class, 'getInvoice'])->name('quickbooks.invoice');
+Route::get('/quickbooks/customers', [QuickBooksController::class, 'getCustomers'])->name('quickbooks.customers');
+Route::get('/quickbooks/customer/{id}', [QuickBooksController::class, 'getCustomer'])->name('quickbooks.customer');
+Route::get('/quickbooks/items', [QuickBooksController::class, 'getItems'])->name('quickbooks.items');
+Route::get('/quickbooks/item/{id}', [QuickBooksController::class, 'getItem'])->name('quickbooks.item');
+Route::get('/quickbooks/estimate/{id}', [QuickBooksController::class, 'getEstimate'])->name('quickbooks.estimate');
+Route::get('/quickbooks/estimates', [QuickBooksController::class, 'getEstimates'])->name('quickbooks.estimates');
+Route::get('/quickbooks/estimate/{id}/pdf', [QuickBooksController::class, 'getEstimatePdf'])->name('quickbooks.estimate.pdf');
+Route::get('/quickbooks/invoice/{id}/pdf', [QuickBooksController::class, 'getInvoicePdf'])->name('quickbooks.invoice.pdf');
+Route::get('/quickbooks/invoice/{id}/send', [QuickBooksController::class, 'sendInvoice'])->name('quickbooks.invoice.send');
+Route::get('/quickbooks/invoice/{id}/payment', [QuickBooksController::class, 'createPayment'])->name('quickbooks.invoice.payment');
+Route::get('/quickbooks/invoice/{id}/payments', [QuickBooksController::class, 'getPayments'])->name('quickbooks.invoice.payments');
+Route::get('/quickbooks/invoice/{id}/payment/{paymentId}', [QuickBooksController::class, 'getPayment'])->name('quickbooks.invoice.payment');
+Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/pdf', [QuickBooksController::class, 'getPaymentPdf'])->name('quickbooks.invoice.payment.pdf');
+Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/send', [QuickBooksController::class, 'sendPayment'])->name('quickbooks.invoice.payment.send');
+Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/refund', [QuickBooksController::class, 'refundPayment'])->name('quickbooks.invoice.payment.refund');
+Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/refund/pdf', [QuickBooksController::class, 'getRefundPdf'])->name('quickbooks.invoice.payment.refund.pdf');
+
 
 // uplaodSignedDocument
 Route::post('/upload-signed-document', [WorkOrderController::class, 'uploadSignedDocument']);
