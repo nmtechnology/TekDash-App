@@ -20,7 +20,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M6.5 8a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
               <path d="M12.354 3.646a.5.5 0 0 1 0 .708l-4.5 4.5a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 7.293l4.146-4.147a.5.5 0 0 1 .708 0z"/>
-              <path d="M11.5 0h-7A1.5 1.5 0 0 0 3 1.5v13A1.5 1.5 0 0 0 4.5 16h7a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 11.5 0zm0 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5h7z"/>
+              <path d="M11.5 0h-7A1.5 1.5 0 0 0 3 1.5v13A1.5 1.5 0 0 0 4.5 16h7a1.5 1.5 0 0 0 1.5-1.5v-13A1.5.5 0 0 1 11.5 0zm0 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5h7z"/>
             </svg>
             Sign Document
           </button>
@@ -136,24 +136,11 @@
       <div v-if="modifiedPdfUrl" class="download-bar">
         <p>Document signed successfully!</p>
         <div class="download-actions">
-          <!-- Restored download button -->
-          <a :href="modifiedPdfUrl" :download="signedFilename" class="action-btn download-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-              <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-            </svg>
-            Download
-          </a>
-          <!-- Updated upload button with disabled state -->
           <button 
-            @click="uploadSignedDocument" 
-            class="action-btn upload-btn"
+            @click="finishAndClose" 
+            class="action-btn save-btn"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-              <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
-            </svg>
-            Upload
+            Save & Close
           </button>
         </div>
       </div>
@@ -621,131 +608,12 @@ export default {
       }
     };
     
-    // NEW: Method to upload the signed document to work order using Inertia
-    const uploadSignedDocument = async () => {
-      try {
-        if (!modifiedPdfUrl.value) {
-          console.error('Missing signed PDF data for upload');
-          alert('Missing signed PDF data for upload');
-          return;
-        }
-
-        loading.value = true;
-
-        // Fetch the signed PDF blob from the URL
-        const response = await fetch(modifiedPdfUrl.value);
-        const blob = await response.blob();
-
-        // Create file with work order title in the filename if available
-        const fileToUpload = new File(
-          [blob], 
-          signedFilename.value, 
-          { type: 'application/pdf' }
-        );
-        console.log('File ready for upload:', fileToUpload.name, fileToUpload.size, fileToUpload.type);
-
-        // Create form data for upload
-        const formData = new FormData();
-        formData.append('file', fileToUpload);
-        formData.append('firstName', firstName.value || 'Unsigned');
-        formData.append('lastName', lastName.value || 'User');
-        formData.append('type', 'signed_document');
-        
-        // Only include work_order_id if it's provided
-        if (props.workOrderId) {
-          formData.append('work_order_id', props.workOrderId);
-          console.log('Uploading with work order ID:', props.workOrderId);
-        } else {
-          console.log('Uploading without work order ID');
-        }
-
-        // Log form data contents for debugging
-        console.log('Form data contents:');
-        for (let [key, value] of formData.entries()) {
-          if (value instanceof File) {
-            console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
-          } else {
-            console.log(`${key}: ${value}`);
-          }
-        }
-
-        // Get CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (!csrfToken) {
-          console.warn('CSRF token not found in meta tags');
-        }
-
-        console.log('Sending upload request to /api/public/documents/upload-signed');
-        
-        // Send the upload request
-        const uploadResponse = await fetch('/api/public/documents/upload-signed', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-CSRF-TOKEN': csrfToken || '',
-            'Accept': 'application/json',
-            // Note: Don't set Content-Type with FormData, browser will set it with boundary
-          },
-          credentials: 'include',
-        });
-
-        // Get response details for better debugging
-        console.log('Response status:', uploadResponse.status, uploadResponse.statusText);
-        const responseContentType = uploadResponse.headers.get('content-type');
-        console.log('Response content type:', responseContentType);
-
-        // Try to get error details from response
-        let responseData;
-        try {
-          if (responseContentType && responseContentType.includes('application/json')) {
-            responseData = await uploadResponse.json();
-          } else {
-            const text = await uploadResponse.text();
-            console.log('Server response (text):', text);
-          }
-        } catch (parseErr) {
-          console.error('Failed to parse response:', parseErr);
-        }
-
-        if (!uploadResponse.ok) {
-          // Try to provide more specific error details
-          let errorDetail = '';
-          if (responseData && responseData.message) {
-            errorDetail = responseData.message;
-          } else if (responseData && responseData.error) {
-            errorDetail = responseData.error;
-          }
-          
-          throw new Error(`Server error (${uploadResponse.status}): ${errorDetail || uploadResponse.statusText}`);
-        }
-
-        // If we made it here, we have a successful response
-        const result = responseData || { success: true };
-
-        if (result.success) {
-          console.log('Upload successful:', result);
-          
-          // Simplified success handling
-          if (props.workOrderId && props.redirectAfterUpload) {
-            closeViewer(); // Close viewer first
-            
-            // Then redirect
-            setTimeout(() => {
-              window.location.href = `/work-orders/${props.workOrderId}`;
-            }, 100);
-          } else {
-            alert('Document uploaded successfully!');
-            closeViewer();
-          }
-        } else {
-          throw new Error(result.message || 'Upload failed with unknown error');
-        }
-
-      } catch (error) {
-        console.error('Upload error:', error);
-        alert('Failed to upload document: ' + (error.message || 'Unknown error'));
-      } finally {
-        loading.value = false;
+    const finishAndClose = () => {
+      emit('document-uploaded');
+      closeViewer();
+      
+      if (props.redirectAfterUpload && props.workOrderId) {
+        window.location.href = `/work-orders/${props.workOrderId}`;
       }
     };
 
@@ -802,9 +670,9 @@ export default {
       saveSignature,
       firstName,
       lastName,
-      uploadSignedDocument,
       signedFilename,
-      sanitizeFilename
+      sanitizeFilename,
+      finishAndClose
     };
   }
 };
@@ -1207,5 +1075,15 @@ export default {
 .floating-close-btn:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5);
+}
+
+.save-btn {
+  background-color: #5fdb00;
+  color: black;
+  border: none;
+}
+
+.save-btn:hover {
+  background-color: #4caf00;
 }
 </style>

@@ -2,23 +2,23 @@
   <div class="messenger mt-2 bg-gray-800 rounded-lg border border-gray-700">
     <!-- Messages list -->
     <div class="messages p-4 space-y-4 max-h-96 overflow-y-auto">
-      <div v-for="note in notes" :key="note.id" class="flex items-start">
+      <div class="chat chat-start" v-for="note in notes" :key="note.id">
         <!-- User avatar - Always show initials for consistent UI -->
-        <div class="flex-shrink-0 mr-3">
-          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700">
+        <div class="chat-image">
+          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700 mask mask-hexagon">
             <div class="avatar-initials text-white text-lg font-bold">
               {{ getCurrentUserInitials() }}
             </div>
           </div>
         </div>
         
-        <!-- Message content - Now with glossy style -->
-        <div class="flex-1 message-bubble glossy-message">
-          <!-- Improved header with clearer separation between name and timestamp -->
-          <div class="flex items-center justify-between mb-1">
-            <p class="text-xs text-blue-300">{{ formatTimestamp(note.created_at) }}</p>
-          </div>
-          <p class="text-sm text-white mt-1 whitespace-pre-wrap message-text">{{ note.text }}</p>
+        <!-- Message content with combined Daisy UI and glossy style -->
+        
+        <div class="chat-bubble glossy-message bg-gray-800/70 text-white border border-gray-700/30">
+          <p class="message-text">{{ note.text }}</p>
+        </div>
+        <div class="chat-header text-xs text-blue-300 mb-1">
+          {{ formatTimestamp(note.created_at) }}
         </div>
       </div>
     </div>
@@ -28,7 +28,7 @@
       <div class="flex items-start space-x-3">
         <!-- Current user avatar - Always show initials for consistency -->
         <div class="flex-shrink-0">
-          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-700">
+          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-700 mask mask-hexagon">
             <div class="avatar-initials text-lime-400 text-lg font-bold">
               {{ getCurrentUserInitials() }}
             </div>
@@ -40,9 +40,9 @@
           <div class="relative">
             <textarea 
               v-model="newNoteText" 
-              placeholder="Add a note..." 
+              placeholder="Add a notation..." 
               class="w-full rounded-md bg-gray-900 border-gray-600 shadow-sm text-lime-400 text-sm"
-              rows="2"
+              rows="1"
               @keydown.enter.prevent="addNote"
               ref="messageInput"
             ></textarea>
@@ -50,7 +50,7 @@
             <!-- Emoji button - Updated styling -->
             <button 
               @click.stop="showEmojiPickerModal = true" 
-              class="absolute bottom-2 right-2 text-yellow-400 hover:text-yellow-500 p-1 rounded-full"
+              class="absolute bottom-2 right-2 text-yellow-400 hover:text-yellow-500 p-1 mask mask-hexagon"
               title="Add emoji"
               type="button"
             >
@@ -365,7 +365,7 @@ export default {
 
 /* Updated focus styles to match lime theme */
 :focus {
-  outline-color: theme('colors.lime.400');
+  outline-color: theme('colors.blue.400');
 }
 
 .emoji-grid {
@@ -382,7 +382,7 @@ export default {
 }
 
 .emoji-grid::-webkit-scrollbar-thumb {
-  background-color: rgba(115, 115, 115, 0.4);
+  background-color: rgba(238, 255, 0, 0.4);
   border-radius: 20px;
 }
 
@@ -628,4 +628,53 @@ textarea {
   background: rgba(17, 24, 39, 0.6);
   border-bottom: 1px solid rgba(107, 114, 128, 0.2);
 }
+
+/* Updated chat bubble styling */
+.chat-bubble {
+  position: relative;
+  overflow: hidden;
+  background: rgba(30, 41, 59, 0.7) !important;
+  box-shadow: 
+    0 2px 5px rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.chat-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.15), 
+    rgba(255, 255, 255, 0.05) 40%, 
+    rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+
+/* Remove default Daisy UI chat bubble triangle */
+.chat-bubble:before {
+  display: none;
+}
+
+.chat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.chat-image {
+  grid-row: span 2;
+}
+
+.chat-header {
+  grid-column: 2;
+}
+
+/* ...rest of existing styles... */
 </style>

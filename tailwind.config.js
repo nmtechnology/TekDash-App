@@ -10,6 +10,7 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
         './resources/js/**/*.vue',
+        './public/preload/**/*.{html,js,css}',
     ],
 
     theme: {
@@ -20,5 +21,9 @@ export default {
         },
     },
 
-    plugins: [forms, typography],
+    plugins: [forms, typography, require("daisyui")],
+    
+    corePlugins: {
+        preflight: false,
+    }
 };

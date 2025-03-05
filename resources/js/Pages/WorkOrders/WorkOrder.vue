@@ -281,7 +281,7 @@
             </div>
             
             <!-- User section -->
-            <!-- <div>
+            <div>
               <p class="text-sm text-gray-400">Assigned to:</p>
               <div class="flex items-center">
                 <span v-if="!editingField.user_name" class="text-white">
@@ -309,7 +309,7 @@
                   </button>
                 </span>
               </div>
-            </div> -->
+            </div>
             
             <!-- Attachments section - Updated with persistent upload button -->
             <div class="glossy-section">
