@@ -7,7 +7,7 @@
         <div class="flex-shrink-0 mr-3">
           <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700">
             <div class="avatar-initials text-white text-lg font-bold">
-              {{ getUserInitials(note.user_id) }}
+              {{ getCurrentUserInitials() }}
             </div>
           </div>
         </div>
@@ -16,7 +16,6 @@
         <div class="flex-1 message-bubble glossy-message">
           <!-- Improved header with clearer separation between name and timestamp -->
           <div class="flex items-center justify-between mb-1">
-            <p class="text-sm font-medium text-lime-400">{{ getUserName(note.user_id) }}</p>
             <p class="text-xs text-blue-300">{{ formatTimestamp(note.created_at) }}</p>
           </div>
           <p class="text-sm text-white mt-1 whitespace-pre-wrap message-text">{{ note.text }}</p>
@@ -157,13 +156,14 @@ export default {
       }
     };
     
-    // Get user initials for avatar - making this more robust
+    // Get user initials for avatar
     const getUserInitials = (userId) => {
       try {
-        // First try to get name from note.user_name if available (for new/updated notes)
-        const noteWithUser = notes.value.find(n => n.user_id === userId && n.user_name);
-        const name = noteWithUser?.user_name || props.getUserName(userId);
-        
+        // Handle both function and string prop types
+        const name = typeof props.getUserName === 'function' 
+          ? props.getUserName(userId)
+          : props.getUserName;
+
         if (!name || typeof name !== 'string' || name === 'undefined' || name === 'null') {
           return userId?.toString().substring(0, 2) || '??';
         }
@@ -259,21 +259,12 @@ export default {
       // Close emoji picker if open
       showEmojiPickerModal.value = false;
       
-      // Try to get the current user name for the temporary note
-      let currentUserName;
-      try {
-        currentUserName = props.getUserName(props.userId);
-      } catch (e) {
-        currentUserName = null;
-      }
-      
-      // Create a temporary note with user_name if available
+      // Create a temporary note
       const tempId = 'temp-' + Date.now();
       const newNote = {
         id: tempId,
         text: newNoteText.value.trim(),
         user_id: props.userId,
-        user_name: currentUserName,
         created_at: new Date().toISOString(),
         isNew: true
       };
@@ -312,17 +303,8 @@ export default {
         console.log('Note saved successfully:', response.data);
         const noteIndex = notes.value.findIndex(n => n.id === tempId);
         if (noteIndex !== -1 && response.data) {
-          // Preserve the user_name from the response or use our best guess
-          const responseName = response.data.user_name || 
-                              currentUserName || 
-                              props.getUserName(response.data.user_id);
-                              
-          // Update the temporary note with the server data but keep user_name
-          notes.value[noteIndex] = { 
-            ...response.data,
-            user_name: responseName,
-            isNew: false 
-          };
+          // Update the temporary note with the server data
+          notes.value[noteIndex] = { ...response.data, isNew: false };
         }
       }).catch(error => {
         console.error('Error adding note:', error);
@@ -349,8 +331,9 @@ export default {
       showEmojiPickerModal,
       insertEmoji,
       getCsrfToken,
-      // Use the prop's getUserName function instead of a non-existent local variable
-      getUserName: props.getUserName
+      getUserName: computed(() => typeof props.getUserName === 'function' 
+        ? props.getUserName 
+        : () => props.getUserName)
     };
   }
 };

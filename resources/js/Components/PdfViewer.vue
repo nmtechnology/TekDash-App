@@ -1,5 +1,12 @@
 <template>
   <div class="pdf-viewer-outer-container">
+    <!-- Add floating close button -->
+    <button class="floating-close-btn" @click.stop="closeViewer" title="Close PDF Viewer">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+      </svg>
+    </button>
+    
     <div class="pdf-viewer-container">
       <!-- Header controls -->
       <div class="pdf-header">
@@ -17,7 +24,7 @@
             </svg>
             Sign Document
           </button>
-          <button class="action-button close-button" @click="closeViewer">
+          <button class="action-button close-button" @click.stop="closeViewer">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
             </svg>
@@ -72,7 +79,11 @@
       </div>
 
       <!-- Signature overlay -->
-      <div v-if="signatureMode" class="signature-overlay">
+      <div 
+        v-if="signatureMode" 
+        class="signature-overlay" 
+        @click.self="cancelSignature"
+      >
         <div class="signature-box">
           <div class="signature-header">
             <h3 class="signature-title">Please sign below</h3>
@@ -133,13 +144,16 @@
             </svg>
             Download
           </a>
-          <!-- New upload button -->
-          <button @click="uploadSignedDocument" class="action-btn upload-btn">
+          <!-- Updated upload button with disabled state -->
+          <button 
+            @click="uploadSignedDocument" 
+            class="action-btn upload-btn"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-              <path d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
+              <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
             </svg>
-            Upload to Work Order
+            Upload
           </button>
         </div>
       </div>
@@ -157,12 +171,13 @@
 </template>
 
 <script>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
 import { PDFDocument, rgb } from 'pdf-lib';
-import { Inertia } from '@inertiajs/inertia';
 
 export default {
   name: 'PdfViewer',
+  
+  emits: ['close', 'update:modelValue', 'document-uploaded'],
   
   props: {
     pdfUrl: {
@@ -195,6 +210,15 @@ export default {
     onClose: {
       type: Function,
       default: null
+    },
+    // Add workOrderTitle prop for naming the signed document
+    workOrderTitle: {
+      type: String,
+      default: ''
+    },
+    modelValue: {
+      type: Boolean,
+      default: false
     }
   },
   
@@ -243,19 +267,27 @@ export default {
       return decodeURIComponent(rawFilename) || 'document.pdf';
     };
     
-    // Compute the signed filename by appending "signed" before the extension
+    // Helper function to sanitize filename (remove invalid characters)
+    const sanitizeFilename = (filename) => {
+      // Replace invalid file name characters with underscores
+      return filename
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_') // Replace invalid characters
+        .replace(/\s+/g, '_')                    // Replace spaces with underscores
+        .replace(/__+/g, '_')                    // Replace multiple underscores with single
+        .trim();
+    };
+    
+    // Compute the signed filename using work order title if available
     const signedFilename = computed(() => {
-      const filename = originalFilename.value;
-      const lastDotIndex = filename.lastIndexOf('.');
-      
-      if (lastDotIndex === -1) {
-        // No extension found
-        return `${filename}-signed.pdf`;
+      if (props.workOrderTitle) {
+        // Use work order title as the filename base
+        const sanitizedTitle = sanitizeFilename(props.workOrderTitle);
+        return `${sanitizedTitle}_signed.pdf`;
+      } else {
+        // Fall back to original filename if available
+        const baseName = originalFilename.value.replace(/\.pdf$/i, '');
+        return `${baseName}_signed.pdf`;
       }
-      
-      const name = filename.substring(0, lastDotIndex);
-      const extension = filename.substring(lastDotIndex);
-      return `${name}-signed${extension}`;
     });
     
     // Methods
@@ -282,9 +314,17 @@ export default {
     };
     
     const closeViewer = () => {
-      if (props.onClose) {
-        props.onClose();
+      if (modifiedPdfUrl.value) {
+        URL.revokeObjectURL(modifiedPdfUrl.value);
+        modifiedPdfUrl.value = null;
       }
+      
+      loading.value = false;
+      error.value = false;
+      signatureMode.value = false;
+      
+      // Emit close event
+      emit('close');
     };
     
     // Simple URL processing function - avoid complexity
@@ -474,7 +514,8 @@ export default {
           emit('signature-captured', {
             signature: signatureData,
             firstName: firstName.value,
-            lastName: lastName.value
+            lastName: lastName.value,
+            timestamp: new Date().toISOString()
           });
           signatureMode.value = false;
         } else {
@@ -517,7 +558,7 @@ export default {
         }
         
         // Load the PDF document
-        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const pdfDoc = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
         const pages = pdfDoc.getPages();
         
         if (pages.length === 0) {
@@ -584,93 +625,126 @@ export default {
     const uploadSignedDocument = async () => {
       try {
         if (!modifiedPdfUrl.value) {
-          console.error('No signed document available to upload');
+          console.error('Missing signed PDF data for upload');
+          alert('Missing signed PDF data for upload');
           return;
         }
 
-        // Show loading state
         loading.value = true;
 
         // Fetch the signed PDF blob from the URL
         const response = await fetch(modifiedPdfUrl.value);
         const blob = await response.blob();
 
+        // Create file with work order title in the filename if available
+        const fileToUpload = new File(
+          [blob], 
+          signedFilename.value, 
+          { type: 'application/pdf' }
+        );
+        console.log('File ready for upload:', fileToUpload.name, fileToUpload.size, fileToUpload.type);
+
         // Create form data for upload
         const formData = new FormData();
-        formData.append('file', blob, signedFilename.value);
-        formData.append('firstName', firstName.value);
-        formData.append('lastName', lastName.value);
-
-        // Add workOrderId to form data if provided
+        formData.append('file', fileToUpload);
+        formData.append('firstName', firstName.value || 'Unsigned');
+        formData.append('lastName', lastName.value || 'User');
+        formData.append('type', 'signed_document');
+        
+        // Only include work_order_id if it's provided
         if (props.workOrderId) {
-          formData.append('workOrderId', props.workOrderId);
+          formData.append('work_order_id', props.workOrderId);
+          console.log('Uploading with work order ID:', props.workOrderId);
+        } else {
+          console.log('Uploading without work order ID');
         }
 
-        console.log('Uploading document', {
-          filename: signedFilename.value,
-          size: blob.size,
-          workOrderId: props.workOrderId
-        });
-
-        // Define onSuccess and onError callbacks
-        const onSuccess = (response) => {
-          loading.value = false;
-
-          // Check if the response is a plain JSON response
-          if (response.headers['content-type']?.includes('application/json')) {
-            // Parse the JSON response
-            const result = response.data;
-
-            // Emit event to notify parent component of upload
-            emit('document-uploaded', {
-              url: result.url,
-              fileName: signedFilename.value,
-              firstName: firstName.value,
-              lastName: lastName.value,
-              workOrderId: props.workOrderId
-            });
-
-            // Show success message
-            alert('Document successfully uploaded to work order!');
-
-            // Redirect to work order view if ID is provided and redirectAfterUpload is true
-            if (props.workOrderId && props.redirectAfterUpload) {
-              // Small delay to ensure the alert is seen
-              setTimeout(() => {
-                // Use router if available, otherwise do a page redirect
-                if (window.Inertia) {
-                  // For Inertia.js applications
-                  Inertia.visit(`/work-orders/${props.workOrderId}`);
-                } else {
-                  // Regular redirect
-                  window.location.href = `/work-orders/${props.workOrderId}`;
-                }
-              }, 500);
-            }
+        // Log form data contents for debugging
+        console.log('Form data contents:');
+        for (let [key, value] of formData.entries()) {
+          if (value instanceof File) {
+            console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
           } else {
-            console.error('Unexpected response type:', response.headers['content-type']);
-            alert('Unexpected response from server. Please check the console.');
+            console.log(`${key}: ${value}`);
           }
-        };
+        }
 
-        const onError = (errors) => {
-          loading.value = false;
-          console.error('Error uploading signed document:', errors);
-          alert(`Failed to upload signed document: ${errors}`);
-        };
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+          console.warn('CSRF token not found in meta tags');
+        }
 
-        // Use Inertia.post to upload the file
-        Inertia.post('/api/public/documents/upload-signed', formData, {
+        console.log('Sending upload request to /api/public/documents/upload-signed');
+        
+        // Send the upload request
+        const uploadResponse = await fetch('/api/public/documents/upload-signed', {
+          method: 'POST',
+          body: formData,
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'X-CSRF-TOKEN': csrfToken || '',
+            'Accept': 'application/json',
+            // Note: Don't set Content-Type with FormData, browser will set it with boundary
           },
-          onSuccess: onSuccess,
-          onError: onError,
+          credentials: 'include',
         });
+
+        // Get response details for better debugging
+        console.log('Response status:', uploadResponse.status, uploadResponse.statusText);
+        const responseContentType = uploadResponse.headers.get('content-type');
+        console.log('Response content type:', responseContentType);
+
+        // Try to get error details from response
+        let responseData;
+        try {
+          if (responseContentType && responseContentType.includes('application/json')) {
+            responseData = await uploadResponse.json();
+          } else {
+            const text = await uploadResponse.text();
+            console.log('Server response (text):', text);
+          }
+        } catch (parseErr) {
+          console.error('Failed to parse response:', parseErr);
+        }
+
+        if (!uploadResponse.ok) {
+          // Try to provide more specific error details
+          let errorDetail = '';
+          if (responseData && responseData.message) {
+            errorDetail = responseData.message;
+          } else if (responseData && responseData.error) {
+            errorDetail = responseData.error;
+          }
+          
+          throw new Error(`Server error (${uploadResponse.status}): ${errorDetail || uploadResponse.statusText}`);
+        }
+
+        // If we made it here, we have a successful response
+        const result = responseData || { success: true };
+
+        if (result.success) {
+          console.log('Upload successful:', result);
+          
+          // Simplified success handling
+          if (props.workOrderId && props.redirectAfterUpload) {
+            closeViewer(); // Close viewer first
+            
+            // Then redirect
+            setTimeout(() => {
+              window.location.href = `/work-orders/${props.workOrderId}`;
+            }, 100);
+          } else {
+            alert('Document uploaded successfully!');
+            closeViewer();
+          }
+        } else {
+          throw new Error(result.message || 'Upload failed with unknown error');
+        }
 
       } catch (error) {
-        console.error('Error uploading signed document:', error);
-        alert(`Failed to upload signed document: ${error.message}`);
+        console.error('Upload error:', error);
+        alert('Failed to upload document: ' + (error.message || 'Unknown error'));
+      } finally {
         loading.value = false;
       }
     };
@@ -687,8 +761,23 @@ export default {
     onMounted(() => {
       console.log('PDF viewer component mounted');
       setupPdfViewer();
+      
+      // Add keyboard event listener
+      window.addEventListener('keydown', handleKeyDown);
     });
     
+    // Clean up on unmount
+    onUnmounted(() => {
+      window.removeEventListener('keydown', handleKeyDown);
+    });
+    
+    // Add keyboard support for closing with Escape key
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeViewer();
+      }
+    };
+
     return {
       loading,
       loaded,
@@ -714,7 +803,8 @@ export default {
       firstName,
       lastName,
       uploadSignedDocument,
-      signedFilename
+      signedFilename,
+      sanitizeFilename
     };
   }
 };
@@ -1087,5 +1177,35 @@ export default {
 
 .upload-btn:hover {
   background-color: #5fdb00;
+}
+
+/* Add floating close button styles */
+.floating-close-btn {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 10001; /* Above everything else */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.floating-close-btn:hover {
+  background-color: #ff0000;
+  transform: scale(1.1);
+}
+
+.floating-close-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5);
 }
 </style>

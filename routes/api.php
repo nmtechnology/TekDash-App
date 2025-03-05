@@ -26,6 +26,10 @@ Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSigne
 // Make this route completely public with no auth requirements
 Route::post('/public/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument']);
 
+Route::prefix('public')->group(function () {
+    Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSigned']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     // User routes
     Route::get('/user', function (Request $request) {
@@ -157,6 +161,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('work-orders/{workOrder}/invoice', [WorkOrderController::class, 'createInvoice']);
     });
+    Route::post('work-orders/{id}/invoice', [WorkOrderController::class, 'createInvoice']);
 
     // Fix the document upload endpoint (remove duplicate /api)
     Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument']);

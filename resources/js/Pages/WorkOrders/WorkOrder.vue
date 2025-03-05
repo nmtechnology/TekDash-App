@@ -391,11 +391,13 @@
                 
                 <!-- PDF preview -->
                 <PdfViewer 
-                  v-else-if="isPdfFile(previewAttachment)"
-                  :pdfUrl="previewAttachment"
+                  v-if="previewAttachment && isPdfFile(previewAttachment)"
+                  :pdf-url="previewAttachment"
                   :title="getFileName(previewAttachment)"
                   :redirect-after-upload="true"
+                  :work-order-id="workOrder.id"
                   @document-uploaded="handleDocumentUpload"
+                  @close="closePreview"
                 />
                 
                 <!-- Close button -->
@@ -512,6 +514,9 @@ export default {
     }
 },
   setup(props, { emit }) {
+    // Add this near the top of setup(), with other refs
+    const showPdfViewer = ref(false);
+    
     // Configure Axios - Add this at the top of setup()
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     axios.defaults.withCredentials = true;
@@ -872,6 +877,11 @@ if (token) {
       }
     };
 
+    const handlePdfClose = () => {
+    showPdfViewer.value = false;
+    // Any other cleanup needed
+};
+
     // For image/file uploads with special handling
     const saveImages = async () => {
       if (!form.images || form.images.length === 0) {
@@ -1111,38 +1121,27 @@ if (token) {
       try {
         console.log('Document uploaded:', data);
         
-        // Add the document to the work order's attachments
-        if (data.url && data.fileName) {
-          // Extract the path from the URL (remove domain and /storage prefix)
-          const pathMatch = data.url.match(/\/storage\/(.*)/);
-          const attachmentPath = pathMatch ? pathMatch[1] : data.url;
-          
-          // Notify parent that document was uploaded
-          emit('document-uploaded', {
-            workOrderId: props.workOrder.id,
-            filePath: attachmentPath,
-            fileName: data.fileName
-          });
-          
-          // Update local state if needed
-          if (props.workOrder.file_attachments && Array.isArray(props.workOrder.file_attachments)) {
-            // Add the new attachment to the array
-            props.workOrder.file_attachments.push(attachmentPath);
-          } else {
-            props.workOrder.file_attachments = [attachmentPath];
+        // Extract just the path portion from the full URL
+        const pathMatch = data.path || data.url.match(/\/storage\/(.*)/);
+        const attachmentPath = typeof pathMatch === 'string' ? pathMatch : pathMatch?.[1];
+        
+        if (attachmentPath) {
+          // Add the new attachment to both arrays if they exist
+          if (!Array.isArray(props.workOrder.file_attachments)) {
+            props.workOrder.file_attachments = [];
           }
+          props.workOrder.file_attachments.push(attachmentPath);
+
+          if (!Array.isArray(props.workOrder.images)) {
+            props.workOrder.images = [];
+          }
+          props.workOrder.images.push(attachmentPath);
           
           // Close the preview
           closePreview();
           
           // Show success message
-          alert(`Document "${data.fileName}" uploaded successfully`);
-          
-          // If a work order ID was provided, and it matches the current work order
-          if (data.workOrderId && data.workOrderId === props.workOrder.id) {
-            // Close the modal to refresh the view
-            closeModal();
-          }
+          alert(`Document uploaded successfully`);
         }
       } catch (error) {
         console.error('Error handling document upload:', error);
@@ -1181,6 +1180,7 @@ if (token) {
       },
       duplicateWorkOrder,
       handleImageUpload,
+      handlePdfClose,
       previewAttachment,
       handleDocumentUpload,
       isPdfFile,
@@ -1198,7 +1198,8 @@ if (token) {
       addNewDate,
       removeDate,
       createInvoice,
-      deleteAttachment
+      deleteAttachment,
+      showPdfViewer
     };
   }
 };

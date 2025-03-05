@@ -15,7 +15,7 @@ class DocumentController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function uploadSignedDocument(Request $request)
+    public function uploadSigned(Request $request)
     {
         Log::info('Document upload request received', [
             'has_file' => $request->hasFile('file'),
