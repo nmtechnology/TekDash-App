@@ -7,7 +7,7 @@ import CurrentTime from '@/Components/CurrentTime.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
 import Search from '@/Components/Search.vue';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { usePage } from '@inertiajs/inertia-vue3';
+import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 
 // Close search results when clicking outside

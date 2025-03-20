@@ -1,6 +1,7 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 import typography from '@tailwindcss/typography';
+import daisyui from 'daisyui';
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -11,6 +12,9 @@ export default {
         './resources/views/**/*.blade.php',
         './resources/js/**/*.vue',
         './public/preload/**/*.{html,js,css}',
+        "./resources/**/*.blade.php",
+        "./resources/**/*.js",
+        "./resources/**/*.vue",
     ],
 
     theme: {
@@ -25,5 +29,9 @@ export default {
     
     corePlugins: {
         preflight: false,
+    },
+    
+    daisyui: {
+        themes: ["light", "dark"],
     }
 };

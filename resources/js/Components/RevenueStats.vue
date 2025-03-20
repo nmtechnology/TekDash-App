@@ -477,6 +477,7 @@ function toggleCollapse() {
 
 // Add a new method to handle QuickBooks connection
 function connectToQuickBooks() {
+  // Let the server handle the redirect URI to ensure an exact match with what's registered
   window.location.href = '/quickbooks/authorize';
 }
 </script>
@@ -586,11 +587,11 @@ function connectToQuickBooks() {
           </div>
           <div v-else class="grid grid-cols-2 gap-2">
             <div>
-              <p>Download Speed: <span class="text-cyan-300 font-bold">{{ 
-                typeof speedTestResults.speedMbps === 'number' && !isNaN(speedTestResults.speedMbps) 
+                <p>Download Speed: <span class="text-cyan-300 font-bold">{{ 
+                typeof speedTestResults.speedMbps === 'number' && !isNaN(speedTestResults.speedMbps) && speedTestResults.speedMbps > 0
                   ? speedTestResults.speedMbps.toFixed(2) 
-                  : '0.00' 
-              }} Mbps</span></p>
+                  : speedTestResults.speedMbps === 0 ? '< 0.01' : '0.00'
+                }} Mbps</span></p>
               <p>Latency: <span class="text-cyan-300 font-bold">{{ 
                 typeof speedTestResults.latency === 'number' && !isNaN(speedTestResults.latency) 
                   ? speedTestResults.latency.toFixed(0) 

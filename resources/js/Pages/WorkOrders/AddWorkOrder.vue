@@ -1,18 +1,26 @@
 <template>
   <div>
-    <button @click="openCreateModal" class="btn outline text-lime-400 rounded-md hover:bg-lime-400 dark:hover:bg-lime-400 hover:text-gray-900 transition z-30">Add Work Order</button>
+    <button @click="openCreateModal" class="btn text-lime-400 rounded-md hover:bg-lime-400 dark:hover:bg-lime-400 hover:text-gray-900 transition z-30">Add Work Order</button>
 
-    <div v-if="showModal" class="fixed inset-0 top-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full mt-16">
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full mt-4">
         <div class="glossy-header px-4 pt-5 pb-4">
-          <div class="sm:flex sm:items-start">
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <div class="flex justify-between items-center">
-                <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
-                  {{ mode === 'create' ? 'Add Work Order Form' : 'Edit Work Order' }}
-                </h3>
-                <NetworkStatusIndicator />
-              </div>
+          
+          <div class="flex justify-between items-center">
+            <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
+              {{ mode === 'create' ? 'Add Work Order Form' : 'Edit Work Order' }}
+            </h3>
+            <div class="flex items-center">
+              <NetworkStatusIndicator />
+              <button 
+                @click="showModal = false" 
+                class="ml-4 text-gray-900 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
+                aria-label="Close modal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -25,7 +33,7 @@
                 <option value="Advanced Project Solutions">Advanced Project Solutions</option>
                 <option value="Barrister Global Service Network">Barrister Global Service Network</option>
                 <option value="Bass-Security">Bass-Security</option>
-                <option value="DarAlIslam">DarAlIslam</option>
+                <option value="Actron Security">Actron Security</option>
                 <option value="Field Nation">Field Nation</option>
                 <option value="Navco">Navco</option>
                 <option value="NuTech National">NuTech National</option>
@@ -35,16 +43,16 @@
             
             <!-- Work order title fields -->
             <div class="glossy-section mb-4">
-              <div class="flex gap-2">
-                <div class="mb-4 flex-1">
+              <div class="flex flex-col md:flex-row md:gap-4">
+                <div class="mb-4 p-2 w-full">
                   <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
                   <input placeholder="Installation" type="text" v-model="workType" id="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                 </div>
-                <div class="mb-4 flex-1">
-                  <label for="workOrderNumber" class="block text-sm font-medium text-green-400">WO Number</label>
+                <div class="mb-4 p-2 w-full">
+                  <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
                   <input placeholder="WO123456-01" type="text" v-model="workOrderNumber" id="workOrderNumber" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                 </div>
-                <div class="mb-4 flex-1">
+                <div class="mb-4 p-2 w-full mr-1">
                   <label for="location" class="block text-sm font-medium text-green-400">Location</label>
                   <input placeholder="Boston, MA" type="text" v-model="location" id="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                 </div>
@@ -60,7 +68,7 @@
             
             <div class="glossy-section mb-4">
               <label for="description" class="block text-sm font-medium text-green-400">Description</label>
-              <textarea v-model="form.description" id="description" placeholder="What is the Field Technician doing onsite?" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
+              <textarea v-model="form.description" id="description" placeholder="What is the Field Technician doing onsite?" class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
             </div>
             
             <div class="glossy-section mb-4">
@@ -207,9 +215,7 @@
 </template>
 
 <script>
-import { useForm } from '@inertiajs/vue3';
-import { Inertia } from '@inertiajs/inertia';
-import { ref, computed } from 'vue';
+import { useForm, router } from '@inertiajs/vue3';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
 
 export default {
@@ -234,7 +240,7 @@ export default {
         visit_dates: [],
         price: '120.00',
         status: 'Scheduled',
-        file_attachments: [], // Initialize as an array
+        file_attachments: [], // Initialize as empty array
         notes: '',
         progress: null,
         users_name: '',
@@ -259,7 +265,14 @@ export default {
       this.dateSelectionType = 'single';
       this.selectedDates = [new Date().toISOString().slice(0, 16)];
       this.form.user_id = this.$page.props.auth.user.id;
+      this.form.file_attachments = []; // Reset to empty array
       this.showModal = true;
+      
+      // Clear the file input
+      setTimeout(() => {
+        const fileInput = document.getElementById('file_attachments');
+        if (fileInput) fileInput.value = '';
+      }, 50);
     },
     openEditModal(workOrder) {
       this.mode = 'edit';
@@ -301,41 +314,47 @@ export default {
         this.form.visit_dates = sortedDates;
       }
       
-      // Create FormData object
-      const formData = new FormData();
-      for (const key in this.form) {
-        if (key === 'file_attachments' && this.form.file_attachments.length > 0) {
-          // Append each file
-          for (let i = 0; i < this.form.file_attachments.length; i++) {
-            formData.append('file_attachments[]', this.form.file_attachments[i]);
-          }
-        } else if (key !== 'file_attachments') {
-          formData.append(key, this.form[key]);
-        }
-      }
-
-      // Define onSuccess and onError callbacks
-      const onSuccess = () => {
-        this.showModal = false;
-        this.resetForm();
-        this.$emit('formSubmitted', `Work order ${this.mode === 'create' ? 'created' : 'updated'} successfully.`);
-      };
-
-      const onError = (errors) => {
-        console.error('Validation errors:', errors);
-      };
-
-      // Submit with Inertia
+      // Always use post() directly with the form instance for proper file handling
       if (this.mode === 'create') {
-        Inertia.post('/work-orders', formData, { onSuccess, onError });
+        this.form.post('/work-orders', {
+          onSuccess: () => {
+            this.showModal = false;
+            this.resetForm();
+            this.$emit('formSubmitted', 'Work order created successfully.');
+          },
+          onError: (errors) => {
+            console.error('Validation errors:', errors);
+          },
+          forceFormData: true
+        });
       } else {
-        Inertia.put(`/work-orders/${this.form.id}`, formData, { onSuccess, onError });
+        this.form.post(`/work-orders/${this.form.id}?_method=PUT`, {
+          onSuccess: () => {
+            this.showModal = false;
+            this.resetForm();
+            this.$emit('formSubmitted', 'Work order updated successfully.');
+          },
+          onError: (errors) => {
+            console.error('Validation errors:', errors);
+          },
+          forceFormData: true
+        });
       }
     },
     handleFileUpload(event) {
-      this.form.file_attachments = Array.from(event.target.files);
+      // Get file objects directly from the event
+      const files = event.target.files;
+      
+      if (files && files.length > 0) {
+        // Set files to the form data - this ensures proper File objects
+        this.form.file_attachments = files;
+      }
     },
     resetForm() {
+      // Clear the file input separately since form.reset() doesn't clear it
+      const fileInput = document.getElementById('file_attachments');
+      if (fileInput) fileInput.value = '';
+      
       this.form.reset();
       this.form.clearErrors();
       this.workType = '';
@@ -343,10 +362,10 @@ export default {
       this.location = '';
       this.dateSelectionType = 'single';
       this.selectedDates = [new Date().toISOString().slice(0, 16)];
-      this.form.file_attachments = null;
+      this.form.file_attachments = []; // Reset to empty array
     },
     duplicateWorkOrder() {
-      Inertia.post(`/work-orders/${this.form.id}/duplicate`, {}, {
+      router.post(`/work-orders/${this.form.id}/duplicate`, {}, {
         onSuccess: () => {
           this.showModal = false;
           this.$emit('formSubmitted', 'Work order duplicated successfully.');
@@ -358,7 +377,7 @@ export default {
     },
     deleteWorkOrder() {
       if (confirm('Are you sure you want to delete this work order?')) {
-        Inertia.delete(`/work-orders/${this.form.id}`, {
+        router.delete(`/work-orders/${this.form.id}`, {
           onSuccess: () => {
             this.showModal = false;
             this.$emit('formSubmitted', 'Work order deleted successfully.');
@@ -489,7 +508,7 @@ export default {
 }
 
 .w-full {
-  width: 100%;
+  width: 90%;
 }
 
 .border {
@@ -541,10 +560,10 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  height: 65vh;
-  max-height: 85vh;
-  width: 90%;
-  max-width: 600px;
+  height: auto; 
+  max-height: 60vh;
+  width: 95%;
+  max-width: 650px;
 }
 
 .glossy-header {
@@ -597,7 +616,8 @@ export default {
   overflow-y: auto;
   scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
   scrollbar-width: thin;
-  padding: 1rem;
+  padding: 0.75rem;
+  max-height: calc(75vh - 120px); /* Adjust space for header and footer */
 }
 
 /* Custom scrollbar */
@@ -635,5 +655,23 @@ progress::-webkit-progress-value {
 progress::-moz-progress-bar {
   background: linear-gradient(90deg, #84cc16, #65a30d);
   border-radius: 4px;
+}
+
+/* Responsive form fields */
+@media (max-width: 768px) {
+  .glossy-section .flex {
+    flex-direction: column;
+  }
+  
+  .glossy-card {
+    height: auto;
+    max-height: 70vh;
+    width: 95%;
+  }
+}
+
+input, select, textarea {
+  padding: 0.5rem;
+  margin: 0.25rem 0;
 }
 </style>

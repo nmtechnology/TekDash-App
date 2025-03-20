@@ -93,7 +93,7 @@ onMounted(() => {
             <!-- Modal header -->
             <div class="flex items-center justify-between p-4 border-b border-gray-700">
                 <div class="flex items-center space-x-4 flex-1">
-                    <h2 class="font-semibold text-xl text-green-400 leading-tight">
+                    <h2 class="font-semibold text-xl text-green-400">
                         Archived Work Orders
                     </h2>
                     <!-- Added search bar next to title -->

@@ -42,7 +42,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </button>
-            <button @click="closeModal" class="text-red-500 outline-dotted hover:text-gray-900 hover:bg-red-500 glossy-close-btn">
+            <button @click="closeModal" class="text-red-500 outline-dotted hover:text-black hover:bg-red-500 glossy-close-btn">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -62,7 +62,7 @@
                 <p class="text-sm text-gray-400">Customer:</p>
                 <div class="flex items-center">
                   <span v-if="!editingField.customer_id" class="text-white">{{ workOrder.customer_id }}</span>
-                  <select v-else v-model="form.customer_id" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
+                  <select v-else v-model="form.customer_id" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
                     <option value="Advanced Project Solutions">Advanced Project Solutions</option>
                     <option value="Barrister Global Service Network">Barrister Global Service Network</option>
                     <option value="DarAlIslam">DarAlIslam</option>
@@ -91,7 +91,7 @@
                 <p class="text-sm text-gray-400">Price:</p>
                 <div class="flex items-center">
                   <span v-if="!editingField.price" class="text-white">${{ workOrder.price }}</span>
-                  <input v-else type="number" v-model="form.price" class="mt-1 w-24 rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" />
+                  <input v-else type="number" v-model="form.price" class="mt-1 w-24 rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" />
                   <span class="ml-2">
                     <button v-if="!editingField.price" @click="startEditing('price')" class="text-lime-400 hover:text-lime-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -114,7 +114,7 @@
                 <p class="text-sm text-gray-400">Status:</p>
                 <div class="flex items-center">
                   <span v-if="!editingField.status" :class="getStatusClasses(workOrder.status).includes('text')">{{ workOrder.status }}</span>
-                  <select v-else v-model="form.status" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
+                  <select v-else v-model="form.status" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-400 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
                     <option value="Scheduled">Scheduled</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Part/Return">Part/Return</option>
@@ -128,7 +128,7 @@
                       </svg>
                     </button>
                     <button v-else @click="saveField('status')" class="text-green-400 hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 20" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </button>
@@ -184,7 +184,7 @@
                       <input 
                         type="datetime-local" 
                         v-model="form.date_time" 
-                        class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                        class="mt-1 w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
                       />
                     </div>
 
@@ -195,7 +195,7 @@
                         <input 
                           type="datetime-local" 
                           v-model="form.date_time" 
-                          class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                          class="mt-1 w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
                         />
                       </div>
                       <div class="flex items-center">
@@ -203,7 +203,7 @@
                         <input 
                           type="datetime-local" 
                           v-model="form.end_date" 
-                          class="mt-1 w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                          class="mt-1 w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
                         />
                       </div>
                     </div>
@@ -214,7 +214,7 @@
                         <input 
                           type="datetime-local" 
                           v-model="selectedDates[index]" 
-                          class="mt-1 flex-grow rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
+                          class="mt-1 flex-grow rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
                         />
                         <button 
                           @click="removeDate(index)" 
@@ -260,10 +260,10 @@
               <div class="flex">
                 <div class="flex-grow">
                   <div v-if="!editingField.description" 
-                    class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md text-white overflow-y-auto max-h-[120px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 touch-auto">
+                    class="whitespace-pre-line mt-1 text-sm bg-gray-900 p-3 rounded-md text-white overflow-y-auto max-h-[120px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900 touch-auto">
                     {{ workOrder.description }}
                   </div>
-                  <textarea v-else v-model="form.description" rows="4" class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:ring-lime-600 text-white sm:text-sm"></textarea>
+                  <textarea v-else v-model="form.description" rows="4" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:ring-lime-600 text-white sm:text-sm"></textarea>
                 </div>
                 <span class="ml-2 flex-shrink-0">
                   <button v-if="!editingField.description" @click="startEditing('description')" class="text-lime-400 hover:text-lime-300">
@@ -290,7 +290,7 @@
                 <select 
                   v-else 
                   v-model="form.user_name" 
-                  class="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
+                  class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
                 >
                   <option v-for="user in $page.props.users" :key="user.name" :value="user.name">
                     {{ user.name }}
@@ -447,14 +447,14 @@
           @click="duplicateWorkOrder" 
           :disabled="workOrder.status === 'Complete'"
           :class="{'opacity-50 cursor-not-allowed': workOrder.status === 'Complete'}"
-          class="glossy-btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-green-400 hover:text-gray-900 sm:ml-3 sm:w-auto sm:text-sm"
+          class="glossy-btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-green-400 hover:text-black sm:ml-3 sm:w-auto sm:text-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           Duplicate
         </button>
-        <button @click="closeModal" class="glossy-btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-red-400 hover:text-gray-900 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+        <button @click="closeModal" class="glossy-btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
           Close
         </button>
       </div>
@@ -1341,12 +1341,12 @@ if (token) {
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(75, 85, 99, 0.5);
+  background-color: rgba(55, 65, 81, 0.7);
   border-radius: 3px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-track {
-  background-color: rgba(17, 24, 39, 0.3);
+  background-color: rgba(17, 24, 39, 0.5);
 }
 
 /* Enhanced border styling for the header */

@@ -52,7 +52,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import axios from 'axios';
-import { usePage } from '@inertiajs/inertia-vue3';
+import { usePage } from '@inertiajs/vue3';
 import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 
 // Define the emits for component communication
