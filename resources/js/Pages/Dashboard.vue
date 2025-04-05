@@ -7,7 +7,7 @@ import CurrentTime from '@/Components/CurrentTime.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
 import Search from '@/Components/Search.vue';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { usePage, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 
 // Close search results when clicking outside
@@ -170,14 +170,14 @@ onMounted(() => {
 <template>
   <AppLayout title="Dashboard">
     <template #header>
-      <div class="fixed mt-16 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
+      <div class="fixed mt-14 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
         <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
               Dashboard <CurrentTime />
               
               <!-- Search Component with error handling -->
-                        <div class="p-3 search-container relative">
+                        <div class="p-1 search-container relative">
                             <Search placeholder="Search work orders..." @search="handleSearch" />
                             
                             <!-- Search Results Dropdown with error state -->
@@ -364,11 +364,11 @@ onMounted(() => {
 <style scoped>
 /* Additional styles if needed */
 .search-container {
-    width: 300px;
+    width: 200px;
     max-width: 100%;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 340px) {
     .search-container {
         width: 100%;
     }

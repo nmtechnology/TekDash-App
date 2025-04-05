@@ -12,9 +12,10 @@
           </div>
         </div>
         
-        <!-- Message content with combined Daisy UI and glossy style -->
-        
-        <div class="chat-bubble glossy-message bg-gray-800/70 text-white border border-gray-700/30">
+        <!-- Message content as post-it note -->
+        <div class="chat-bubble post-it-note">
+          <!-- Fake pin/tack for post-it note -->
+          <div class="post-it-pin"></div>
           <p class="message-text">{{ note.text }}</p>
         </div>
         <div class="chat-header text-xs text-blue-300 mb-1">
@@ -25,10 +26,10 @@
     
     <!-- Input area -->
     <div class="border-t border-gray-800 p-4">
-      <div class="flex items-start space-x-3">
+      <div class="flex items-start space-x-1">
         <!-- Current user avatar - Always show initials for consistency -->
         <div class="flex-shrink-0">
-          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-700 mask mask-hexagon">
+          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-900 mask mask-hexagon">
             <div class="avatar-initials text-lime-400 text-lg font-bold">
               {{ getCurrentUserInitials() }}
             </div>
@@ -41,7 +42,7 @@
             <textarea 
               v-model="newNoteText" 
               placeholder="Add a notation..." 
-              class="w-full rounded-md bg-gray-900 border-gray-600 shadow-sm text-lime-400 text-sm"
+              class="rounded-md bg-gray-900 border-gray-800 shadow-sm text-lime-400 text-sm"
               rows="1"
               @keydown.enter.prevent="addNote"
               ref="messageInput"
@@ -50,7 +51,7 @@
             <!-- Emoji button - Updated styling -->
             <button 
               @click.stop="showEmojiPickerModal = true" 
-              class="absolute bottom-2 right-2 text-yellow-400 hover:text-yellow-500 p-1 mask mask-hexagon"
+              class="btn bottom-2 right-2 text-yellow-400 hover:text-yellow-500 p-1 mask mask-hexagon"
               title="Add emoji"
               type="button"
             >
@@ -63,9 +64,9 @@
           <div class="flex justify-end mt-2">
             <button 
               @click="addNote" 
-              class="inline-flex items-center rounded-md outline px-3 py-2 text-sm font-semibold text-lime-400 shadow-sm hover:text-gray-900 hover:bg-lime-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
+              class="inline-flex items-center rounded-md btn px-3 py-2 text-sm font-semibold text-lime-400 shadow-sm hover:text-gray-900 hover:bg-lime-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
             >
-              Send
+              Post
             </button>
           </div>
         </div>
@@ -542,118 +543,76 @@ export default {
   color: #F3F4F6;
 }
 
-/* Glossy message styling */
-.message-bubble {
+/* Remove glossy message styles and replace with post-it note styling */
+.post-it-note {
   position: relative;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background: rgba(30, 41, 59, 0.7);
+  padding: 1rem 1.25rem;
+  background: #FFFA99; /* Classic post-it yellow */
+  color: #333; /* Darker text for better readability */
+  border: none !important;
+  border-radius: 2px !important;
   box-shadow: 
-    0 2px 5px rgba(0, 0, 0, 0.2),
-    0 4px 10px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+  transform: rotate(-2deg); /* Slight rotation for post-it effect */
+  transition: transform 0.2s ease;
+  margin-bottom: 0.75rem;
   z-index: 1;
 }
 
-/* Glossy reflection effect */
-.glossy-message {
-  position: relative;
+/* Every other post-it rotated differently for variety */
+.chat:nth-child(even) .post-it-note {
+  transform: rotate(1deg);
+  background: #FFDD99; /* Slightly different shade */
 }
 
-.glossy-message::before {
+.chat:nth-child(3n) .post-it-note {
+  transform: rotate(-0.5deg);
+  background: #FFF5AB; /* Another post-it shade */
+}
+
+/* Hover effect */
+.post-it-note:hover {
+  transform: rotate(0deg) scale(1.02);
+  z-index: 2;
+}
+
+/* Post-it texture */
+.post-it-note::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 50%;
-  background: linear-gradient(to bottom, 
-    rgba(255, 255, 255, 0.15), 
-    rgba(255, 255, 255, 0.05) 40%, 
-    rgba(255, 255, 255, 0) 100%);
-  z-index: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000000' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+  opacity: 0.3;
   pointer-events: none;
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
 }
 
-/* Message text positioning relative to the glossy effect */
-.message-text {
+/* Pin/tack styling */
+.post-it-pin {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #F5F5F5 0%, #999 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  z-index: 3;
+}
+
+/* Message text styling for post-its */
+.post-it-note .message-text {
   position: relative;
   z-index: 1;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 400;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-}
-
-/* Custom avatar styling to match the glossy theme */
-.avatar-initials {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  font-size: 1rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%);
-  color: white;
-  user-select: none;
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1);
-}
-
-/* Input area styling to match the glossy theme */
-textarea {
-  background: rgba(17, 24, 39, 0.7) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(75, 85, 99, 0.3) !important;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Enhanced emoji modal styling to match glossy theme */
-.emoji-modal-container {
-  background: rgba(31, 41, 55, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(107, 114, 128, 0.2);
-  box-shadow: 
-    0 10px 25px -5px rgba(0, 0, 0, 0.5),
-    0 8px 10px -6px rgba(0, 0, 0, 0.3);
-}
-
-.emoji-modal-header {
-  background: rgba(17, 24, 39, 0.6);
-  border-bottom: 1px solid rgba(107, 114, 128, 0.2);
-}
-
-/* Updated chat bubble styling */
-.chat-bubble {
-  position: relative;
-  overflow: hidden;
-  background: rgba(30, 41, 59, 0.7) !important;
-  box-shadow: 
-    0 2px 5px rgba(0, 0, 0, 0.2),
-    0 4px 10px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-}
-
-.chat-bubble::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(to bottom, 
-    rgba(255, 255, 255, 0.15), 
-    rgba(255, 255, 255, 0.05) 40%, 
-    rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
+  color: #333;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 /* Remove default Daisy UI chat bubble triangle */
@@ -661,20 +620,24 @@ textarea {
   display: none;
 }
 
+/* Update chat layout to accommodate post-it notes better */
 .chat {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.5rem;
+  gap: 0.75rem;
   align-items: flex-start;
+  margin-bottom: 1.5rem;
 }
 
 .chat-image {
   grid-row: span 2;
+  align-self: center;
 }
 
 .chat-header {
   grid-column: 2;
+  margin-top: -0.5rem;
 }
 
-/* ...rest of existing styles... */
+/* ... rest of existing styles ... */
 </style>

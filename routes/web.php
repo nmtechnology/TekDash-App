@@ -198,6 +198,47 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::post('/work-orders/{workOrder}/attachments', [WorkOrderController::class, 'uploadAttachments'])
         ->name('work-orders.attachments');
+
+    // Add the route for invoice creation if it doesn't already exist
+    Route::post('/work-orders/{id}/invoice', [WorkOrderController::class, 'createInvoice'])
+        ->middleware(['auth'])
+        ->name('work-orders.create-invoice');
+
+    // Add this special route for handling status updates, particularly for Part/Return
+    Route::post('/work-orders/{workOrder}/simple-status-update', function (\App\Models\WorkOrder $workOrder, \Illuminate\Http\Request $request) {
+        try {
+            // Get the status from the request
+            $status = $request->input('status');
+            
+            // Simple direct database update using query builder, which properly escapes the value
+            $updated = \Illuminate\Support\Facades\DB::table('work_orders')
+                ->where('id', $workOrder->id)
+                ->update(['status' => $status]);
+            
+            if ($updated) {
+                // Return a simple JSON response that doesn't need Inertia rendering
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Status updated successfully',
+                    'status' => $status,
+                    'workOrderId' => $workOrder->id
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status not updated'
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to update work order status: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating status',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    })->middleware(['auth']);
 });
 
 // QuickBooks Integration Routes
@@ -232,3 +273,8 @@ Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback']
 Route::get('/csrf-token', function () {
     return response()->json(['csrf_token' => csrf_token()]);
 })->middleware('web');
+
+// Add this route to your existing routes
+Route::get('/csrf-token', function () {
+    return response()->json(['csrfToken' => csrf_token()]);
+});

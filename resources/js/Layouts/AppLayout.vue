@@ -164,9 +164,9 @@ function logout() {
                         <div class="flex">
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link :href="route('dashboard')" class="flex items-center nav-link-spotlight">
+                                <Link :href="route('dashboard')" class="flex items-center link-hover">
                                     <ApplicationMark class="block h-9 w-auto" />
-                                    <p class="italic font-extrabold text-white ms-2 -ml-3">Technology</p>
+                                    <p class="italic font-extrabold text-white ms-2 -ml-4">TekDash</p>
                                 </Link>
                             </div>
 
@@ -180,7 +180,7 @@ function logout() {
                                 </NavLink>
                             </div>
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('work-orders.index')" :active="route().current('work-orders.index')" class="nav-link-spotlight flex items-center">
+                                <NavLink :href="route('work-orders.index')" :active="route().current('work-orders.index')" class="link-hover nav-link-spotlight flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                                         <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
@@ -354,10 +354,10 @@ function logout() {
 }
 
 /* Add specific styling for team dropdown */
-/* .dark .dropdown-content {
+.dark .dropdown-content {
     background-color: #1f2937;
     border-color: #374151;
-} */
+}
 
 /* Glass morphism styles */
 .glossy-card {

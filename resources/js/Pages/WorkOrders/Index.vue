@@ -3,11 +3,8 @@ import { ref, computed } from 'vue';
 import format from 'date-fns/format';
 import { usePage, router } from '@inertiajs/vue3';
 import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import Alert from '@/Components/Alert.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import WorkOrder from './WorkOrder.vue';
-import GroqQuery from '../GroqQuery.vue';
 import axios from 'axios';
 import CurrentTime from '@/Components/CurrentTime.vue';
 import ArchivedWorkOrdersModal from '@/Pages/WorkOrders/ArchivedWorkOrdersModal.vue';
@@ -168,15 +165,40 @@ const closeArchivedWorkOrderModal = () => {
   // Refresh the work order list
   router.reload({ only: ['workOrders'] });
 };
+
+// Add this helper function to determine progress percentage based on status
+const getStatusColor = (status) => {
+  switch (status.toLowerCase()) {
+    case 'scheduled': return 'bg-blue-500';
+    case 'in progress': return 'bg-yellow-500';
+    case 'part needed': return 'bg-purple-500';
+    case 'complete': return 'bg-green-500';
+    case 'cancelled': return 'bg-red-500';
+    case 'archived': return 'bg-gray-500';
+    default: return 'bg-gray-500';
+  }
+};
+
+const getStatusProgress = (status) => {
+  switch (status.toLowerCase()) {
+    case 'scheduled': return 20;
+    case 'in progress': return 40;
+    case 'part needed': return 60;
+    case 'complete': return 100;
+    case 'cancelled': return 0;
+    case 'archived': return 100;
+    default: return 0;
+  }
+};
 </script>
 
 <template>
-  <AppLayout title="Active Work Orders">
+  <AppLayout :title="'Active Work Orders'">
     <template #header>
       <div class="fixed -mt-5 top-2 sm:top-10 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
         <div class="max-w-7xl mx-auto py-2 px-4 sm:px-2 lg:px-6">
           <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-white mt-12 leading-tight">
+            <h2 class="font-semibold text-xl text-lime-400 mt-12 leading-tight">
               Active Work Orders <CurrentTime />
             </h2>
             <TeamDropdown />
@@ -189,7 +211,7 @@ const closeArchivedWorkOrderModal = () => {
         <div class="mt-4 sm:ml-16 sm:mt-0">
           <div class="p-4 flex space-x-4">
             <AddWorkorder class="justify-end" />
-            <button @click="showArchivedModal = true" class="outline text-lime-600 btn rounded p-2 hover:bg-lime-400 hover:text-gray-900">Archived Work Orders</button>
+            <button @click="showArchivedModal = true" class="text-lime-600 btn rounded p-2 hover:bg-lime-500 hover:text-gray-900">Archived Work Orders</button>
             <ArchivedWorkOrdersModal :is-open="showArchivedModal" @close="showArchivedModal = false" />
           </div>
         </div>
@@ -197,42 +219,53 @@ const closeArchivedWorkOrderModal = () => {
           <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
               <div class="overflow-hidden border-b border-accent shadow sm:rounded-lg">
-                <div class="table-wrapper">
-                  <table class="min-w-full divide-y divide-accent table-fixed outline outline-green-400">
-                    <thead class="bg-gray-900 backdrop-blur-md opacity-95">
+                <div class="scrollable-container">
+                  <table class="min-w-full divide-y divide-accent table-fixed table">
+                    <thead class="bg-gray-900 backdrop-blur-md opacity-95 z-50">
                       <tr>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white"></th>
-                        <th scope="col" class="sticky top-0 z-10 py-3.5 pl-4 pr-3 text-left text-xl font-semibold text-white sm:pl-0">Title</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Scheduled Time</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">Customer</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-white">User</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400"></th>
+                        <th scope="col" class="sticky top-0 z-10 py-3 pl-4 text-left text-xl font-semibold text-lime-400 sm:pl-0">Title</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">Status</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">Scheduled Time</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">Customer</th>
+                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">User</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-accent bg-transparent">
                       <tr v-for="(workOrder, index) in filteredWorkOrders" :key="index">
                         <td class="relative whitespace-nowrap py-5 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                          <button @click="openModal(workOrder)" class="outline rounded p-1 text-yellow-400 hover:text-gray-900 hover:bg-yellow-400">
+                          <button @click="openModal(workOrder)" class="btn rounded p-1 text-yellow-400 hover:text-gray-900 hover:bg-yellow-400">
                             View<span class="sr-only">, {{ workOrder.title }}</span>
                           </button>
-                          <button @click="deleteWorkOrder(workOrder.id)" class="text-red-600 hover:text-gray-900 hover:bg-red-600 outline p-1 ml-1 mr-2 rounded">
+                          <button @click="deleteWorkOrder(workOrder.id)" class="btn text-red-600 hover:text-gray-900 hover:bg-red-600 p-1 ml-1 mr-2 rounded">
                             Delete<span class="sr-only">, {{ workOrder.title }}</span>
                           </button>
                         </td>
                         <td class="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-0">
                           <div class="flex items-center">
                             <div class="ml-4">
-                              <div class="font-medium text-green-400">{{ workOrder.title }}</div>
+                              <div class="font-medium text-white">{{ workOrder.title }}</div>
                             </div>
                           </div>
                         </td>
                         <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="text-green-400">{{ formatDate(workOrder.date_time) }}</div>
+                          <div class="flex flex-col">
+                            <div class="text-white mb-1">{{ workOrder.status }}</div>
+                            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                              <div class="h-2.5 rounded-full" 
+                                   :class="getStatusColor(workOrder.status)"
+                                   :style="{ width: getStatusProgress(workOrder.status) + '%' }"></div>
+                            </div>
+                          </div>
                         </td>
                         <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="text-green-400">{{ workOrder.customer_id }}</div>
+                          <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
                         </td>
                         <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="text-green-400">{{ getUserName(workOrder.user_id) }}</div>
+                          <div class="text-white">{{ workOrder.customer_id }}</div>
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
+                          <div class="text-white">{{ getUserName(workOrder.user_id) }}</div>
                         </td>
                       </tr>
                     </tbody>
@@ -247,11 +280,13 @@ const closeArchivedWorkOrderModal = () => {
           <span class="text-white">Page {{ currentPage }} of {{ totalPages }}</span>
           <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">Next</button>
         </div>
-        <WorkOrder v-if="selectedWorkOrder" 
-          :workOrder="selectedWorkOrder" 
-          :showModal="showModal" 
+        <WorkOrder
+          v-if="selectedWorkOrder"
+          :workOrder="selectedWorkOrder"
+          :showModal="showModal"
           :users="users"
-          @close="closeModal" />
+          @close="closeModal"
+        />
         <ArchivedWorkOrderModal
           v-if="showArchivedWorkOrderModal"
           :workOrder="archivedWorkOrder"

@@ -203,3 +203,6 @@ Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/refund/pdf', [QuickBook
 
 // uplaodSignedDocument
 Route::post('/upload-signed-document', [WorkOrderController::class, 'uploadSignedDocument']);
+
+// Check if work order exists
+Route::get('/check-work-order-exists', [WorkOrderController::class, 'checkWorkOrderExists']);

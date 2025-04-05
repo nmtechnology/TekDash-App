@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
-      <button @click="toggleWeekends" class="px-4 py-2 rounded-md bg-gray-800 text-lime-400 border border-lime-400 hover:bg-lime-500 hover:text-gray-900 transition-colors duration-200">
+      <button @click="toggleWeekends" class="px-4 py-2 rounded-md bg-gray-800 text-lime-400 border hover:bg-lime-500 hover:text-gray-900 transition-colors duration-200">
         Toggle Weekends
       </button>
       <AddWorkorder class="text-lime-400" />
@@ -25,7 +25,7 @@
             
             <!-- Right content section -->
             <div class="glossy-btn flex flex-1 items-center justify-between truncate rounded-r-md bg-white/10 dark:bg-gray-700/40 backdrop-blur-sm">
-              <div class="flex-1 truncate px-2 py-1 text-xs">
+              <div class="flex-1 truncate px-1 py-1 text-xs">
                 <p class="font-medium text-gray-800 dark:text-white truncate">
                   {{ arg.event.title }}
                   <span v-if="arg.event.extendedProps.isMultiDayEvent && arg.event.extendedProps.visitNumber" 
@@ -407,17 +407,17 @@ body {
 
 /* Button styling to match the glossy theme */
 .glossy-btn {
-  background: linear-gradient(135deg, rgba(24, 157, 0, 0.518), rgba(18, 138, 20, 0.1));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(157, 255, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .glossy-btn:hover {
-  background: linear-gradient(135deg, rgba(24, 157, 0, 0.518), rgba(18, 138, 20, 0.1));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(163, 230, 53, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Custom scrollbar for webkit browsers */
@@ -502,6 +502,24 @@ body {
   padding: 0 !important;
   border: none !important;
   background: transparent !important;
+  font-size: 0.85em; /* Smaller font size for events */
+}
+
+/* Make the event cards smaller overall */
+.event-card {
+  max-height: 2.5rem; /* Reduce the height */
+}
+
+.event-card .flex-1 {
+  padding: 1px 2px !important; /* Reduce padding */
+}
+
+.event-card .w-8 {
+  width: 1.5rem !important; /* Make the colored status bar smaller */
+}
+
+.event-card .text-xs {
+  font-size: 0.7rem; /* Make text smaller */
 }
 
 /* Add these new styles for list view hover colors */

@@ -50,7 +50,24 @@
                 </div>
                 <div class="mb-4 p-2 w-full">
                   <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
-                  <input placeholder="WO123456-01" type="text" v-model="workOrderNumber" id="workOrderNumber" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                  <div class="relative">
+                    <input 
+                      placeholder="WO123456-01" 
+                      type="text" 
+                      v-model="workOrderNumber" 
+                      @blur="checkExistingWorkOrder" 
+                      id="workOrderNumber" 
+                      class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
+                      :class="{'border-red-500': duplicateWorkOrderFound}"
+                      required
+                    >
+                    <div v-if="checkingWorkOrder" class="absolute right-3 top-2">
+                      <span class="text-yellow-400 text-xs">Checking...</span>
+                    </div>
+                    <div v-if="duplicateWorkOrderFound" class="text-red-500 text-xs mt-1">
+                      Work order with this number already exists.
+                    </div>
+                  </div>
                 </div>
                 <div class="mb-4 p-2 w-full mr-1">
                   <label for="location" class="block text-sm font-medium text-green-400">Location</label>
@@ -189,8 +206,16 @@
             <div class="glossy-section mb-4">
               <label for="file_attachments" class="block text-sm font-medium text-green-400">Attachments</label>
               <input type="file" @change="handleFileUpload" id="file_attachments" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" multiple>
+              <div v-if="form.errors.file_attachments" class="text-red-500 text-xs mt-1">
+                {{ form.errors.file_attachments }}
+              </div>
             </div>
-            
+
+            <!-- Add error message for user_id -->
+            <div v-if="form.errors.user_id" class="text-red-500 text-xs mt-1 mb-4">
+              {{ form.errors.user_id }}
+            </div>
+
             <input type="hidden" v-model="form.user_id" />
             <progress v-if="form.progress" :value="form.progress.percentage" min="0" max="100" class="w-full rounded-md">
               {{ form.progress.percentage }}%
@@ -199,7 +224,13 @@
         </div>
         
         <div class="glossy-footer px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse sm:gap-2">
-          <button type="submit" @click="submitForm" class="w-full inline-flex justify-center rounded border shadow-sm px-4 py-2 bg-lime-400 bg-opacity-20 text-base font-medium text-lime-400 hover:bg-lime-400 hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 sm:text-sm transition-colors duration-200">
+          <button 
+            type="submit" 
+            @click="submitForm" 
+            :disabled="duplicateWorkOrderFound || checkingWorkOrder"
+            class="w-full inline-flex justify-center rounded border shadow-sm px-4 py-2 bg-lime-400 bg-opacity-20 text-base font-medium text-lime-400 hover:bg-lime-400 hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 sm:text-sm transition-colors duration-200"
+            :class="{'opacity-50 cursor-not-allowed': duplicateWorkOrderFound || checkingWorkOrder}"
+          >
             {{ mode === 'create' ? 'Submit' : 'Update' }}
           </button>
           <button @click="showModal = false" type="button" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded border outline shadow-sm px-4 py-2 text-red-500 font-medium hover:bg-red-400 hover:bg-opacity-20 sm:text-sm transition-colors duration-200">
@@ -217,10 +248,14 @@
 <script>
 import { useForm, router } from '@inertiajs/vue3';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
+import axios from 'axios';
 
 export default {
   components: {
     NetworkStatusIndicator,
+  },
+  props: {
+    auth: Object,
   },
   data() {
     return {
@@ -231,6 +266,10 @@ export default {
       location: '',
       dateSelectionType: 'single',
       selectedDates: [new Date().toISOString().slice(0, 16)],
+      isSubmitting: false,
+      checkingWorkOrder: false,
+      duplicateWorkOrderFound: false,
+      debounceTimer: null,
       form: useForm({
         customer_id: '',
         title: '',
@@ -243,9 +282,26 @@ export default {
         file_attachments: [], // Initialize as empty array
         notes: '',
         progress: null,
+        user_id: '', // Initialize with empty string
         users_name: '',
       }),
     };
+  },
+  watch: {
+    workOrderNumber(newValue) {
+      // Clear previous validation
+      this.duplicateWorkOrderFound = false;
+      
+      // Debounce the check to avoid too many requests
+      clearTimeout(this.debounceTimer);
+      
+      // Only check if there's a value and it's at least 3 characters
+      if (newValue && newValue.length >= 3) {
+        this.debounceTimer = setTimeout(() => {
+          this.checkExistingWorkOrder();
+        }, 500);
+      }
+    }
   },
   computed: {
     formattedTitle() {
@@ -256,6 +312,45 @@ export default {
     }
   },
   methods: {
+    async checkExistingWorkOrder() {
+      // Don't check if work order number is empty or too short
+      if (!this.workOrderNumber || this.workOrderNumber.length < 3) return;
+      
+      // Skip this check in edit mode for the current work order
+      if (this.mode === 'edit' && this.form.id) {
+        const currentWorkOrderNumber = this.extractWorkOrderNumber(this.form.title);
+        if (currentWorkOrderNumber === this.workOrderNumber) {
+          this.duplicateWorkOrderFound = false;
+          return;
+        }
+      }
+      
+      this.checkingWorkOrder = true;
+      
+      try {
+        const response = await axios.get(`/api/check-work-order-exists`, {
+          params: { workOrderNumber: this.workOrderNumber }
+        });
+        
+        this.duplicateWorkOrderFound = response.data.exists;
+        
+      } catch (error) {
+        console.error('Error checking work order:', error);
+        // Don't block submission on API error
+        this.duplicateWorkOrderFound = false;
+      } finally {
+        this.checkingWorkOrder = false;
+      }
+    },
+    
+    extractWorkOrderNumber(title) {
+      // Extract work order number from title (format: "Type / WO# / Location")
+      if (!title) return '';
+      
+      const parts = title.split('/');
+      return parts.length > 1 ? parts[1].trim() : '';
+    },
+    
     openCreateModal() {
       this.mode = 'create';
       this.form.reset();
@@ -264,6 +359,7 @@ export default {
       this.location = '';
       this.dateSelectionType = 'single';
       this.selectedDates = [new Date().toISOString().slice(0, 16)];
+      // Set user ID from auth immediately when opening modal
       this.form.user_id = this.$page.props.auth.user.id;
       this.form.file_attachments = []; // Reset to empty array
       this.showModal = true;
@@ -273,6 +369,8 @@ export default {
         const fileInput = document.getElementById('file_attachments');
         if (fileInput) fileInput.value = '';
       }, 50);
+      this.duplicateWorkOrderFound = false;
+      this.checkingWorkOrder = false;
     },
     openEditModal(workOrder) {
       this.mode = 'edit';
@@ -294,51 +392,123 @@ export default {
       }
       
       this.showModal = true;
+      this.duplicateWorkOrderFound = false;
+      this.checkingWorkOrder = false;
+      
+      // Extract work order number, type and location from title
+      if (workOrder.title) {
+        const parts = workOrder.title.split('/');
+        if (parts.length >= 3) {
+          this.workType = parts[0].trim();
+          this.workOrderNumber = parts[1].trim();
+          this.location = parts[2].trim();
+        }
+      }
     },
     submitForm() {
-      // Set the combined title before submitting
-      this.form.title = this.formattedTitle;
-      
-      // Handle date field based on selection type
-      if (this.dateSelectionType === 'single') {
-        this.form.end_date = null;
-        this.form.visit_dates = [this.form.date_time];
-      } 
-      else if (this.dateSelectionType === 'range') {
-        this.form.visit_dates = this.generateDateRange(this.form.date_time, this.form.end_date);
-      } 
-      else if (this.dateSelectionType === 'multiple') {
-        const sortedDates = [...this.selectedDates].sort();
-        this.form.date_time = sortedDates[0] || '';
-        this.form.end_date = sortedDates[sortedDates.length - 1] || '';
-        this.form.visit_dates = sortedDates;
+      // Prevent submission if duplicate work order is found
+      if (this.duplicateWorkOrderFound || this.checkingWorkOrder) {
+        return;
       }
       
-      // Always use post() directly with the form instance for proper file handling
-      if (this.mode === 'create') {
-        this.form.post('/work-orders', {
-          onSuccess: () => {
-            this.showModal = false;
-            this.resetForm();
-            this.$emit('formSubmitted', 'Work order created successfully.');
-          },
-          onError: (errors) => {
-            console.error('Validation errors:', errors);
-          },
-          forceFormData: true
-        });
-      } else {
-        this.form.post(`/work-orders/${this.form.id}?_method=PUT`, {
-          onSuccess: () => {
-            this.showModal = false;
-            this.resetForm();
-            this.$emit('formSubmitted', 'Work order updated successfully.');
-          },
-          onError: (errors) => {
-            console.error('Validation errors:', errors);
-          },
-          forceFormData: true
-        });
+      // Check for duplicates one more time before submission
+      this.checkExistingWorkOrder().then(() => {
+        if (this.duplicateWorkOrderFound) return;
+        
+        // Set the combined title before submitting
+        this.form.title = this.formattedTitle;
+        
+        // Explicitly set the user ID again before submission to ensure it's present
+        this.form.user_id = this.$page.props.auth.user.id;
+        
+        // Handle date field based on selection type
+        if (this.dateSelectionType === 'single') {
+          this.form.end_date = null;
+          this.form.visit_dates = [this.form.date_time];
+        } 
+        else if (this.dateSelectionType === 'range') {
+          this.form.visit_dates = this.generateDateRange(this.form.date_time, this.form.end_date);
+        } 
+        else if (this.dateSelectionType === 'multiple') {
+          const sortedDates = [...this.selectedDates].sort();
+          this.form.date_time = sortedDates[0] || '';
+          this.form.end_date = sortedDates[sortedDates.length - 1] || '';
+          this.form.visit_dates = sortedDates;
+        }
+        
+        if (this.isSubmitting) return; // Prevent multiple submissions
+        this.isSubmitting = true;
+        
+        // Always use post() directly with the form instance for proper file handling
+        if (this.mode === 'create') {
+          this.form.post('/work-orders', {
+            onSuccess: () => {
+              this.showModal = false;
+              this.resetForm();
+              const userName = this.$page.props.auth.user.name;
+              const timestamp = new Date().toLocaleString();
+              this.$emit('formSubmitted', `${userName} successfully created work order '${this.formattedTitle}' at ${timestamp}`);
+              this.isSubmitting = false;
+            },
+            onError: (errors) => {
+              console.error('Validation errors:', errors);
+              this.isSubmitting = false;
+              
+              // Check if we have a CSRF token error (419)
+              if (errors.response && errors.response.status === 419) {
+                this.refreshCsrfTokenAndRetry();
+              }
+            },
+            forceFormData: true
+          });
+        } else {
+          this.form.post(`/work-orders/${this.form.id}?_method=PUT`, {
+            onSuccess: () => {
+              this.showModal = false;
+              const userName = this.$page.props.auth.user.name;
+              const timestamp = new Date().toLocaleString();
+              this.$emit('formSubmitted', `${userName} successfully updated work order '${this.formattedTitle}' at ${timestamp}`);
+              this.isSubmitting = false;
+            },
+            onError: (errors) => {
+              console.error('Validation errors:', errors);
+              this.isSubmitting = false;
+              
+              // Check if we have a CSRF token error (419)
+              if (errors.response && errors.response.status === 419) {
+                this.refreshCsrfTokenAndRetry();
+              }
+              // Check if we have a CSRF token error (419)
+              if (errors.response && errors.response.status === 419) {
+                this.refreshCsrfTokenAndRetry();
+              }
+            },
+            forceFormData: true
+          });
+        }
+      });
+    },
+    // Add a method to refresh CSRF token
+    async refreshCsrfTokenAndRetry() {
+      try {
+        // Get a fresh CSRF token
+        const response = await axios.get('/csrf-token');
+        if (response.data && response.data.csrfToken) {
+          // Update the token in meta tag
+          const tokenElement = document.querySelector('meta[name="csrf-token"]');
+          if (tokenElement) {
+            tokenElement.setAttribute('content', response.data.csrfToken);
+          }
+          
+          // Retry submission after a short delay
+          setTimeout(() => {
+            this.isSubmitting = false;
+            this.submitForm();
+          }, 500);
+        }
+      } catch (error) {
+        console.error('Failed to refresh CSRF token:', error);
+        this.isSubmitting = false;
       }
     },
     handleFileUpload(event) {
@@ -346,8 +516,11 @@ export default {
       const files = event.target.files;
       
       if (files && files.length > 0) {
-        // Set files to the form data - this ensures proper File objects
-        this.form.file_attachments = files;
+        // Convert FileList to array and set to form.file_attachments
+        this.form.file_attachments = Array.from(files);
+      } else {
+        // Reset to empty array if no files
+        this.form.file_attachments = [];
       }
     },
     resetForm() {
@@ -673,5 +846,19 @@ progress::-moz-progress-bar {
 input, select, textarea {
   padding: 0.5rem;
   margin: 0.25rem 0;
+}
+
+/* Additional styles for validation */
+.border-red-500 {
+  border-color: #ef4444 !important;
+  border-width: 2px !important;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
 }
 </style>

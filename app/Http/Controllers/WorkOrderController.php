@@ -795,4 +795,100 @@ public function uploadAttachments(Request $request, WorkOrder $workOrder)
     }
 }
 
+/**
+ * Create an invoice for a work order and optionally archive it
+ *
+ * @param  int  $id
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function createInvoice(Request $request, $id)
+{
+    try {
+        // Find the work order
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        // Check if work order is already completed
+        if ($workOrder->status !== 'Complete') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only completed work orders can be invoiced.'
+            ], 400);
+        }
+        
+        // Create the invoice in QuickBooks
+        // Replace with your actual QuickBooks integration code
+        $invoiceId = $this->createQuickBooksInvoice($workOrder);
+        
+        // Archive the work order if requested
+        if ($request->has('archive') && $request->archive === true) {
+            // Move to archived status or table as per your application logic
+            $workOrder->archived = true;
+            $workOrder->invoice_id = $invoiceId; // Save the QuickBooks invoice ID
+            $workOrder->save();
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Invoice created successfully',
+            'invoice_id' => $invoiceId
+        ]);
+    } catch (\Exception $e) {
+        // Log the error for debugging
+        \Log::error('Invoice creation failed: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to create invoice: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Create an invoice in QuickBooks
+ * 
+ * @param WorkOrder $workOrder
+ * @return string Invoice ID
+ */
+private function createQuickBooksInvoice($workOrder)
+{
+    // This is a placeholder method - replace with your actual QuickBooks integration
+    // For example, using QuickBooks SDK or API
+    
+    try {
+        // Implement your QuickBooks invoice creation logic here
+        // Examples might include:
+        // 1. Preparing customer data
+        // 2. Setting up line items based on work order
+        // 3. Making API calls to QuickBooks
+        
+        // For demonstration purposes, returning a dummy invoice ID
+        return 'INV-' . time() . '-' . $workOrder->id;
+        
+    } catch (\Exception $e) {
+        \Log::error('QuickBooks invoice creation failed: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+/**
+ * Check if a work order with the given work order number exists
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function checkWorkOrderExists(Request $request)
+{
+    $workOrderNumber = $request->input('workOrderNumber');
+    
+    if (empty($workOrderNumber)) {
+        return response()->json(['exists' => false]);
+    }
+
+    // Search for the work order number within the title field
+    // Using LIKE with wildcards to find it anywhere in the title
+    $exists = WorkOrder::where('title', 'like', '%' . $workOrderNumber . '%')->exists();
+
+    return response()->json(['exists' => $exists]);
+}
+
 }

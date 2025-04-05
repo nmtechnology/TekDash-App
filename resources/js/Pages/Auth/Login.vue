@@ -44,7 +44,7 @@ const submit = () => {
                 <div class="flex justify-center">
                     <ApplicationMark class="w-16 h-16" />
                 </div>
-                <h1 class="text-2xl font-bold text-center text-green-400 mt-2">Welcome Back</h1>
+                <h1 class="text-2xl font-bold text-center text-green-400 mt-2">TekDash</h1>
             </div>
 
             <div v-if="status" class="mb-4 font-medium text-sm text-green-600 bg-green-50 p-3 rounded">
@@ -120,8 +120,8 @@ const submit = () => {
 .glossy-card {
   display: flex;
   flex-direction: column;
-  height: 65vh; /* Adjust this value as needed */
-  max-height: 85vh;
+  height: 43vh; /* Adjust this value as needed */
+  max-height: 65vh;
 }
 
 /* Fixed header styling */

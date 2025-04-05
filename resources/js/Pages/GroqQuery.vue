@@ -29,9 +29,22 @@
         </div>
       </div>
 
+      <!-- Enhanced error display -->
       <div v-if="error" class="mt-4 border border-red-500 rounded-md p-4">
         <h2 class="font-bold mb-2 text-red-500">Error:</h2>
         <p class="text-red-500">{{ error }}</p>
+        <!-- Error details section -->
+        <div v-if="errorDetails" class="mt-2">
+          <p class="text-amber-400 font-semibold">Error Details:</p>
+          <pre class="bg-gray-800 p-2 rounded text-red-300 text-xs mt-1 overflow-x-auto">{{ errorDetails }}</pre>
+        </div>
+        <button 
+          @click="retryQuery" 
+          class="mt-3 border border-amber-500 text-amber-500 px-4 py-1 rounded-md hover:bg-amber-500 hover:text-black transition-colors duration-200"
+          v-if="lastQuery"
+        >
+          Retry Request
+        </button>
       </div>
     </div>
   </div>
@@ -44,15 +57,19 @@ import axios from 'axios';
 export default {
   setup() {
     const query = ref('');
+    const lastQuery = ref('');
     const responses = ref([]);
     const error = ref(null);
+    const errorDetails = ref(null);
     const isLoading = ref(false);
 
     const submitQuery = async () => {
       if (!query.value || isLoading.value) return;
-
+      
+      lastQuery.value = query.value;
       isLoading.value = true;
       error.value = null;
+      errorDetails.value = null;
 
       try {
         const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -89,22 +106,33 @@ export default {
         
         query.value = '';
       } catch (err) {
-        console.error('Groq API Error Details:', {
+        // Extract and format error details
+        const errorInfo = {
           message: err.message,
           status: err.response?.status,
           statusText: err.response?.statusText,
           data: err.response?.data,
-          headers: err.response?.headers,
-          config: {
-            url: err.config?.url,
-            method: err.config?.method,
-            headers: err.config?.headers
-          }
-        });
+          url: err.config?.url,
+          method: err.config?.method
+        };
         
-        error.value = err.response?.data?.message || err.message || 'An error occurred while processing your request';
+        console.error('Groq API Error Details:', errorInfo);
+        
+        // Set appropriate error messages
+        const statusMessage = err.response?.status ? ` (Status ${err.response.status}: ${err.response.statusText})` : '';
+        error.value = `Request failed${statusMessage}: ${err.message}`;
+        
+        // Format detailed error information
+        errorDetails.value = JSON.stringify(errorInfo, null, 2);
       } finally {
         isLoading.value = false;
+      }
+    };
+
+    const retryQuery = () => {
+      if (lastQuery.value) {
+        query.value = lastQuery.value;
+        submitQuery();
       }
     };
 
@@ -116,10 +144,13 @@ export default {
 
     return {
       query,
+      lastQuery,
       responses,
       error,
+      errorDetails,
       isLoading,
       submitQuery,
+      retryQuery,
       formatResponse,
     };
   },
@@ -152,5 +183,12 @@ button:disabled {
 .responses-container::-webkit-scrollbar-thumb {
   background-color: theme('colors.green.500');
   border-radius: 4px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 200px;
+  overflow-y: auto;
 }
 </style>

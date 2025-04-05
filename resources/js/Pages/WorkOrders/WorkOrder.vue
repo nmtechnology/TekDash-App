@@ -23,26 +23,26 @@
                 v-else 
                 type="text" 
                 v-model="form.title" 
-                class="w-full rounded-md bg-lime-400 border-lime-400 shadow-sm focus:border-lime-600 focus:ring-lime-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 text-white text-lg font-medium"
+                class="w-full rounded-md bg-gray-900 border-lime-400 shadow-sm focus:border-lime-600 focus:ring-lime-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 text-white text-lg font-medium"
               />
             </h3>
             
             <!-- Network Status Indicator -->
-            <NetworkStatusIndicator :workOrderId="workOrder.id" />
+            <NetworkStatusIndicator :workOrderId="workOrder.id" class="ml-4"/>
           </div>
           
           <div class="flex space-x-2">
-            <button v-if="!editingField.title" @click="startEditing('title')" class="glossy-icon-btn text-lime-400 hover:text-lime-600">
+            <button v-if="!editingField.title" @click="startEditing('title')" class="glossy-icon-btn btn text-lime-400 hover:text-lime-600">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </button>
-            <button v-else @click="saveField('title')" class="text-green-400 hover:text-green-300 glossy-icon-btn">
+            <button v-else @click="saveField('title')" class="text-green-400 btn hover:text-green-300 glossy-icon-btn">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </button>
-            <button @click="closeModal" class="text-red-500 outline-dotted hover:text-black hover:bg-red-500 glossy-close-btn">
+            <button @click="closeModal" class="text-red-500 btn hover:text-black hover:bg-red-500 glossy-close-btn">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -59,7 +59,7 @@
             <!-- Customer section -->
             <div class="flex justify-between items-start glossy-section">
               <div class="w-full">
-                <p class="text-sm text-gray-400">Customer:</p>
+                <p class="text-sm text-lime-400">Customer:</p>
                 <div class="flex items-center">
                   <span v-if="!editingField.customer_id" class="text-white">{{ workOrder.customer_id }}</span>
                   <select v-else v-model="form.customer_id" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
@@ -73,12 +73,12 @@
                     <option value="Telaid">Telaid</option>
                   </select>
                   <span class="ml-2">
-                    <button v-if="!editingField.customer_id" @click="startEditing('customer_id')" class="text-lime-400 hover:text-lime-300">
+                    <button v-if="!editingField.customer_id" @click="startEditing('customer_id')" class="text-lime-400 btn hover:text-lime-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
-                    <button v-else @click="saveField('customer_id')" class="text-green-400 hover:text-green-300">
+                    <button v-else @click="saveField('customer_id')" class="text-green-400 btn hover:text-green-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
@@ -88,17 +88,17 @@
               </div>
               
               <div>
-                <p class="text-sm text-gray-400">Price:</p>
+                <p class="text-sm text-lime-400">Price:</p>
                 <div class="flex items-center">
                   <span v-if="!editingField.price" class="text-white">${{ workOrder.price }}</span>
                   <input v-else type="number" v-model="form.price" class="mt-1 w-24 rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" />
                   <span class="ml-2">
-                    <button v-if="!editingField.price" @click="startEditing('price')" class="text-lime-400 hover:text-lime-300">
+                    <button v-if="!editingField.price" @click="startEditing('price')" class="text-lime-400 btn hover:text-lime-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
-                    <button v-else @click="saveField('price')" class="text-green-400 hover:text-green-300">
+                    <button v-else @click="saveField('price')" class="text-green-400 btn hover:text-green-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
@@ -111,24 +111,24 @@
             <!-- Status section -->
             <div class="flex justify-between items-start glossy-section">
               <div class="w-full">
-                <p class="text-sm text-gray-400">Status:</p>
+                <p class="text-sm text-lime-400">Status:</p>
                 <div class="flex items-center">
-                  <span v-if="!editingField.status" :class="getStatusClasses(workOrder.status).includes('text')">{{ workOrder.status }}</span>
+                  <span v-if="!editingField.status" :class="getStatusClasses(workOrder.status)">
+                    {{ workOrder.status }}
+                  </span>
                   <select v-else v-model="form.status" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-400 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
-                    <option value="Scheduled">Scheduled</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Part/Return">Part/Return</option>
-                    <option value="Complete">Complete</option>
-                    <option value="Cancelled">Cancelled</option>
+                    <option v-for="status in VALID_STATUSES" :key="status" :value="status">
+                      {{ status }}
+                    </option>
                   </select>
                   <span class="ml-2">
-                    <button v-if="!editingField.status" @click="startEditing('status')" class="text-lime-400 hover:text-lime-300">
+                    <button v-if="!editingField.status" @click="startEditing('status')" class="text-lime-400 btn hover:text-lime-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
-                    <button v-else @click="saveField('status')" class="text-green-400 hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 20" stroke="currentColor">
+                    <button v-else @click="saveField('status')" class="text-green-400 btn hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </button>
@@ -137,7 +137,7 @@
               </div>
               
               <div>
-                <p class="text-sm text-gray-400">Date(s):</p>
+                <p class="text-sm text-lime-400">Date(s):</p>
                 <div class="flex items-center">
                   <div v-if="!editingField.date_time" class="text-white">
                     <span v-if="workOrder.visit_dates && workOrder.visit_dates.length">
@@ -239,12 +239,12 @@
                     </div>
                   </div>
                   <span class="ml-2">
-                    <button v-if="!editingField.date_time" @click="startEditing('date_time')" class="text-lime-400 hover:text-lime-300">
+                    <button v-if="!editingField.date_time" @click="startEditing('date_time')" class="text-lime-400 btn hover:text-lime-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
-                    <button v-else @click="saveField('date_time')" class="text-green-400 hover:text-green-300">
+                    <button v-else @click="saveField('date_time')" class="text-green-400 btn hover:text-green-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
@@ -256,7 +256,7 @@
             
             <!-- Description section - Updated to be smaller and scrollable -->
             <div>
-              <p class="text-sm text-gray-400">Description:</p>
+              <p class="text-sm text-lime-400">Description:</p>
               <div class="flex">
                 <div class="flex-grow">
                   <div v-if="!editingField.description" 
@@ -266,12 +266,12 @@
                   <textarea v-else v-model="form.description" rows="4" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:ring-lime-600 text-white sm:text-sm"></textarea>
                 </div>
                 <span class="ml-2 flex-shrink-0">
-                  <button v-if="!editingField.description" @click="startEditing('description')" class="text-lime-400 hover:text-lime-300">
+                  <button v-if="!editingField.description" @click="startEditing('description')" class="text-lime-400 btn hover:text-lime-300">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </button>
-                  <button v-else @click="saveField('description')" class="text-green-400 hover:text-green-300">
+                  <button v-else @click="saveField('description')" class="text-green-400 btn hover:text-green-300">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
@@ -282,7 +282,7 @@
             
             <!-- User section -->
             <div>
-              <p class="text-sm text-gray-400">Assigned to:</p>
+              <p class="text-sm text-lime-400">Assigned to:</p>
               <div class="flex items-center">
                 <span v-if="!editingField.user_name" class="text-white">
                   {{ getUserName(workOrder.user_name) }}
@@ -297,12 +297,12 @@
                   </option>
                 </select>
                 <span class="ml-2">
-                  <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 hover:text-lime-300">
+                  <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 btn hover:text-lime-300">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </button>
-                  <button v-else @click="saveField('user_id')" class="text-green-400 hover:text-green-300">
+                  <button v-else @click="saveField('user_id')" class="text-green-400 btn hover:text-green-300">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
@@ -317,7 +317,7 @@
                 <p class="text-sm text-gray-400">Attachments:</p>
                 <button 
                   @click="startEditing('images')" 
-                  class="text-lime-400 btn outline mb-2 rounded p-1 hover:text-gray-900 hover:bg-lime-400 text-sm flex items-center"
+                  class="text-lime-400 btn mb-2 p-1 hover:text-gray-900 hover:bg-lime-400 text-sm flex items-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -373,7 +373,30 @@
                   <div class="text-xs text-gray-400 ml-2">
                     Supports: PDF, JPG, JPEG, PNG, GIF, HEIC, DOCX
                   </div>
-                  <button @click="saveField('images')" class="text-lime-400 hover:text-lime-500">Save</button>
+                  <button 
+                    @click="saveField('images')" 
+                    class="text-white btn hover:text-lime-500"
+                    :disabled="isUploading"
+                  >
+                    <span v-if="isUploading">Uploading...</span>
+                    <span v-else>Save</span>
+                  </button>
+                </li>
+                <!-- Add upload progress indicator -->
+                <li v-if="isUploading && uploadProgress > 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
+                  <div class="w-3/4 mx-auto">
+                    <div class="bg-gray-700 rounded-full h-2.5 dark:bg-gray-700 w-full">
+                      <div class="bg-lime-500 h-2.5 rounded-full" :style="{ width: uploadProgress + '%' }"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1 text-center">{{ uploadProgress }}% complete</p>
+                  </div>
+                </li>
+                <!-- Display upload errors if any -->
+                <li v-if="uploadError" class="flex items-center py-2 pl-3 pr-4 text-sm text-red-400 bg-red-900/20 border border-red-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{{ uploadError }}</span>
                 </li>
               </ul>
             </div>
@@ -429,34 +452,50 @@
       </div>
       
       <!-- Fixed footer -->
-      <div class="glossy-footer sticky bottom-0 z-30 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-700/50">
-        <!-- Add this new invoice button -->
-        <button 
-          @click="createInvoice" 
-          :disabled="workOrder.status !== 'Complete'"
-          :class="{'cursor-not-allowed': workOrder.status !== 'Complete'}"
-          class="glossy-btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-blue-400 hover:text-gray-900 hover:bg-blue-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          Create Invoice
-        </button>
-        <!-- Updated duplicate button with disabled state when status is Complete -->
-        <button 
-          @click="duplicateWorkOrder" 
-          :disabled="workOrder.status === 'Complete'"
-          :class="{'opacity-50 cursor-not-allowed': workOrder.status === 'Complete'}"
-          class="glossy-btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 outline text-green-400 font-medium hover:bg-green-400 hover:text-black sm:ml-3 sm:w-auto sm:text-sm"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-          Duplicate
-        </button>
-        <button @click="closeModal" class="glossy-btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 outline text-red-400 font-medium hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-          Close
-        </button>
+      <div class="glossy-footer sticky bottom-0 z-30 px-4 py-3 sm:px-6 border-t border-gray-700/50">
+        <!-- Progress Bar for Status - moved here -->
+        <div class="mb-3">
+          <div class="w-full bg-gray-800 rounded-full h-2.5 dark:bg-gray-800">
+            <div 
+              class="h-2.5 rounded-full transition-all duration-500 ease-in-out" 
+              :class="getProgressBarColor(workOrder.status)"
+              :style="`width: ${getStatusProgress(workOrder.status)}%`"
+            ></div>
+          </div>
+          <p class="text-xs text-gray-400 mt-1 flex justify-between">
+            <span>Progress</span>
+            <span>{{ getStatusProgress(workOrder.status) }}%</span>
+          </p>
+        </div>
+        
+        <!-- Footer buttons -->
+        <div class="sm:flex sm:flex-row-reverse">
+          <!-- Replace the Create Invoice button with Archive Work Order button -->
+          <button 
+            @click="archiveWorkOrder" 
+            class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-purple-400 hover:text-gray-900 hover:bg-purple-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            Archive Work Order
+          </button>
+          <!-- Updated duplicate button with disabled state when status is Complete -->
+          <button 
+            @click="duplicateWorkOrder" 
+            :disabled="workOrder.status === 'Complete'"
+            :class="{'opacity-50 cursor-not-allowed': workOrder.status === 'Complete'}"
+            class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-green-400 font-medium hover:bg-green-400 hover:text-black sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Duplicate
+          </button>
+          <button @click="closeModal" class="glossy-btn btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-red-400 font-medium hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Close
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -468,16 +507,16 @@ import { format, parseISO } from 'date-fns';
 import { useForm } from '@inertiajs/vue3';
 import Messenger from '@/Components/Messenger.vue';
 import PdfViewer from '@/Components/PdfViewer.vue';
-import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue'; // Import the NetworkStatusIndicator
+import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue'; 
 import axios from 'axios';
-import { router } from '@inertiajs/vue3'; // Import router for navigation
+import { router } from '@inertiajs/vue3'; 
 
 export default {
   name: 'WorkOrder',
   components: {
     Messenger,
-    PdfViewer, // Add the PDF viewer component
-    NetworkStatusIndicator, // Register the component
+    PdfViewer, 
+    NetworkStatusIndicator, 
   },
   props: {
     workOrder: {
@@ -488,32 +527,20 @@ export default {
       type: Boolean,
       required: true,
     },
+    users: {
+      type: Array,
+      required: true,
+    },
   },
-  methods: {
-    updateWorkOrder() {
-        // Check authentication before making request
-        if (!this.$page.props.auth.user) {
-            // Redirect to login if not authenticated
-            window.location.href = route('login');
-            return;
-        }
-        
-        axios.put(`/api/work-orders/${this.workOrder.id}`, this.workOrder)
-            .then(response => {
-                // Success handling
-            })
-            .catch(error => {
-                console.error('Error updating work order:', error);
-                if (error.response && error.response.status === 401) {
-                    // Handle auth error - maybe redirect to login
-                    window.location.href = route('login');
-                } else {
-                    console.error('Server validation errors:', error.response?.data);
-                }
-            });
-    }
-},
   setup(props, { emit }) {
+    // Add error handling for missing or invalid props
+    if (!props.workOrder) {
+      console.error('WorkOrder prop is missing or invalid.');
+    }
+    if (!Array.isArray(props.users)) {
+      console.error('Users prop is missing or invalid.');
+    }
+
     // Add this near the top of setup(), with other refs
     const showPdfViewer = ref(false);
     
@@ -546,11 +573,9 @@ export default {
       } else if (statusLower.includes('part') || statusLower.includes('return')) {
         return 'bg-purple-800 text-purple-100 ring-purple-700';
       }
-      
       return 'bg-gray-800 text-gray-300 ring-gray-700';
     };
 
-    // Rest of existing functions
     const isEditing = ref(false);
     const editingField = ref({
       title: false,
@@ -605,7 +630,6 @@ export default {
         form.price = newVal.price || 0;
         form.notes = newVal.notes || [];
         form.user_id = newVal.user_id || '';
-        
         // Initialize date selection after form is updated
         initializeDateSelection();
       }
@@ -624,6 +648,15 @@ export default {
       }
     };
 
+    // Add this near the top of the setup function, after the refs
+    const VALID_STATUSES = [
+      'Scheduled',
+      'In Progress',
+      'Part Needed',
+      'Complete',
+      'Cancelled'
+    ];
+
     // Save field with appropriate date structure based on selection type
     const saveField = async (field) => {
       if (field === 'images') {
@@ -631,8 +664,17 @@ export default {
       }
 
       let data = {};
+      // Special handling for status field
+      if (field === 'status') {
+        if (!VALID_STATUSES.includes(form[field])) {
+          console.error('Invalid status:', form[field]);
+          alert(`Invalid status value. Must be one of: ${VALID_STATUSES.join(', ')}`);
+          return;
+        }
+        data = { status: form[field].trim() };
+      }
       // Special handling for date fields
-      if (field === 'date_time') {
+      else if (field === 'date_time') {
         if (dateSelectionType.value === 'single') {
           data.date_time = form.date_time;
           data.end_date = null;
@@ -650,22 +692,28 @@ export default {
           data.end_date = sortedDates[sortedDates.length - 1] || '';
           data.visit_dates = sortedDates;
         }
-      } 
-      else if (field === 'price') {
+      } else if (field === 'price') {
         // Ensure price is a number
         data[field] = Number(form[field]);
-      } 
-      else {
-        // Standard field
+      } else {
         data[field] = form[field];
       }
-      
+
       // Log what we're sending for debugging
       console.log(`Updating ${field} with:`, data);
-      
+
       try {
-        // Use web route instead of API route
-        const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, data);
+        // Get fresh CSRF token
+        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // Use web route instead of API route with explicit headers
+        const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, data, {
+          headers: {
+            'X-CSRF-TOKEN': csrf,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
         
         if (response.data.success) {
           Object.keys(data).forEach(key => {
@@ -673,50 +721,52 @@ export default {
           });
           editingField.value[field] = false;
         } else {
-          throw new Error(response.data.message || 'Update failed');
+          console.error(`Failed to update ${field}:`, response.data.message);
+          alert(response.data.message || `Failed to update ${field}`);
         }
       } catch (error) {
-        console.error('Error updating work order:', error);
-        if (error.response?.status === 401) {
-          window.location.href = '/login';
+        console.error(`Error updating ${field}:`, error);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+          alert(error.response.data?.message || `Failed to update ${field}`);
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+          alert('No response from server. Please try again later.');
         } else {
-          alert(error.response?.data?.message || 'Failed to update field');
+          console.error('Error setting up request:', error.message);
+          alert(`Error: ${error.message}`);
         }
       }
     };
 
-    // Set axios defaults
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-axios.defaults.withCredentials = true;  // Important for maintaining session cookies
-
-// Get CSRF token from the meta tag
-const token = document.head.querySelector('meta[name="csrf-token"]');
-if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
-} else {
-    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
-}
-
-    // Generate array of dates between start and end for range selection
+    // Generate a range of dates between start and end
     const generateDateRange = (start, end) => {
-      if (!start || !end) return [];
-      
       try {
+        if (!start || !end) return [start].filter(Boolean);
+        
         const startDate = new Date(start);
         const endDate = new Date(end);
         
-        if (isNaN(startDate) || isNaN(endDate)) return [];
-        
-        const dateArray = [];
+        if (isNaN(startDate) || isNaN(endDate)) {
+          return [start].filter(Boolean);
+        }
+
+        // If they're on the same day, just return both times
+        const isSameDay = startDate.toDateString() === endDate.toDateString();
+        if (isSameDay) return [start, end];
+
+        // Generate array of dates between start and end
+        const dates = [];
         let currentDate = new Date(startDate);
         
-        // Add all dates between start and end
         while (currentDate <= endDate) {
-          dateArray.push(new Date(currentDate).toISOString().slice(0, 16));
+          dates.push(currentDate.toISOString().split('T')[0] + 'T00:00:00');
           currentDate.setDate(currentDate.getDate() + 1);
         }
         
-        return dateArray;
+        return dates;
       } catch (error) {
         console.error("Error generating date range:", error);
         return [];
@@ -741,7 +791,6 @@ if (token) {
     // Format multiple dates for display
     const formatMultipleDates = (dates) => {
       if (!dates || !dates.length) return 'No dates set';
-      
       try {
         // Sort dates chronologically
         const sortedDates = [...dates].sort();
@@ -749,7 +798,7 @@ if (token) {
         if (sortedDates.length === 1) {
           return formatDate(sortedDates[0]);
         }
-        
+
         // For many dates, show first and last with count
         const firstDate = formatDateShort(sortedDates[0]);
         const lastDate = formatDateShort(sortedDates[sortedDates.length - 1]);
@@ -777,7 +826,6 @@ if (token) {
     const duplicateWorkOrder = async (event) => {
       const button = event.target.closest('button');
       const originalText = button.innerHTML;
-      
       try {
         button.disabled = true;
         button.innerHTML = 'Duplicating...';
@@ -798,7 +846,7 @@ if (token) {
         }
       } catch (error) {
         console.error('Error duplicating work order:', error);
-        alert(error.response?.data?.message || 'Failed to duplicate work order');
+        alert(error.response?.data?.message || 'Failed to duplicate work order'); 
       } finally {
         button.disabled = false;
         button.innerHTML = originalText;
@@ -813,7 +861,7 @@ if (token) {
       if (!filename) return false;
       return filename.toLowerCase().endsWith('.pdf');
     };
-    
+
     const isImageFile = (filename) => {
       if (!filename) return false;
       const lowerFilename = filename.toLowerCase();
@@ -846,7 +894,7 @@ if (token) {
         previewAttachment.value = attachment;
       }
     };
-    
+
     // Close preview
     const closePreview = () => {
       previewAttachment.value = null;
@@ -855,21 +903,34 @@ if (token) {
     // Updated file upload handler that accepts PDFs
     const handleImageUpload = (event) => {
       const files = Array.from(event.target.files);
-      const maxFileSize = 10 * 1024 * 1024; // 10MB limit
+      const maxFileSize = 8 * 1024 * 1024; // 8MB limit - reduced from 10MB to match server limits
+      const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.heic', '.docx'];
+
+      // Clear previous files and errors
+      form.images = [];
+      uploadError.value = '';
+
+      // More thorough validation
       const validFiles = [];
       const invalidFiles = [];
-
-      // Validate each file
       files.forEach(file => {
-        if (file.size > maxFileSize) {
-          invalidFiles.push(`${file.name} (${Math.round(file.size/1024/1024)}MB exceeds 10MB limit)`);
+        // Get file extension
+        const extension = '.' + file.name.split('.').pop().toLowerCase();
+        const isValidType = validExtensions.includes(extension);
+        const isValidSize = file.size <= maxFileSize;
+        console.log(`Validating file: ${file.name} (${file.type}, ${Math.round(file.size/1024)}KB) - Valid type: ${isValidType}, Valid size: ${isValidSize}`);
+        if (!isValidType) {
+          invalidFiles.push(`${file.name} (unsupported file type)`);
+        } else if (!isValidSize) {
+          invalidFiles.push(`${file.name} (${Math.round(file.size/1024/1024)}MB exceeds 8MB limit)`);
         } else {
           validFiles.push(file);
         }
       });
-
+      
       if (invalidFiles.length > 0) {
-        alert(`The following files are too large:\n${invalidFiles.join('\n')}\nMaximum size is 10MB per file.`);
+        uploadError.value = `Cannot upload these files:\n${invalidFiles.join('\n')}`;
+        alert(`Cannot upload these files:\n${invalidFiles.join('\n')}`);
       }
 
       if (validFiles.length) {
@@ -878,9 +939,9 @@ if (token) {
     };
 
     const handlePdfClose = () => {
-    showPdfViewer.value = false;
-    // Any other cleanup needed
-};
+      showPdfViewer.value = false;
+      // Any other cleanup needed
+    };
 
     // For image/file uploads with special handling
     const saveImages = async () => {
@@ -888,78 +949,144 @@ if (token) {
         editingField.value.images = false;
         return;
       }
-    
+
+      // Clear previous errors
+      uploadError.value = '';
+      isUploading.value = true;
+      uploadProgress.value = 0;
+
+      // Create fresh FormData
       const formData = new FormData();
-      // Use standard 'attachments' array name for Laravel file uploads
+      // Add each file individually with numeric index to match Laravel's expectations
       form.images.forEach((file, index) => {
+        // Use attachments[] format for Laravel's array validation
         formData.append(`attachments[${index}]`, file);
-        console.log('Uploading file:', file.name, 'type:', file.type, 'size:', file.size);
+        console.log(`Adding file ${index}: ${file.name} (${file.type}, ${Math.round(file.size / 1024)} KB)`);
       });
-    
+
+      // Add work order ID explicitly to ensure it's properly associated
+      formData.append('work_order_id', props.workOrder.id);
+
       try {
-        // Make sure we're using the correct URL and headers
+        // Get fresh CSRF token for this specific request
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+          throw new Error('CSRF token not found. Please refresh the page and try again.');
+        }
+        
+        // Add CSRF token to formdata as an additional safeguard
+        formData.append('_token', csrfToken);
+        
+        console.log('Uploading files to:', `/work-orders/${props.workOrder.id}/attachments`);
+        
+        // Make the request with progress tracking
         const response = await axios.post(
           `/work-orders/${props.workOrder.id}/attachments`,
           formData,
           {
             headers: {
-              'Content-Type': 'multipart/form-data',
+              'X-CSRF-TOKEN': csrfToken,
               'Accept': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+              // Do not set Content-Type for multipart/form-data
             },
-            // Add timeout to allow for larger files
-            timeout: 60000
+            withCredentials: true, // Include cookies for session authentication
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              uploadProgress.value = percentCompleted;
+            },
+            timeout: 300000 // 5 minutes
           }
         );
-    
-        if (response.data.success) {
-          // Update both images and file_attachments arrays
-          if (response.data.attachments) {
-            if (!Array.isArray(props.workOrder.images)) {
-              props.workOrder.images = [];
-            }
-            if (!Array.isArray(props.workOrder.file_attachments)) {
-              props.workOrder.file_attachments = [];
-            }
-    
-            // Add new attachments
-            props.workOrder.images = [...props.workOrder.images, ...response.data.attachments];
-            props.workOrder.file_attachments = [...props.workOrder.file_attachments, ...response.data.attachments];
+        
+        // Handle success response
+        console.log('Upload response:', response.data);
+        
+        if (response.data && (response.data.success || response.data.paths || response.data.attachments)) {
+          // Handle attachments from any of the possible response formats
+          const attachments = response.data.attachments || response.data.paths || [];
+          
+          // Ensure we have arrays for storage
+          if (!Array.isArray(props.workOrder.images)) {
+            props.workOrder.images = [];
           }
-    
-          // Clear the form and close edit mode
+          if (!Array.isArray(props.workOrder.file_attachments)) {
+            props.workOrder.file_attachments = [];
+          }
+          
+          // Add new attachments to both arrays
+          if (Array.isArray(attachments)) {
+            attachments.forEach(attachment => {
+              props.workOrder.images.push(attachment);
+              props.workOrder.file_attachments.push(attachment);
+            });
+          } else if (typeof attachments === 'string') {
+            props.workOrder.images.push(attachments);
+            props.workOrder.file_attachments.push(attachments);
+          }
+          
+          // Success - clear form and close upload interface
           form.images = [];
           editingField.value.images = false;
+        } else {
+          // No clear success indicator
+          uploadError.value = response.data?.message || 'Upload may have failed. Please check attachments.';
         }
       } catch (error) {
         console.error('Error uploading files:', error);
-        
-        // Improved error handling
-        let errorMessage = 'Failed to upload files. ';
-        
-        if (error.response?.data?.errors) {
-          // Handle validation errors
-          const errors = error.response.data.errors;
-          const errorMessages = [];
+        // Enhanced validation error handling
+        if (error.response?.status === 422 && error.response?.data?.errors) {
+          // Extract and format validation errors
+          const validationErrors = error.response.data.errors;
+          console.error('Validation errors:', validationErrors);
           
-          Object.keys(errors).forEach(key => {
-            errorMessages.push(...errors[key]);
+          let errorMessages = [];
+          
+          // Check for common validation issues and provide helpful messages
+          Object.entries(validationErrors).forEach(([field, messages]) => {
+            // Extract index from field name like "attachments.0"
+            const fileIndex = field.match(/\d+$/);
+            const fileNumber = fileIndex ? parseInt(fileIndex[0]) + 1 : '';
+            const fileLabel = fileNumber ? `File #${fileNumber}` : field;
+            
+            messages.forEach(message => {
+              if (message.includes('max') || message.includes('size')) {
+                // File size error - get the specific max size from the error if possible
+                const sizeMatch = message.match(/\d+\s*(kb|mb|gb)/i);
+                const sizeLimit = sizeMatch ? sizeMatch[0].toUpperCase() : '8MB';
+                errorMessages.push(`${fileLabel}: File exceeds ${sizeLimit} limit`);
+              } else if (message.includes('mimes') || message.includes('type')) {
+                // Extract allowed mime types from error message if possible
+                const mimesMatch = message.match(/must be a file of type: ([^.]+)/i);
+                const allowedTypes = mimesMatch ? mimesMatch[1] : 'JPG, JPEG, PNG, GIF, PDF, HEIC, DOCX';
+                errorMessages.push(`${fileLabel}: Must be one of these types: ${allowedTypes}`);
+              } else {
+                // Other errors
+                errorMessages.push(`${fileLabel}: ${message}`);
+              }
+            });
           });
           
-          errorMessage += errorMessages.join('\n');
+          // Set a detailed user-friendly error message
+          if (errorMessages.length > 0) {
+            uploadError.value = errorMessages.join('\n');
+          } else {
+            uploadError.value = 'Files failed validation. Try with smaller files (under 8MB) or different file types.';
+          }
+        } else if (error.response?.status === 419) {
+          uploadError.value = 'Your session has expired. Please refresh the page and try again.';
         } else if (error.response?.data?.message) {
-          // Handle other API errors
-          errorMessage += error.response.data.message;
-        } else if (error.message) {
-          // Handle general errors
-          errorMessage += error.message;
+          uploadError.value = error.response.data.message;
+        } else {
+          uploadError.value = `Upload failed: ${error.message}`;
         }
-        
-        // Log detailed error info for debugging
-        console.error('Response status:', error.response?.status);
-        console.error('Response data:', error.response?.data);
-        
-        alert(errorMessage);
+      } finally {
+        isUploading.value = false;
+        // If no error, close the upload interface after a short delay
+        if (!uploadError.value) {
+          setTimeout(() => {
+            editingField.value.images = false;
+          }, 1000);
+        }
       }
     };
 
@@ -1003,7 +1130,7 @@ if (token) {
       return [...new Set(attachments)];
     };
 
-    const createInvoice = async (event) => {
+    const archiveWorkOrder = async (event) => {
       // Define variables outside try block so they're accessible in finally
       const button = event.target.closest('button');
       const originalText = button.innerHTML;
@@ -1011,16 +1138,24 @@ if (token) {
       try {
         // Show loading state
         button.disabled = true;
-        button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Creating Invoice...';
+        button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Archiving...';
         
-        // Get CSRF token from meta tag
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        // Get CSRF token from meta tag with better error handling
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrf = csrfMeta ? csrfMeta.getAttribute('content') : null;
         
-        // Use web route instead of API route for better Laravel session handling
-        // Removed "status" from the payload to prevent data truncation
-        const response = await axios.post(`/work-orders/${props.workOrder.id}/invoice`, {
-          archive: true // Explicitly request archiving
-        }, {
+        if (!csrf) {
+          throw new Error('CSRF token not found. Please refresh the page and try again.');
+        }
+        
+        // Create payload with CSRF token included in body data
+        const payload = {
+          archive: true,
+          _token: csrf // Include token in request body as well
+        };
+        
+        // Use web route to archive the work order
+        const response = await axios.post(`/work-orders/${props.workOrder.id}/archive`, payload, {
           headers: {
             'X-CSRF-TOKEN': csrf,
             'X-Requested-With': 'XMLHttpRequest',
@@ -1029,34 +1164,36 @@ if (token) {
           },
           withCredentials: true
         });
-    
+
         if (response.data.success) {
           // Close current modal first
           emit('close');
           
           // Show success message
-          const invoiceId = response.data.invoice_id || '';
-          
-          // Emit event to show the archived work order modal with this work order
-          emit('invoice-created', {
+          emit('work-order-archived', {
             workOrderId: props.workOrder.id,
-            invoiceId: invoiceId,
-            message: 'Invoice created successfully in QuickBooks! The work order has been archived.'
+            message: 'Work order has been successfully archived.'
           });
           
-          // Optionally refresh the main work order list to reflect the change
+          // Refresh the main work order list to reflect the change
           router.reload({ only: ['workOrders'] });
         } else {
-          throw new Error(response.data.message || 'Failed to create invoice');
+          throw new Error(response.data.message || 'Failed to archive work order');
         }
       } catch (error) {
-        console.error('Error creating invoice:', error);
-        
+        console.error('Error archiving work order:', error);
         // Detailed error logging
         if (error.response) {
           console.error('Response data:', error.response.data);
           console.error('Response status:', error.response.status);
-          console.error('Response headers:', error.response.headers); // Log response headers
+          console.error('Response headers:', error.response.headers);
+          // Special handling for CSRF token issues
+          if (error.response.status === 419 || 
+              (error.response.data && error.response.data.message && 
+              error.response.data.message.toLowerCase().includes('csrf'))) {
+            alert('Your session has expired. Please refresh the page and try again.');
+            return;
+          }
         } else if (error.request) {
           console.error('No response received:', error.request);
         } else {
@@ -1067,7 +1204,7 @@ if (token) {
         if (error.response?.status === 401) {
           window.location.href = '/login';
         } else {
-          alert(`Failed to create invoice: ${error.response?.data?.message || error.message}`);
+          alert(`Failed to archive work order: ${error.response?.data?.message || error.message}`);
         }
       } finally {
         // Reset button state - originalText now in scope
@@ -1082,10 +1219,10 @@ if (token) {
       if (!confirm('Are you sure you want to delete this attachment?')) {
         return;
       }
-    
+
       try {
         await router.post(
-          route('work-orders.delete-attachment', props.workOrder.id),
+          route('work-orders.delete-attachment', props.workOrder.id), 
           {
             attachment_path: attachmentPath
           },
@@ -1098,7 +1235,6 @@ if (token) {
                   ? props.workOrder.images.filter(img => img !== attachmentPath)
                   : [];
               }
-              
               if (props.workOrder.file_attachments) {
                 props.workOrder.file_attachments = Array.isArray(props.workOrder.file_attachments)
                   ? props.workOrder.file_attachments.filter(file => file !== attachmentPath)
@@ -1120,7 +1256,6 @@ if (token) {
     const handleDocumentUpload = async (data) => {
       try {
         console.log('Document uploaded:', data);
-        
         // Extract just the path portion from the full URL
         const pathMatch = data.path || data.url.match(/\/storage\/(.*)/);
         const attachmentPath = typeof pathMatch === 'string' ? pathMatch : pathMatch?.[1];
@@ -1131,7 +1266,7 @@ if (token) {
             props.workOrder.file_attachments = [];
           }
           props.workOrder.file_attachments.push(attachmentPath);
-
+          
           if (!Array.isArray(props.workOrder.images)) {
             props.workOrder.images = [];
           }
@@ -1149,21 +1284,66 @@ if (token) {
       }
     };
 
+    // Add these new refs near the top of setup()
+    const isUploading = ref(false);
+    const uploadProgress = ref(0);
+    const uploadError = ref('');
+
+    const getStatusProgress = (status) => {
+      if (!status) return 0;
+      const statusLower = status.toLowerCase();
+      
+      if (statusLower.includes('complete')) {
+        return 100;
+      } else if (statusLower.includes('part') || statusLower.includes('return')) {
+        return 75;
+      } else if (statusLower.includes('progress')) {
+        return 50;
+      } else if (statusLower.includes('scheduled')) {
+        return 10;
+      } else if (statusLower.includes('cancel')) {
+        return 0;
+      }
+      
+      return 0;
+    };
+
+    const getProgressBarColor = (status) => {
+      if (!status) return 'bg-gray-600';
+      
+      const statusLower = status.toLowerCase();
+      
+      if (statusLower.includes('complete')) {
+        return 'bg-green-500';
+      } else if (statusLower.includes('part') || statusLower.includes('return')) {
+        return 'bg-purple-500';
+      } else if (statusLower.includes('progress')) {
+        return 'bg-yellow-500';
+      } else if (statusLower.includes('scheduled')) {
+        return 'bg-blue-500';
+      } else if (statusLower.includes('cancel')) {
+        return 'bg-red-500';
+      }
+      
+      return 'bg-gray-600';
+    };
+
+    // Define the getUserName function
+    const getUserName = (userName) => {
+      return userName || 'Unknown User';
+    };
+
+    const getUserAvatar = (userName) => {
+      // Replace this logic with the actual implementation for fetching user avatars
+      return `/images/avatars/${userName || 'default'}.png`;
+    };
+
     return {
       getStatusClasses,
-      // ... rest of existing return values ...
-      users: ref([]),
-      isLoading: ref(true),
-      getUserName: (userId) => {
-        // Existing getUserName function
-      },
-      getUserAvatar: (userId) => {
-        // Existing getUserAvatar function
-      },
       isEditing,
       editingField,
       form,
-      formatDate, // Make sure formatDate is included in the returned object
+      formatDate, 
       closeModal: () => emit('close'),
       startEditing: (field) => {
         Object.keys(editingField.value).forEach(key => {
@@ -1174,7 +1354,7 @@ if (token) {
       saveField: (field) => {
         if (field === 'images') {
           saveImages();
-        } else {
+        } else { 
           saveField(field);
         }
       },
@@ -1187,21 +1367,28 @@ if (token) {
       isImageFile,
       isDocumentFile,
       getFileName,
-      previewAttachment,
       handlePreviewAttachment,
       closePreview,
       getAllAttachments,
       formatMultipleDates,
-      formatDateShort, // Also export this helper function
+      formatDateShort, 
       dateSelectionType,
       selectedDates,
       addNewDate,
       removeDate,
-      createInvoice,
+      archiveWorkOrder,
       deleteAttachment,
-      showPdfViewer
+      showPdfViewer,
+      isUploading,
+      uploadProgress,
+      uploadError,
+      getStatusProgress,
+      getProgressBarColor,
+      getUserName, // Ensure this is returned so it can be used in the template
+      getUserAvatar, // Ensure this is returned so it can be used in the template
+      VALID_STATUSES,
     };
-  }
+  },
 };
 </script>
 
@@ -1352,7 +1539,7 @@ if (token) {
 /* Enhanced border styling for the header */
 .glossy-header .border-b {
   border-image: linear-gradient(
-    to right,
+    to right, 
     transparent,
     rgba(255, 255, 255, 0.342),
     transparent

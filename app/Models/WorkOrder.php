@@ -54,7 +54,6 @@ class WorkOrder extends Model
     const CUSTOMERS = [
         'APS',
         'Barrister Global',
-        'DarAlIslam',
         'Field Nation',
         'Navco',
         'NEW CUSTOMER',
