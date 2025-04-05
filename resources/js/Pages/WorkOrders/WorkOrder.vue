@@ -6,14 +6,14 @@
     <!-- Modal container with fixed header and scrollable content -->
     <div class="mt-10 glossy-card flex flex-col w-full max-w-4xl mx-4 sm:mx-auto rounded-lg text-left shadow-xl transform transition-all relative z-[10000] max-h-[80vh]">
       <!-- Fixed header -->
-      <div class="glossy-header sticky top-0 z-30 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-700/50">
+      <div class="glossy-header sticky top-0 z-30 px-4 pt-3 pb-3 sm:p-4 border-b border-gray-700/50">
         <div class="flex justify-between items-center">
-          <div class="flex items-center space-x-3 flex-grow">
-            <h3 class="text-xl2 font-medium text-lime-400" id="modal-title">
-              <span v-if="!editingField.title" class="flex items-center">
-                 {{ workOrder.title }}
+          <div class="flex items-center">
+            <h3 class="text-xl font-medium text-lime-400 truncate max-w-lg" id="modal-title">
+              <span v-if="!editingField.title" class="flex items-center space-x-2">
+                <span class="truncate">{{ workOrder.title }}</span>
                 <span 
-                  class="ml-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
+                  class="ml-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset shrink-0"
                   :class="getStatusClasses(workOrder.status)"
                 >
                   {{ workOrder.status }}
@@ -65,7 +65,6 @@
                   <select v-else v-model="form.customer_id" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
                     <option value="Advanced Project Solutions">Advanced Project Solutions</option>
                     <option value="Barrister Global Service Network">Barrister Global Service Network</option>
-                    <option value="DarAlIslam">DarAlIslam</option>
                     <option value="Field Nation">Field Nation</option>
                     <option value="Navco">Navco</option>
                     <option value="NEW CUSTOMER">NEW CUSTOMER</option>
@@ -254,6 +253,71 @@
               </div>
             </div>
             
+            <!-- Add address and hours sections after the status section -->
+            <div class="flex justify-between items-start glossy-section">
+              <!-- Address field -->
+              <div class="w-2/3">
+                <p class="text-sm text-lime-400">Work Site Address:</p>
+                <p class="text-sm text-white">Location where the technician needs to be ON TIME!</p>
+                <div class="flex items-start">
+                  <div class="flex-grow">
+                    <span v-if="!editingField.address" class="text-white">{{ workOrder.address || 'No address set' }}</span>
+                    <input 
+                      v-else 
+                      type="text" 
+                      v-model="form.address" 
+                      placeholder="Enter complete work site address"
+                      class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-lime-600 text-white sm:text-sm"
+                    />
+                  </div>
+                  <span class="ml-2">
+                    <button v-if="!editingField.address" @click="startEditing('address')" class="text-lime-400 btn hover:text-lime-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button v-else @click="saveField('address')" class="text-green-400 btn hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Hours field -->
+              <div class="w-1/3 pl-4">
+                <p class="text-sm text-lime-400">Approved Hours:</p>
+                <p class="text-sm text-white">Hours approved by customer</p>
+                <div class="flex items-start">
+                  <div class="flex-grow">
+                    <span v-if="!editingField.hours" class="text-white">{{ workOrder.hours || 'No hours set' }}</span>
+                    <input 
+                      v-else 
+                      type="number" 
+                      v-model="form.hours" 
+                      step="0.5"
+                      min="0"
+                      placeholder="Enter number of hours"
+                      class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-lime-600 text-white sm:text-sm"
+                    />
+                  </div>
+                  <span class="ml-2">
+                    <button v-if="!editingField.hours" @click="startEditing('hours')" class="text-lime-400 btn hover:text-lime-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button v-else @click="saveField('hours')" class="text-green-400 btn hover:text-green-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <!-- Description section - Updated to be smaller and scrollable -->
             <div>
               <p class="text-sm text-lime-400">Description:</p>
@@ -529,16 +593,13 @@ export default {
     },
     users: {
       type: Array,
-      required: true,
+      default: () => [], // Make users prop optional with empty array default
     },
   },
   setup(props, { emit }) {
     // Add error handling for missing or invalid props
     if (!props.workOrder) {
       console.error('WorkOrder prop is missing or invalid.');
-    }
-    if (!Array.isArray(props.users)) {
-      console.error('Users prop is missing or invalid.');
     }
 
     // Add this near the top of setup(), with other refs
@@ -584,7 +645,9 @@ export default {
       status: false,
       price: false,
       customer_id: false,
-      images: false
+      images: false,
+      address: false,
+      hours: false,
     });
 
     const form = useForm({
@@ -598,7 +661,9 @@ export default {
       price: props.workOrder?.price || 0,
       notes: props.workOrder?.notes || [],
       images: [],
-      user_id: props.workOrder?.user_id || ''
+      user_id: props.workOrder?.user_id || '',
+      address: props.workOrder?.address || '',
+      hours: props.workOrder?.hours || '',
     });
 
     // New state for advanced date selection
@@ -630,6 +695,8 @@ export default {
         form.price = newVal.price || 0;
         form.notes = newVal.notes || [];
         form.user_id = newVal.user_id || '';
+        form.address = newVal.address || '';
+        form.hours = newVal.hours || '';
         // Initialize date selection after form is updated
         initializeDateSelection();
       }
@@ -673,6 +740,85 @@ export default {
         }
         data = { status: form[field].trim() };
       }
+      // Special handling for hours field - send only the value directly
+      else if (field === 'hours') {
+        // Direct approach - create a plain object with just the field name and value
+        const hoursValue = parseFloat(form.hours) || 0;
+        
+        // Send the data in the format the backend expects
+        try {
+          const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+          
+          // Make a separate request specifically for hours
+          const response = await axios.post(`/work-orders/${props.workOrder.id}/update-hours`, {
+            hours: hoursValue
+          }, {
+            headers: {
+              'X-CSRF-TOKEN': csrf,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (response.data.success) {
+            // Update local state with the new hours value
+            props.workOrder.hours = hoursValue;
+            editingField.value[field] = false;
+          } else {
+            console.error('Failed to update hours:', response.data.message);
+            alert(response.data.message || 'Failed to update hours');
+          }
+          return;
+        } catch (error) {
+          console.error('Error updating hours:', error);
+          if (error.response) {
+            console.error('Response data:', error.response.data);
+            console.error('Response status:', error.response.status);
+            alert(error.response.data?.message || 'Failed to update hours');
+          } else {
+            alert(`Error: ${error.message}`);
+          }
+          return;
+        }
+      }
+      // Special handling for address field
+      else if (field === 'address') {
+        // Send the data in the format the backend expects with a dedicated endpoint
+        try {
+          const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+          
+          // Make a separate request specifically for address
+          const response = await axios.post(`/work-orders/${props.workOrder.id}/update-address`, {
+            address: form.address
+          }, {
+            headers: {
+              'X-CSRF-TOKEN': csrf,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (response.data.success) {
+            // Update local state with the new address value
+            props.workOrder.address = form.address;
+            editingField.value[field] = false;
+          } else {
+            console.error('Failed to update address:', response.data.message);
+            alert(response.data.message || 'Failed to update address');
+          }
+          return;
+        } catch (error) {
+          console.error('Error updating address:', error);
+          if (error.response) {
+            console.error('Response data:', error.response.data);
+            console.error('Response status:', error.response.status);
+            alert(error.response.data?.message || 'Failed to update address');
+          } else {
+            alert(`Error: ${error.message}`);
+          }
+          return;
+        }
+      }
       // Special handling for date fields
       else if (field === 'date_time') {
         if (dateSelectionType.value === 'single') {
@@ -699,6 +845,9 @@ export default {
         data[field] = form[field];
       }
 
+      // Add field_name to all requests for better backend validation
+      data.field_name = field;
+
       // Log what we're sending for debugging
       console.log(`Updating ${field} with:`, data);
 
@@ -707,7 +856,10 @@ export default {
         const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         
         // Use web route instead of API route with explicit headers
-        const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, data, {
+        const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
+          ...data,
+          field: field // Send field name separately
+        }, {
           headers: {
             'X-CSRF-TOKEN': csrf,
             'Content-Type': 'application/json',
@@ -716,9 +868,14 @@ export default {
         });
         
         if (response.data.success) {
-          Object.keys(data).forEach(key => {
-            props.workOrder[key] = data[key];
-          });
+          // Update local state
+          if (field === 'hours') {
+            props.workOrder.hours = data.hours;
+          } else {
+            Object.keys(data).forEach(key => {
+              props.workOrder[key] = data[key];
+            });
+          }
           editingField.value[field] = false;
         } else {
           console.error(`Failed to update ${field}:`, response.data.message);
@@ -1131,83 +1288,45 @@ export default {
     };
 
     const archiveWorkOrder = async (event) => {
-      // Define variables outside try block so they're accessible in finally
       const button = event.target.closest('button');
       const originalText = button.innerHTML;
       
       try {
-        // Show loading state
         button.disabled = true;
         button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Archiving...';
         
-        // Get CSRF token from meta tag with better error handling
-        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrf = csrfMeta ? csrfMeta.getAttribute('content') : null;
-        
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         if (!csrf) {
           throw new Error('CSRF token not found. Please refresh the page and try again.');
         }
-        
-        // Create payload with CSRF token included in body data
-        const payload = {
-          archive: true,
-          _token: csrf // Include token in request body as well
-        };
-        
-        // Use web route to archive the work order
-        const response = await axios.post(`/work-orders/${props.workOrder.id}/archive`, payload, {
-          headers: {
-            'X-CSRF-TOKEN': csrf,
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          withCredentials: true
-        });
+
+        const response = await axios.post(
+          `/work-orders/${props.workOrder.id}/archive`,
+          { archive: true },
+          {
+            headers: {
+              'X-CSRF-TOKEN': csrf,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          }
+        );
 
         if (response.data.success) {
-          // Close current modal first
           emit('close');
-          
-          // Show success message
           emit('work-order-archived', {
             workOrderId: props.workOrder.id,
-            message: 'Work order has been successfully archived.'
+            message: response.data.message || 'Work order has been successfully archived.'
           });
-          
-          // Refresh the main work order list to reflect the change
-          router.reload({ only: ['workOrders'] });
+          window.location.reload();
         } else {
           throw new Error(response.data.message || 'Failed to archive work order');
         }
       } catch (error) {
         console.error('Error archiving work order:', error);
-        // Detailed error logging
-        if (error.response) {
-          console.error('Response data:', error.response.data);
-          console.error('Response status:', error.response.status);
-          console.error('Response headers:', error.response.headers);
-          // Special handling for CSRF token issues
-          if (error.response.status === 419 || 
-              (error.response.data && error.response.data.message && 
-              error.response.data.message.toLowerCase().includes('csrf'))) {
-            alert('Your session has expired. Please refresh the page and try again.');
-            return;
-          }
-        } else if (error.request) {
-          console.error('No response received:', error.request);
-        } else {
-          console.error('Error setting up request:', error.message);
-        }
-        
-        // Handle auth errors
-        if (error.response?.status === 401) {
-          window.location.href = '/login';
-        } else {
-          alert(`Failed to archive work order: ${error.response?.data?.message || error.message}`);
-        }
+        const errorMessage = error.response?.data?.message || error.message;
+        alert(`Failed to archive work order: ${errorMessage}`);
       } finally {
-        // Reset button state - originalText now in scope
         if (button) {
           button.disabled = false;
           button.innerHTML = originalText;

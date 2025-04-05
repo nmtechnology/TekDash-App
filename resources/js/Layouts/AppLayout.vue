@@ -156,7 +156,7 @@ function logout() {
 
         <Banner />
 
-        <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95 bg-fixed">
+        <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95">
             <nav :class="['fixed-navbar bg-transparent backdrop-blur-md border-b border-gray-600 fixed inset-x-0 top-0 z-50', isScrolled ? 'scrolled' : '']">
                 <!-- Primary Navigation Menu -->
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -28,6 +28,8 @@ class WorkOrder extends Model
         'file_attachments',
         'archived',
         'archived_at',
+        'address',
+        'hours',
     ];
 
     protected $with = ['notes'];
@@ -40,6 +42,7 @@ class WorkOrder extends Model
         'file_attachments' => 'array',
         'archived_at' => 'datetime',
         'status' => 'string',
+        'hours' => 'decimal:2',
     ];
 
     const STATUSES = [

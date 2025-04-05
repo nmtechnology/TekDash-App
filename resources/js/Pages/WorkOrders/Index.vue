@@ -10,6 +10,7 @@ import CurrentTime from '@/Components/CurrentTime.vue';
 import ArchivedWorkOrdersModal from '@/Pages/WorkOrders/ArchivedWorkOrdersModal.vue';
 import ArchivedWorkOrderModal from './ArchivedWorkOrderModal.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
+import ArchivedWorkOrders from './ArchivedWorkOrders.vue';
 
 const { props } = usePage();
 const workOrders = ref(props.workOrders || []);
@@ -190,6 +191,14 @@ const getStatusProgress = (status) => {
     default: return 0;
   }
 };
+
+const showArchived = ref(false);
+
+const viewArchivedWorkOrder = (workOrder) => {
+  selectedWorkOrder.value = workOrder;
+  showWorkOrderModal.value = true;
+  showArchived.value = false;
+};
 </script>
 
 <template>
@@ -200,55 +209,62 @@ const getStatusProgress = (status) => {
           <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-lime-400 mt-12 leading-tight">
               Active Work Orders <CurrentTime />
+                <div class="flex space-x-4">
+                <TeamDropdown :teams="props.teams" />
+                <AddWorkorder />
+                
+                <button 
+                              @click="showArchived = true"
+                              class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                              </svg>
+                              View Archived
+                            </button>
+                </div>
             </h2>
-            <TeamDropdown />
           </div>
         </div>
       </div>
     </template>
     <div class="bg-gray-900/55 min-h-screen opacity-70 py-10 flex justify-center">
-      <div class="w-full max-w-6xl">
-        <div class="mt-4 sm:ml-16 sm:mt-0">
-          <div class="p-4 flex space-x-4">
-            <AddWorkorder class="justify-end" />
-            <button @click="showArchivedModal = true" class="text-lime-600 btn rounded p-2 hover:bg-lime-500 hover:text-gray-900">Archived Work Orders</button>
-            <ArchivedWorkOrdersModal :is-open="showArchivedModal" @close="showArchivedModal = false" />
-          </div>
+      <div class="w-full px-4">
+        <div class="mt-4 sm:mt-0">
+          
         </div>
-        <div class="mt-8 flow-root">
-          <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        <div class="mt-40 flow-root">
+          <div class="overflow-x-auto">
+            <div class="inline-block min-w-full py-2 align-middle px-2">
               <div class="overflow-hidden border-b border-accent shadow sm:rounded-lg">
-                <div class="scrollable-container">
-                  <table class="min-w-full divide-y divide-accent table-fixed table">
+                <div class="min-w-full">
+                  <table class="w-full divide-y divide-accent">
                     <thead class="bg-gray-900 backdrop-blur-md opacity-95 z-50">
                       <tr>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400"></th>
-                        <th scope="col" class="sticky top-0 z-10 py-3 pl-4 text-left text-xl font-semibold text-lime-400 sm:pl-0">Title</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">Status</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">Scheduled Time</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">Customer</th>
-                        <th scope="col" class="sticky top-0 z-10 px-3 py-3.5 text-left text-xl font-semibold text-lime-400">User</th>
+                        <th scope="col" class="sticky top-0 z-10 w-[15%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Actions</th>
+                        <th scope="col" class="sticky top-0 z-10 w-[25%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Title</th>
+                        <th scope="col" class="sticky top-0 z-10 w-[15%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Status</th>
+                        <th scope="col" class="sticky top-0 z-10 w-[20%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Scheduled Time</th>
+                        <th scope="col" class="sticky top-0 z-10 w-[15%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Customer</th>
+                        <th scope="col" class="sticky top-0 z-10 w-[10%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">User</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-accent bg-transparent">
                       <tr v-for="(workOrder, index) in filteredWorkOrders" :key="index">
-                        <td class="relative whitespace-nowrap py-5 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                          <button @click="openModal(workOrder)" class="btn rounded p-1 text-yellow-400 hover:text-gray-900 hover:bg-yellow-400">
-                            View<span class="sr-only">, {{ workOrder.title }}</span>
-                          </button>
-                          <button @click="deleteWorkOrder(workOrder.id)" class="btn text-red-600 hover:text-gray-900 hover:bg-red-600 p-1 ml-1 mr-2 rounded">
-                            Delete<span class="sr-only">, {{ workOrder.title }}</span>
-                          </button>
-                        </td>
-                        <td class="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-0">
-                          <div class="flex items-center">
-                            <div class="ml-4">
-                              <div class="font-medium text-white">{{ workOrder.title }}</div>
-                            </div>
+                        <td class="relative py-4 px-4 text-sm font-medium">
+                          <div class="flex gap-2">
+                            <button @click="openModal(workOrder)" class="btn rounded px-2 py-1 text-yellow-400 hover:text-gray-900 hover:bg-yellow-400">
+                              View
+                            </button>
+                            <button @click="deleteWorkOrder(workOrder.id)" class="btn text-red-600 hover:text-gray-900 hover:bg-red-600 px-2 py-1 rounded">
+                              Delete
+                            </button>
                           </div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
+                        <td class="py-4 px-4 text-sm">
+                          <div class="font-medium text-white" :title="workOrder.title">{{ workOrder.title }}</div>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-accent">
                           <div class="flex flex-col">
                             <div class="text-white mb-1">{{ workOrder.status }}</div>
                             <div class="w-full bg-gray-700 rounded-full h-2.5">
@@ -258,14 +274,14 @@ const getStatusProgress = (status) => {
                             </div>
                           </div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
+                        <td class="px-4 py-4 text-sm text-accent">
                           <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="text-white">{{ workOrder.customer_id }}</div>
+                        <td class="px-4 py-4 text-sm text-accent">
+                          <div class="text-white" :title="workOrder.customer_id">{{ workOrder.customer_id }}</div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-5 text-sm text-accent">
-                          <div class="text-white">{{ getUserName(workOrder.user_id) }}</div>
+                        <td class="px-4 py-4 text-sm text-accent">
+                          <div class="text-white" :title="getUserName(workOrder.user_id)">{{ getUserName(workOrder.user_id) }}</div>
                         </td>
                       </tr>
                     </tbody>
@@ -275,7 +291,7 @@ const getStatusProgress = (status) => {
             </div>
           </div>
         </div>
-        <div class="mt-4 flex justify-between">
+        <div class="mt-4 flex justify-between fixed bottom-0 left-0 right-0 bg-gray-900 p-4">
           <button @click="prevPage" :disabled="currentPage === 1" class="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">Previous</button>
           <span class="text-white">Page {{ currentPage }} of {{ totalPages }}</span>
           <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">Next</button>
@@ -295,6 +311,11 @@ const getStatusProgress = (status) => {
           :users="users"
           @close="closeArchivedWorkOrderModal"
         />
+        <ArchivedWorkOrders 
+          v-if="showArchived"
+          @close="showArchived = false"
+          @view-work-order="viewArchivedWorkOrder"
+        />
       </div>
     </div>
   </AppLayout>
@@ -302,28 +323,28 @@ const getStatusProgress = (status) => {
 
 <style scoped>
 .scrollable-container {
-  max-height: 400px; /* Adjust the height as needed */
+  max-height: calc(100vh - 300px);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
+/* Update existing styles */
 .table-wrapper {
-  max-height: 400px; /* Adjust the height as needed */
   overflow-y: auto;
-  overflow-x: auto; /* Enable horizontal scrolling */
-  -webkit-overflow-scrolling: touch; /* Enable smooth scrolling on iOS */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   position: relative;
 }
 
 thead th {
   position: sticky;
   top: 0;
-  background: #1f2937; /* Match the background color of the thead */
+  background: #1f2937;
   z-index: 1;
 }
 
 td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: normal;
+  white-space: normal;
 }
 </style>

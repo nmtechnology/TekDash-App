@@ -66,32 +66,48 @@ class RevenueController extends Controller
                 Log::warning('Could not determine completed status, using: ' . $completedStatus);
             }
             
-            Log::info('Using status "' . $completedStatus . '" for completed work orders');
+            // Look for archived status
+            $archivedStatus = null;
+            $possibleArchivedStatuses = ['archived', 'Archived', 'ARCHIVED', 'archive', 'Archive'];
+            foreach ($possibleArchivedStatuses as $status) {
+                if (in_array($status, $availableStatuses)) {
+                    $archivedStatus = $status;
+                    break;
+                }
+            }
+            
+            // Create an array of statuses to include in revenue calculations
+            $revenueStatuses = [$completedStatus];
+            if ($archivedStatus) {
+                $revenueStatuses[] = $archivedStatus;
+            }
+            
+            Log::info('Including statuses in revenue calculations: ' . json_encode($revenueStatuses));
             
             // Calculate revenue for the last 7 days
             $last7Days = Carbon::now()->subDays(7);
-            $last7DaysRevenue = WorkOrder::where('status', $completedStatus)
+            $last7DaysRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->where($completedDateColumn, '>=', $last7Days)
                 ->sum('price');
             
             // Calculate revenue for the last 30 days
             $last30Days = Carbon::now()->subDays(30);
-            $last30DaysRevenue = WorkOrder::where('status', $completedStatus)
+            $last30DaysRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->where($completedDateColumn, '>=', $last30Days)
                 ->sum('price');
             
             // Calculate total revenue
-            $totalRevenue = WorkOrder::where('status', $completedStatus)->sum('price');
+            $totalRevenue = WorkOrder::whereIn('status', $revenueStatuses)->sum('price');
             
             // Get monthly revenue data
-            $monthlyRevenue = $this->getMonthlyRevenue($completedStatus, $completedDateColumn);
+            $monthlyRevenue = $this->getMonthlyRevenue($revenueStatuses, $completedDateColumn);
             
             // Calculate month-over-month growth
             list($currentMonthRevenue, $lastMonthRevenue, $comparedToLastMonth) = 
-                $this->calculateMonthOverMonthGrowth($completedStatus, $completedDateColumn);
+                $this->calculateMonthOverMonthGrowth($revenueStatuses, $completedDateColumn);
             
             // Calculate year-over-year growth
-            $comparedToLastYear = $this->calculateYearOverYearGrowth($completedStatus, $completedDateColumn);
+            $comparedToLastYear = $this->calculateYearOverYearGrowth($revenueStatuses, $completedDateColumn);
             
             // Calculate forecast
             $forecastNextMonth = $this->calculateForecastNextMonth($currentMonthRevenue, $lastMonthRevenue);
@@ -114,6 +130,8 @@ class RevenueController extends Controller
                 'last30DaysRevenue' => $last30DaysRevenue,
                 '_debug' => [
                     'completedStatus' => $completedStatus,
+                    'archivedStatus' => $archivedStatus,
+                    'revenueStatuses' => $revenueStatuses,
                     'availableStatuses' => $availableStatuses,
                     'completedDateColumn' => $completedDateColumn,
                     'currentMonthRevenue' => $currentMonthRevenue,
@@ -128,11 +146,11 @@ class RevenueController extends Controller
         }
     }
     
-    private function getMonthlyRevenue($completedStatus, $completedDateColumn)
+    private function getMonthlyRevenue($revenueStatuses, $completedDateColumn)
     {
         $yearStart = Carbon::now()->startOfYear();
         
-        $monthlyQuery = WorkOrder::where('status', $completedStatus)
+        $monthlyQuery = WorkOrder::whereIn('status', $revenueStatuses)
             ->where($completedDateColumn, '>=', $yearStart)
             ->select(DB::raw("MONTH($completedDateColumn) as month"), DB::raw('SUM(price) as revenue'))
             ->groupBy('month')
@@ -157,16 +175,16 @@ class RevenueController extends Controller
         return collect($allMonths)->values()->all();
     }
     
-    private function calculateMonthOverMonthGrowth($completedStatus, $completedDateColumn)
+    private function calculateMonthOverMonthGrowth($revenueStatuses, $completedDateColumn)
     {
         $currentMonth = Carbon::now()->month;
         $lastMonth = Carbon::now()->subMonth()->month;
         
-        $currentMonthRevenue = WorkOrder::where('status', $completedStatus)
+        $currentMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
             ->whereMonth($completedDateColumn, $currentMonth)
             ->sum('price');
             
-        $lastMonthRevenue = WorkOrder::where('status', $completedStatus)
+        $lastMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
             ->whereMonth($completedDateColumn, $lastMonth)
             ->sum('price');
             
@@ -177,16 +195,16 @@ class RevenueController extends Controller
         return [$currentMonthRevenue, $lastMonthRevenue, $comparedToLastMonth];
     }
     
-    private function calculateYearOverYearGrowth($completedStatus, $completedDateColumn)
+    private function calculateYearOverYearGrowth($revenueStatuses, $completedDateColumn)
     {
         $thisYear = Carbon::now()->year;
         $lastYear = Carbon::now()->subYear()->year;
         
-        $thisYearRevenue = WorkOrder::where('status', $completedStatus)
+        $thisYearRevenue = WorkOrder::whereIn('status', $revenueStatuses)
             ->whereYear($completedDateColumn, $thisYear)
             ->sum('price');
             
-        $lastYearRevenue = WorkOrder::where('status', $completedStatus)
+        $lastYearRevenue = WorkOrder::whereIn('status', $revenueStatuses)
             ->whereYear($completedDateColumn, $lastYear)
             ->sum('price');
             

@@ -40,6 +40,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     // Work Orders (using resource route)
     Route::resource('work-orders', WorkOrderController::class);
     
+    // Replace the existing archive route with this one
+    Route::post('/work-orders/{workOrder}/archive', [WorkOrderController::class, 'archive'])
+        ->middleware(['auth', 'verified'])
+        ->name('work-orders.archive');
+
     // Additional work order routes
     Route::put('/api/work-orders/{id}', [WorkOrderController::class, 'update']);
 
@@ -239,6 +244,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             ], 500);
         }
     })->middleware(['auth']);
+
+    // Add this route for updating hours specifically
+    Route::post('/work-orders/{workOrder}/update-hours', [WorkOrderController::class, 'updateHours'])
+        ->name('work-orders.update-hours');
+
+    // Add this route for updating address specifically - add it near the other work-orders routes
+    Route::post('/work-orders/{workOrder}/update-address', [WorkOrderController::class, 'updateAddress'])
+        ->name('work-orders.update-address');
 });
 
 // QuickBooks Integration Routes

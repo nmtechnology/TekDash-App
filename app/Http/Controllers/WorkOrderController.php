@@ -8,18 +8,28 @@ use Inertia\Inertia;
 use App\Models\Note;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class WorkOrderController extends Controller
 {
     // Display a listing of the resource
     public function index()
     {
-        $workOrders = WorkOrder::all();
+        $workOrders = WorkOrder::where('archived', false)->get();
         $users = User::all();
         return Inertia::render('WorkOrders/Index', [
             'workOrders' => $workOrders,
             'users' => $users,
         ]);
+    }
+
+    public function archived()
+    {
+        $archivedOrders = WorkOrder::where('archived', true)
+            ->orderBy('archived_at', 'desc')
+            ->get();
+        
+        return response()->json($archivedOrders);
     }
 
     // Show the form for creating a new resource
@@ -492,87 +502,87 @@ public function calendarEvents()
     }
 
     public function getStats()
-{
-    try {
-        // Get current month's data
-        $currentMonthOrders = WorkOrder::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->get();
+    {
+        try {
+            // Get current month's data
+            $currentMonthOrders = WorkOrder::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->get();
+                
+            // Get previous month's data for comparison
+            $previousMonthOrders = WorkOrder::whereMonth('created_at', now()->subMonth()->month)
+                ->whereYear('created_at', now()->subMonth()->year)
+                ->get();
+                
+            // Calculate totals for current month - using archived instead of completed
+            $currentTotalRevenue = $currentMonthOrders->where('archived', true)->sum('price');
+            $currentArchivedCount = $currentMonthOrders->where('archived', true)->count();
+            $currentPendingCount = $currentMonthOrders->where('archived', false)->count();
+            $currentAvgPrice = $currentArchivedCount > 0 
+                ? $currentTotalRevenue / $currentArchivedCount
+                : 0;
+                
+            // Calculate totals for previous month - using archived instead of completed
+            $previousTotalRevenue = $previousMonthOrders->where('archived', true)->sum('price');
+            $previousArchivedCount = $previousMonthOrders->where('archived', true)->count();
+            $previousPendingCount = $previousMonthOrders->where('archived', false)->count();
+            $previousAvgPrice = $previousArchivedCount > 0 
+                ? $previousTotalRevenue / $previousArchivedCount
+                : 0;
+                
+            // Calculate percentage changes
+            $revenueChange = $previousTotalRevenue > 0 
+                ? (($currentTotalRevenue - $previousTotalRevenue) / $previousTotalRevenue) * 100 
+                : 0;
+                
+            $archivedChange = $previousArchivedCount > 0 
+                ? (($currentArchivedCount - $previousArchivedCount) / $previousArchivedCount) * 100 
+                : 0;
+                
+            $pendingChange = $previousPendingCount > 0 
+                ? (($currentPendingCount - $previousPendingCount) / $previousPendingCount) * 100 
+                : 0;
+                
+            $avgPriceChange = $previousAvgPrice > 0 
+                ? (($currentAvgPrice - $previousAvgPrice) / $previousAvgPrice) * 100 
+                : 0;
+                
+            // Format the stats array with updated labels
+            $stats = [
+                [
+                    'name' => 'Total Revenue (Archived)',
+                    'value' => '$' . number_format($currentTotalRevenue, 2),
+                    'change' => ($revenueChange >= 0 ? '+' : '') . number_format($revenueChange, 2) . '%',
+                    'changeType' => $revenueChange >= 0 ? 'positive' : 'negative'
+                ],
+                [
+                    'name' => 'Archived Orders',
+                    'value' => $currentArchivedCount,
+                    'change' => ($archivedChange >= 0 ? '+' : '') . number_format($archivedChange, 2) . '%',
+                    'changeType' => $archivedChange >= 0 ? 'positive' : 'negative'
+                ],
+                [
+                    'name' => 'Active Orders',
+                    'value' => $currentPendingCount,
+                    'change' => ($pendingChange >= 0 ? '+' : '') . number_format($pendingChange, 2) . '%',
+                    'changeType' => $pendingChange <= 0 ? 'positive' : 'negative' // Less pending is positive
+                ],
+                [
+                    'name' => 'Average Price (Archived)',
+                    'value' => '$' . number_format($currentAvgPrice, 2),
+                    'change' => ($avgPriceChange >= 0 ? '+' : '') . number_format($avgPriceChange, 2) . '%',
+                    'changeType' => $avgPriceChange >= 0 ? 'positive' : 'negative'
+                ]
+            ];
             
-        // Get previous month's data for comparison
-        $previousMonthOrders = WorkOrder::whereMonth('created_at', now()->subMonth()->month)
-            ->whereYear('created_at', now()->subMonth()->year)
-            ->get();
-            
-        // Calculate totals for current month
-        $currentTotalRevenue = $currentMonthOrders->sum('price');
-        $currentCompletedCount = $currentMonthOrders->where('status', 'Complete')->count();
-        $currentPendingCount = $currentMonthOrders->whereIn('status', ['Scheduled', 'In Progress'])->count();
-        $currentAvgPrice = $currentMonthOrders->count() > 0 
-            ? $currentTotalRevenue / $currentMonthOrders->count() 
-            : 0;
-            
-        // Calculate totals for previous month
-        $previousTotalRevenue = $previousMonthOrders->sum('price');
-        $previousCompletedCount = $previousMonthOrders->where('status', 'Complete')->count();
-        $previousPendingCount = $previousMonthOrders->whereIn('status', ['Scheduled', 'In Progress'])->count();
-        $previousAvgPrice = $previousMonthOrders->count() > 0 
-            ? $previousTotalRevenue / $previousMonthOrders->count() 
-            : 0;
-            
-        // Calculate percentage changes
-        $revenueChange = $previousTotalRevenue > 0 
-            ? (($currentTotalRevenue - $previousTotalRevenue) / $previousTotalRevenue) * 100 
-            : 0;
-            
-        $completedChange = $previousCompletedCount > 0 
-            ? (($currentCompletedCount - $previousCompletedCount) / $previousCompletedCount) * 100 
-            : 0;
-            
-        $pendingChange = $previousPendingCount > 0 
-            ? (($currentPendingCount - $previousPendingCount) / $previousPendingCount) * 100 
-            : 0;
-            
-        $avgPriceChange = $previousAvgPrice > 0 
-            ? (($currentAvgPrice - $previousAvgPrice) / $previousAvgPrice) * 100 
-            : 0;
-            
-        // Format the stats array
-        $stats = [
-            [
-                'name' => 'Total Revenue',
-                'value' => '$' . number_format($currentTotalRevenue, 2),
-                'change' => ($revenueChange >= 0 ? '+' : '') . number_format($revenueChange, 2) . '%',
-                'changeType' => $revenueChange >= 0 ? 'positive' : 'negative'
-            ],
-            [
-                'name' => 'Completed Orders',
-                'value' => $currentCompletedCount,
-                'change' => ($completedChange >= 0 ? '+' : '') . number_format($completedChange, 2) . '%',
-                'changeType' => $completedChange >= 0 ? 'positive' : 'negative'
-            ],
-            [
-                'name' => 'Pending Orders',
-                'value' => $currentPendingCount,
-                'change' => ($pendingChange >= 0 ? '+' : '') . number_format($pendingChange, 2) . '%',
-                'changeType' => $pendingChange <= 0 ? 'positive' : 'negative' // Less pending is positive
-            ],
-            [
-                'name' => 'Average Price',
-                'value' => '$' . number_format($currentAvgPrice, 2),
-                'change' => ($avgPriceChange >= 0 ? '+' : '') . number_format($avgPriceChange, 2) . '%',
-                'changeType' => $avgPriceChange >= 0 ? 'positive' : 'negative'
-            ]
-        ];
-        
-        return response()->json($stats);
-    } catch (\Exception $e) {
-        \Log::error('Error calculating work order stats: ' . $e->getMessage());
-        return response()->json([
-            ['name' => 'Error', 'value' => 'Could not load stats', 'change' => '', 'changeType' => 'neutral']
-        ], 500);
+            return response()->json($stats);
+        } catch (\Exception $e) {
+            \Log::error('Error calculating work order stats: ' . $e->getMessage());
+            return response()->json([
+                ['name' => 'Error', 'value' => 'Could not load stats', 'change' => '', 'changeType' => 'neutral']
+            ], 500);
+        }
     }
-}
 
 /**
  * Search for work orders based on the query
@@ -889,6 +899,85 @@ public function checkWorkOrderExists(Request $request)
     $exists = WorkOrder::where('title', 'like', '%' . $workOrderNumber . '%')->exists();
 
     return response()->json(['exists' => $exists]);
+}
+
+public function archive(WorkOrder $workOrder)
+{
+    try {
+        DB::beginTransaction();
+        
+        // Update the work order status and archived flag
+        $workOrder->update([
+            'status' => 'Archived',
+            'archived' => true,
+            'archived_at' => now()
+        ]);
+        
+        DB::commit();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Work order archived successfully'
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error archiving work order: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to archive work order: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Update the hours for the specified work order.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function updateHours(Request $request, $id)
+{
+    $workOrder = WorkOrder::findOrFail($id);
+    
+    $request->validate([
+        'hours' => 'nullable|numeric|min:0',
+    ]);
+    
+    $workOrder->hours = $request->hours;
+    $workOrder->save();
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Hours updated successfully',
+        'hours' => $workOrder->hours
+    ]);
+}
+
+/**
+ * Update the address for the specified work order.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function updateAddress(Request $request, $id)
+{
+    $workOrder = WorkOrder::findOrFail($id);
+    
+    $request->validate([
+        'address' => 'nullable|string|max:255',
+    ]);
+    
+    $workOrder->address = $request->address;
+    $workOrder->save();
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Address updated successfully',
+        'address' => $workOrder->address
+    ]);
 }
 
 }

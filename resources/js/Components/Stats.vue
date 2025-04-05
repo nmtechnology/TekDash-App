@@ -74,12 +74,12 @@
         
         <dl v-else class="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div 
-            v-for="stat in stats" 
+            v-for="stat in combinedStats" 
             :key="stat.name" 
             class="glass-card flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 px-6 py-8 rounded-xl transition-all duration-300 hover:shadow-lg"
+            :title="stat.tooltip"  
           >
             <dt class="text-sm font-medium text-gray-600 dark:text-purple-300 flex items-center">
-              <span v-if="stat.icon" class="mr-2" v-html="stat.icon"></span>
               {{ stat.name }}
             </dt>
             <dd :class="[stat.changeType === 'negative' ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-500 dark:text-emerald-400', 'text-xs font-medium']">{{ stat.change }}</dd>
@@ -92,7 +92,7 @@
 </template>
     
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Define props with new collapsable and refresh options
 const props = defineProps({
@@ -107,6 +107,8 @@ const props = defineProps({
       { name: 'Revenue', value: '$0.00', change: '0%', changeType: 'neutral' },
       { name: 'Completed Work Orders', value: '0', change: '0%', changeType: 'neutral' },
       { name: 'Pending Work Orders', value: '0', change: '0%', changeType: 'neutral' },
+      { name: 'Archived Work Orders', value: '0', change: '0%', changeType: 'neutral' },
+      { name: 'Archived Orders Value', value: '$0.00', change: '0%', changeType: 'neutral' },
       { name: 'Average Price', value: '$0.00', change: '0%', changeType: 'neutral' },
     ]
   },
@@ -153,6 +155,85 @@ async function refreshData() {
     isLoading.value = false;
   }
 }
+
+// Computed property that combines revenue with archived orders value
+const combinedStats = computed(() => {
+  try {
+    // Create a deep copy of stats to avoid mutation issues
+    let modifiedStats = JSON.parse(JSON.stringify(props.stats));
+    
+    const extractValue = (str) => {
+      if (!str) return 0;
+      // Remove currency symbols and separators
+      const numericValue = str.toString()
+        .replace(/[$€£¥]/g, '')
+        .replace(/,/g, '')
+        .replace(/\s/g, '')
+        .trim();
+      
+      const parsed = parseFloat(numericValue);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+    
+    // Update pending work orders count
+    const pendingItem = modifiedStats.find(s => s.name === 'Pending Work Orders');
+    if (pendingItem) {
+      // Find work orders with relevant statuses
+      const scheduledItem = props.stats.find(s => s.name === 'Scheduled Work Orders')?.value || '0';
+      const inProgressItem = props.stats.find(s => s.name === 'In Progress Work Orders')?.value || '0';
+      const partNeededItem = props.stats.find(s => s.name === 'Part Needed Work Orders')?.value || '0';
+      
+      // Sum all pending statuses
+      const totalPending = 
+        extractValue(scheduledItem) +
+        extractValue(inProgressItem) +
+        extractValue(partNeededItem);
+      
+      // Update the pending work orders value
+      const pendingIndex = modifiedStats.findIndex(s => s.name === 'Pending Work Orders');
+      if (pendingIndex !== -1) {
+        modifiedStats[pendingIndex] = {
+          ...modifiedStats[pendingIndex],
+          value: totalPending.toString(),
+          tooltip: `Scheduled: ${scheduledItem}, In Progress: ${inProgressItem}, Part Needed: ${partNeededItem}`
+        };
+      }
+    }
+    
+    // Handle revenue calculations as before
+    const revenueItem = modifiedStats.find(s => s.name === 'Revenue' || s.name.includes('Revenue'));
+    const archivedValueItem = modifiedStats.find(s => s.name === 'Archived Orders Value');
+    
+    if (revenueItem && archivedValueItem) {
+      const revenueValue = extractValue(revenueItem.value);
+      const archivedValue = extractValue(archivedValueItem.value);
+      const totalValue = revenueValue + archivedValue;
+      
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      });
+      
+      const revenueIndex = modifiedStats.findIndex(s => s.name === revenueItem.name);
+      if (revenueIndex !== -1) {
+        modifiedStats[revenueIndex] = {
+          ...modifiedStats[revenueIndex],
+          name: 'Total Revenue',
+          value: formatter.format(totalValue),
+          originalValue: revenueItem.value,
+          tooltip: `Active: ${revenueItem.value} + Archived: ${archivedValueItem.value}`
+        };
+      }
+    }
+    
+    console.log('Modified stats:', modifiedStats);
+    return modifiedStats;
+    
+  } catch (error) {
+    console.error("Error calculating combined stats:", error);
+    return props.stats;
+  }
+});
 </script>
 
 <style scoped>

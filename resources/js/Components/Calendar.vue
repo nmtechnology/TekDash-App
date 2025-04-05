@@ -1,12 +1,22 @@
 <template>
-  <div>
+  <div class="glass-container p-5 mb-6">
     <div class="flex justify-between items-center mb-4">
-      <button @click="toggleWeekends" class="px-4 py-2 rounded-md bg-gray-800 text-lime-400 border hover:bg-lime-500 hover:text-gray-900 transition-colors duration-200">
-        Toggle Weekends
-      </button>
-      <AddWorkorder class="text-lime-400" />
+      <div class="flex items-center gap-2">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+          Work Order Calendar
+        </h2>
+      </div>
+      <div class="flex gap-2">
+        <button @click="toggleWeekends" class="glass-button px-3 py-1 rounded text-white flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Toggle Weekends
+        </button>
+        <AddWorkorder class="px-3 py-1 rounded" />
+      </div>
     </div>
-    <div class="bg-gray-900 outline p-4 rounded-lg shadow glossy-section">
+    <div class="glass-card p-4 rounded-lg">
       <FullCalendar :options="calendarOptions">
         <!-- Custom event rendering as cards -->
         <template v-slot:eventContent="arg">
@@ -275,17 +285,17 @@ function getStatusText(status: string): string {
 function getStatusColor(status: string): string {
   switch (status?.toLowerCase()) {
     case 'complete':
-      return '#4ade80'; // green
+      return '#279c54'; // green
     case 'scheduled':
-      return '#3b82f6'; // blue
+      return '#223694'; // blue
     case 'in progress':
-      return '#f59e0b'; // amber
+      return '#b59023'; // amber
     case 'cancelled':
       return '#ef4444'; // red
     case 'part/return':
-      return '#8b5cf6'; // purple
+      return '#844ac4'; // purple
     default:
-      return '#64748b'; // slate
+      return '#844ac4'; // slate
   }
 }
 
@@ -587,4 +597,119 @@ body {
 }
 
 /* Your other existing styles... */
+
+/* Glass Morphism Styles */
+.glass-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  transition: all 0.3s ease;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  transition: all 0.3s ease;
+}
+
+.glass-button {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.glass-button:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .glass-container {
+    background: rgba(30, 30, 30, 0.3);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  }
+  
+  .glass-card {
+    background: rgba(30, 30, 30, 0.3);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  }
+  
+  .glass-button {
+    background: rgba(30, 30, 30, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .glass-button:hover {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: rgba(139, 92, 246, 0.4);
+  }
+}
+
+/* FullCalendar custom styles to match glass theme */
+.fc {
+  --fc-page-bg-color: transparent;
+  --fc-border-color: rgba(255, 255, 255, 0.1);
+  --fc-neutral-bg-color: rgba(255, 255, 255, 0.05);
+  --fc-list-event-hover-bg-color: rgba(139, 92, 246, 0.2);
+}
+
+.fc .fc-toolbar-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.fc .fc-button {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.fc .fc-button:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: rgba(139, 92, 246, 0.4);
+  border-color: rgba(139, 92, 246, 0.6);
+}
+
+.fc-theme-standard td, 
+.fc-theme-standard th {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.fc .fc-daygrid-day-number,
+.fc .fc-col-header-cell-cushion {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Event card specific styles */
+.event-card {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: transform 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
 </style>

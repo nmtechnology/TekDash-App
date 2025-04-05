@@ -1,8 +1,13 @@
 <template>
   <div>
-    <button @click="openCreateModal" class="btn text-lime-400 rounded-md hover:bg-lime-400 dark:hover:bg-lime-400 hover:text-gray-900 transition z-30">Add Work Order</button>
+    <button @click="openCreateModal" class="btn flex items-center gap-2 px-4 py-2 text-base transition-all duration-300">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Add Work Order
+    </button>
 
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
       <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full mt-4">
         <div class="glossy-header px-4 pt-5 pb-4">
           
@@ -28,7 +33,7 @@
         <div class="overflow-y-auto px-4 py-5 bg-gray-900 bg-opacity-90">
           <form @submit.prevent="submitForm">
             <div class="glossy-section mb-4">
-              <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label>
+              <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label><p class="text-sm text-white">Choose a customer from the dropdown menu below.</p>
               <select v-model="form.customer_id" id="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                 <option value="Advanced Project Solutions">Advanced Project Solutions</option>
                 <option value="Barrister Global Service Network">Barrister Global Service Network</option>
@@ -41,13 +46,11 @@
               </select>
             </div>
             
+            <h3 class="text-lime-400 text-lg font-medium mb-2">Title</h3>
             <!-- Work order title fields -->
-            <div class="glossy-section mb-4">
+            <div class="glossy-section mb-4"><p class="text-sm text-white">This section will generate a title for TekDash to find it in our system. Work order #'s cannot be used twice and the work order should have been duplicated if this is a return trip instead of creating a new work order. Location name is not an address, it is the name of the business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to look for a WalMart when driving. </p>
               <div class="flex flex-col md:flex-row md:gap-4">
-                <div class="mb-4 p-2 w-full">
-                  <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
-                  <input placeholder="Installation" type="text" v-model="workType" id="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                </div>
+                
                 <div class="mb-4 p-2 w-full">
                   <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
                   <div class="relative">
@@ -69,11 +72,46 @@
                     </div>
                   </div>
                 </div>
-                <div class="mb-4 p-2 w-full mr-1">
-                  <label for="location" class="block text-sm font-medium text-green-400">Location</label>
-                  <input placeholder="Boston, MA" type="text" v-model="location" id="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                
+                <div class="mb-4 p-2 w-full">
+                  <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
+                  <select v-model="workType" id="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                    <option value="" disabled>Select work type</option>
+                    <option value="CCTV">CCTV</option>
+                    <option value="ALARM">ALARM</option>
+                    <option value="CABLING">CABLING</option>
+                    <option value="POS">POS</option>
+                    <option value="INTERCOM">INTERCOM</option>
+                    <option value="FIRE">FIRE</option>
+                    <option value="ACCESS-CONTROL">ACCESS-CONTROL</option>
+                    <option value="TS">TS</option>
+                    <option value="ESTIMATE">ESTIMATE</option>
+                    <option value="WALK-THRU">WALK-THRU</option>
+                    <option value="MEETING">MEETING</option>
+                    <option value="APPT">APPT</option>
+                    <option value="PERSONAL-LEAVE">PERSONAL-LEAVE</option>
+                  </select>
                 </div>
               </div>
+                <div class="mb-4 p-2 w-full mr-1">
+                <label for="location" class="block text-sm font-medium text-green-400">Location/Business name</label>
+                <select v-model="location" id="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                  <option value="" disabled>Select business name</option>
+                  <option value="Chili's">Chili's</option>
+                  <option value="Brinks">Brinks</option>
+                  <option value="Chase">Chase</option>
+                  <option value="Dillard's">Dillard's</option>
+                  <option value="DutchBros">DutchBros</option>
+                  <option value="RaisingCaines">RaisingCaines</option>
+                  <option value="ChaseATM">ChaseATM</option>
+                  <option value="WalMart">WalMart</option>
+                  <option value="Target">Target</option>
+                  <option value="Whataburger">Whataburger</option>
+                  <option value="MisterCarwash">MisterCarwash</option>
+                  <option value="WellsFargo">WellsFargo</option>
+                  <option value="NewSite">NewSite</option>
+                </select>
+                </div>
               <!-- Preview of combined title -->
               <div>
                 <label class="block text-sm font-medium text-green-400">Generated Title</label>
@@ -84,10 +122,10 @@
             </div>
             
             <div class="glossy-section mb-4">
-              <label for="description" class="block text-sm font-medium text-green-400">Description</label>
+              <label for="description" class="block text-sm font-medium text-green-400">Service Description</label><p class="text-sm text-white">Enter the details of what was requested on the work order sent by the customer, here's a hint, you can copy and paste the description from the work orders into here which saves you time.</p>
               <textarea v-model="form.description" id="description" placeholder="What is the Field Technician doing onsite?" class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
             </div>
-            
+
             <div class="glossy-section mb-4">
               <label for="date_time" class="block text-sm font-medium text-green-400">Date Selection</label>
               
@@ -186,6 +224,34 @@
                 </button>
               </div>
             </div>
+
+            <!-- New address field -->
+            <div class="glossy-section mb-4">
+              <label for="address" class="block text-sm font-medium text-green-400">Work Site Address</label><p class="text-sm text-white">Enter the address for the site where the technician needs to be ON TIME!</p>
+              <input 
+                type="text" 
+                v-model="form.address" 
+                id="address" 
+                placeholder="Enter complete work site address" 
+                class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
+                required
+              >
+            </div>
+
+            <!-- New hours field -->
+            <div class="glossy-section mb-4">
+              <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label><p class="text-sm text-white">Enter the amount of hours approved by the customer, if we need more time onstie then we will call at that time to request the estimated hours to complete the WO. This is usually abour 2-4 hours for our first trip.</p>
+              <input 
+                type="number" 
+                v-model="form.hours" 
+                id="hours" 
+                step="0.5"
+                min="0"
+                placeholder="Enter number of hours" 
+                class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
+                required
+              >
+            </div>
             
             <div class="glossy-section mb-4">
               <label for="price" class="block text-sm font-medium text-green-400">Price</label>
@@ -279,11 +345,13 @@ export default {
         visit_dates: [],
         price: '120.00',
         status: 'Scheduled',
-        file_attachments: [], // Initialize as empty array
+        file_attachments: [],
         notes: '',
         progress: null,
-        user_id: '', // Initialize with empty string
+        user_id: '',
         users_name: '',
+        address: '', // Add address field
+        hours: '', // Add hours field
       }),
     };
   },
@@ -611,7 +679,7 @@ export default {
 }
 
 .btn-primary {
-  background-color: hsl(90, 100%, 50%);
+  background-color: hsl(262, 69%, 44%);
   color: white;
 }
 
@@ -625,11 +693,11 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .bg-white {
@@ -860,5 +928,37 @@ input, select, textarea {
 
 .cursor-not-allowed {
   cursor: not-allowed;
+}
+
+/* Update existing styles or add at the end */
+
+.glass-button {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.glass-button:hover {
+  background: rgba(139, 92, 246, 0.3); /* Purple color with transparency */
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  color: rgb(255, 255, 255); /* Matching purple text color */
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .glass-button {
+    background: rgba(30, 30, 30, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .glass-button:hover {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: rgba(139, 92, 246, 0.4);
+  }
 }
 </style>

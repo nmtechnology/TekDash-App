@@ -87,12 +87,12 @@ const submit = () => {
                 <div class="block mt-5">
                     <label class="flex items-center">
                         <Checkbox v-model:checked="form.remember" name="remember" />
-                        <span class="ms-2 text-sm text-lime-400">Remember me</span>
+                        <span class="ms-2 text-sm text-white">Remember me</span>
                     </label>
                 </div>
 
                 <div class="mt-6">
-                    <PrimaryButton class="w-full justify-center py-3 glossy-btn" :class="{ 'opacity-75': form.processing }" :disabled="form.processing">
+                    <PrimaryButton class="w-full justify-center py-3 glossy-btn" :class="{ 'opacity-95': form.processing }" :disabled="form.processing">
                         <span v-if="form.processing">Processing...</span>
                         <span v-else>Log in</span>
                     </PrimaryButton>
@@ -102,7 +102,7 @@ const submit = () => {
             <div class="glossy-footer py-4 -mx-6 -mb-4 px-6 mt-6">
                 <div class="text-center text-sm">
                     <span class="text-green-400">Don't have an account?</span>
-                    <Link :href="route('register')" class="ml-1 text-lime-400 hover:text-lime-600 transition font-medium">
+                    <Link :href="route('register')" class="ml-1 text-white hover:text-lime-600 transition font-medium">
                         Sign up
                     </Link>
                 </div>
