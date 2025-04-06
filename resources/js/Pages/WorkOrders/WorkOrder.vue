@@ -392,13 +392,21 @@
               <ul role="list" class="mt-1 divide-y divide-gray-700 rounded-md border border-gray-700">
                 <li v-for="(attachment, index) in getAllAttachments()" :key="index" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
                   <div class="flex w-0 flex-1 items-center">
-                    <!-- Different icons for different file types -->
-                    <svg v-if="isPdfFile(attachment)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
-                    </svg>
+                    <!-- Thumbnail or icon for the attachment -->
+                    <div class="flex-shrink-0 h-10 w-10 mr-3">
+                      <img 
+                        v-if="isImageFile(attachment)" 
+                        :src="`/storage/${attachment}`" 
+                        alt="Attachment thumbnail" 
+                        class="h-full w-full object-cover rounded-md"
+                      />
+                      <svg v-else-if="isPdfFile(attachment)" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
+                      </svg>
+                    </div>
                     <span class="ml-2 flex-1 truncate text-white">{{ getFileName(attachment) }}</span>
                   </div>
                   <div class="ml-4 flex-shrink-0 flex space-x-2">
@@ -1354,31 +1362,28 @@ export default {
       isUploading.value = true;
       uploadProgress.value = 0;
 
-      // Create fresh FormData
-      const formData = new FormData();
-      // Add each file individually with numeric index to match Laravel's expectations
-      form.images.forEach((file, index) => {
-        // Use attachments[] format for Laravel's array validation
-        formData.append(`attachments[${index}]`, file);
-        console.log(`Adding file ${index}: ${file.name} (${file.type}, ${Math.round(file.size / 1024)} KB)`);
-      });
-
-      // Add work order ID explicitly to ensure it's properly associated
-      formData.append('work_order_id', props.workOrder.id);
-
       try {
-        // Get fresh CSRF token for this specific request
+        const formData = new FormData();
+        
+        // Log the files being uploaded
+        console.log('Files to upload:', form.images);
+        
+        // Append each file to FormData with the correct field name
+        form.images.forEach(file => {
+          formData.append('attachments[]', file);
+          console.log(`Appending file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+        });
+
+        // For debugging - log all entries in FormData
+        for (let pair of formData.entries()) {
+          console.log('FormData entry:', pair[0], pair[1]);
+        }
+
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         if (!csrfToken) {
           throw new Error('CSRF token not found. Please refresh the page and try again.');
         }
-        
-        // Add CSRF token to formdata as an additional safeguard
-        formData.append('_token', csrfToken);
-        
-        console.log('Uploading files to:', `/work-orders/${props.workOrder.id}/attachments`);
-        
-        // Make the request with progress tracking
+
         const response = await axios.post(
           `/work-orders/${props.workOrder.id}/attachments`,
           formData,
@@ -1386,106 +1391,48 @@ export default {
             headers: {
               'X-CSRF-TOKEN': csrfToken,
               'Accept': 'application/json',
-              // Do not set Content-Type for multipart/form-data
+              // Let the browser set the Content-Type with boundary
+              'Content-Type': 'multipart/form-data',
             },
-            withCredentials: true, // Include cookies for session authentication
+            // Prevent axios from trying to transform the data
+            transformRequest: [(data) => data],
             onUploadProgress: (progressEvent) => {
               const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
               uploadProgress.value = percentCompleted;
             },
-            timeout: 300000 // 5 minutes
           }
         );
-        
-        // Handle success response
+
         console.log('Upload response:', response.data);
-        
-        if (response.data && (response.data.success || response.data.paths || response.data.attachments)) {
-          // Handle attachments from any of the possible response formats
-          const attachments = response.data.attachments || response.data.paths || [];
-          
-          // Ensure we have arrays for storage
-          if (!Array.isArray(props.workOrder.images)) {
-            props.workOrder.images = [];
-          }
-          if (!Array.isArray(props.workOrder.file_attachments)) {
-            props.workOrder.file_attachments = [];
-          }
-          
-          // Add new attachments to both arrays
-          if (Array.isArray(attachments)) {
-            attachments.forEach(attachment => {
-              props.workOrder.images.push(attachment);
-              props.workOrder.file_attachments.push(attachment);
-            });
-          } else if (typeof attachments === 'string') {
-            props.workOrder.images.push(attachments);
-            props.workOrder.file_attachments.push(attachments);
-          }
-          
-          // Success - clear form and close upload interface
+
+        if (response.data.success) {
+          const attachments = response.data.attachments || [];
+          props.workOrder.images = [...(props.workOrder.images || []), ...attachments];
           form.images = [];
           editingField.value.images = false;
         } else {
-          // No clear success indicator
-          uploadError.value = response.data?.message || 'Upload may have failed. Please check attachments.';
+          uploadError.value = response.data.message || 'Upload failed. Please try again.';
         }
       } catch (error) {
-        console.error('Error uploading files:', error);
-        // Enhanced validation error handling
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+
         if (error.response?.status === 422 && error.response?.data?.errors) {
-          // Extract and format validation errors
           const validationErrors = error.response.data.errors;
-          console.error('Validation errors:', validationErrors);
-          
-          let errorMessages = [];
-          
-          // Check for common validation issues and provide helpful messages
-          Object.entries(validationErrors).forEach(([field, messages]) => {
-            // Extract index from field name like "attachments.0"
-            const fileIndex = field.match(/\d+$/);
-            const fileNumber = fileIndex ? parseInt(fileIndex[0]) + 1 : '';
-            const fileLabel = fileNumber ? `File #${fileNumber}` : field;
-            
-            messages.forEach(message => {
-              if (message.includes('max') || message.includes('size')) {
-                // File size error - get the specific max size from the error if possible
-                const sizeMatch = message.match(/\d+\s*(kb|mb|gb)/i);
-                const sizeLimit = sizeMatch ? sizeMatch[0].toUpperCase() : '8MB';
-                errorMessages.push(`${fileLabel}: File exceeds ${sizeLimit} limit`);
-              } else if (message.includes('mimes') || message.includes('type')) {
-                // Extract allowed mime types from error message if possible
-                const mimesMatch = message.match(/must be a file of type: ([^.]+)/i);
-                const allowedTypes = mimesMatch ? mimesMatch[1] : 'JPG, JPEG, PNG, GIF, PDF, HEIC, DOCX';
-                errorMessages.push(`${fileLabel}: Must be one of these types: ${allowedTypes}`);
-              } else {
-                // Other errors
-                errorMessages.push(`${fileLabel}: ${message}`);
-              }
-            });
+          const errorMessages = Object.entries(validationErrors).map(([field, messages]) => {
+            // Check if the error is related to attachments
+            const fieldName = field.replace('attachments.', 'File ');
+            return `${fieldName}: ${messages.join(', ')}`;
           });
-          
-          // Set a detailed user-friendly error message
-          if (errorMessages.length > 0) {
-            uploadError.value = errorMessages.join('\n');
-          } else {
-            uploadError.value = 'Files failed validation. Try with smaller files (under 8MB) or different file types.';
-          }
-        } else if (error.response?.status === 419) {
-          uploadError.value = 'Your session has expired. Please refresh the page and try again.';
-        } else if (error.response?.data?.message) {
-          uploadError.value = error.response.data.message;
+          uploadError.value = errorMessages.join('\n');
         } else {
-          uploadError.value = `Upload failed: ${error.message}`;
+          uploadError.value = error.response?.data?.message || 'An error occurred during the upload.';
         }
       } finally {
         isUploading.value = false;
-        // If no error, close the upload interface after a short delay
-        if (!uploadError.value) {
-          setTimeout(() => {
-            editingField.value.images = false;
-          }, 1000);
-        }
       }
     };
 

@@ -786,54 +786,6 @@ public function uploadAttachments(Request $request, WorkOrder $workOrder)
 }
 
 /**
- * Create an invoice for a work order and optionally archive it
- *
- * @param  int  $id
- * @return \Illuminate\Http\JsonResponse
- */
-public function createInvoice(Request $request, $id)
-{
-    try {
-        // Find the work order
-        $workOrder = WorkOrder::findOrFail($id);
-        
-        // Check if work order is already completed
-        if ($workOrder->status !== 'Complete') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only completed work orders can be invoiced.'
-            ], 400);
-        }
-        
-        // Create the invoice in QuickBooks
-        // Replace with your actual QuickBooks integration code
-        $invoiceId = $this->createQuickBooksInvoice($workOrder);
-        
-        // Archive the work order if requested
-        if ($request->has('archive') && $request->archive === true) {
-            // Move to archived status or table as per your application logic
-            $workOrder->archived = true;
-            $workOrder->invoice_id = $invoiceId; // Save the QuickBooks invoice ID
-            $workOrder->save();
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Invoice created successfully',
-            'invoice_id' => $invoiceId
-        ]);
-    } catch (\Exception $e) {
-        // Log the error for debugging
-        \Log::error('Invoice creation failed: ' . $e->getMessage());
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to create invoice: ' . $e->getMessage()
-        ], 500);
-    }
-}
-
-/**
  * Create an invoice in QuickBooks
  * 
  * @param WorkOrder $workOrder
@@ -957,6 +909,28 @@ public function updateAddress(Request $request, $id)
         'success' => true,
         'message' => 'Address updated successfully',
         'address' => $workOrder->address
+    ]);
+}
+
+public function createInvoice($id)
+{
+    $workOrder = WorkOrder::find($id);
+
+    if (!$workOrder) {
+        return response()->json(['message' => 'Work order not found'], 404);
+    }
+
+    // Logic to create an invoice
+    $invoice = Invoice::create([
+        'work_order_id' => $workOrder->id,
+        'amount' => $workOrder->price,
+        // Add other necessary fields
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'invoiceId' => $invoice->id,
+        'message' => 'Invoice created successfully'
     ]);
 }
 

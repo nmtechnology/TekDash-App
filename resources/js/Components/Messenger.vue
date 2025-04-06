@@ -2,7 +2,11 @@
   <div class="messenger mt-2 bg-gray-800 rounded-lg border border-gray-700">
     <!-- Messages list -->
     <div class="messages p-4 space-y-4 max-h-96 overflow-y-auto">
-      <div class="chat chat-start" v-for="note in notes" :key="note.id">
+      <div 
+        class="chat chat-start" 
+        v-for="note in notes" 
+        :key="note.id"
+      >
         <!-- User avatar - Always show initials for consistent UI -->
         <div class="chat-image">
           <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700 mask mask-hexagon">
@@ -13,7 +17,10 @@
         </div>
         
         <!-- Message content as post-it note -->
-        <div class="chat-bubble post-it-note">
+        <div 
+          class="chat-bubble post-it-note" 
+          :class="note.user_id === userId ? 'bg-blue-400' : 'bg-yellow-300'"
+        >
           <!-- Fake pin/tack for post-it note -->
           <div class="post-it-pin"></div>
           <p class="message-text">{{ note.text }}</p>
@@ -99,6 +106,7 @@ import { format } from 'date-fns';
 import axios from 'axios';
 // Remove the Inertia import
 import EmojiPicker from './EmojiPicker.vue';
+
 
 export default {
   components: {

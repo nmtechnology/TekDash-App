@@ -199,7 +199,7 @@ export default {
     }
   },
   
-  emits: ['close', 'view-work-order', 'invoice-created', 'update-archived-count'],
+  emits: ['close', 'view-work-order', 'invoice-created'],
   
   setup(props, { emit }) {
     const mounted = ref(false);
@@ -268,21 +268,19 @@ export default {
       try {
         const response = await axios.get('/archived-work-orders');
         await nextTick();
-        // Process orders and emit total count
+        // Add debug logging
+        console.log('Raw orders:', response.data);
         archivedOrders.value = (response.data || [])
           .map(order => {
             const processed = processWorkOrder(order);
+            console.log('Processed order:', processed);
             return processed;
           })
           .filter(Boolean);
-        
-        // Emit the count immediately after loading
-        emit('update-archived-count', archivedOrders.value.length);
       } catch (err) {
         error.value = 'Failed to load archived orders. Please try again.';
         console.error('Failed to load archived orders:', err);
         archivedOrders.value = [];
-        emit('update-archived-count', 0);
       } finally {
         loading.value = false;
       }
@@ -347,6 +345,7 @@ export default {
       
       try {
         const response = await axios.post(`/work-orders/${order.id}/create-invoice`);
+        
         if (response.data.success) {
           // Remove from archived orders if needed
           archivedOrders.value = archivedOrders.value.filter(o => o.id !== order.id);
@@ -355,10 +354,23 @@ export default {
             invoiceId: response.data.invoiceId,
             message: response.data.message
           });
+        } else {
+          throw new Error(response.data.message || 'Unknown error occurred while creating the invoice');
         }
       } catch (err) {
-        console.error('Failed to create invoice:', err);
-        error.value = 'Failed to create QuickBooks invoice. Please try again.';
+        const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+        error.value = `Failed to create invoice: ${errorMessage}`;
+        
+        console.error('Failed to create invoice:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          message: err.message,
+          config: err.config, // Log the request configuration
+          url: err.config?.url, // Log the URL of the request
+          method: err.config?.method, // Log the HTTP method
+          headers: err.config?.headers // Log the request headers
+        });
       } finally {
         invocingId.value = null;
       }

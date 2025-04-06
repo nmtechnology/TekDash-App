@@ -364,6 +364,31 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
 
 <template>
   <AppLayout>
+    <div class="fixed mt-14 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
+      <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
+            Active Work Orders
+            <CurrentTime />
+          </h2>
+          <div class="flex space-x-4">
+            <TeamDropdown :teams="props.teams" />
+            <AddWorkorder />
+            <button 
+              @click="openArchivedModal"
+              class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+              View Archive
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rest of the existing template -->
     <div class="bg-gray-900/55 min-h-screen opacity-70 py-10 flex justify-center">
       <div class="w-full px-4">
         <div class="mt-40 flow-root">

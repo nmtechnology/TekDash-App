@@ -206,3 +206,6 @@ Route::post('/upload-signed-document', [WorkOrderController::class, 'uploadSigne
 
 // Check if work order exists
 Route::get('/check-work-order-exists', [WorkOrderController::class, 'checkWorkOrderExists']);
+
+// Add the missing route for creating invoices
+Route::post('/work-orders/{id}/create-invoice', [WorkOrderController::class, 'createInvoice']);

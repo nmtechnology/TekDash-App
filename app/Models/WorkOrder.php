@@ -43,6 +43,7 @@ class WorkOrder extends Model
         'archived_at' => 'datetime',
         'status' => 'string',
         'hours' => 'decimal:2',
+        'archived' => 'boolean',
     ];
 
     const STATUSES = [

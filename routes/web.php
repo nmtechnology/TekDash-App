@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\GroqController;
 use App\Http\Controllers\WorkOrderController;
-use App\Http\Controllers\QuickBooksController;
+use App\Http\Controllers\QuickBooksAuthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\DocumentController;
 
@@ -40,11 +40,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     // Work Orders (using resource route)
     Route::resource('work-orders', WorkOrderController::class);
     
-    // Replace the existing archive route with this one
-    Route::post('/work-orders/{workOrder}/archive', [WorkOrderController::class, 'archive'])
-        ->middleware(['auth', 'verified'])
-        ->name('work-orders.archive');
-
     // Additional work order routes
     Route::put('/api/work-orders/{id}', [WorkOrderController::class, 'update']);
 
@@ -244,14 +239,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             ], 500);
         }
     })->middleware(['auth']);
-
-    // Add this route for updating hours specifically
-    Route::post('/work-orders/{workOrder}/update-hours', [WorkOrderController::class, 'updateHours'])
-        ->name('work-orders.update-hours');
-
-    // Add this route for updating address specifically - add it near the other work-orders routes
-    Route::post('/work-orders/{workOrder}/update-address', [WorkOrderController::class, 'updateAddress'])
-        ->name('work-orders.update-address');
 });
 
 // QuickBooks Integration Routes
@@ -264,23 +251,13 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     
 });
 
-// QuickBooks Routes - Update these routes with proper class reference
-Route::middleware(['auth'])->group(function () {
-    // QuickBooks routes with proper namespace
-    Route::get('/quickbooks/authorize', [QuickBooksController::class, 'authorize'])->name('quickbooks.authorize');
-    Route::get('/quickbooks/callback', [QuickBooksController::class, 'callback'])->name('quickbooks.callback');
-    Route::post('/quickbooks/create-invoice', [QuickBooksController::class, 'createInvoice'])->name('quickbooks.create-invoice');
-    Route::get('/quickbooks/disconnect', [QuickBooksController::class, 'disconnect'])->name('quickbooks.disconnect');
-    Route::get('/quickbooks/connection-status', [QuickBooksController::class, 'connectionStatus'])->name('quickbooks.status');
+// QuickBooks Routes
+Route::prefix('quickbooks')->group(function () {
+    Route::get('/connect', 'QuickbooksController@connect')->name('quickbooks.connect');
+    Route::get('/callback', 'QuickbooksController@callback')->name('quickbooks.callback');
+    Route::get('/connection-status', 'QuickbooksController@connectionStatus')->name('quickbooks.status');
+    Route::post('/create-invoice', 'QuickbooksController@createInvoice')->name('quickbooks.create-invoice');
 });
-
-// Remove or comment out duplicate/old routes
-// Route::prefix('quickbooks')->group(function () {
-//     Route::get('/connect', 'QuickbooksController@connect')->name('quickbooks.connect');
-//     Route::get('/callback', 'QuickbooksController@callback')->name('quickbooks.callback');
-//     Route::get('/connection-status', 'QuickbooksController@connectionStatus')->name('quickbooks.status');
-//     Route::post('/create-invoice', 'QuickbooksController@createInvoice')->name('quickbooks.create-invoice');
-// });
 
 // Work Order Routes
 Route::post('/work-orders/{workOrder}/mark-invoiced', 'WorkOrderController@markInvoiced')->name('workOrders.markInvoiced');
@@ -300,12 +277,4 @@ Route::get('/csrf-token', function () {
 // Add this route to your existing routes
 Route::get('/csrf-token', function () {
     return response()->json(['csrfToken' => csrf_token()]);
-});
-
-Route::middleware(['auth'])->group(function () {
-    // QuickBooks routes
-    Route::get('/quickbooks/authorize', [QuickBooksController::class, 'authorize'])->name('quickbooks.authorize');
-    Route::get('/quickbooks/callback', [QuickBooksController::class, 'callback'])->name('quickbooks.callback');
-    Route::post('/quickbooks/create-invoice', [QuickBooksController::class, 'createInvoice'])->name('quickbooks.create-invoice');
-    Route::get('/quickbooks/disconnect', [QuickBooksController::class, 'disconnect'])->name('quickbooks.disconnect');
 });
