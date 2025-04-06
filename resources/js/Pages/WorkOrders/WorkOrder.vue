@@ -423,7 +423,7 @@
                     <button 
                       v-if="$page.props.auth.user && $page.props.auth.user.role !== 'guest'"
                       @click="deleteAttachment(attachment)" 
-                      class="text-red-500 hover:bg-red-400 hover:text-gray-900 btn rounded p-1 outline"
+                      class="text-red-500 hover:bg-red-400 hover:text-gray-900 btn rounded"
                     >
                       Delete
                     </button>

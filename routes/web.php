@@ -239,6 +239,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             ], 500);
         }
     })->middleware(['auth']);
+
+    Route::post('/work-orders/{workOrder}/archive', [WorkOrderController::class, 'archive'])
+        ->name('work-orders.archive');
 });
 
 // QuickBooks Integration Routes

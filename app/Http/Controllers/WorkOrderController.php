@@ -836,25 +836,15 @@ public function checkWorkOrderExists(Request $request)
 public function archive(WorkOrder $workOrder)
 {
     try {
-        DB::beginTransaction();
-        
-        // Update the work order status and archived flag
-        $workOrder->update([
-            'status' => 'Archived',
-            'archived' => true,
-            'archived_at' => now()
-        ]);
-        
-        DB::commit();
-        
+        $workOrder->archived = true;
+        $workOrder->archived_at = now();
+        $workOrder->save();
+
         return response()->json([
             'success' => true,
-            'message' => 'Work order archived successfully'
+            'message' => 'Work order has been archived successfully.'
         ]);
     } catch (\Exception $e) {
-        DB::rollBack();
-        \Log::error('Error archiving work order: ' . $e->getMessage());
-        
         return response()->json([
             'success' => false,
             'message' => 'Failed to archive work order: ' . $e->getMessage()
