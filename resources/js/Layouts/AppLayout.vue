@@ -176,7 +176,7 @@ function logout() {
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                                     </svg>
-                                    <span></span>
+                                    <span>Dashboard</span>
                                 </NavLink>
                             </div>
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
@@ -200,7 +200,7 @@ function logout() {
                                         </button>
 
                                         <span v-else class="inline-flex rounded-md">
-                                            <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md outline text-lime-400 hover:bg-lime-400 hover:text-gray-900 focus:outline-none focus:bg-lime-400 active:bg-gray-900 active:text-gray-900 transition ease-in-out duration-150 glossy-btn">
+                                            <button type="button" class="inline-flex btn items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md outline text-lime-400 hover:bg-lime-400 hover:text-gray-900 focus:outline-none focus:bg-lime-400 active:bg-gray-900 active:text-gray-900 transition ease-in-out duration-150 glossy-btn">
                                                 {{ $page.props.auth.user.name }}
 
                                                 <svg class="ms-2 -me-0.5 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -285,17 +285,17 @@ function logout() {
                     </div>
 
                     <!-- Responsive Settings Options -->
-                    <div class="pt-4 pb-1 border-t border-gray-200">
+                    <div class="pt-4 pb-">
                         <div class="flex items-center px-4">
                             <div v-if="$page.props.jetstream.managesProfilePhotos" class="shrink-0 me-3">
                                 <img class="size-10 rounded-full object-cover" :src="$page.props.auth.user.profile_photo_url" :alt="$page.props.auth.user.name">
                             </div>
 
                             <div>
-                                <div class="font-medium text-base text-gray-300">
+                                <div class="font-medium text-base text-lime-400">
                                     {{ $page.props.auth.user.name }}
                                 </div>
-                                <div class="font-medium text-sm text-gray-400">
+                                <div class="font-medium text-sm text-gray-800">
                                     {{ $page.props.auth.user.email }}
                                 </div>
                             </div>
@@ -448,8 +448,8 @@ function logout() {
   height: 30px;
   background: radial-gradient(
     circle,
-    rgba(243, 244, 246, 0.4) 0%,
-    rgba(243, 244, 246, 0.1) 40%,
+    rgba(1, 13, 38, 0.4) 0%,
+    rgba(24, 53, 112, 0.1) 40%,
     transparent 70%
   );
   border-radius: 50%;
@@ -557,15 +557,14 @@ body {
 
 /* Button styling to match the glossy theme */
 .glossy-btn {
-  background: linear-gradient(135deg, rgba(243, 244, 246, 0.2), rgba(229, 231, 235, 0.1));
+  background: linear-gradient(135deg, rgb(25, 29, 37), rgb(25, 29, 40));
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(243, 244, 246, 0.3);
   transition: all 0.3s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .glossy-btn:hover {
-  background: linear-gradient(135deg, rgba(243, 244, 246, 0.3), rgba(229, 231, 235, 0.2));
+  background: linear-gradient(135deg, rgb(25, 29, 37), rgba(229, 231, 235, 0.2));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(243, 244, 246, 0.4);
 }

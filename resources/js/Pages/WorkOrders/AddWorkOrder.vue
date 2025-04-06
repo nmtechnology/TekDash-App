@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button @click="openCreateModal" class="btn flex items-center gap-2 px-4 py-2 text-base transition-all duration-300">
+    <button @click="openCreateModal" class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
@@ -195,27 +195,31 @@
 
               <!-- Multiple date selection -->
               <div v-if="dateSelectionType === 'multiple'" class="space-y-2">
-                <div v-for="(date, index) in selectedDates" :key="index" class="flex items-center">
+                <div v-for="(dateObj, index) in selectedDates" :key="index" class="flex items-center gap-2">
                   <input 
                     type="datetime-local" 
-                    v-model="selectedDates[index]" 
+                    v-model="dateObj.date"
                     class="glossy-content text-lime-400 mt-1 flex-grow rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
                     required
                   />
                   <button 
                     @click="removeDate(index)" 
                     type="button"
-                    class="ml-2 text-red-400 hover:text-red-300"
+                    class="text-red-400 hover:text-red-300 p-1"
+                    :disabled="selectedDates.length === 1"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
+                <div class="text-yellow-400 text-xs mt-2 p-2 bg-yellow-900 bg-opacity-30 rounded">
+                  <strong>Note:</strong> Selecting multiple dates will create separate work orders for each date.
+                </div>
                 <button 
                   @click="addNewDate" 
                   type="button"
-                  class="text-sm text-lime-400 hover:text-lime-300 flex items-center"
+                  class="text-sm text-lime-400 hover:text-lime-300 flex items-center mt-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -331,7 +335,7 @@ export default {
       workOrderNumber: '',
       location: '',
       dateSelectionType: 'single',
-      selectedDates: [new Date().toISOString().slice(0, 16)],
+      selectedDates: [{ date: new Date().toISOString().slice(0, 16) }],
       isSubmitting: false,
       checkingWorkOrder: false,
       duplicateWorkOrderFound: false,
@@ -426,7 +430,7 @@ export default {
       this.workOrderNumber = '';
       this.location = '';
       this.dateSelectionType = 'single';
-      this.selectedDates = [new Date().toISOString().slice(0, 16)];
+      this.selectedDates = [{ date: new Date().toISOString().slice(0, 16) }];
       // Set user ID from auth immediately when opening modal
       this.form.user_id = this.$page.props.auth.user.id;
       this.form.file_attachments = []; // Reset to empty array
@@ -449,14 +453,15 @@ export default {
         user_id: this.$page.props.auth.user.id,
       });
       
-      // Initialize date selection type based on work order data
-      if (workOrder.visit_dates && workOrder.visit_dates.length > 1) {
+      // Initialize date selection type and dates
+      if (workOrder.visit_dates && workOrder.visit_dates.length > 0) {
         this.dateSelectionType = 'multiple';
-        this.selectedDates = [...workOrder.visit_dates];
+        this.selectedDates = workOrder.visit_dates.map(date => ({ date }));
       } else if (workOrder.end_date) {
         this.dateSelectionType = 'range';
       } else {
         this.dateSelectionType = 'single';
+        this.selectedDates = [{ date: workOrder.date_time || new Date().toISOString().slice(0, 16) }];
       }
       
       this.showModal = true;
@@ -493,69 +498,126 @@ export default {
         if (this.dateSelectionType === 'single') {
           this.form.end_date = null;
           this.form.visit_dates = [this.form.date_time];
+          this.submitSingleWorkOrder();
         } 
         else if (this.dateSelectionType === 'range') {
           this.form.visit_dates = this.generateDateRange(this.form.date_time, this.form.end_date);
+          this.submitSingleWorkOrder();
         } 
         else if (this.dateSelectionType === 'multiple') {
-          const sortedDates = [...this.selectedDates].sort();
-          this.form.date_time = sortedDates[0] || '';
-          this.form.end_date = sortedDates[sortedDates.length - 1] || '';
-          this.form.visit_dates = sortedDates;
-        }
-        
-        if (this.isSubmitting) return; // Prevent multiple submissions
-        this.isSubmitting = true;
-        
-        // Always use post() directly with the form instance for proper file handling
-        if (this.mode === 'create') {
-          this.form.post('/work-orders', {
-            onSuccess: () => {
-              this.showModal = false;
-              this.resetForm();
-              const userName = this.$page.props.auth.user.name;
-              const timestamp = new Date().toLocaleString();
-              this.$emit('formSubmitted', `${userName} successfully created work order '${this.formattedTitle}' at ${timestamp}`);
-              this.isSubmitting = false;
-            },
-            onError: (errors) => {
-              console.error('Validation errors:', errors);
-              this.isSubmitting = false;
-              
-              // Check if we have a CSRF token error (419)
-              if (errors.response && errors.response.status === 419) {
-                this.refreshCsrfTokenAndRetry();
-              }
-            },
-            forceFormData: true
-          });
-        } else {
-          this.form.post(`/work-orders/${this.form.id}?_method=PUT`, {
-            onSuccess: () => {
-              this.showModal = false;
-              const userName = this.$page.props.auth.user.name;
-              const timestamp = new Date().toLocaleString();
-              this.$emit('formSubmitted', `${userName} successfully updated work order '${this.formattedTitle}' at ${timestamp}`);
-              this.isSubmitting = false;
-            },
-            onError: (errors) => {
-              console.error('Validation errors:', errors);
-              this.isSubmitting = false;
-              
-              // Check if we have a CSRF token error (419)
-              if (errors.response && errors.response.status === 419) {
-                this.refreshCsrfTokenAndRetry();
-              }
-              // Check if we have a CSRF token error (419)
-              if (errors.response && errors.response.status === 419) {
-                this.refreshCsrfTokenAndRetry();
-              }
-            },
-            forceFormData: true
-          });
+          // Filter out any empty dates
+          const validDates = this.selectedDates
+            .map(d => d.date)
+            .filter(date => date && date.trim() !== '')
+            .sort();
+
+          if (validDates.length === 0) {
+            alert('Please select at least one valid date');
+            return;
+          }
+
+          // Handle multiple dates as separate work orders
+          this.submitMultipleWorkOrders(validDates);
         }
       });
     },
+    
+    // New method to submit a single work order
+    submitSingleWorkOrder() {
+      if (this.isSubmitting) return; // Prevent multiple submissions
+      this.isSubmitting = true;
+      
+      // Always use post() directly with the form instance for proper file handling
+      if (this.mode === 'create') {
+        this.form.post('/work-orders', {
+          onSuccess: () => {
+            this.showModal = false;
+            this.resetForm();
+            const userName = this.$page.props.auth.user.name;
+            const timestamp = new Date().toLocaleString();
+            this.$emit('formSubmitted', `${userName} successfully created work order '${this.formattedTitle}' at ${timestamp}`);
+            this.isSubmitting = false;
+          },
+          onError: (errors) => {
+            console.error('Validation errors:', errors);
+            this.isSubmitting = false;
+            
+            // Check if we have a CSRF token error (419)
+            if (errors.response && errors.response.status === 419) {
+              this.refreshCsrfTokenAndRetry();
+            }
+          },
+          forceFormData: true
+        });
+      } else {
+        this.form.post(`/work-orders/${this.form.id}?_method=PUT`, {
+          onSuccess: () => {
+            this.showModal = false;
+            const userName = this.$page.props.auth.user.name;
+            const timestamp = new Date().toLocaleString();
+            this.$emit('formSubmitted', `${userName} successfully updated work order '${this.formattedTitle}' at ${timestamp}`);
+            this.isSubmitting = false;
+          },
+          onError: (errors) => {
+            console.error('Validation errors:', errors);
+            this.isSubmitting = false;
+            
+            // Check if we have a CSRF token error (419)
+            if (errors.response && errors.response.status === 419) {
+              this.refreshCsrfTokenAndRetry();
+            }
+          },
+          forceFormData: true
+        });
+      }
+    },
+    
+    // New method to submit multiple work orders
+    async submitMultipleWorkOrders(dates) {
+      if (this.isSubmitting) return;
+      this.isSubmitting = true;
+
+      try {
+        const totalDates = dates.length;
+        let successCount = 0;
+
+        for (let i = 0; i < dates.length; i++) {
+          const date = dates[i];
+
+          // Prepare the form data for this work order
+          const formData = {
+            customer_id: this.form.customer_id,
+            title: `${this.formattedTitle} (${new Date(date).toLocaleDateString()})`,
+            description: this.form.description,
+            date_time: date,
+            end_date: null, // Ensure end_date is null for single-date work orders
+            address: this.form.address,
+            hours: this.form.hours,
+            price: this.form.price,
+            status: this.form.status,
+            user_id: this.form.user_id,
+          };
+
+          // Send the request to create the work order
+          await axios.post('/work-orders', formData);
+
+          successCount++;
+        }
+
+        // Close the modal and reset the form
+        this.showModal = false;
+        this.resetForm();
+        const userName = this.$page.props.auth.user.name;
+        const timestamp = new Date().toLocaleString();
+        this.$emit('formSubmitted', `${userName} successfully created ${successCount} work orders for '${this.formattedTitle}' at ${timestamp}`);
+      } catch (error) {
+        console.error('Error creating multiple work orders:', error);
+        alert('There was an error creating some work orders. Please check the input data and try again.');
+      } finally {
+        this.isSubmitting = false;
+      }
+    },
+    
     // Add a method to refresh CSRF token
     async refreshCsrfTokenAndRetry() {
       try {
@@ -602,7 +664,7 @@ export default {
       this.workOrderNumber = '';
       this.location = '';
       this.dateSelectionType = 'single';
-      this.selectedDates = [new Date().toISOString().slice(0, 16)];
+      this.selectedDates = [{ date: new Date().toISOString().slice(0, 16) }];
       this.form.file_attachments = []; // Reset to empty array
     },
     duplicateWorkOrder() {
@@ -631,13 +693,11 @@ export default {
     },
     // Functions for date selection
     addNewDate() {
-      this.selectedDates.push(new Date().toISOString().slice(0, 16));
+      this.selectedDates.push({ date: new Date().toISOString().slice(0, 16) });
     },
     removeDate(index) {
-      this.selectedDates.splice(index, 1);
-      // Always keep at least one date
-      if (this.selectedDates.length === 0) {
-        this.addNewDate();
+      if (this.selectedDates.length > 1) {
+        this.selectedDates.splice(index, 1);
       }
     },
     // Generate array of dates between start and end for range selection

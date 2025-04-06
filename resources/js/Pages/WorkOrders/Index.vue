@@ -7,10 +7,9 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import WorkOrder from './WorkOrder.vue';
 import axios from 'axios';
 import CurrentTime from '@/Components/CurrentTime.vue';
-import ArchivedWorkOrdersModal from '@/Pages/WorkOrders/ArchivedWorkOrdersModal.vue';
-import ArchivedWorkOrderModal from './ArchivedWorkOrderModal.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
 import ArchivedWorkOrders from './ArchivedWorkOrders.vue';
+import Stats from '@/Components/Stats.vue';
 
 const { props } = usePage();
 const workOrders = ref(props.workOrders || []);
@@ -104,20 +103,14 @@ const prevPage = () => {
 };
 
 // Search logic
-const filteredWorkOrders = computed(() => {
-  if (!searchQuery.value) {
-    return workOrders.value;
-  }
-  return workOrders.value.filter(workOrder => {
-    return (
-      workOrder.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      workOrder.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      workOrder.status.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      workOrder.customer_id.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      getUserName(workOrder.user_id).toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-  });
-});
+const selectedStatFilter = ref(null);
+
+// filteredWorkOrders is now defined further down in the code
+// where it combines both status filters
+
+function handleFilterStats(statName) {
+  selectedStatFilter.value = statName === 'Total' ? null : statName.toLowerCase();
+}
 
 // Regular work order modal state
 const showWorkOrderModal = ref(false);
@@ -199,49 +192,234 @@ const viewArchivedWorkOrder = (workOrder) => {
   showWorkOrderModal.value = true;
   showArchived.value = false;
 };
+
+const openArchivedModal = () => {
+  showArchived.value = true;
+};
+
+const closeArchivedModal = () => {
+  showArchived.value = false;
+};
+
+// Update the filteredData computed property
+const filteredData = computed(() => {
+  const data = workOrders.value || [];
+  return [
+    {
+      name: 'Total',
+      stat: data.length || 0,
+      status: 'total'
+    },
+    {
+      name: 'Invoiced',
+      stat: data.filter(wo => wo?.status?.toLowerCase() === 'invoiced').length || 0,
+      status: 'invoiced'
+    },
+    {
+      name: 'Archived',
+      stat: data.filter(wo => wo?.status?.toLowerCase() === 'archived').length || 0, // Just count archived status
+      status: 'archived'
+    },
+    {
+      name: 'Scheduled',
+      stat: data.filter(wo => wo?.status?.toLowerCase() === 'scheduled').length || 0,
+      status: 'scheduled'
+    },
+    {
+      name: 'In Progress',
+      stat: data.filter(wo => wo?.status?.toLowerCase() === 'in progress').length || 0,
+      status: 'in_progress'
+    },
+    {
+      name: 'Part Needed',
+      stat: data.filter(wo => wo?.status?.toLowerCase() === 'part needed').length || 0,
+      status: 'part_needed'
+    },
+    {
+      name: 'Complete',
+      stat: data.filter(wo => wo?.status?.toLowerCase() === 'complete').length || 0,
+      status: 'complete'
+    },
+    {
+      name: 'Cancelled',
+      stat: data.filter(wo => wo?.status?.toLowerCase() === 'cancelled').length || 0,
+      status: 'cancelled'
+    }
+  ];
+});
+
+// Group work orders by base title (removing date information from parentheses)
+const groupedWorkOrders = computed(() => {
+  const grouped = {};
+  
+  workOrders.value.forEach(workOrder => {
+    // Extract base title without date part
+    let baseTitle = workOrder.title;
+    const dateMatch = baseTitle.match(/^(.+) \(\d{1,2}\/\d{1,2}\/\d{2,4}\)$/);
+    
+    if (dateMatch) {
+      baseTitle = dateMatch[1];
+    }
+    
+    if (!grouped[baseTitle]) {
+      grouped[baseTitle] = [];
+    }
+    
+    grouped[baseTitle].push(workOrder);
+  });
+  
+  return grouped;
+});
+
+const formatDateTime = (dateTime) => {
+  return new Date(dateTime).toLocaleString();
+};
+
+const openWorkOrder = (workOrder) => {
+  selectedWorkOrder.value = workOrder;
+  showModal.value = true;
+};
+
+const statusOptions = [
+  { label: 'All', value: '' },
+  { label: 'Scheduled', value: 'scheduled' },
+  { label: 'In Progress', value: 'in progress' },
+  { label: 'Part Needed', value: 'part needed' },
+  { label: 'Complete', value: 'complete' },
+  { label: 'Cancelled', value: 'cancelled' },
+  { label: 'Archived', value: 'archived' },
+  { label: 'Invoiced', value: 'invoiced' }
+];
+
+const selectedStatus = ref('');
+
+// Merge the two filteredWorkOrders computeds into one
+const filteredWorkOrders = computed(() => {
+  let filtered = workOrders.value;
+
+  // Status filtering from dropdown
+  if (selectedStatus.value) {
+    filtered = filtered.filter(workOrder => 
+      workOrder.status?.toLowerCase() === selectedStatus.value.toLowerCase()
+    );
+  }
+  // Status filtering from stats component
+  else if (selectedStatFilter.value) {
+    filtered = filtered.filter(workOrder => 
+      workOrder.status?.toLowerCase() === selectedStatFilter.value.toLowerCase()
+    );
+  }
+
+  // Search query filtering
+  if (searchQuery.value) {
+    filtered = filtered.filter(workOrder => 
+      workOrder.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      workOrder.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      workOrder.customer_id?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      getUserName(workOrder.user_id)?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
+  }
+
+  return filtered;
+});
+
+// Add clearFilters function
+const clearFilters = () => {
+  selectedStatus.value = '';
+  selectedStatFilter.value = null;
+  searchQuery.value = '';
+  currentPage.value = 1;
+};
+
+// Add this computed property after the existing filteredWorkOrders computed
+const filteredGroupedWorkOrders = computed(() => {
+  const grouped = {};
+  
+  // Use filteredWorkOrders instead of workOrders.value
+  filteredWorkOrders.value.forEach(workOrder => {
+    let baseTitle = workOrder.title;
+    const dateMatch = baseTitle.match(/^(.+) \(\d{1,2}\/\d{1,2}\/\d{2,4}\)$/);
+    
+    if (dateMatch) {
+      baseTitle = dateMatch[1];
+    }
+    
+    if (!grouped[baseTitle]) {
+      grouped[baseTitle] = [];
+    }
+    
+    grouped[baseTitle].push(workOrder);
+  });
+  
+  return grouped;
+});
 </script>
 
 <template>
-  <AppLayout :title="'Active Work Orders'">
-    <template #header>
-      <div class="fixed -mt-5 top-2 sm:top-10 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
-        <div class="max-w-7xl mx-auto py-2 px-4 sm:px-2 lg:px-6">
-          <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-lime-400 mt-12 leading-tight">
-              Active Work Orders <CurrentTime />
-                <div class="flex space-x-4">
-                <TeamDropdown :teams="props.teams" />
-                <AddWorkorder />
-                
-                <button 
-                              @click="showArchived = true"
-                              class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                              </svg>
-                              View Archived
-                            </button>
-                </div>
-            </h2>
-          </div>
-        </div>
-      </div>
-    </template>
+  <AppLayout>
     <div class="bg-gray-900/55 min-h-screen opacity-70 py-10 flex justify-center">
       <div class="w-full px-4">
-        <div class="mt-4 sm:mt-0">
-          
-        </div>
         <div class="mt-40 flow-root">
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full py-2 align-middle px-2">
-              <div class="overflow-hidden border-b border-accent shadow sm:rounded-lg">
+              <div class="overflow-hidden border-b border-accent shadow sm:rounded-lg glass-container">
+                <div class="sm:mt-0">
+                  <Stats 
+                    :stats="[
+                      { name: 'Total', value: filteredData[0].stat.toString(), change: '', changeType: 'neutral' },
+                      { name: 'Invoiced', value: filteredData[1].stat.toString(), change: '', changeType: 'neutral' },
+                      { name: 'Archived', value: filteredData[2].stat.toString(), change: '', changeType: 'neutral' },
+                      { name: 'Scheduled', value: filteredData[3].stat.toString(), change: '', changeType: 'neutral' },
+                      { name: 'In Progress', value: filteredData[4].stat.toString(), change: '', changeType: 'neutral' },
+                      { name: 'Part Needed', value: filteredData[5].stat.toString(), change: '', changeType: 'neutral' },
+                      { name: 'Complete', value: filteredData[6].stat.toString(), change: '', changeType: 'neutral' },
+                      { name: 'Cancelled', value: filteredData[7].stat.toString(), change: '', changeType: 'neutral' }
+                    ]"
+                    :collapsable="true"
+                    title="Work Order Statistics"
+                    @filterStats="handleFilterStats"
+                  />
+                </div>
                 <div class="min-w-full">
-                  <table class="w-full divide-y divide-accent">
-                    <thead class="bg-gray-900 backdrop-blur-md opacity-95 z-50">
+                  <div class="px-4 py-3 flex items-center justify-between glass-header">
+                    <div class="flex items-center space-x-4">
+                      <!-- Search Input -->
+                      <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Search work orders..."
+                        class="px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-lime-500"
+                      />
+                      
+                      <!-- Status Filter Dropdown -->
+                      <select
+                        v-model="selectedStatus"
+                        class="px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-lime-500"
+                      >
+                        <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                          {{ option.label }}
+                        </option>
+                      </select>
+
+                      <!-- Clear Filters Button -->
+                      <button
+                        v-if="selectedStatus || searchQuery"
+                        @click="clearFilters"
+                        class="px-3 py-2 text-red-400 hover:text-red-300 focus:outline-none"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+
+                    <!-- Results Counter -->
+                    <div class="text-white">
+                      {{ filteredWorkOrders.length }} work order(s) found
+                    </div>
+                  </div>
+                  <table class="w-full divide-y divide-accent/10">
+                    <thead class="glass-header">
                       <tr>
-                        <th scope="col" class="sticky top-0 z-10 w-[15%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Actions</th>
+                        <!-- Removed Actions column -->
                         <th scope="col" class="sticky top-0 z-10 w-[25%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Title</th>
                         <th scope="col" class="sticky top-0 z-10 w-[15%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Status</th>
                         <th scope="col" class="sticky top-0 z-10 w-[20%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Scheduled Time</th>
@@ -249,41 +427,38 @@ const viewArchivedWorkOrder = (workOrder) => {
                         <th scope="col" class="sticky top-0 z-10 w-[10%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">User</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-accent bg-transparent">
-                      <tr v-for="(workOrder, index) in filteredWorkOrders" :key="index">
-                        <td class="relative py-4 px-4 text-sm font-medium">
-                          <div class="flex gap-2">
-                            <button @click="openModal(workOrder)" class="btn rounded px-2 py-1 text-yellow-400 hover:text-gray-900 hover:bg-yellow-400">
-                              View
-                            </button>
-                            <button @click="deleteWorkOrder(workOrder.id)" class="btn text-red-600 hover:text-gray-900 hover:bg-red-600 px-2 py-1 rounded">
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                        <td class="py-4 px-4 text-sm">
-                          <div class="font-medium text-white" :title="workOrder.title">{{ workOrder.title }}</div>
-                        </td>
-                        <td class="px-4 py-4 text-sm text-accent">
-                          <div class="flex flex-col">
-                            <div class="text-white mb-1">{{ workOrder.status }}</div>
-                            <div class="w-full bg-gray-700 rounded-full h-2.5">
-                              <div class="h-2.5 rounded-full" 
-                                   :class="getStatusColor(workOrder.status)"
-                                   :style="{ width: getStatusProgress(workOrder.status) + '%' }"></div>
+                    <tbody class="divide-y divide-accent/10 bg-transparent">
+                      <template v-for="(group, baseTitle) in filteredGroupedWorkOrders" :key="baseTitle">
+                        <!-- Show grouped work orders with a common base title -->
+                        <tr v-for="workOrder in group" :key="workOrder.id" @click="openWorkOrder(workOrder)" class="cursor-pointer hover:bg-gray-700">
+                          <!-- Removed Actions column -->
+                          <td class="py-4 px-4 text-sm">
+                            <div class="font-medium text-white" :title="workOrder.title">{{ workOrder.title }}</div>
+                            <div v-if="group.length > 1" class="text-xs text-gray-500">
+                              Part of a multi-day work order
                             </div>
-                          </div>
-                        </td>
-                        <td class="px-4 py-4 text-sm text-accent">
-                          <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
-                        </td>
-                        <td class="px-4 py-4 text-sm text-accent">
-                          <div class="text-white" :title="workOrder.customer_id">{{ workOrder.customer_id }}</div>
-                        </td>
-                        <td class="px-4 py-4 text-sm text-accent">
-                          <div class="text-white" :title="getUserName(workOrder.user_id)">{{ getUserName(workOrder.user_id) }}</div>
-                        </td>
-                      </tr>
+                          </td>
+                          <td class="px-4 py-4 text-sm text-accent">
+                            <div class="flex flex-col">
+                              <div class="text-white mb-1">{{ workOrder.status }}</div>
+                              <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                <div class="h-2.5 rounded-full" 
+                                     :class="getStatusColor(workOrder.status)"
+                                     :style="{ width: getStatusProgress(workOrder.status) + '%' }"></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="px-4 py-4 text-sm text-accent">
+                            <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
+                          </td>
+                          <td class="px-4 py-4 text-sm text-accent">
+                            <div class="text-white" :title="workOrder.customer_id">{{ workOrder.customer_id }}</div>
+                          </td>
+                          <td class="px-4 py-4 text-sm text-accent">
+                            <div class="text-white" :title="getUserName(workOrder.user_id)">{{ getUserName(workOrder.user_id) }}</div>
+                          </td>
+                        </tr>
+                      </template>
                     </tbody>
                   </table>
                 </div>
@@ -303,17 +478,10 @@ const viewArchivedWorkOrder = (workOrder) => {
           :users="users"
           @close="closeModal"
         />
-        <ArchivedWorkOrderModal
-          v-if="showArchivedWorkOrderModal"
-          :workOrder="archivedWorkOrder"
-          :invoiceId="archivedInvoiceId"
-          :message="archivedMessage"
-          :users="users"
-          @close="closeArchivedWorkOrderModal"
-        />
+        <!-- Remove or modify the ArchivedWorkOrderModal component usage -->
         <ArchivedWorkOrders 
-          v-if="showArchived"
-          @close="showArchived = false"
+          :is-open="showArchived"
+          @close="closeArchivedModal"
           @view-work-order="viewArchivedWorkOrder"
         />
       </div>
@@ -328,7 +496,27 @@ const viewArchivedWorkOrder = (workOrder) => {
   overflow-x: hidden;
 }
 
-/* Update existing styles */
+.glass-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.glass-header {
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-row {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
 .table-wrapper {
   overflow-y: auto;
   overflow-x: auto;
@@ -339,12 +527,30 @@ const viewArchivedWorkOrder = (workOrder) => {
 thead th {
   position: sticky;
   top: 0;
-  background: #1f2937;
   z-index: 1;
 }
 
 td {
   word-break: normal;
   white-space: normal;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .glass-container {
+    background: rgba(30, 30, 30, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  }
+  
+  .glass-header {
+    background: rgba(17, 24, 39, 0.95);
+  }
+  
+  .glass-row {
+    background: rgba(30, 30, 30, 0.2);
+  }
+  
+ 
 }
 </style>

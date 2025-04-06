@@ -244,7 +244,6 @@ onMounted(() => {
               
               <!-- Stats component -->
               <div v-else>
-                <Stats :stats="filteredData" />
                 <RevenueStats />
               </div>
               

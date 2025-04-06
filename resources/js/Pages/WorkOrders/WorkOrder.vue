@@ -534,30 +534,83 @@
         
         <!-- Footer buttons -->
         <div class="sm:flex sm:flex-row-reverse">
-          <!-- Replace the Create Invoice button with Archive Work Order button -->
+          <!-- Archive Work Order button - now using green color -->
           <button 
             @click="archiveWorkOrder" 
-            class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-purple-400 hover:text-gray-900 hover:bg-purple-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
+            :disabled="workOrder.status !== 'Complete'"
+            class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-green-400 hover:text-gray-900 hover:bg-green-400 font-medium sm:ml-3 sm:w-auto sm:text-sm"
+            :class="{
+              'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-green-400': workOrder.status !== 'Complete'
+            }"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
             </svg>
             Archive Work Order
           </button>
-          <!-- Updated duplicate button with disabled state when status is Complete -->
+          <!-- Duplicate button - now using purple color -->
           <button 
-            @click="duplicateWorkOrder" 
-            :disabled="workOrder.status === 'Complete'"
-            :class="{'opacity-50 cursor-not-allowed': workOrder.status === 'Complete'}"
-            class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-green-400 font-medium hover:bg-green-400 hover:text-black sm:ml-3 sm:w-auto sm:text-sm"
+            @click="duplicateWorkOrder($event)" 
+            :disabled="workOrder.status !== 'Part Needed'"
+            :class="[
+              'glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-purple-400 font-medium hover:bg-purple-400 hover:text-black sm:ml-3 sm:w-auto sm:text-sm',
+              { 'opacity-50 cursor-not-allowed': workOrder.status !== 'Part Needed' }
+            ]"
+            :title="workOrder.status !== 'Part Needed' ? 'Duplication is only available for work orders with Part Needed status' : 'Create a duplicate work order'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
             Duplicate
           </button>
-          <button @click="closeModal" class="glossy-btn btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-red-400 font-medium hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-            Close
+          <!-- Delete button (replacing close button) -->
+          <button 
+            @click="deleteWorkOrder" 
+            class="glossy-btn btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-red-400 font-medium hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add this modal for date selection -->
+  <div v-if="showDuplicateDateModal" class="fixed inset-0 z-[10002] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="cancelDuplicate"></div>
+    <div class="relative bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 glossy-card">
+      <h3 class="text-lg font-medium text-lime-400 mb-4">Select Date for Duplicate</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">New Work Order Date</label>
+          <input 
+            type="datetime-local" 
+            v-model="duplicateDate"
+            class="w-full rounded-md bg-gray-800 border-gray-700 text-white focus:border-lime-500 focus:ring-lime-500"
+          />
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button 
+            @click="cancelDuplicate"
+            class="px-4 py-2 text-sm text-red-400 hover:bg-red-400 hover:text-black rounded-md border border-red-400"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="confirmDuplicate"
+            class="px-4 py-2 text-sm text-lime-400 hover:bg-lime-400 hover:text-black rounded-md border border-lime-400 disabled:opacity-50"
+            :disabled="isDuplicating"
+          >
+            <div class="flex items-center">
+              <svg v-if="isDuplicating" class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ isDuplicating ? 'Duplicating...' : 'Duplicate' }}</span>
+            </div>
           </button>
         </div>
       </div>
@@ -582,6 +635,7 @@ export default {
     PdfViewer, 
     NetworkStatusIndicator, 
   },
+  emits: ['close', 'work-order-archived'],  // Add this line to declare emits
   props: {
     workOrder: {
       type: Object,
@@ -597,26 +651,228 @@ export default {
     },
   },
   setup(props, { emit }) {
-    // Add error handling for missing or invalid props
+    // Improved error handling for missing or invalid props
     if (!props.workOrder) {
       console.error('WorkOrder prop is missing or invalid.');
+      return {
+        closeModal: () => emit('close'),
+        // Provide minimal required return values to prevent errors
+        getStatusClasses: () => 'bg-gray-800 text-gray-300 ring-gray-700',
+        workOrder: {},
+        form: useForm({}),
+        formatDate: () => 'Invalid Date',
+        getProgressBarColor: () => 'bg-gray-600',
+        getStatusProgress: () => 0,
+        VALID_STATUSES: [],
+        // Add empty functions for all methods used in the template
+        startEditing: () => {},
+        saveField: () => {},
+        getAllAttachments: () => [],
+        getUserName: () => 'Unknown User',
+        getUserAvatar: () => '/images/avatars/default.png',
+        handleImageUpload: () => {}, // Add missing function
+        isPdfFile: () => false,
+        isImageFile: () => false,
+        isDocumentFile: () => false,
+        getFileName: () => '',
+        handlePreviewAttachment: () => {},
+        closePreview: () => {},
+        formatMultipleDates: () => '',
+        formatDateShort: () => '', 
+        dateSelectionType: ref('single'),
+        selectedDates: ref([]),
+        addNewDate: () => {},
+        removeDate: () => {},
+        archiveWorkOrder: () => {},
+        deleteAttachment: () => {},
+        isUploading: ref(false),
+        uploadProgress: ref(0),
+        uploadError: ref(''),
+        showDuplicateDateModal: ref(false),
+        duplicateDate: ref(''),
+        isDuplicating: ref(false),
+        
+        duplicateWorkOrder: (event) => {
+          console.log('Duplicate button clicked');
+          console.log('Current status:', props.workOrder.status);
+          
+          // Prevent default if it's a button click
+          if (event) {
+            event.preventDefault();
+          }
+
+          // Check if status is Part Needed
+          if (props.workOrder.status !== 'Part Needed') {
+            console.log('Wrong status - cannot duplicate');
+            return;
+          }
+          
+          // Set initial date value to tomorrow
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          duplicateDate.value = tomorrow.toISOString().slice(0, 16);
+          
+          console.log('Opening duplicate modal with date:', duplicateDate.value);
+          showDuplicateDateModal.value = true;
+        },
+
+        cancelDuplicate: () => {
+          showDuplicateDateModal.value = false;
+          duplicateDate.value = '';
+        },
+
+        confirmDuplicate: async () => {
+          if (isDuplicating.value) return;
+          
+          isDuplicating.value = true;
+          
+          try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!csrf) {
+              throw new Error('CSRF token not found');
+            }
+
+            // Ensure we have a valid date
+            if (!duplicateDate.value) {
+              throw new Error('Please select a valid date');
+            }
+
+            // Create a copy of the work order data with the new date
+            const newWorkOrderData = {
+              customer_id: props.workOrder.customer_id,
+              title: props.workOrder.title,
+              description: props.workOrder.description,
+              date_time: duplicateDate.value, // Use the selected date
+              status: 'Scheduled', // Always set to Scheduled
+              price: props.workOrder.price,
+              user_id: props.workOrder.user_id,
+              user_name: props.workOrder.user_name,
+              address: props.workOrder.address,
+              hours: props.workOrder.hours,
+              visit_dates: [duplicateDate.value], // Include as visit_dates array too
+              original_id: props.workOrder.id // Reference to original
+            };
+
+            console.log('Sending duplicate data with date:', duplicateDate.value);
+            
+            const response = await axios.post(
+              `/work-orders/${props.workOrder.id}/duplicate`,
+              newWorkOrderData,
+              {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrf
+          }
+              }
+            );
+
+            if (response.data.success) {
+              console.log('Duplication successful:', response.data);
+              showDuplicateDateModal.value = false;
+              alert('Work order duplicated successfully!');
+              window.location.reload();
+            } else {
+              throw new Error(response.data.message || 'Failed to duplicate work order');
+            }
+          } catch (error) {
+            console.error('Error duplicating work order:', error);
+            alert(error.response?.data?.message || error.message || 'Failed to duplicate work order');
+          } finally {
+            isDuplicating.value = false;
+          }
+        },
+        duplicateWorkOrder: () => {},
+        cancelDuplicate: () => {},
+        confirmDuplicate: () => {},
+      };
     }
 
     // Add this near the top of setup(), with other refs
     const showPdfViewer = ref(false);
+    const previewAttachment = ref(null);
+    const isUploading = ref(false);
+    const uploadProgress = ref(0);
+    const uploadError = ref('');
+    const showDuplicateDateModal = ref(false);
+    const duplicateDate = ref('');
+    const isDuplicating = ref(false);
     
-    // Configure Axios - Add this at the top of setup()
-    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    axios.defaults.withCredentials = true;
-    axios.defaults.headers.common = {
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRF-TOKEN': csrf,
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
+    // Configure Axios - Add this at the top of setup() with better error handling
+    let csrf;
+    try {
+      csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (!csrf) {
+        console.warn('CSRF token not found in the document. Some features might not work correctly.');
+      }
+      
+      axios.defaults.withCredentials = true;
+      axios.defaults.headers.common = {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': csrf || '',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+    } catch (error) {
+      console.error('Error setting up Axios defaults:', error);
+    }
+
+    // Define closePreview function here to avoid reference errors
+    const closePreview = () => {
+      previewAttachment.value = null;
+    };
+    
+    // Helper functions for file types - defined early to avoid reference errors
+    const isPdfFile = (filename) => {
+      if (!filename) return false;
+      return filename.toLowerCase().endsWith('.pdf');
     };
 
-    // ...existing code...
+    const isImageFile = (filename) => {
+      if (!filename) return false;
+      const lowerFilename = filename.toLowerCase();
+      return lowerFilename.endsWith('.jpg') || 
+             lowerFilename.endsWith('.jpeg') || 
+             lowerFilename.endsWith('.png') || 
+             lowerFilename.endsWith('.gif') || 
+             lowerFilename.endsWith('.webp') ||
+             lowerFilename.endsWith('.heic');
+    };
 
+    const isDocumentFile = (filename) => {
+      if (!filename) return false;
+      const lowerFilename = filename.toLowerCase();
+      return lowerFilename.endsWith('.docx') ||
+             lowerFilename.endsWith('.doc');
+    };
+    
+    const getFileName = (path) => {
+      if (!path) return '';
+      return path.split('/').pop();
+    };
+    
+    const handlePreviewAttachment = (attachment) => {
+      if (isImageFile(attachment) || isPdfFile(attachment) || isDocumentFile(attachment)) {
+        previewAttachment.value = attachment;
+      }
+    };
+    
+    // ADD THE MISSING handleImageUpload FUNCTION
+    const handleImageUpload = (event) => {
+      try {
+        if (!event.target.files || event.target.files.length === 0) {
+          console.warn('No files selected in handleImageUpload');
+          return;
+        }
+        
+        form.images = Array.from(event.target.files);
+        console.log(`Selected ${form.images.length} files for upload`);
+      } catch (error) {
+        console.error('Error in handleImageUpload:', error);
+        alert('Failed to process selected files. Please try again.');
+      }
+    };
+    
     // Enhanced getStatusClasses function to match the color scheme in the example
     const getStatusClasses = (status) => {
       if (!status) return 'bg-gray-800 text-gray-300 ring-gray-700';
@@ -853,7 +1109,7 @@ export default {
 
       try {
         // Get fresh CSRF token
-        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         
         // Use web route instead of API route with explicit headers
         const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
@@ -980,118 +1236,104 @@ export default {
     
     // ... rest of existing functions ...
 
-    const duplicateWorkOrder = async (event) => {
-      const button = event.target.closest('button');
-      const originalText = button.innerHTML;
+    // Add these new refs near the top with other refs
+    
+    // Replace the existing duplicateWorkOrder function with this version
+    const duplicateWorkOrder = (event) => {
+      console.log('Duplicate button clicked');
+      console.log('Current status:', props.workOrder.status);
+      
+      // Prevent default if it's a button click
+      if (event) {
+        event.preventDefault();
+      }
+
+      // Check if status is Part Needed
+      if (props.workOrder.status !== 'Part Needed') {
+        console.log('Wrong status - cannot duplicate');
+        return;
+      }
+      
+      // Set initial date value to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      duplicateDate.value = tomorrow.toISOString().slice(0, 16);
+      
+      console.log('Opening duplicate modal with date:', duplicateDate.value);
+      showDuplicateDateModal.value = true;
+    };
+
+    // Add these new functions
+    const cancelDuplicate = () => {
+      showDuplicateDateModal.value = false;
+      duplicateDate.value = '';
+    };
+
+    const confirmDuplicate = async () => {
+      if (isDuplicating.value) return;
+      
+      isDuplicating.value = true;
+      
       try {
-        button.disabled = true;
-        button.innerHTML = 'Duplicating...';
-        
-        // Add the leading slash to ensure it's from the root path
-        const response = await axios.post(`/work-orders/${props.workOrder.id}/duplicate`, {}, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrf
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrf) {
+          throw new Error('CSRF token not found');
+        }
+
+        // Ensure we have a valid date
+        if (!duplicateDate.value) {
+          throw new Error('Please select a valid date');
+        }
+
+        // Format the date properly
+        const formattedDate = new Date(duplicateDate.value).toISOString();
+
+        // Create focused payload with only necessary data and explicit date handling
+        const newWorkOrderData = {
+          customer_id: props.workOrder.customer_id,
+          title: props.workOrder.title,
+          description: props.workOrder.description,
+          price: props.workOrder.price,
+          user_id: props.workOrder.user_id,
+          user_name: props.workOrder.user_name,
+          address: props.workOrder.address,
+          hours: props.workOrder.hours,
+          original_id: props.workOrder.id,
+          // Date related fields - make sure these are explicitly set
+          date_time: formattedDate,
+          visit_dates: [formattedDate],
+          end_date: null,
+          status: 'Scheduled'
+        };
+
+        console.log('Sending duplicate request with date:', formattedDate);
+
+        const response = await axios.post(
+          `/work-orders/${props.workOrder.id}/duplicate`,
+          newWorkOrderData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': csrf
+            }
           }
-        });
-        
+        );
+
         if (response.data.success) {
+          console.log('Duplicate response:', response.data);
+          showDuplicateDateModal.value = false;
+          alert('Work order duplicated successfully with new date!');
           window.location.reload();
         } else {
           throw new Error(response.data.message || 'Failed to duplicate work order');
         }
       } catch (error) {
         console.error('Error duplicating work order:', error);
-        alert(error.response?.data?.message || 'Failed to duplicate work order'); 
+        console.log('Error details:', error.response?.data);
+        alert(error.response?.data?.message || error.message || 'Failed to duplicate work order');
       } finally {
-        button.disabled = false;
-        button.innerHTML = originalText;
-      }
-    };
-
-    // Add state for image preview
-    const previewAttachment = ref(null);
-
-    // Helper functions for file types
-    const isPdfFile = (filename) => {
-      if (!filename) return false;
-      return filename.toLowerCase().endsWith('.pdf');
-    };
-
-    const isImageFile = (filename) => {
-      if (!filename) return false;
-      const lowerFilename = filename.toLowerCase();
-      return lowerFilename.endsWith('.jpg') || 
-             lowerFilename.endsWith('.jpeg') || 
-             lowerFilename.endsWith('.png') || 
-             lowerFilename.endsWith('.gif') || 
-             lowerFilename.endsWith('.webp') ||
-             lowerFilename.endsWith('.heic');
-    };
-
-    // Add new function to check for document files
-    const isDocumentFile = (filename) => {
-      if (!filename) return false;
-      const lowerFilename = filename.toLowerCase();
-      return lowerFilename.endsWith('.docx') ||
-             lowerFilename.endsWith('.doc');
-    };
-    
-    // Get clean file name for display
-    const getFileName = (path) => {
-      if (!path) return '';
-      // Extract just the filename from the full path
-      return path.split('/').pop();
-    };
-    
-    // Preview attachment (for images)
-    const handlePreviewAttachment = (attachment) => {
-      if (isImageFile(attachment) || isPdfFile(attachment) || isDocumentFile(attachment)) {
-        previewAttachment.value = attachment;
-      }
-    };
-
-    // Close preview
-    const closePreview = () => {
-      previewAttachment.value = null;
-    };
-    
-    // Updated file upload handler that accepts PDFs
-    const handleImageUpload = (event) => {
-      const files = Array.from(event.target.files);
-      const maxFileSize = 8 * 1024 * 1024; // 8MB limit - reduced from 10MB to match server limits
-      const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.heic', '.docx'];
-
-      // Clear previous files and errors
-      form.images = [];
-      uploadError.value = '';
-
-      // More thorough validation
-      const validFiles = [];
-      const invalidFiles = [];
-      files.forEach(file => {
-        // Get file extension
-        const extension = '.' + file.name.split('.').pop().toLowerCase();
-        const isValidType = validExtensions.includes(extension);
-        const isValidSize = file.size <= maxFileSize;
-        console.log(`Validating file: ${file.name} (${file.type}, ${Math.round(file.size/1024)}KB) - Valid type: ${isValidType}, Valid size: ${isValidSize}`);
-        if (!isValidType) {
-          invalidFiles.push(`${file.name} (unsupported file type)`);
-        } else if (!isValidSize) {
-          invalidFiles.push(`${file.name} (${Math.round(file.size/1024/1024)}MB exceeds 8MB limit)`);
-        } else {
-          validFiles.push(file);
-        }
-      });
-      
-      if (invalidFiles.length > 0) {
-        uploadError.value = `Cannot upload these files:\n${invalidFiles.join('\n')}`;
-        alert(`Cannot upload these files:\n${invalidFiles.join('\n')}`);
-      }
-
-      if (validFiles.length) {
-        form.images = validFiles;
+        isDuplicating.value = false;
       }
     };
 
@@ -1375,38 +1617,46 @@ export default {
     const handleDocumentUpload = async (data) => {
       try {
         console.log('Document uploaded:', data);
-        // Extract just the path portion from the full URL
-        const pathMatch = data.path || data.url.match(/\/storage\/(.*)/);
-        const attachmentPath = typeof pathMatch === 'string' ? pathMatch : pathMatch?.[1];
-        
-        if (attachmentPath) {
-          // Add the new attachment to both arrays if they exist
-          if (!Array.isArray(props.workOrder.file_attachments)) {
-            props.workOrder.file_attachments = [];
-          }
-          props.workOrder.file_attachments.push(attachmentPath);
-          
-          if (!Array.isArray(props.workOrder.images)) {
-            props.workOrder.images = [];
-          }
-          props.workOrder.images.push(attachmentPath);
-          
-          // Close the preview
-          closePreview();
-          
-          // Show success message
-          alert(`Document uploaded successfully`);
+        if (!data || (!data.path && !data.url)) {
+          throw new Error('No document path received from upload');
         }
+
+        // Extract the path, handling both full URLs and storage paths
+        let attachmentPath = '';
+        if (data.path) {
+          attachmentPath = data.path.replace(/^\/storage\//, '');
+        } else if (data.url) {
+          const pathMatch = data.url.match(/\/storage\/(.*)/);
+          attachmentPath = pathMatch ? pathMatch[1] : '';
+        }
+
+        if (!attachmentPath) {
+          throw new Error('Could not extract valid attachment path');
+        }
+
+        // Add the new attachment to both arrays if they exist
+        if (!Array.isArray(props.workOrder.file_attachments)) {
+          props.workOrder.file_attachments = [];
+        }
+        props.workOrder.file_attachments.push(attachmentPath);
+        
+        if (!Array.isArray(props.workOrder.images)) {
+          props.workOrder.images = [];
+        }
+        props.workOrder.images.push(attachmentPath);
+        
+        // Close the preview
+        closePreview();
+        
+        // Show success message
+        console.log('Document successfully added:', attachmentPath);
       } catch (error) {
         console.error('Error handling document upload:', error);
-        alert('Failed to process the uploaded document.');
+        alert(`Failed to process the uploaded document: ${error.message}`);
       }
     };
 
-    // Add these new refs near the top of setup()
-    const isUploading = ref(false);
-    const uploadProgress = ref(0);
-    const uploadError = ref('');
+ 
 
     const getStatusProgress = (status) => {
       if (!status) return 0;
@@ -1455,6 +1705,37 @@ export default {
     const getUserAvatar = (userName) => {
       // Replace this logic with the actual implementation for fetching user avatars
       return `/images/avatars/${userName || 'default'}.png`;
+    };
+
+    const deleteWorkOrder = async () => {
+      if (!confirm('Are you sure you want to delete this work order?')) {
+        return;
+      }
+    
+      try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrf) {
+          throw new Error('CSRF token not found');
+        }
+    
+        const response = await axios.delete(`/work-orders/${props.workOrder.id}`, {
+          headers: {
+            'X-CSRF-TOKEN': csrf,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+    
+        if (response.data.success) {
+          emit('close');
+          window.location.reload();
+        } else {
+          throw new Error(response.data.message || 'Failed to delete work order');
+        }
+      } catch (error) {
+        console.error('Error deleting work order:', error);
+        alert(error.response?.data?.message || error.message || 'Failed to delete work order');
+      }
     };
 
     return {
@@ -1506,8 +1787,23 @@ export default {
       getUserName, // Ensure this is returned so it can be used in the template
       getUserAvatar, // Ensure this is returned so it can be used in the template
       VALID_STATUSES,
+      showDuplicateDateModal,
+      duplicateDate,
+      cancelDuplicate,
+      confirmDuplicate,
+      isDuplicating,
+      deleteWorkOrder,
     };
   },
+  // Add an errorCaptured hook to handle and log errors
+  errorCaptured(err, instance, info) {
+    console.error('Error captured in WorkOrder component:', err);
+    console.log('Error instance:', instance);
+    console.log('Error info:', info);
+    
+    // Return false to prevent the error from propagating
+    return false;
+  }
 };
 </script>
 

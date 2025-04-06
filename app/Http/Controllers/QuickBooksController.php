@@ -24,73 +24,80 @@ class QuickBooksController extends Controller
     {
         $this->clientId = config('services.quickbooks.client_id');
         $this->clientSecret = config('services.quickbooks.client_secret');
-        $this->redirectUri = config('app.url') . '/quickbooks/callback';
+        $this->redirectUri = config('services.quickbooks.redirect_uri');
         $this->scope = 'com.intuit.quickbooks.accounting';
     }
 
-    public function authorize()
+    public function authorize(Request $request)
     {
-        // Generate and store CSRF token
+        // Store CSRF token in session for validation in callback
         $state = Str::random(40);
-        Session::put('quickbooks_state', $state);
+        session(['quickbooks_state' => $state]);
 
-        $authorizationUrl = 'https://appcenter.intuit.com/connect/oauth2';
-        $queryParams = http_build_query([
+        $authUrl = 'https://appcenter.intuit.com/connect/oauth2';
+        $params = [
             'client_id' => $this->clientId,
             'response_type' => 'code',
             'scope' => $this->scope,
             'redirect_uri' => $this->redirectUri,
-            'state' => $state,
-        ]);
+            'state' => $state
+        ];
 
-        return redirect($authorizationUrl . '?' . $queryParams);
+        return redirect($authUrl . '?' . http_build_query($params));
     }
 
     public function callback(Request $request)
     {
-        // Verify state to prevent CSRF
-        $state = Session::pull('quickbooks_state');
-        
-        if ($state !== $request->state) {
-            return redirect('/dashboard')->with('error', 'Invalid state parameter. Authorization failed.');
-        }
-
-        if ($request->has('error')) {
-            return redirect('/dashboard')->with('error', 'QuickBooks authorization failed: ' . $request->error_description);
-        }
-
-        // Exchange authorization code for access token
         try {
-            $response = Http::asForm()->post('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', [
-                'grant_type' => 'authorization_code',
-                'code' => $request->code,
-                'redirect_uri' => $this->redirectUri,
-                'client_id' => $this->clientId,
-                'client_secret' => $this->clientSecret,
+            // Validate state to prevent CSRF
+            if ($request->state !== session('quickbooks_state')) {
+                throw new \Exception('Invalid state parameter');
+            }
+
+            if ($request->has('error')) {
+                throw new \Exception("QuickBooks OAuth error: " . $request->get('error'));
+            }
+
+            $code = $request->get('code');
+            
+            // Exchange authorization code for tokens
+            $response = Http::withBasicAuth($this->clientId, $this->clientSecret)
+                ->asForm()
+                ->post('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', [
+                    'grant_type' => 'authorization_code',
+                    'code' => $code,
+                    'redirect_uri' => $this->redirectUri
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('QuickBooks token exchange failed', [
+                    'response' => $response->json(),
+                    'status' => $response->status()
+                ]);
+                throw new \Exception("Failed to exchange authorization code for tokens");
+            }
+
+            $tokens = $response->json();
+
+            // Store the tokens securely
+            // You should encrypt these before storing
+            session([
+                'quickbooks_access_token' => $tokens['access_token'],
+                'quickbooks_refresh_token' => $tokens['refresh_token'],
+                'quickbooks_realm_id' => $request->get('realmId')
             ]);
 
-            if ($response->successful()) {
-                $tokenData = $response->json();
-                
-                // Store token data in session or database
-                Session::put('quickbooks_access_token', $tokenData['access_token']);
-                Session::put('quickbooks_refresh_token', $tokenData['refresh_token']);
-                Session::put('quickbooks_token_expires', now()->addSeconds($tokenData['expires_in']));
-                Session::put('quickbooks_realm_id', $request->realmId);
-                
-                return redirect('/dashboard')->with('success', 'Successfully connected to QuickBooks!');
-            } else {
-                Log::error('QuickBooks token exchange failed', [
-                    'status' => $response->status(),
-                    'response' => $response->json(),
-                ]);
-                return redirect('/dashboard')->with('error', 'Failed to connect to QuickBooks. Please try again later.');
-            }
+            return redirect()->route('dashboard')
+                ->with('success', 'Successfully connected to QuickBooks!');
+
         } catch (\Exception $e) {
-            Log::error('Exception during QuickBooks authorization', [
-                'exception' => $e->getMessage(),
+            Log::error('QuickBooks OAuth error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-            return redirect('/dashboard')->with('error', 'An error occurred connecting to QuickBooks: ' . $e->getMessage());
+
+            return redirect()->route('dashboard')
+                ->with('error', 'Failed to connect to QuickBooks: ' . $e->getMessage());
         }
     }
     
@@ -128,9 +135,17 @@ class QuickBooksController extends Controller
             $workOrder = WorkOrder::findOrFail($validatedData['workOrderId']);
             $invoiceData = $validatedData['invoiceData'];
             
+            if (!Session::has('quickbooks_access_token')) {
+                throw new \Exception('QuickBooks is not connected. Please connect to QuickBooks first.');
+            }
+            
             // Use QuickBooks service to create the invoice
             $quickbooksService = new QuickBooksService();
             $response = $quickbooksService->createInvoice($workOrder, $invoiceData);
+            
+            if (!$response) {
+                throw new \Exception('Failed to create invoice in QuickBooks');
+            }
             
             // Update the work order with invoice reference if needed
             if (isset($response['Id']) || isset($response['id']) || isset($response['invoiceId'])) {

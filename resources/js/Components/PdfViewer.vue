@@ -497,12 +497,18 @@ export default {
         const success = await addSignatureToPdf(signatureData);
         
         if (success) {
-          // MODIFIED: Include firstName and lastName in the emitted data
-          emit('signature-captured', {
-            signature: signatureData,
-            firstName: firstName.value,
-            lastName: lastName.value,
-            timestamp: new Date().toISOString()
+          // Emit document-uploaded event with proper data
+          emit('document-uploaded', {
+            path: pdfDisplayUrl.value,
+            success: true,
+            fileName: signedFilename.value,
+            signed: true,
+            signature: {
+              data: signatureData,
+              firstName: firstName.value,
+              lastName: lastName.value,
+              timestamp: new Date().toISOString()
+            }
           });
           signatureMode.value = false;
         } else {

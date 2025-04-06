@@ -41,55 +41,35 @@ class WorkOrderController extends Controller
     // Store a newly created resource in storage
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'customer_id' => 'required|string|max:255',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'date_time' => 'required|date',
-            'price' => 'required|numeric',
-            'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
-            'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
+        try {
+            // Validate request
+            $validated = $request->validate([
+                'customer_id' => 'required|string',
+                'title' => 'required|string',
+                'description' => 'required|string',
+                'date_time' => 'required|date',
+                'end_date' => 'nullable|date',
+                'address' => 'required|string',
+                'hours' => 'required|numeric|min:0',
+                'price' => 'required|numeric|min:0',
+                'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
+                'user_id' => 'required|exists:users,id',
+            ]);
 
-        $workOrder = new WorkOrder();
-        $workOrder->user_id = $validatedData['user_id'];
-        $workOrder->customer_id = $validatedData['customer_id'];
-        $latestWorkOrder = WorkOrder::where('title', 'like', $validatedData['title'] . '-%')->orderBy('id', 'desc')->first();
-        if ($latestWorkOrder) {
-            preg_match('/\-(\d+)$/', $latestWorkOrder->title, $matches);
-            $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 1;
-        } else {
-            $copyNumber = 1;
+            // Create the work order
+            $workOrder = WorkOrder::create($validated);
+
+            return response()->json(['success' => true, 'message' => 'Work order created successfully.', 'workOrder' => $workOrder], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Log validation errors for debugging
+            \Log::error('Validation failed for work order creation:', $e->errors());
+
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error creating work order:', $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'An error occurred while creating the work order.'], 500);
         }
-        $workOrder->title = $validatedData['title'] . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT);
-        $workOrder->description = $validatedData['description'];
-        $workOrder->date_time = $validatedData['date_time'];
-        $workOrder->price = $validatedData['price'];
-        $workOrder->status = $validatedData['status'];
-
-        if ($request->hasFile('file_attachments')) {
-            $fileAttachments = [];
-            foreach ($request->file('file_attachments') as $file) {
-                $path = $file->store('work_orders', 'public');
-                $fileAttachments[] = $path;
-            }
-            $workOrder->file_attachments = json_encode($fileAttachments);
-        }
-
-        if ($request->hasFile('images')) {
-            $images = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('work_orders', 'public');
-                $images[] = $path;
-            }
-            $workOrder->images = json_encode($images);
-        }
-
-        $workOrder->save();
-
-        return redirect()->route('dashboard')->with('success', 'Work order added successfully.');
     }
 
     // Display the specified resource
@@ -157,7 +137,7 @@ public function getDetails($id)
             'description' => 'required|string',
             'date_time' => 'required|date',
             'price' => 'required|numeric',
-            'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
+            'status' => 'required|string|in:Scheduled,In Progress,Part Needed,Complete,Cancelled',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
@@ -248,7 +228,7 @@ public function getDetails($id)
                 $copyNumber = 2;
             }
             
-            $newWorkOrder->title = $baseTitle . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
+            $newWorkOrder->title = $baseTitle . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (ReturnTrip)';
 
             // Handle file attachments
             if ($workOrder->file_attachments) {

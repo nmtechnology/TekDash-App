@@ -475,14 +475,10 @@ function toggleCollapse() {
   }
 }
 
-// Update the method to handle QuickBooks connection with proper redirect URI handling
+// Update the connectToQuickBooks method to use a fixed redirect URI
 function connectToQuickBooks() {
-  // Get current domain and protocol to pass to backend for proper redirect URI construction
-  const currentUrl = encodeURIComponent(window.location.href);
-  const currentDomain = encodeURIComponent(window.location.origin);
-  
-  // Send current domain information so backend can construct the exact registered redirect URI
-  window.location.href = `/quickbooks/authorize?domain=${currentDomain}&returnUrl=${currentUrl}`;
+  // Redirect to the QuickBooks authorization endpoint
+  window.location.href = `/quickbooks/authorize`;
 }
 </script>
 
