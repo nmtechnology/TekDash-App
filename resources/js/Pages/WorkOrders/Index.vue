@@ -81,7 +81,7 @@ const currentPage = ref(1);
 const itemsPerPage = 10;
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredWorkOrders.value.length / itemsPerPage);
+  return Math.max(1, Math.ceil(filteredWorkOrders.value.length / itemsPerPage));
 });
 
 const paginatedWorkOrders = computed(() => {
@@ -353,6 +353,13 @@ const filteredGroupedWorkOrders = computed(() => {
   
   return grouped;
 });
+
+// Add helper function to check for multi-day work orders
+const isPartOfMultiDayWorkOrder = (workOrder) => {
+  const baseTitle = workOrder.title.replace(/\s*\(\d{1,2}\/\d{1,2}\/\d{2,4}\)$/, '');
+  return Object.values(filteredGroupedWorkOrders.value)
+    .find(group => group.length > 1 && group.some(wo => wo.id === workOrder.id));
+};
 </script>
 
 <template>
@@ -428,37 +435,34 @@ const filteredGroupedWorkOrders = computed(() => {
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-accent/10 bg-transparent">
-                      <template v-for="(group, baseTitle) in filteredGroupedWorkOrders" :key="baseTitle">
-                        <!-- Show grouped work orders with a common base title -->
-                        <tr v-for="workOrder in group" :key="workOrder.id" @click="openWorkOrder(workOrder)" class="cursor-pointer hover:bg-gray-700">
-                          <!-- Removed Actions column -->
-                          <td class="py-4 px-4 text-sm">
-                            <div class="font-medium text-white" :title="workOrder.title">{{ workOrder.title }}</div>
-                            <div v-if="group.length > 1" class="text-xs text-gray-500">
-                              Part of a multi-day work order
-                            </div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="flex flex-col">
-                              <div class="text-white mb-1">{{ workOrder.status }}</div>
-                              <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                <div class="h-2.5 rounded-full" 
-                                     :class="getStatusColor(workOrder.status)"
-                                     :style="{ width: getStatusProgress(workOrder.status) + '%' }"></div>
+                      <tr v-for="workOrder in paginatedWorkOrders" :key="workOrder.id" @click="openWorkOrder(workOrder)" class="cursor-pointer hover:bg-gray-700">
+                        <td class="py-4 px-4 text-sm">
+                          <div class="font-medium text-white" :title="workOrder.title">{{ workOrder.title }}</div>
+                          <div v-if="isPartOfMultiDayWorkOrder(workOrder)" class="text-xs text-gray-500">
+                            Part of a multi-day work order
+                          </div>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-accent">
+                          <div class="flex flex-col">
+                            <div class="text-white mb-1">{{ workOrder.status }}</div>
+                            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                              <div class="h-2.5 rounded-full" 
+                                   :class="getStatusColor(workOrder.status)"
+                                   :style="{ width: getStatusProgress(workOrder.status) + '%' }">
                               </div>
                             </div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="text-white" :title="workOrder.customer_id">{{ workOrder.customer_id }}</div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="text-white" :title="getUserName(workOrder.user_id)">{{ getUserName(workOrder.user_id) }}</div>
-                          </td>
-                        </tr>
-                      </template>
+                          </div>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-accent">
+                          <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-accent">
+                          <div class="text-white" :title="workOrder.customer_id">{{ workOrder.customer_id }}</div>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-accent">
+                          <div class="text-white" :title="getUserName(workOrder.user_id)">{{ getUserName(workOrder.user_id) }}</div>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
