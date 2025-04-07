@@ -66,4 +66,25 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function hasRole($role, $teamId = null)
+    {
+        if ($teamId) {
+            return $this->teams()
+                ->wherePivot('team_id', $teamId)
+                ->wherePivot('role', $role)
+                ->exists();
+        }
+        return $this->teams()->wherePivot('role', $role)->exists();
+    }
+
+    public function isAdmin($teamId = null)
+    {
+        return $this->hasRole('admin', $teamId);
+    }
+
+    public function isTech($teamId = null)
+    {
+        return $this->hasRole('tech', $teamId);
+    }
 }

@@ -15,11 +15,8 @@ class WorkOrderController extends Controller
     // Display a listing of the resource
     public function index()
     {
-        $workOrders = WorkOrder::where('archived', false)->get();
-        $users = User::all();
         return Inertia::render('WorkOrders/Index', [
-            'workOrders' => $workOrders,
-            'users' => $users,
+            'workOrders' => WorkOrder::latest()->paginate(10)
         ]);
     }
 

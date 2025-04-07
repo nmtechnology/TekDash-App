@@ -6,8 +6,8 @@ import RevenueStats from '@/Components/RevenueStats.vue';
 import CurrentTime from '@/Components/CurrentTime.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
 import Search from '@/Components/Search.vue';
-import { ref, onMounted, onUnmounted } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { usePage, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 
 // Close search results when clicking outside
@@ -165,6 +165,26 @@ function getFallbackStats() {
 onMounted(() => {
   fetchStats();
 });
+
+// User role-based actions
+const user = usePage().props.auth.user;
+
+const canManageWorkOrders = computed(() => user.isAdmin);
+const canUpdateWorkOrders = computed(() => user.isAdmin || user.isTech);
+
+// Add navigation methods
+const navigateToWorkOrders = () => {
+    router.visit(route('work-orders.index'))
+}
+
+// Update button click handlers
+const createWorkOrder = () => {
+    router.visit(route('work-orders.create'))
+}
+
+const viewWorkOrder = (id) => {
+    router.visit(route('work-orders.show', id))
+}
 </script>
 
 <template>
@@ -173,8 +193,8 @@ onMounted(() => {
       <div class="fixed mt-14 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
         <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
-              Dashboard <CurrentTime />
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">Dashboard
+
               
               <!-- Search Component with error handling -->
                         <div class="p-1 search-container relative">
@@ -224,8 +244,7 @@ onMounted(() => {
                                 </div>
                             </div>
                         </div>
-            </h2>
-            <TeamDropdown />  <!-- Add this line -->
+            </h2><CurrentTime />
           </div>
         </div>
       </div>
@@ -257,6 +276,25 @@ onMounted(() => {
                 <div class="relative z-10">
                   <Welcome />
                 </div>
+              </div>
+
+              <div v-if="$page.props.auth.user.isAdmin" class="admin-actions mt-4 space-x-4">
+                <!-- Admin only buttons with proper routing -->
+                <button @click="createWorkOrder" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Create Work Order
+                </button>
+                <button @click="navigateToWorkOrders"
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    View All Orders
+                </button>
+              </div>
+              
+              <div class="tech-actions">
+                <!-- Tech accessible buttons -->
+                <button @click="updateStatus">Update Status</button>
+                <button @click="uploadImage">Upload Image</button>
+                <button @click="getSignature">Get Signature</button>
               </div>
             </div>
           </div>

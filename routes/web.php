@@ -242,6 +242,27 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::post('/work-orders/{workOrder}/archive', [WorkOrderController::class, 'archive'])
         ->name('work-orders.archive');
+
+    Route::get('/work-orders/{workOrder}/show', [WorkOrderController::class, 'show'])->name('work-orders.show');
+});
+
+// Admin only routes
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::post('/work-orders', [WorkOrderController::class, 'store'])->name('work-orders.store');
+    Route::put('/work-orders/{workOrder}', [WorkOrderController::class, 'update'])->name('work-orders.update');
+    Route::delete('/work-orders/{workOrder}', [WorkOrderController::class, 'destroy'])->name('work-orders.destroy');
+    Route::post('/work-orders/{workOrder}/archive', [WorkOrderController::class, 'archive'])->name('work-orders.archive');
+    Route::post('/work-orders/{workOrder}/invoice', [WorkOrderController::class, 'invoice'])->name('work-orders.invoice');
+});
+
+// Tech and Admin routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/work-orders', [WorkOrderController::class, 'index'])->name('work-orders.index');
+    Route::get('/work-orders/{workOrder}', [WorkOrderController::class, 'show'])->name('work-orders.show');
+    Route::post('/work-orders/{workOrder}/status', [WorkOrderController::class, 'updateStatus'])->name('work-orders.update-status');
+    Route::post('/work-orders/{workOrder}/notes', [WorkOrderController::class, 'addNotes'])->name('work-orders.add-notes');
+    Route::post('/work-orders/{workOrder}/images', [WorkOrderController::class, 'uploadImages'])->name('work-orders.upload-images');
+    Route::post('/work-orders/{workOrder}/signature', [WorkOrderController::class, 'getSignature'])->name('work-orders.get-signature');
 });
 
 // QuickBooks Integration Routes

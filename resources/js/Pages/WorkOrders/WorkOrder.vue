@@ -414,11 +414,11 @@
                     <button 
                       v-if="isImageFile(attachment) || isPdfFile(attachment) || isDocumentFile(attachment)" 
                       @click="handlePreviewAttachment(attachment)" 
-                      class="text-lime-400 btn outline rounded p-1 hover:text-gray-900 hover:bg-lime-400"
+                      class="text-lime-400 btn outline rounded p- hover:text-gray-900 hover:bg-lime-400"
                     >
                       View
                     </button>
-                    <a :href="`/storage/${attachment}`" class="text-yellow-500 text-sm hover:bg-yellow-500 outline btn rounded p-1 hover:text-gray-900" download>Download</a>
+                    <a :href="`/storage/${attachment}`" class="btn rounded p-1 hover:text-gray-900" download>Download</a>
                     <!-- Add delete button -->
                     <button 
                       v-if="$page.props.auth.user && $page.props.auth.user.role !== 'guest'"
@@ -571,6 +571,16 @@
             </svg>
             Duplicate
           </button>
+          <!-- Replace the existing Link with this updated version -->
+          <!-- <Link
+            :href="route('work-orders.show', workOrder.id)"
+            class="glossy-btn inline-flex justify-center rounded-md border border-transparent shadow-sm px-2 py-2 text-blue-400 font-medium hover:bg-blue-400 hover:text-black sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Full Details
+          </Link> -->
           <!-- Delete button (replacing close button) -->
           <button 
             @click="deleteWorkOrder" 
@@ -634,7 +644,7 @@ import Messenger from '@/Components/Messenger.vue';
 import PdfViewer from '@/Components/PdfViewer.vue';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue'; 
 import axios from 'axios';
-import { router } from '@inertiajs/vue3'; 
+import { router, Link } from '@inertiajs/vue3'; 
 
 export default {
   name: 'WorkOrder',
@@ -1850,7 +1860,7 @@ export default {
   transition: all 0.3s ease;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(115, 115, 115, 0.1);
 }
 
 .glossy-btn::before {
@@ -1860,7 +1870,7 @@ export default {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 80%);
+  background: radial-gradient(circle, rgba(49, 49, 49, 0.223) 0%, transparent 80%);
   transform: rotate(45deg);
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -1877,7 +1887,9 @@ export default {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   height: 100%;
+  width: 100%;
   max-height: calc(80vh - 125px);
+  max-width: calc(50vh - 200px);
 }
 
 .overflow-y-auto {

@@ -94,11 +94,20 @@ const getUserAvatar = (userId) => {
       return 'bg-gray-800 text-gray-300 ring-gray-700';
     };
 
-// Add this computed value for the QR code URL
-const qrCodeUrl = window.location.origin + route('work-orders.show', props.workOrder.id);
+// Replace the qrCodeUrl line with this function
+const getWorkOrderQRData = () => {
+    const qrData = {
+        id: props.workOrder.id,
+        title: props.workOrder.title,
+        status: props.workOrder.status,
+        date_time: props.workOrder.date_time,
+        price: props.workOrder.price,
+        description: props.workOrder.description
+    };
+    return JSON.stringify(qrData);
+};
 
-const qrSize = ref(100); // Size of QR code in pixels
-// style the qr code
+const qrSize = ref(128); // Increased size to accommodate more data
 const qrStyle = ref({
     width: '100%',
     height: '100%',
@@ -144,14 +153,14 @@ const isImage = (doc) => {
                             <div class="flex flex-col items-center">
                                 <div class="bg-white p-2 rounded-lg">
                                     <QRCode
-                                        :value="qrCodeUrl"
+                                        :value="getWorkOrderQRData()"
                                         :style="qrStyle"
                                         :size="qrSize"
                                         level="H"
                                         render-as="svg"
                                     />
                                 </div>
-                                <span class="text-xs text-gray-400 mt-2">Scan to view on mobile</span>
+                                <span class="text-xs text-gray-400 mt-2">Scan for work order details</span>
                             </div>
                         </div>
                     </div>
