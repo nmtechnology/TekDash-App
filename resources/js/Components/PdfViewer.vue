@@ -20,7 +20,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M6.5 8a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
               <path d="M12.354 3.646a.5.5 0 0 1 0 .708l-4.5 4.5a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 7.293l4.146-4.147a.5.5 0 0 1 .708 0z"/>
-              <path d="M11.5 0h-7A1.5 1.5 0 0 0 3 1.5v13A1.5 1.5 0 0 0 4.5 16h7a1.5 1.5 0 0 0 1.5-1.5v-13A1.5.5 0 0 1 11.5 0zm0 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5h7z"/>
+              <path d="M11.5 0h-7A1.5 1.5 0 0 0 3 1.5v13A1.5 1.5 0 0 0 4.5 16h7a1.5.5 0 0 1 11.5 0zm0 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5h7z"/>
             </svg>
             Sign Document
           </button>
@@ -97,9 +97,9 @@
             @mousemove="draw"
             @mouseup="stopDrawing"
             @mouseleave="stopDrawing"
-            @touchstart.prevent="startDrawing"
-            @touchmove.prevent="draw"
-            @touchend.prevent="stopDrawing"
+            @touchstart.passive="startDrawing"
+            @touchmove.passive="draw"
+            @touchend="stopDrawing"
           ></canvas>
           
           <!-- NEW: Added input fields for first name and last name -->
@@ -206,6 +206,10 @@ export default {
     modelValue: {
       type: Boolean,
       default: false
+    },
+    showThumbnail: {
+      type: Boolean,
+      default: true
     }
   },
   
@@ -476,11 +480,10 @@ export default {
       const canvas = signatureCanvas.value;
       const signatureData = canvas.toDataURL('image/png');
       
-      // Empty signature check - look for non-white pixels
+      // Validate signature
       const ctx = canvas.getContext('2d');
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       const hasDrawing = Array.from(imageData).some((pixel, index) => {
-        // Check for non-transparent pixels (every 4th value is alpha channel)
         return index % 4 === 3 && pixel > 0;
       });
       
@@ -489,7 +492,12 @@ export default {
         return;
       }
       
-      // Show loading state
+      // Validate name fields
+      if (!firstName.value.trim() || !lastName.value.trim()) {
+        alert('Please enter both first and last name.');
+        return;
+      }
+      
       loading.value = true;
       
       try {
@@ -497,30 +505,86 @@ export default {
         const success = await addSignatureToPdf(signatureData);
         
         if (success) {
-          // Emit document-uploaded event with proper data
-          emit('document-uploaded', {
-            path: pdfDisplayUrl.value,
-            success: true,
-            fileName: signedFilename.value,
-            signed: true,
-            signature: {
-              data: signatureData,
+          try {
+            // Create form data for upload
+            const formData = new FormData();
+            
+            // Convert the modified PDF to a Blob
+            const response = await fetch(modifiedPdfUrl.value);
+            const pdfBlob = await response.blob();
+            
+            // Verify blob size and type
+            if (pdfBlob.size === 0) {
+              throw new Error('Generated PDF is empty');
+            }
+            
+            // Add the PDF file and metadata to form data
+            formData.append('file', new File([pdfBlob], signedFilename.value, { type: 'application/pdf' }));
+            formData.append('metadata', JSON.stringify({
               firstName: firstName.value,
               lastName: lastName.value,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              hasSignature: true,
+              originalFilename: originalFilename.value
+            }));
+            
+            // Add CSRF token if needed
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            // Upload the signed document
+            const uploadResponse = await fetch('/api/documents/upload', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                ...(token ? { 'X-CSRF-TOKEN': token } : {})
+              },
+              credentials: 'same-origin'
+            });
+            
+            if (!uploadResponse.ok) {
+              const errorData = await uploadResponse.json().catch(() => ({}));
+              throw new Error(errorData.message || `Upload failed with status: ${uploadResponse.status}`);
             }
-          });
-          signatureMode.value = false;
+            
+            const result = await uploadResponse.json();
+            
+            // Emit success event with upload result
+            emit('document-uploaded', {
+              path: result.path,
+              success: true,
+              fileName: signedFilename.value,
+              signed: true,
+              signature: {
+                firstName: firstName.value,
+                lastName: lastName.value,
+                timestamp: new Date().toISOString()
+              }
+            });
+            
+            signatureMode.value = false;
+            loading.value = false;
+            
+            // Show success message and handle redirect
+            alert('Document signed and saved successfully!');
+            
+            if (props.redirectAfterUpload && props.workOrderId) {
+              window.location.href = `/work-orders/${props.workOrderId}`;
+            }
+          } catch (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw new Error(`Failed to upload signed document: ${uploadError.message}`);
+          }
         } else {
-          error.value = true;
-          errorMessage.value = 'Failed to add signature to PDF';
+          throw new Error('Failed to add signature to PDF');
         }
       } catch (err) {
         console.error('Error saving signature:', err);
         error.value = true;
-        errorMessage.value = 'Error processing signature: ' + err.message;
-      } finally {
+        errorMessage.value = err.message || 'Error saving signed document';
         loading.value = false;
+        alert(errorMessage.value);
       }
     };
     
@@ -623,6 +687,11 @@ export default {
       }
     };
 
+    const handleThumbnailClick = () => {
+      setupPdfViewer();
+      emit('update:modelValue', true);
+    };
+
     // Watch for URL changes
     watch(() => props.pdfUrl, (newUrl, oldUrl) => {
       if (newUrl && newUrl !== oldUrl) {
@@ -678,7 +747,8 @@ export default {
       lastName,
       signedFilename,
       sanitizeFilename,
-      finishAndClose
+      finishAndClose,
+      handleThumbnailClick
     };
   }
 };

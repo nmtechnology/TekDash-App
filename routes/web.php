@@ -7,7 +7,7 @@ use App\Http\Controllers\GroqController;
 use App\Http\Controllers\WorkOrderController;
 use App\Http\Controllers\QuickBooksAuthController;
 use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\PDFController;
 
 // Public routes
 Route::get('/', function () {
@@ -193,8 +193,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('work-orders.invoice');
 
     // Add the document upload route as a web route (with session authentication)
-    Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument'])
-        ->middleware(['auth:sanctum', 'verified']);
+    Route::post('/documents/upload-signed', [PdfController::class, 'uploadSigned'])
+        ->middleware(['auth:sanctum', 'verified'])
+        ->name('documents.upload.signed');
 
     Route::post('/work-orders/{workOrder}/attachments', [WorkOrderController::class, 'uploadAttachments'])
         ->name('work-orders.attachments');
@@ -244,6 +245,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('work-orders.archive');
 
     Route::get('/work-orders/{workOrder}/show', [WorkOrderController::class, 'show'])->name('work-orders.show');
+
+    Route::post('/work-orders/{workOrder}/update-hours', [WorkOrderController::class, 'updateHours'])->name('work-orders.update-hours');
+
+    // Document upload routes
+    Route::post('/api/documents/upload', [PdfController::class, 'upload'])
+        ->name('documents.upload');
+    Route::post('/documents/upload', [PdfController::class, 'upload'])
+        ->name('documents.upload.web');
 });
 
 // Admin only routes

@@ -438,7 +438,7 @@ public function updateField(Request $request, $id)
     $value = $request->input($field);
     
     // Validate field name to prevent mass assignment vulnerabilities
-    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'price'];
+    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'price', 'hours', 'address'];
     
     if (!in_array($field, $allowedFields)) {
         return response()->json([
@@ -849,30 +849,7 @@ public function archive(WorkOrder $workOrder)
     }
 }
 
-/**
- * Update the hours for the specified work order.
- *
- * @param  \Illuminate\Http\Request  $request
- * @param  int  $id
- * @return \Illuminate\Http\Response
- */
-public function updateHours(Request $request, $id)
-{
-    $workOrder = WorkOrder::findOrFail($id);
-    
-    $request->validate([
-        'hours' => 'nullable|numeric|min:0',
-    ]);
-    
-    $workOrder->hours = $request->hours;
-    $workOrder->save();
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Hours updated successfully',
-        'hours' => $workOrder->hours
-    ]);
-}
+// Removed duplicate updateHours method as it's now handled by updateField
 
 /**
  * Update the address for the specified work order.

@@ -1,11 +1,11 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Welcome from '@/Components/Welcome.vue';
-import Stats from '@/Components/Stats.vue';
-import RevenueStats from '@/Components/RevenueStats.vue';
 import CurrentTime from '@/Components/CurrentTime.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
+import RevenueStats from '@/Components/RevenueStats.vue';
 import Search from '@/Components/Search.vue';
+import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -17,8 +17,12 @@ function handleClickOutside(event) {
     }
 }
 
-defineProps({
+const props = defineProps({
     title: String,
+    teams: {
+        type: Array,
+        default: () => []
+    }
 });
 
 // Get page object using the usePage composable
@@ -185,6 +189,11 @@ const createWorkOrder = () => {
 const viewWorkOrder = (id) => {
     router.visit(route('work-orders.show', id))
 }
+
+// Update openArchivedModal to use POST without a parameter
+const openArchivedModal = () => {
+    router.post(route('work-orders.archive', { workOrder: 0 }));
+};
 </script>
 
 <template>
@@ -193,58 +202,15 @@ const viewWorkOrder = (id) => {
       <div class="fixed mt-14 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
         <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">Dashboard
-
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
+              Active Work Orders
+              <CurrentTime />
+            </h2>
+            <div class="flex space-x-4">
+              <TeamDropdown :teams="props.teams" />
+              <AddWorkorder />
               
-              <!-- Search Component with error handling -->
-                        <div class="p-1 search-container relative">
-                            <Search placeholder="Search work orders..." @search="handleSearch" />
-                            
-                            <!-- Search Results Dropdown with error state -->
-                            <div v-if="showSearchResults" 
-                                 class="absolute mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-md overflow-hidden z-50">
-                                <div v-if="isSearching" class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                                    Searching work orders...
-                                </div>
-                                <ul v-else-if="workOrders.length > 0" class="max-h-80 overflow-y-auto">
-                                    <li v-for="order in workOrders" :key="order.id" 
-                                        class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b dark:border-gray-700 last:border-b-0"
-                                        @click="openWorkOrderModal(order.id)">
-                                        <div class="flex justify-between items-center">
-                                            <div>
-                                                <div class="font-medium text-gray-900 dark:text-white">
-                                                    {{ order.title || `Work Order #${order.id}` }}
-                                                </div>
-                                                <div class="text-sm text-gray-500 dark:text-gray-400">
-                                                    {{ order.customer_name || order.customer_id || 'No customer info' }}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <span v-if="order.status" class="text-xs px-2 py-1 rounded" 
-                                                    :class="{
-                                                        'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100': 
-                                                            order.status.toLowerCase().includes('complete'),
-                                                        'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100': 
-                                                            order.status.toLowerCase().includes('scheduled'),
-                                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100': 
-                                                            order.status.toLowerCase().includes('progress'),
-                                                        'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100': 
-                                                            order.status.toLowerCase().includes('cancel'),
-                                                        'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100': 
-                                                            order.status.toLowerCase().includes('part') || order.status.toLowerCase().includes('return')
-                                                    }">
-                                                    {{ order.status }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                                <div v-else-if="searchQuery.length >= 2" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                    No work orders found matching "{{ searchQuery }}"
-                                </div>
-                            </div>
-                        </div>
-            </h2><CurrentTime />
+            </div>
           </div>
         </div>
       </div>

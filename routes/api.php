@@ -8,6 +8,7 @@ use App\Http\Controllers\WorkOrderController;
 use App\Models\WorkOrder;
 use Carbon\Carbon;
 use App\Http\Controllers\DocumentController; // Add this import
+use App\Http\Controllers\PdfController;
 
 // Public routes
 Route::get('/health', function () {
@@ -209,3 +210,6 @@ Route::get('/check-work-order-exists', [WorkOrderController::class, 'checkWorkOr
 
 // Add the missing route for creating invoices
 Route::post('/work-orders/{id}/create-invoice', [WorkOrderController::class, 'createInvoice']);
+
+// Add the route for the PDF upload endpoint
+Route::post('/documents/upload', [PdfController::class, 'upload']);

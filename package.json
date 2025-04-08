@@ -41,6 +41,7 @@
         "date-fns": "^4.1.0",
         "daypilot-pro-vue": "https://npm.daypilot.org/daypilot-pro-vue/trial/2024.4.6180.tar.gz",
         "pdf-lib": "^1.17.1",
+        "pdfjs-dist": "^5.1.91",
         "qrcode": "^1.5.4",
         "qrcode.vue": "^3.4.1",
         "vue-chartjs": "^5.3.2"
