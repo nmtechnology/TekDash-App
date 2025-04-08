@@ -1510,7 +1510,7 @@
         }
       };
 
-      // Add this function to handle document uploads from PdfViewer
+      // Update the handleDocumentUpload function:
       const handleDocumentUpload = async (data) => {
         try {
           console.log('Document uploaded:', data);
@@ -1531,28 +1531,46 @@
             throw new Error('Could not extract valid attachment path');
           }
 
-          // Add the new attachment to both arrays if they exist
-          if (!Array.isArray(props.workOrder.file_attachments)) {
-            props.workOrder.file_attachments = [];
-          }
-          props.workOrder.file_attachments.push(attachmentPath);
-          if (!Array.isArray(props.workOrder.images)) {
-            props.workOrder.images = [];
-          }
-          props.workOrder.images.push(attachmentPath);
+          // Send request to update attachments on the server
+          const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          const response = await axios.post(
+            `/work-orders/${props.workOrder.id}/update-attachments`,
+            { 
+              attachment_path: attachmentPath,
+              action: 'add'
+            },
+            {
+              headers: {
+                'X-CSRF-TOKEN': csrf,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              }
+            }
+          );
 
-          // Close the preview  
-          closePreview();
+          if (response.data.success) {
+            // Update local state
+            if (!Array.isArray(props.workOrder.file_attachments)) {
+              props.workOrder.file_attachments = [];
+            }
+            props.workOrder.file_attachments.push(attachmentPath);
+            
+            if (!Array.isArray(props.workOrder.images)) {
+              props.workOrder.images = [];
+            }
+            props.workOrder.images.push(attachmentPath);
 
-          // Show success message        
-          console.log('Document successfully added:', attachmentPath);
+            // Close the preview
+            closePreview();
+            console.log('Document successfully added:', attachmentPath);
+          } else {
+            throw new Error(response.data.message || 'Failed to update attachments on server');
+          }
         } catch (error) {
           console.error('Error handling document upload:', error);
           alert(`Failed to process the uploaded document: ${error.message}`);
         }
       };
-
-   
 
       const getStatusProgress = (status) => {
         if (!status) return 0;

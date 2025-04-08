@@ -898,4 +898,57 @@ public function createInvoice($id)
     ]);
 }
 
+public function updateAttachments(Request $request, WorkOrder $workOrder)
+{
+    try {
+        $validated = $request->validate([
+            'attachment_path' => 'required|string',
+            'action' => 'required|in:add,remove'
+        ]);
+
+        // Get current attachments
+        $images = $workOrder->images ?? [];
+        if (is_string($images)) {
+            $images = json_decode($images, true) ?? [];
+        }
+        
+        $fileAttachments = $workOrder->file_attachments ?? [];
+        if (is_string($fileAttachments)) {
+            $fileAttachments = json_decode($fileAttachments, true) ?? [];
+        }
+
+        if ($validated['action'] === 'add') {
+            // Add to both arrays if not already present
+            if (!in_array($validated['attachment_path'], $images)) {
+                $images[] = $validated['attachment_path'];
+            }
+            if (!in_array($validated['attachment_path'], $fileAttachments)) {
+                $fileAttachments[] = $validated['attachment_path'];
+            }
+        } else {
+            // Remove from both arrays
+            $images = array_values(array_filter($images, fn($img) => $img !== $validated['attachment_path']));
+            $fileAttachments = array_values(array_filter($fileAttachments, fn($file) => $file !== $validated['attachment_path']));
+        }
+
+        // Update the work order
+        $workOrder->update([
+            'images' => $images,
+            'file_attachments' => $fileAttachments
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attachments updated successfully',
+            'images' => $images,
+            'file_attachments' => $fileAttachments
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update attachments: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 }

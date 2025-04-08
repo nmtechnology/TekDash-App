@@ -12,6 +12,21 @@ axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 axios.defaults.withCredentials = true;
 axios.defaults.timeout = 30000; // 30 seconds timeout
 
+// Add axios interceptor to handle CSRF token refreshing
+axios.interceptors.response.use(
+    response => response,
+    async error => {
+        if (error.response?.status === 419) {
+            // CSRF token mismatch - refresh token and retry
+            const { data } = await axios.get('/csrf-refresh');
+            axios.defaults.headers.common['X-CSRF-TOKEN'] = data.token;
+            // Retry the original request
+            return axios(error.config);
+        }
+        return Promise.reject(error);
+    }
+);
+
 // Function to retrieve CSRF token from multiple possible sources
 const getCsrfToken = () => {
   // Try to get it from the meta tag (most common)

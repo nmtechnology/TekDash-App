@@ -160,6 +160,7 @@
 <script>
 import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
 import { PDFDocument, rgb } from 'pdf-lib';
+import axios from 'axios';
 
 export default {
   name: 'PdfViewer',
@@ -243,6 +244,11 @@ export default {
     // Add a ref to store the original filename
     const originalFilename = ref('document.pdf');
     
+    // Add these refs
+    const isSaving = ref(false);
+    const saveError = ref(null);
+    const signedPdfBlob = ref(null);
+
     // Helper function to extract filename from URL
     const extractFilename = (url) => {
       if (!url) return 'document.pdf';
@@ -475,206 +481,84 @@ export default {
     };
     
     const saveSignature = async () => {
-      if (!signatureCanvas.value) return;
-      
-      const canvas = signatureCanvas.value;
-      const signatureData = canvas.toDataURL('image/png');
-      
-      // Validate signature
-      const ctx = canvas.getContext('2d');
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      const hasDrawing = Array.from(imageData).some((pixel, index) => {
-        return index % 4 === 3 && pixel > 0;
-      });
-      
-      if (!hasDrawing) {
-        alert('Please sign the document before saving.');
-        return;
-      }
-      
-      // Validate name fields
-      if (!firstName.value.trim() || !lastName.value.trim()) {
-        alert('Please enter both first and last name.');
-        return;
-      }
-      
-      loading.value = true;
-      
       try {
-        // Add signature to PDF
-        const success = await addSignatureToPdf(signatureData);
+        isSaving.value = true;
+        saveError.value = null;
+
+        // First, create the signed PDF with annotations
+        const signatureImage = signatureCanvas.value.toDataURL('image/png');
         
-        if (success) {
-          try {
-            // Create form data for upload
-            const formData = new FormData();
-            
-            // Convert the modified PDF to a Blob
-            const response = await fetch(modifiedPdfUrl.value);
-            const pdfBlob = await response.blob();
-            
-            // Verify blob size and type
-            if (pdfBlob.size === 0) {
-              throw new Error('Generated PDF is empty');
-            }
-            
-            // Add the PDF file and metadata to form data
-            formData.append('file', new File([pdfBlob], signedFilename.value, { type: 'application/pdf' }));
-            formData.append('metadata', JSON.stringify({
-              firstName: firstName.value,
-              lastName: lastName.value,
-              timestamp: new Date().toISOString(),
-              hasSignature: true,
-              originalFilename: originalFilename.value
-            }));
-            
-            // Add CSRF token if needed
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
-            // Upload the signed document
-            const uploadResponse = await fetch('/api/documents/upload', {
-              method: 'POST',
-              body: formData,
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                ...(token ? { 'X-CSRF-TOKEN': token } : {})
-              },
-              credentials: 'same-origin'
-            });
-            
-            if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json().catch(() => ({}));
-              throw new Error(errorData.message || `Upload failed with status: ${uploadResponse.status}`);
-            }
-            
-            const result = await uploadResponse.json();
-            
-            // Emit success event with upload result
-            emit('document-uploaded', {
-              path: result.path,
-              success: true,
-              fileName: signedFilename.value,
-              signed: true,
-              signature: {
-                firstName: firstName.value,
-                lastName: lastName.value,
-                timestamp: new Date().toISOString()
-              }
-            });
-            
-            signatureMode.value = false;
-            loading.value = false;
-            
-            // Show success message and handle redirect
-            alert('Document signed and saved successfully!');
-            
-            if (props.redirectAfterUpload && props.workOrderId) {
-              window.location.href = `/work-orders/${props.workOrderId}`;
-            }
-          } catch (uploadError) {
-            console.error('Upload error:', uploadError);
-            throw new Error(`Failed to upload signed document: ${uploadError.message}`);
-          }
-        } else {
-          throw new Error('Failed to add signature to PDF');
-        }
-      } catch (err) {
-        console.error('Error saving signature:', err);
-        error.value = true;
-        errorMessage.value = err.message || 'Error saving signed document';
-        loading.value = false;
-        alert(errorMessage.value);
-      }
-    };
-    
-    const addSignatureToPdf = async (signatureData) => {
-      try {
-        // Use the current display URL which we know is properly formatted
-        console.log('Fetching PDF from URL:', pdfDisplayUrl.value);
+        // Create PDF with signature
+        const pdfBytes = await fetch(pdfDisplayUrl.value).then(res => res.arrayBuffer());
+        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const pngImage = await pdfDoc.embedPng(signatureImage);
         
-        // Fetch the original PDF with appropriate cache control
-        const pdfResponse = await fetch(pdfDisplayUrl.value, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-          }
-        });
-        
-        if (!pdfResponse.ok) {
-          console.error(`HTTP error fetching PDF: ${pdfResponse.status}`);
-          throw new Error(`HTTP error! Status: ${pdfResponse.status}`);
-        }
-        
-        const pdfBuffer = await pdfResponse.arrayBuffer();
-        console.log('PDF loaded, size:', pdfBuffer.byteLength);
-        
-        if (pdfBuffer.byteLength === 0) {
-          throw new Error('Empty PDF file received');
-        }
-        
-        // Load the PDF document
-        const pdfDoc = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
+        // Add signature to the last page
         const pages = pdfDoc.getPages();
-        
-        if (pages.length === 0) {
-          throw new Error('PDF has no pages');
-        }
-        
         const lastPage = pages[pages.length - 1];
         
-        console.log('Processing signature image');
-        // Convert signature data URL to image (strip header)
-        const base64Data = signatureData.replace(/^data:image\/(png|jpg);base64,/, '');
-        const signatureImage = await pdfDoc.embedPng(base64Data);
-        
-        // Calculate signature position (bottom of the page)
+        // Calculate signature position
         const { width, height } = lastPage.getSize();
-        const signatureWidth = 200;
-        const signatureHeight = 100;
-        const signatureX = width / 2 - signatureWidth / 2;
-        const signatureY = 50; // Position from bottom
-        
-        console.log('Adding signature to PDF page');
-        // Add signature to the page
-        lastPage.drawImage(signatureImage, {
-          x: signatureX,
-          y: signatureY,
-          width: signatureWidth,
-          height: signatureHeight,
+        lastPage.drawImage(pngImage, {
+          x: 50,
+          y: 50,
+          width: 200,
+          height: 100,
         });
         
-        // NEW: Add first and last name text to the PDF
+        // Add name and date if provided
         if (firstName.value || lastName.value) {
-          const fullName = `${firstName.value} ${lastName.value}`.trim();
-          if (fullName) {
-            lastPage.drawText(fullName, {
-              x: signatureX,
-              y: signatureY - 20, // Position below signature
-              size: 12,
-              color: rgb(0, 0, 0), // Black color
-            });
-          }
+          lastPage.drawText(`${firstName.value} ${lastName.value}`, {
+            x: 50,
+            y: 30,
+            size: 12,
+            color: rgb(0, 0, 0),
+          });
+          
+          // Add date
+          const currentDate = new Date().toLocaleDateString();
+          lastPage.drawText(currentDate, {
+            x: 50,
+            y: 15,
+            size: 10,
+            color: rgb(0, 0, 0),
+          });
         }
         
-        console.log('Saving modified PDF');
         // Save the modified PDF
         const modifiedPdfBytes = await pdfDoc.save();
+        const signedPdfBlob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
         
-        // Create URL for the modified PDF
-        const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-        const newUrl = URL.createObjectURL(blob);
-        modifiedPdfUrl.value = newUrl;
+        // Create FormData with proper file name
+        const formData = new FormData();
+        const fileName = `signed_${Date.now()}.pdf`;
+        formData.append('signed_pdf', signedPdfBlob, fileName);
+        formData.append('work_order_id', props.workOrderId);
         
-        // Update the viewer to show the modified PDF
-        pdfDisplayUrl.value = newUrl;
-        console.log('Signature added successfully');
+        // Get fresh CSRF token
+        const csrfResponse = await axios.get('/csrf-refresh');
+        const token = csrfResponse.data.token;
         
-        return true;
+        const response = await axios.post('/documents/upload-signed', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'X-CSRF-TOKEN': token,
+          }
+        });
+
+        if (response.data.success) {
+          signatureMode.value = false;
+          emit('document-uploaded', response.data);
+          modifiedPdfUrl.value = URL.createObjectURL(signedPdfBlob);
+        } else {
+          throw new Error(response.data.message || 'Failed to upload signed document');
+        }
       } catch (error) {
-        console.error('Error adding signature to PDF:', error);
-        return false;
+        console.error('Error saving signature:', error);
+        saveError.value = `Failed to upload signed document: ${error.message}`;
+        throw error;
+      } finally {
+        isSaving.value = false;
       }
     };
     
@@ -748,7 +632,10 @@ export default {
       signedFilename,
       sanitizeFilename,
       finishAndClose,
-      handleThumbnailClick
+      handleThumbnailClick,
+      isSaving,
+      saveError,
+      signedPdfBlob
     };
   }
 };

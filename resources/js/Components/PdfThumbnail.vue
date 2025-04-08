@@ -19,9 +19,7 @@
 <script>
 import { ref, onMounted, computed } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
-
-// Update worker configuration to use local file
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+import { initPdfWorker } from '@/utils/pdfWorkerHelper';
 
 export default {
   name: 'PdfThumbnail',
@@ -49,7 +47,7 @@ export default {
 
     const generateThumbnail = async () => {
       try {
-        // Add cMapUrl configuration
+        initPdfWorker();
         const loadingTask = pdfjsLib.getDocument({
           url: props.pdfUrl,
           cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@latest/cmaps/',

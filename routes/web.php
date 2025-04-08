@@ -23,6 +23,11 @@ Route::get('/', function () {
 Route::get('/groq/diagnose', [App\Http\Controllers\GroqDiagnosticController::class, 'diagnose']);
 Route::get('/groq/test-direct', [App\Http\Controllers\GroqDiagnosticController::class, 'testDirectAccessKey']);
 
+// Add this outside of any middleware groups for accessibility
+Route::get('/csrf-refresh', function () {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('web');
+
 // Protected routes
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
     Route::get('/dashboard', function () {
@@ -192,11 +197,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->middleware(['auth', 'verified'])
         ->name('work-orders.invoice');
 
-    // Add the document upload route as a web route (with session authentication)
-    Route::post('/documents/upload-signed', [PdfController::class, 'uploadSigned'])
-        ->middleware(['auth:sanctum', 'verified'])
-        ->name('documents.upload.signed');
-
     Route::post('/work-orders/{workOrder}/attachments', [WorkOrderController::class, 'uploadAttachments'])
         ->name('work-orders.attachments');
 
@@ -248,11 +248,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::post('/work-orders/{workOrder}/update-hours', [WorkOrderController::class, 'updateHours'])->name('work-orders.update-hours');
 
-    // Document upload routes
-    Route::post('/api/documents/upload', [PdfController::class, 'upload'])
-        ->name('documents.upload');
-    Route::post('/documents/upload', [PdfController::class, 'upload'])
-        ->name('documents.upload.web');
+    // Add the new route for updating attachments
+    Route::post('/work-orders/{workOrder}/update-attachments', [WorkOrderController::class, 'updateAttachments'])
+        ->name('work-orders.update-attachments');
 });
 
 // Admin only routes
@@ -308,6 +306,9 @@ Route::get('/csrf-token', function () {
 })->middleware('web');
 
 // Add this route to your existing routes
-Route::get('/csrf-token', function () {
-    return response()->json(['csrfToken' => csrf_token()]);
+Route::middleware(['web', 'auth:sanctum', 'verified'])->group(function () {
+    Route::post('/documents/upload', [PdfController::class, 'upload'])
+        ->name('documents.upload.web');
+    Route::post('/documents/upload-signed', [PdfController::class, 'uploadSigned'])
+        ->name('documents.upload.signed');
 });

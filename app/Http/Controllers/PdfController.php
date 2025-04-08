@@ -140,24 +140,55 @@ class PdfController extends Controller
     public function uploadSigned(Request $request)
     {
         try {
-            $request->validate([
-                'document' => 'required|file|mimes:pdf|max:10240', // 10MB max, PDF only
-                'workOrderId' => 'required|exists:work_orders,id'
+            \Log::info('Upload signed document request received', [
+                'content_type' => $request->header('Content-Type'),
+                'has_file' => $request->hasFile('signed_pdf'),
+                'work_order_id' => $request->input('work_order_id')
             ]);
 
-            $file = $request->file('document');
-            $path = $file->store('signed_documents/' . $request->workOrderId, 'public');
+            $request->validate([
+                'signed_pdf' => [
+                    'required',
+                    'file',
+                    'max:10240', // 10MB max
+                    function ($attribute, $value, $fail) {
+                        if (!in_array($value->getMimeType(), ['application/pdf', 'application/x-pdf'])) {
+                            $fail('The file must be a PDF document.');
+                        }
+                    },
+                ],
+                'work_order_id' => 'required|exists:work_orders,id'
+            ]);
+
+            $file = $request->file('signed_pdf');
+            $fileName = 'signed_' . time() . '_' . Str::random(10) . '.pdf';
+            $path = $file->storeAs('work-orders/signed', $fileName, 'public');
+
+            if (!$path) {
+                throw new \Exception('Failed to store the signed document');
+            }
+
+            \Log::info('Document uploaded successfully', ['path' => $path]);
 
             return response()->json([
                 'success' => true,
                 'path' => $path,
                 'url' => Storage::url($path)
             ]);
-        } catch (\Exception $e) {
-            Log::error('Signed PDF upload failed: ' . $e->getMessage());
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed:', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to upload signed PDF'
+                'error' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error uploading signed document: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to upload signed document: ' . $e->getMessage()
             ], 500);
         }
     }
