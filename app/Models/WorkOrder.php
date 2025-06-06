@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 use App\Models\Customer;
 use App\Models\Note;
+use App\Models\WorkOrderActivity;
 
 
 class WorkOrder extends Model
@@ -135,5 +136,13 @@ class WorkOrder extends Model
         }
         
         return $allAttachments;
+    }
+    
+    /**
+     * Get all activities for this work order
+     */
+    public function activities()
+    {
+        return $this->hasMany(WorkOrderActivity::class)->orderBy('created_at', 'desc');
     }
 }

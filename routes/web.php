@@ -8,6 +8,7 @@ use App\Http\Controllers\WorkOrderController;
 use App\Http\Controllers\QuickBooksAuthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PDFController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 // Public routes
 Route::get('/', function () {
@@ -42,11 +43,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     
     // Additional work order routes
     Route::put('/api/work-orders/{id}', [WorkOrderController::class, 'update']);
-
     Route::get('/api/work-orders', [WorkOrderController::class, 'index']);
     Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate']);
     Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
     Route::post('/work-orders/{id}/update-images', [WorkOrderController::class, 'updateImages'])->name('work-orders.update-images');
+    Route::delete('/work-orders/{id}/attachments', [WorkOrderController::class, 'deleteAttachment'])->name('work-orders.delete-attachment');
+    Route::get('/work-orders/{id}/activities', [WorkOrderController::class, 'getActivities'])->name('work-orders.activities');
     
     // Notes
     Route::post('/work-orders/{workOrder}/notes', [WorkOrderController::class, 'addNote']);
@@ -302,12 +304,32 @@ Route::get('/quickbooks/authorize', [App\Http\Controllers\QuickBooksController::
     
 Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');
 
-// Add a CSRF token refresh route
+// Add CSRF token refresh routes
 Route::get('/csrf-token', function () {
     return response()->json(['csrf_token' => csrf_token()]);
 })->middleware('web');
+
+// Add the CsrfController route for refreshing tokens
+Route::post('/csrf/refresh', [App\Http\Controllers\CsrfController::class, 'refresh'])
+    ->middleware('web')
+    ->name('csrf.refresh');
 
 // Add this route to your existing routes
 Route::get('/csrf-token', function () {
     return response()->json(['csrfToken' => csrf_token()]);
 });
+
+// Email verification routes
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', [App\Http\Controllers\Auth\EmailVerificationController::class, 'verify'])
+    ->middleware(['auth', 'signed'])
+    ->name('verification.verify');
+
+Route::post('/email/verification-notification', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+
+    return back()->with('status', 'verification-link-sent');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.send');

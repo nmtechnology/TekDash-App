@@ -20,8 +20,10 @@
 import { ref, onMounted, computed } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Update worker configuration to use local file
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+// Set the worker source to use a CDN
+const pdfVersion = pdfjsLib.version || '3.11.174';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 
+  `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfVersion}/build/pdf.worker.min.js`;
 
 export default {
   name: 'PdfThumbnail',
@@ -49,10 +51,10 @@ export default {
 
     const generateThumbnail = async () => {
       try {
-        // Add cMapUrl configuration
+        // Add cMapUrl configuration with consistent versioning
         const loadingTask = pdfjsLib.getDocument({
           url: props.pdfUrl,
-          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@latest/cmaps/',
+          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfVersion}/cmaps/`,
           cMapPacked: true,
         });
         const pdf = await loadingTask.promise;

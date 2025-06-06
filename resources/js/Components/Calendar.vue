@@ -51,6 +51,99 @@
       </FullCalendar>
     </div>
   </div>
+
+  <!-- Work Order Modal -->
+  <div v-if="showWorkOrderModal && selectedWorkOrder" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <!-- Background overlay -->
+      <div class="fixed inset-0 bg-gray-800 bg-opacity-75 transition-opacity" aria-hidden="true" @click="closeModal"></div>
+
+      <!-- Modal panel -->
+      <div class="inline-block align-bottom bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+              <!-- Header with close button -->
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">
+                  Work Order #{{ selectedWorkOrder.id }}
+                </h3>
+                <button @click="closeModal" class="text-gray-400 hover:text-gray-200">
+                  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Work order details -->
+              <div class="text-gray-300 space-y-3">
+                <div v-if="selectedWorkOrder.title" class="mb-2">
+                  <h4 class="text-lg font-medium text-white">{{ selectedWorkOrder.title }}</h4>
+                </div>
+                
+                <div v-if="selectedWorkOrder.status" class="flex justify-between">
+                  <div>
+                    <p class="text-sm text-gray-400">Status:</p>
+                    <span class="inline-flex px-2 py-1 text-xs rounded" 
+                          :class="{
+                            'bg-green-800 text-green-100': selectedWorkOrder.status.toLowerCase().includes('complete'),
+                            'bg-blue-800 text-blue-100': selectedWorkOrder.status.toLowerCase().includes('scheduled'),
+                            'bg-yellow-800 text-yellow-100': selectedWorkOrder.status.toLowerCase().includes('progress'),
+                            'bg-red-800 text-red-100': selectedWorkOrder.status.toLowerCase().includes('cancel'),
+                            'bg-purple-800 text-purple-100': selectedWorkOrder.status.toLowerCase().includes('part') || 
+                                                          selectedWorkOrder.status.toLowerCase().includes('return')
+                          }">
+                      {{ selectedWorkOrder.status }}
+                    </span>
+                  </div>
+                  
+                  <div v-if="selectedWorkOrder.price">
+                    <p class="text-sm text-gray-400">Price:</p>
+                    <span>${{ selectedWorkOrder.price }}</span>
+                  </div>
+                </div>
+                
+                <div v-if="selectedWorkOrder.customer_id || selectedWorkOrder.customer_name" class="mt-4">
+                  <p class="text-sm text-gray-400">Customer:</p>
+                  <p v-if="selectedWorkOrder.customer_name">{{ selectedWorkOrder.customer_name }}</p>
+                  <p v-if="selectedWorkOrder.customer_id" class="text-sm">ID: {{ selectedWorkOrder.customer_id }}</p>
+                </div>
+                
+                <div v-if="selectedWorkOrder.created_at || selectedWorkOrder.date">
+                  <p class="text-sm text-gray-400">Date:</p>
+                  <p>{{ new Date(selectedWorkOrder.created_at || selectedWorkOrder.date).toLocaleString() }}</p>
+                </div>
+                
+                <div v-if="selectedWorkOrder.description" class="mt-4">
+                  <p class="text-sm text-gray-400">Description:</p>
+                  <p class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md">
+                    {{ selectedWorkOrder.description }}
+                  </p>
+                </div>
+                
+                <div v-if="selectedWorkOrder.address" class="mt-4">
+                  <p class="text-sm text-gray-400">Address:</p>
+                  <p class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md">
+                    {{ selectedWorkOrder.address }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Modal footer -->
+        <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <a :href="`/work-orders/${selectedWorkOrder.id}`" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">
+            View Full Details
+          </a>
+          <button @click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -305,16 +398,14 @@ function handleDateClick(arg: any) {
   // You can implement date click handling here
 }
 
-// Update the handleEventClick function to emit event with the work order ID
+// Update the handleEventClick function to directly open the work order modal
 function handleEventClick(arg: any) {
   // Get the work order ID from the clicked event
   const workOrderId = arg.event.id;
   
-  // Emit an event to the parent component with the work order ID
-  emit('workOrderSelected', workOrderId);
-  
-  // For debugging
+  // Open the work order modal directly
   console.log('Event clicked, opening work order:', workOrderId);
+  openWorkOrderModal(workOrderId);
 }
 
 // Define the calendar options

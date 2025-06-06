@@ -10,227 +10,165 @@
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
       <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full mt-4">
         <div class="glossy-header px-4 pt-5 pb-4">
-          
           <div class="flex justify-between items-center">
             <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
-              {{ mode === 'create' ? 'Add Work Order Form' : 'Edit Work Order' }}
+              Add Work Order
             </h3>
-            <div class="flex items-center">
-              <NetworkStatusIndicator />
-              <button 
-                @click="showModal = false" 
-                class="ml-4 text-gray-900 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
-                aria-label="Close modal"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            <button 
+              @click="showModal = false" 
+              class="btn btn-circle btn-outline ml-4 text-gray-900 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
+              aria-label="Close modal"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
-        
+
+        <!-- Steps component -->
+        <ul class="steps mb-4">
+          <li v-for="step in totalSteps" :key="step" 
+              class="step" 
+              :class="{'step-info': step <= currentStep, 'step-error': step > currentStep}"
+              :data-content="step === currentStep ? '✓' : ''">
+            Step {{ step }}
+          </li>
+        </ul>
+
         <div class="overflow-y-auto px-4 py-5 bg-gray-900 bg-opacity-90">
           <form @submit.prevent="submitForm">
-            <div class="glossy-section mb-4">
-              <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label><p class="text-sm text-white">Choose a customer from the dropdown menu below.</p>
-              <select v-model="form.customer_id" id="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                <option value="Advanced Project Solutions">Advanced Project Solutions</option>
-                <option value="Barrister Global Service Network">Barrister Global Service Network</option>
-                <option value="Bass-Security">Bass-Security</option>
-                <option value="Actron Security">Actron Security</option>
-                <option value="Field Nation">Field Nation</option>
-                <option value="Navco">Navco</option>
-                <option value="NuTech National">NuTech National</option>
-                <option value="Telaid">Telaid</option>
-              </select>
+            <div v-if="currentStep === 1">
+              <div class="glossy-section mb-4">
+                <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label><p class="text-sm text-white">Choose a customer from the dropdown menu below.</p>
+                <select v-model="form.customer_id" id="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                  <option value="Advanced Project Solutions">Advanced Project Solutions</option>
+                  <option value="Barrister Global Service Network">Barrister Global Service Network</option>
+                  <option value="Bass-Security">Bass-Security</option>
+                  <option value="Actron Security">Actron Security</option>
+                  <option value="Field Nation">Field Nation</option>
+                  <option value="Navco">Navco</option>
+                  <option value="NuTech National">NuTech National</option>
+                  <option value="Telaid">Telaid</option>
+                </select>
+              </div>
             </div>
-            
-            <h3 class="text-lime-400 text-lg font-medium mb-2">Title</h3>
-            <!-- Work order title fields -->
-            <div class="glossy-section mb-4"><p class="text-sm text-white">This section will generate a title for TekDash to find it in our system. Work order #'s cannot be used twice and the work order should have been duplicated if this is a return trip instead of creating a new work order. Location name is not an address, it is the name of the business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to look for a WalMart when driving. </p>
-              <div class="flex flex-col md:flex-row md:gap-4">
+
+            <div v-if="currentStep === 2">
+              <div class="glossy-section mb-4">
+                <h3 class="text-lime-400 text-lg font-medium mb-2">Title</h3>
+                <!-- Work order title fields -->
+                <p class="text-sm text-white">This section will generate a title for TekDash to find it in our system. Work order #'s cannot be used twice and the work order should have been duplicated if this is a return trip instead of creating a new work order. Location name is not an address, it is the name of the business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to look for a WalMart when driving. </p>
                 
-                <div class="mb-4 p-2 w-full">
-                  <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
-                  <div class="relative">
-                    <input 
-                      placeholder="WO123456-01" 
-                      type="text" 
-                      v-model="workOrderNumber" 
-                      @blur="checkExistingWorkOrder" 
-                      id="workOrderNumber" 
-                      class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
-                      :class="{'border-red-500': duplicateWorkOrderFound}"
-                      required
-                    >
-                    <div v-if="checkingWorkOrder" class="absolute right-3 top-2">
-                      <span class="text-yellow-400 text-xs">Checking...</span>
-                    </div>
-                    <div v-if="duplicateWorkOrderFound" class="text-red-500 text-xs mt-1">
-                      Work order with this number already exists.
+                <div class="flex flex-col md:flex-row md:gap-4">
+                  
+                  <div class="mb-4 p-2 w-full">
+                    <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
+                    <div class="relative">
+                      <input 
+                        placeholder="WO123456-01" 
+                        type="text" 
+                        v-model="workOrderNumber" 
+                        @blur="checkExistingWorkOrder" 
+                        id="workOrderNumber" 
+                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
+                        :class="{'border-red-500': duplicateWorkOrderFound}"
+                        required
+                      >
+                      <div v-if="checkingWorkOrder" class="absolute right-3 top-2">
+                        <span class="text-yellow-400 text-xs">Checking...</span>
+                      </div>
+                      <div v-if="duplicateWorkOrderFound" class="text-red-500 text-xs mt-1">
+                        Work order with this number already exists.
+                      </div>
                     </div>
                   </div>
+                  
+                  <div class="mb-4 p-2 w-full">
+                    <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
+                    <select v-model="workType" id="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                      <option value="" disabled>Select work type</option>
+                      <option value="CCTV">CCTV</option>
+                      <option value="ALARM">ALARM</option>
+                      <option value="CABLING">CABLING</option>
+                      <option value="POS">POS</option>
+                      <option value="INTERCOM">INTERCOM</option>
+                      <option value="FIRE">FIRE</option>
+                      <option value="ACCESS-CONTROL">ACCESS-CONTROL</option>
+                      <option value="TS">TS</option>
+                      <option value="ESTIMATE">ESTIMATE</option>
+                      <option value="WALK-THRU">WALK-THRU</option>
+                      <option value="MEETING">MEETING</option>
+                      <option value="APPT">APPT</option>
+                      <option value="PERSONAL-LEAVE">PERSONAL-LEAVE</option>
+                    </select>
+                  </div>
                 </div>
-                
-                <div class="mb-4 p-2 w-full">
-                  <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
-                  <select v-model="workType" id="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                    <option value="" disabled>Select work type</option>
-                    <option value="CCTV">CCTV</option>
-                    <option value="ALARM">ALARM</option>
-                    <option value="CABLING">CABLING</option>
-                    <option value="POS">POS</option>
-                    <option value="INTERCOM">INTERCOM</option>
-                    <option value="FIRE">FIRE</option>
-                    <option value="ACCESS-CONTROL">ACCESS-CONTROL</option>
-                    <option value="TS">TS</option>
-                    <option value="ESTIMATE">ESTIMATE</option>
-                    <option value="WALK-THRU">WALK-THRU</option>
-                    <option value="MEETING">MEETING</option>
-                    <option value="APPT">APPT</option>
-                    <option value="PERSONAL-LEAVE">PERSONAL-LEAVE</option>
+                  <div class="mb-4 p-2 w-full mr-1">
+                  <label for="location" class="block text-sm font-medium text-green-400">Location/Business name</label>
+                  <select v-model="location" id="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                    <option value="" disabled>Select business name</option>
+                    <option value="Chili's">Chili's</option>
+                    <option value="Brinks">Brinks</option>
+                    <option value="Chase">Chase</option>
+                    <option value="Dillard's">Dillard's</option>
+                    <option value="DutchBros">DutchBros</option>
+                    <option value="RaisingCaines">RaisingCaines</option>
+                    <option value="ChaseATM">ChaseATM</option>
+                    <option value="WalMart">WalMart</option>
+                    <option value="Target">Target</option>
+                    <option value="Whataburger">Whataburger</option>
+                    <option value="MisterCarwash">MisterCarwash</option>
+                    <option value="WellsFargo">WellsFargo</option>
+                    <option value="NewSite">NewSite</option>
                   </select>
-                </div>
-              </div>
-                <div class="mb-4 p-2 w-full mr-1">
-                <label for="location" class="block text-sm font-medium text-green-400">Location/Business name</label>
-                <select v-model="location" id="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                  <option value="" disabled>Select business name</option>
-                  <option value="Chili's">Chili's</option>
-                  <option value="Brinks">Brinks</option>
-                  <option value="Chase">Chase</option>
-                  <option value="Dillard's">Dillard's</option>
-                  <option value="DutchBros">DutchBros</option>
-                  <option value="RaisingCaines">RaisingCaines</option>
-                  <option value="ChaseATM">ChaseATM</option>
-                  <option value="WalMart">WalMart</option>
-                  <option value="Target">Target</option>
-                  <option value="Whataburger">Whataburger</option>
-                  <option value="MisterCarwash">MisterCarwash</option>
-                  <option value="WellsFargo">WellsFargo</option>
-                  <option value="NewSite">NewSite</option>
-                </select>
-                </div>
-              <!-- Preview of combined title -->
-              <div>
-                <label class="block text-sm font-medium text-green-400">Generated Title</label>
-                <div class="text-lime-400 mt-1 px-3 py-2 rounded-md glossy-content">
-                  {{ formattedTitle }}
+                  </div>
+                <!-- Preview of combined title -->
+                <div>
+                  <label class="block text-sm font-medium text-green-400">Generated Title</label>
+                  <div class="text-lime-400 mt-1 px-3 py-2 rounded-md glossy-content">
+                    {{ formattedTitle }}
+                  </div>
                 </div>
               </div>
             </div>
             
-            <div class="glossy-section mb-4">
+            <div v-if="currentStep === 3" class="glossy-section mb-4">
               <label for="description" class="block text-sm font-medium text-green-400">Service Description</label><p class="text-sm text-white">Enter the details of what was requested on the work order sent by the customer, here's a hint, you can copy and paste the description from the work orders into here which saves you time.</p>
               <textarea v-model="form.description" id="description" placeholder="What is the Field Technician doing onsite?" class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
             </div>
 
-            <div class="glossy-section mb-4">
-              <label for="date_time" class="block text-sm font-medium text-green-400">Date Selection</label>
-              
-              <!-- Date selection type toggle -->
-              <div class="flex space-x-4 text-sm mb-2">
-                <label class="flex items-center">
-                  <input 
-                    type="radio" 
-                    v-model="dateSelectionType" 
-                    value="single" 
-                    class="mr-2 focus:ring-lime-400 text-lime-500"
-                  >
-                  <span class="text-white">Single Date</span>
-                </label>
-                <label class="flex items-center">
-                  <input 
-                    type="radio" 
-                    v-model="dateSelectionType" 
-                    value="range" 
-                    class="mr-2 focus:ring-lime-400 text-lime-500"
-                  >
-                  <span class="text-white">Date Range</span>
-                </label>
-                <label class="flex items-center">
-                  <input 
-                    type="radio" 
-                    v-model="dateSelectionType" 
-                    value="multiple" 
-                    class="mr-2 focus:ring-lime-400 text-lime-500"
-                  >
-                  <span class="text-white">Multiple Dates</span>
-                </label>
-              </div>
+            <div v-if="currentStep === 4" class="glossy-section mb-4">
+              <label for="date_time" class="block text-sm font-medium text-green-400">Date and Time Selection</label>
 
-              <!-- Single date selection -->
-              <div v-if="dateSelectionType === 'single'" class="mb-2">
-                <input 
-                  type="datetime-local" 
-                  v-model="form.date_time" 
-                  id="date_time" 
-                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
-                  required
-                />
-              </div>
+              <!-- Cally Date Picker -->
+              <calendar-date 
+                class="cally bg-base-100 border border-base-300 shadow-lg rounded-box mt-2"
+                @input="(value) => form.date_time = value"
+              >
+                <svg aria-label="Previous" class="fill-current size-4" slot="previous" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
+                <svg aria-label="Next" class="fill-current size-4" slot="next" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
+                <calendar-month></calendar-month>
+              </calendar-date>
 
-              <!-- Date range selection -->
-              <div v-if="dateSelectionType === 'range'" class="space-y-2">
-                <div class="flex items-center">
-                  <span class="text-xs text-gray-400 mr-2 w-14">Start:</span>
-                  <input 
-                    type="datetime-local" 
-                    v-model="form.date_time" 
-                    class="glossy-content text-lime-400 mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
-                    required
-                  />
-                </div>
-                <div class="flex items-center">
-                  <span class="text-xs text-gray-400 mr-2 w-14">End:</span>
-                  <input 
-                    type="datetime-local" 
-                    v-model="form.end_date" 
-                    class="glossy-content text-lime-400 mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
-                    required
-                  />
-                </div>
-              </div>
-
-              <!-- Multiple date selection -->
-              <div v-if="dateSelectionType === 'multiple'" class="space-y-2">
-                <div v-for="(dateObj, index) in selectedDates" :key="index" class="flex items-center gap-2">
-                  <input 
-                    type="datetime-local" 
-                    v-model="dateObj.date"
-                    class="glossy-content text-lime-400 mt-1 flex-grow rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
-                    required
-                  />
-                  <button 
-                    @click="removeDate(index)" 
-                    type="button"
-                    class="text-red-400 hover:text-red-300 p-1"
-                    :disabled="selectedDates.length === 1"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div class="text-yellow-400 text-xs mt-2 p-2 bg-yellow-900 bg-opacity-30 rounded">
-                  <strong>Note:</strong> Selecting multiple dates will create separate work orders for each date.
-                </div>
-                <button 
-                  @click="addNewDate" 
-                  type="button"
-                  class="text-sm text-lime-400 hover:text-lime-300 flex items-center mt-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Another Date
-                </button>
+              <!-- Time Selector -->
+              <div class="flex items-center gap-2 mt-4">
+                <select v-model="selectedTime.hour" class="glossy-content text-lime-400 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
+                  <option v-for="hour in 12" :key="hour" :value="hour">{{ hour }}</option>
+                </select>
+                <span class="text-white">:</span>
+                <select v-model="selectedTime.minute" class="glossy-content text-lime-400 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
+                  <option v-for="minute in 60" :key="minute" :value="minute < 10 ? '0' + minute : minute">{{ minute < 10 ? '0' + minute : minute }}</option>
+                </select>
+                <select v-model="selectedTime.period" class="glossy-content text-lime-400 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
               </div>
             </div>
 
             <!-- New address field -->
-            <div class="glossy-section mb-4">
+            <div v-if="currentStep === 5" class="glossy-section mb-4">
               <label for="address" class="block text-sm font-medium text-green-400">Work Site Address</label><p class="text-sm text-white">Enter the address for the site where the technician needs to be ON TIME!</p>
               <input 
                 type="text" 
@@ -243,40 +181,295 @@
             </div>
 
             <!-- New hours field -->
-            <div class="glossy-section mb-4">
-              <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label><p class="text-sm text-white">Enter the amount of hours approved by the customer, if we need more time onstie then we will call at that time to request the estimated hours to complete the WO. This is usually abour 2-4 hours for our first trip.</p>
-              <input 
-                type="number" 
-                v-model="form.hours" 
-                id="hours" 
-                step="0.5"
-                min="0"
-                placeholder="Enter number of hours" 
-                class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
-                required
-              >
+            <div v-if="currentStep === 6" class="glossy-section mb-4">
+              <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label>
+              <p class="text-sm text-white mb-4">Enter the amount of hours approved by the customer, if we need more time onsite then we will call at that time to request the estimated hours to complete the WO. This is usually about 2-4 hours for our first trip.</p>
+              
+              <!-- Quick selection tiles -->
+              <div class="grid grid-cols-4 gap-4 mb-6">
+                <button 
+                  v-for="hours in [4, 8, 12, 16]" 
+                  :key="hours"
+                  type="button"
+                  @click="form.hours = hours"
+                  :class="{
+                    'bg-lime-600': form.hours === hours,
+                    'hover:bg-lime-700': form.hours === hours,
+                    'bg-gray-800 hover:bg-gray-700': form.hours !== hours
+                  }"
+                  class="glossy-content p-4 rounded-lg text-lime-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50"
+                >
+                  {{ hours }}h
+                </button>
+              </div>
+
+              <!-- Slider -->
+              <div class="mt-6">
+                <div class="flex justify-between text-lime-400 text-sm mb-2">
+                  <span>2h</span>
+                  <span>16h</span>
+                </div>
+                <input 
+                  type="range" 
+                  v-model="form.hours" 
+                  id="hours" 
+                  min="2"
+                  max="16"
+                  step="2"
+                  class="slider w-full"
+                  required
+                >
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                  <template v-for="value in [2, 4, 6, 8, 10, 12, 14, 16]" :key="value">
+                    <span class="relative" style="left: -4px">|</span>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Current value display -->
+              <div class="text-center mt-4">
+                <span class="text-lime-400 text-lg font-medium">{{ form.hours }} hours</span>
+              </div>
             </div>
             
-            <div class="glossy-section mb-4">
-              <label for="price" class="block text-sm font-medium text-green-400">Price</label>
-              <input type="number" v-model="form.price" id="price" placeholder="Enter price" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+            <div v-if="currentStep === 7" class="glossy-section mb-4">
+              <label for="hourlyRate" class="block text-sm font-medium text-green-400">Hourly Rate</label>
+              <p class="text-sm text-white mb-4">Select the hourly rate. The total price will be calculated based on the approved hours.</p>
+              
+              <!-- Quick selection tiles -->
+              <div class="grid grid-cols-4 gap-4 mb-6">
+                <button 
+                  v-for="rate in [95, 120, 130, 180]" 
+                  :key="rate"
+                  type="button"
+                  @click="form.hourlyRate = rate"
+                  :class="{
+                    'bg-purple-600': form.hourlyRate === rate,
+                    'hover:bg-purple-700': form.hourlyRate === rate,
+                    'bg-gray-800 hover:bg-gray-700': form.hourlyRate !== rate
+                  }"
+                  class="glossy-content p-4 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+                >
+                  ${{ rate }}/hr
+                </button>
+              </div>
+
+              <!-- Slider with purple theme -->
+              <div class="mt-6">
+                <div class="flex justify-between text-purple-400 text-sm mb-2">
+                  <span>$55/hr</span>
+                  <span>$200/hr</span>
+                </div>
+                <input 
+                  type="range" 
+                  v-model="form.hourlyRate" 
+                  id="hourlyRate" 
+                  min="55"
+                  max="200"
+                  step="5"
+                  class="slider-purple w-full"
+                  required
+                >
+                <div class="flex justify-between text-xs text-gray-400 mt-1 overflow-x-auto">
+                  <template v-for="value in rateValues" :key="value">
+                    <span class="relative text-center whitespace-nowrap" style="min-width: 20px">|</span>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Travel expense section -->
+              <div class="mt-8 p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    v-model="form.includeTravel" 
+                    class="checkbox checkbox-success"
+                  />
+                  <span class="text-white">Include Travel Expense</span>
+                </label>
+                
+                <!-- Travel expense configuration (shows when checkbox is checked) -->
+                <div v-if="form.includeTravel" class="mt-4">
+                  <!-- Mileage rate quick selection tiles -->
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-purple-400 mb-2">Rate per Mile</label>
+                    <div class="grid grid-cols-5 gap-2">
+                      <button 
+                        v-for="rate in [1.00, 0.75, 0.65, 0.50, 0.45]" 
+                        :key="rate"
+                        type="button"
+                        @click="form.mileageRate = rate"
+                        :class="{
+                          'bg-purple-600': form.mileageRate === rate,
+                          'hover:bg-purple-700': form.mileageRate === rate,
+                          'bg-gray-800 hover:bg-gray-700': form.mileageRate !== rate
+                        }"
+                        class="glossy-content p-2 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-sm"
+                      >
+                        ${{ rate.toFixed(2) }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Travel distance slider -->
+                  <div class="mt-6">
+                    <label class="block text-sm font-medium text-purple-400 mb-2">Distance (One Way)</label>
+                    <div class="flex justify-between text-purple-400 text-sm mb-2">
+                      <span>45 miles</span>
+                      <span>400 miles</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      v-model="form.travelMiles" 
+                      min="45"
+                      max="400"
+                      step="5"
+                      class="slider-purple w-full"
+                    />
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                      <template v-for="value in [45, 100, 150, 200, 250, 300, 350, 400]" :key="value">
+                        <span class="relative" style="left: -4px">|</span>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Travel cost calculation -->
+                  <div class="text-center mt-4 p-3 rounded-lg bg-gray-800/50">
+                    <div class="flex flex-col gap-1 text-sm">
+                      <div>
+                        <span class="text-gray-400">{{ form.travelMiles }} miles × </span>
+                        <span class="text-purple-400">${{ form.mileageRate.toFixed(2) }}/mile</span>
+                        <span class="text-gray-400"> × 2 (round-trip)</span>
+                      </div>
+                      <div class="text-lg font-medium text-purple-400">
+                        ${{ travelCost }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Current rate and total price display -->
+              <div class="flex flex-col items-center mt-6 space-y-2">
+                <span class="text-purple-400 text-lg font-medium">${{ form.hourlyRate }}/hr</span>
+                <div class="text-white text-sm">
+                  <div class="flex flex-col items-center gap-1">
+                    <div>
+                      <span class="text-purple-400">${{ form.hourlyRate }}</span> × 
+                      <span class="text-lime-400">{{ form.hours }} hours</span> = 
+                      <span class="text-purple-400">${{ laborCost }}</span>
+                    </div>
+                    <div v-if="form.includeTravel">
+                      <span class="text-gray-400">+</span>
+                      <span class="text-purple-400">${{ travelCost }}</span>
+                      <span class="text-gray-400">travel</span>
+                    </div>
+                    <div class="text-xl font-bold mt-2">
+                      <span class="text-gray-400">Total:</span>
+                      <span class="text-purple-400">${{ totalPrice }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div class="glossy-section mb-4">
-              <label for="status" class="block text-sm font-medium text-green-400">Status</label>
-              <select v-model="form.status" id="status" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                <option value="Scheduled">Scheduled</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Part/Return">Part/Return</option>
-                <option value="Complete">Complete</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+            <div v-if="currentStep === 8" class="glossy-section mb-4">
+              <label class="block text-sm font-medium text-green-400 mb-4">Status</label>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button 
+                  v-for="status in ['Scheduled', 'In Progress', 'Part/Return', 'Complete', 'Cancelled']" 
+                  :key="status"
+                  type="button"
+                  @click="form.status = status"
+                  class="status-badge flex items-center justify-center gap-2 p-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                  :class="{
+                    'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': status === 'Scheduled' && form.status === status,
+                    'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500': status === 'In Progress' && form.status === status,
+                    'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500': status === 'Part/Return' && form.status === status,
+                    'bg-green-600 hover:bg-green-700 focus:ring-green-500': status === 'Complete' && form.status === status,
+                    'bg-red-600 hover:bg-red-700 focus:ring-red-500': status === 'Cancelled' && form.status === status,
+                    'bg-gray-800 hover:bg-gray-700': form.status !== status,
+                    'glossy-content': true
+                  }"
+                >
+                  <span class="text-white font-medium">{{ status }}</span>
+                  <svg 
+                    v-if="form.status === status" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    class="h-5 w-5 text-white" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                  >
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
-            <div class="glossy-section mb-4">
-              <label for="file_attachments" class="block text-sm font-medium text-green-400">Attachments</label>
-              <input type="file" @change="handleFileUpload" id="file_attachments" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" multiple>
-              <div v-if="form.errors.file_attachments" class="text-red-500 text-xs mt-1">
+            <div v-if="currentStep === 9" class="glossy-section mb-4">
+              <label class="block text-sm font-medium text-green-400 mb-2">Attachments</label>
+              <p class="text-sm text-white mb-4">Upload any relevant files or documents for this work order.</p>
+              
+              <div class="form-control">
+                <label class="label cursor-pointer flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-lime-400 transition-colors duration-200">
+                  <input 
+                    type="file" 
+                    @change="handleFileUpload" 
+                    id="file_attachments" 
+                    class="file-input file-input-bordered file-input-success w-full max-w-lg bg-gray-800/50 text-lime-400"
+                    multiple
+                  />
+                </label>
+                
+                <!-- File list preview -->
+                <div v-if="form.file_attachments && form.file_attachments.length > 0" class="mt-4">
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div v-for="(file, index) in form.file_attachments" 
+                         :key="index" 
+                         class="relative group">
+                      <div class="aspect-square rounded-lg overflow-hidden bg-gray-800/50">
+                        <!-- PDF Preview -->
+                        <PDFThumbnail
+                          v-if="file.type === 'application/pdf'"
+                          :file="file"
+                          class="w-full h-full object-cover"
+                        />
+                        <!-- Image Preview -->
+                        <img
+                          v-else-if="file.type.startsWith('image/')"
+                          :src="URL.createObjectURL(file)"
+                          :alt="file.name"
+                          class="w-full h-full object-cover"
+                        />
+                        <!-- Default File Icon -->
+                        <div v-else class="w-full h-full flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      <!-- File Info Overlay -->
+                      <div class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
+                        <div class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm truncate">
+                          {{ file.name }}
+                        </div>
+                        <button 
+                          @click="removeFile(index)"
+                          class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end"
+                          type="button"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div v-if="form.errors.file_attachments" class="text-red-500 text-xs mt-2">
                 {{ form.errors.file_attachments }}
               </div>
             </div>
@@ -290,25 +483,33 @@
             <progress v-if="form.progress" :value="form.progress.percentage" min="0" max="100" class="w-full rounded-md">
               {{ form.progress.percentage }}%
             </progress>
+
+            <div class="flex justify-between mt-4">
+              <button 
+                v-if="currentStep > 1" 
+                type="button" 
+                @click="currentStep--" 
+                class="btn btn-secondary"
+              >
+                Back
+              </button>
+              <button 
+                v-if="currentStep < totalSteps" 
+                type="button" 
+                @click="currentStep++" 
+                class="btn btn-primary"
+              >
+                Next
+              </button>
+              <button 
+                v-if="currentStep === totalSteps" 
+                type="submit" 
+                class="btn btn-success"
+              >
+                Submit
+              </button>
+            </div>
           </form>
-        </div>
-        
-        <div class="glossy-footer px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse sm:gap-2">
-          <button 
-            type="submit" 
-            @click="submitForm" 
-            :disabled="duplicateWorkOrderFound || checkingWorkOrder"
-            class="w-full inline-flex justify-center rounded border shadow-sm px-4 py-2 bg-lime-400 bg-opacity-20 text-base font-medium text-lime-400 hover:bg-lime-400 hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 sm:text-sm transition-colors duration-200"
-            :class="{'opacity-50 cursor-not-allowed': duplicateWorkOrderFound || checkingWorkOrder}"
-          >
-            {{ mode === 'create' ? 'Submit' : 'Update' }}
-          </button>
-          <button @click="showModal = false" type="button" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded border outline shadow-sm px-4 py-2 text-red-500 font-medium hover:bg-red-400 hover:bg-opacity-20 sm:text-sm transition-colors duration-200">
-            Cancel
-          </button>
-          <button v-if="mode === 'edit'" @click="deleteWorkOrder" type="button" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded border shadow-sm px-4 py-2 bg-red-600 bg-opacity-20 text-base font-medium text-red-400 hover:bg-red-600 hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm transition-colors duration-200">
-            Delete
-          </button>
         </div>
       </div>
     </div>
@@ -318,11 +519,14 @@
 <script>
 import { useForm, router } from '@inertiajs/vue3';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
+import PDFThumbnail from '@/Components/PDFThumbnail.vue';
 import axios from 'axios';
+import 'cally';
 
 export default {
   components: {
     NetworkStatusIndicator,
+    PDFThumbnail,
   },
   props: {
     auth: Object,
@@ -330,7 +534,8 @@ export default {
   data() {
     return {
       showModal: false,
-      mode: 'create',
+      currentStep: 1,
+      totalSteps: 9,
       workType: '',
       workOrderNumber: '',
       location: '',
@@ -348,15 +553,24 @@ export default {
         end_date: '',
         visit_dates: [],
         price: '120.00',
+        hourlyRate: 120,
         status: 'Scheduled',
         file_attachments: [],
         notes: '',
         progress: null,
         user_id: '',
         users_name: '',
-        address: '', // Add address field
-        hours: '', // Add hours field
+        address: '',
+        hours: 4,
+        includeTravel: false,
+        travelMiles: 45,
+        mileageRate: 1.00,
       }),
+      selectedTime: {
+        hour: 12,
+        minute: '00',
+        period: 'AM',
+      },
     };
   },
   watch: {
@@ -373,15 +587,68 @@ export default {
           this.checkExistingWorkOrder();
         }, 500);
       }
+    },
+    // Update form.date_time when time changes
+    selectedTime: {
+      handler(newTime) {
+        const [year, month, day] = this.form.date_time.split('-');
+        const hour = newTime.period === 'PM' && newTime.hour !== 12 ? newTime.hour + 12 : newTime.hour;
+        const minute = newTime.minute;
+        this.form.date_time = `${year}-${month}-${day}T${hour}:${minute}`;
+      },
+      deep: true,
+    },
+    // Update price when hourly rate changes
+    'form.hourlyRate': {
+      handler(newRate) {
+        this.form.price = (newRate * this.form.hours).toFixed(2);
+      },
+      immediate: true
+    },
+    // Update price when hours change
+    'form.hours': {
+      handler(newHours) {
+        this.form.price = (this.form.hourlyRate * newHours).toFixed(2);
+      },
+      immediate: true
+    },
+    'form.hourlyRate': {
+      handler(newRate) {
+        this.form.price = (newRate * this.form.hours).toFixed(2);
+      },
+      immediate: true
+    },
+    'form.hours': {
+      handler(newHours) {
+        this.form.price = (this.form.hourlyRate * newHours).toFixed(2);
+      },
+      immediate: true
     }
-  },
-  computed: {
-    formattedTitle() {
-      // Combine the three fields into one title string
-      if (!this.workType && !this.workOrderNumber && !this.location) return '';
-      
-      return `${this.workType || 'Unknown'} / ${this.workOrderNumber || 'No WO#'} / ${this.location || 'No Location'}`;
-    }
+  },    computed: {
+      formattedTitle() {
+        // Combine the three fields into one title string
+        if (!this.workType && !this.workOrderNumber && !this.location) return '';
+        
+        return `${this.workType || 'Unknown'} / ${this.workOrderNumber || 'No WO#'} / ${this.location || 'No Location'}`;
+      },
+      laborCost() {
+        return (this.form.hourlyRate * this.form.hours).toFixed(2);
+      },
+      travelCost() {
+        return this.form.includeTravel ? (this.form.travelMiles * this.form.mileageRate * 2).toFixed(2) : '0.00';
+      },
+      totalPrice() {
+        const labor = this.form.hourlyRate * this.form.hours;
+        const travel = this.form.includeTravel ? this.form.travelMiles * 1 * 2 : 0;
+        return (labor + travel).toFixed(2);
+      },
+      rateValues() {
+        const values = [];
+        for (let rate = 55; rate <= 200; rate += 5) {
+          values.push(rate);
+        }
+        return values;
+      }
   },
   methods: {
     async checkExistingWorkOrder() {
@@ -642,17 +909,33 @@ export default {
       }
     },
     handleFileUpload(event) {
-      // Get file objects directly from the event
       const files = event.target.files;
       
       if (files && files.length > 0) {
-        // Convert FileList to array and set to form.file_attachments
         this.form.file_attachments = Array.from(files);
-      } else {
-        // Reset to empty array if no files
-        this.form.file_attachments = [];
       }
     },
+    
+    removeFile(index) {
+      // Create a new FileList without the removed file
+      const dtTransfer = new DataTransfer();
+      
+      this.form.file_attachments.forEach((file, i) => {
+        if (i !== index) {
+          dtTransfer.items.add(file);
+        }
+      });
+      
+      // Update the file input's files
+      const fileInput = document.getElementById('file_attachments');
+      if (fileInput) {
+        fileInput.files = dtTransfer.files;
+      }
+      
+      // Update the form's file attachments
+      this.form.file_attachments = Array.from(dtTransfer.files);
+    },
+    
     resetForm() {
       // Clear the file input separately since form.reset() doesn't clear it
       const fileInput = document.getElementById('file_attachments');
@@ -1020,5 +1303,195 @@ input, select, textarea {
     background: rgba(139, 92, 246, 0.25);
     border-color: rgba(139, 92, 246, 0.4);
   }
+}
+
+/* Custom styles for the Cally date picker */
+calendar-date {
+  /* Primary colors */
+  --cally-primary-color: #84cc16;
+  --cally-primary-color-light: #a3e635;
+  --cally-primary-color-dark: #65a30d;
+  
+  /* Text colors */
+  --cally-text-color: #ffffff;
+  --cally-text-color-secondary: #9ca3af;
+  
+  /* Background colors */
+  --cally-background-color: rgba(17, 24, 39, 0.95);
+  --cally-surface-color: rgba(31, 41, 55, 0.85);
+  
+  /* Border colors */
+  --cally-border-color: rgba(255, 255, 255, 0.08);
+  
+  /* Hover and focus states */
+  --cally-hover-color: rgba(132, 204, 22, 0.1);
+  --cally-focus-ring-color: rgba(132, 204, 22, 0.5);
+  
+  /* Additional customization */
+  --cally-border-radius: 0.5rem;
+  --cally-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  
+  /* Add backdrop filter for glossy effect */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Style the calendar container to match glossy-card */
+calendar-date::part(container) {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Style selected date to use lime color */
+calendar-date::part(selected) {
+  background-color: #84cc16 !important;
+  color: #ffffff !important;
+}
+
+/* Style today's date */
+calendar-date::part(today) {
+  border-color: #84cc16 !important;
+}
+
+/* Style hover state */
+calendar-date::part(day):hover {
+  background-color: rgba(132, 204, 22, 0.1) !important;
+}
+
+/* Style the range slider */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: linear-gradient(90deg, rgba(132, 204, 22, 0.2), rgba(132, 204, 22, 0.3));
+  border-radius: 3px;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #84cc16;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.1);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #65a30d;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 6px rgba(132, 204, 22, 0.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #84cc16;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.1);
+  border: none;
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #65a30d;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 6px rgba(132, 204, 22, 0.2);
+}
+
+.slider::-moz-range-track {
+  background: linear-gradient(90deg, rgba(132, 204, 22, 0.2), rgba(132, 204, 22, 0.3));
+  border-radius: 3px;
+  height: 6px;
+}
+
+/* Purple slider styles */
+.slider-purple {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: linear-gradient(90deg, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.3));
+  border-radius: 3px;
+  outline: none;
+}
+
+.slider-purple::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #9333ea;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1);
+}
+
+.slider-purple::-webkit-slider-thumb:hover {
+  background: #7e22ce;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 6px rgba(147, 51, 234, 0.2);
+}
+
+.slider-purple::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #9333ea;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1);
+  border: none;
+}
+
+.slider-purple::-moz-range-thumb:hover {
+  background: #7e22ce;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 6px rgba(147, 51, 234, 0.2);
+}
+
+.slider-purple::-moz-range-track {
+  background: linear-gradient(90deg, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.3));
+  border-radius: 3px;
+  height: 6px;
+}
+
+/* Add glossy effect to quick selection tiles */
+.glossy-content.p-4 {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(132, 204, 22, 0.1);
+}
+
+.glossy-content.p-4:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: rgba(132, 204, 22, 0.3);
+}
+
+.glossy-content.p-4.bg-lime-600 {
+  background: linear-gradient(135deg, #84cc16, #65a30d);
+  border-color: rgba(163, 230, 53, 0.3);
+}
+
+.status-badge {
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transform: translateY(0);
+  transition: all 0.2s ease;
+}
+
+.status-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.5);
+}
+
+.status-badge:active {
+  transform: translateY(0);
 }
 </style>

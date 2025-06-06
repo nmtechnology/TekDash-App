@@ -1,682 +1,217 @@
 <template>
-  <div v-if="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center modal-animation">
-    <!-- Semi-transparent overlay with enhanced blur -->
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
-    
-    <!-- Modal container with fixed header and scrollable content -->
-    <div class="mt-10 glossy-card flex flex-col w-full max-w-4xl mx-4 sm:mx-auto rounded-lg text-left shadow-xl transform transition-all relative z-[10000] max-h-[80vh]">
-       
-      <!-- Fixed header -->
-      <div class="glossy-header sticky top-0 z-30 px-4 pt-3 pb-3 sm:p-4 border-b border-gray-700/50">
-        <!-- Controls row -->
-       <div class="flex justify-end">
-          
-          <!-- Edit/Save/Close buttons -->
-          <div class="flex space-x-2">
-            
-            <button @click="closeModal" class="text-red-500 btn hover:text-black hover:bg-red-500 glossy-close-btn">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <!-- Title and Status -->
-        <div class="mb-3">
-          <h3 class="text-3xl font-bold text-white truncate max-w-full" id="modal-title">
-            <span v-if="!editingField.title" class="flex items-center">
-              <span class="truncate">{{ workOrder.title }}</span>
-              <span 
-                class="ml-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset shrink-0"
-                :class="getStatusClasses(workOrder.status)"
-              >
-                {{ workOrder.status }}
-              </span><NetworkStatusIndicator :workOrderId="workOrder.id" class="ml-4" />
-            <button v-if="!editingField.title" @click="startEditing('title')" class="glossy-icon-btn btn-sm ml-4 text-lime-400 hover:text-lime-600">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </button>
-            <button v-else @click="saveField('title')" class="glossy-icon-btn btn-sm ml-4 text-green-400 hover:text-green-300">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-            </button></span>
+  <div class="bg-gray-900 text-white min-h-screen">
+    <!-- Error Alert -->
+    <div v-if="uploadError" class="p-4 mb-4 bg-red-800 text-red-100 rounded-lg">
+      <p class="font-medium">Error:</p>
+      <p class="whitespace-pre-line">{{ uploadError }}</p>
+    </div>
+
+    <!-- Header Section -->
+    <header class="p-6 border-b border-gray-700">
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <div v-if="editingField.title" class="flex items-center space-x-2">
             <input 
-              v-else 
-              type="text" 
               v-model="form.title" 
-              class=" w-95 rounded-md bg-gray-900 border-lime-400 shadow-sm focus:border-lime-600 focus:ring-lime-600 dark:focus:border-lime-400 dark:focus:ring-lime-400 text-white text-3xl font-bold px-4 py-2"
+              class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full"
+              @keyup.enter="saveField('title')"
+              placeholder="Enter work order title"
             />
-          </h3><!-- Network Status Indicator -->
-          <div class="flex items-center">
-            
+            <button 
+              @click="saveField('title')"
+              class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Save
+            </button>
+          </div>
+          <h1 
+            v-else 
+            @click="editingField.title = true"
+            class="text-2xl font-bold cursor-pointer hover:text-blue-400"
+          >
+            {{ workOrderData.title }}
+          </h1>
+
+          <div class="mt-2 flex items-center space-x-4">
+            <span class="text-gray-400">Created: {{ formatDate(workOrderData.created_at) }}</span>
+            <span class="text-gray-400">Updated: {{ formatDate(workOrderData.updated_at) }}</span>
           </div>
         </div>
-        
-       
-      </div>
-      
-      <!-- Scrollable content -->
-      <div class="flex-1 overflow-y-auto p-4">
-        <div class="text-gray-300 space-y-4">
-          <!-- Work order details -->
-          <div class="text-gray-300 space-y-4">
-            <!-- Customer section -->
-            <div class="flex justify-between items-start glossy-section">
-              <div class="w-full">
-                <p class="text-sm text-lime-400">Customer:</p>
-                <div class="flex items-center">
-                  <span v-if="!editingField.customer_id" class="text-white">{{ workOrder.customer_id }}</span>
-                  <select v-else v-model="form.customer_id" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
-                    <option value="Advanced Project Solutions">Advanced Project Solutions</option>
-                    <option value="Barrister Global Service Network">Barrister Global Service Network</option>
-                    <option value="Field Nation">Field Nation</option>
-                    <option value="Navco">Navco</option>
-                    <option value="NEW CUSTOMER">NEW CUSTOMER</option>
-                    <option value="NuTech National">NuTech National</option>
-                    <option value="Telaid">Telaid</option>
-                  </select>
-                  <span class="ml-2">
-                    <button v-if="!editingField.customer_id" @click="startEditing('customer_id')" class="text-lime-400 btn hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('customer_id')" class="text-green-400 btn hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div>
-              
-              <div>
-                <p class="text-sm text-lime-400">Price:</p>
-                <div class="flex items-center">
-                  <span v-if="!editingField.price" class="text-white">${{ workOrder.price }}</span>
-                  <input v-else type="number" v-model="form.price" class="mt-1 w-24 rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" />
-                  <span class="ml-2">
-                    <button v-if="!editingField.price" @click="startEditing('price')" class="text-lime-400 btn hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('price')" class="text-green-400 btn hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Status section -->
-            <div class="flex justify-between items-start glossy-section">
-              <div class="w-full">
-                <p class="text-sm text-lime-400">Status:</p>
-                <div class="flex items-center">
-                  <span v-if="!editingField.status" :class="getStatusClasses(workOrder.status)">
-                    {{ workOrder.status }}
-                  </span>
-                  <select v-else v-model="form.status" ref="statusSelect" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-400 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm">
-                    <option v-for="status in VALID_STATUSES" :key="status" :value="status">
-                      {{ status }}
-                    </option>
-                  </select>
-                  <span class="ml-2">
-                    <button v-if="!editingField.status" @click="startEditing('status')" class="text-lime-400 btn hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('status')" class="text-green-400 btn hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div>
-              
-              <div>
-                <p class="text-sm text-lime-400">Date(s):</p>
-                <div class="flex items-center">
-                  <div v-if="!editingField.date_time" class="text-white">
-                    <span v-if="workOrder.visit_dates && workOrder.visit_dates.length">
-                      {{ formatMultipleDates(workOrder.visit_dates) }}
-                    </span>
-                    <span v-else>
-                      {{ formatDate(workOrder.date_time) }}
-                    </span>
-                  </div>
-                  <div v-else class="flex flex-col space-y-3 w-full">
-                    <!-- Date selection type toggle -->
-                    <div class="flex space-x-4 text-sm">
-                      <label class="flex items-center">
-                        <input 
-                          type="radio" 
-                          v-model="dateSelectionType" 
-                          value="single" 
-                          class="mr-2 focus:ring-lime-400 text-lime-500"
-                        >
-                        <span class="text-white">Single Date</span>
-                      </label>
-                      <label class="flex items-center">
-                        <input 
-                          type="radio" 
-                          v-model="dateSelectionType" 
-                          value="range" 
-                          class="mr-2 focus:ring-lime-400 text-lime-500"
-                        >
-                        <span class="text-white">Date Range</span>
-                      </label>
-                      <label class="flex items-center">
-                        <input 
-                          type="radio" 
-                          v-model="dateSelectionType" 
-                          value="multiple" 
-                          class="mr-2 focus:ring-lime-400 text-lime-500"
-                        >
-                        <span class="text-white">Multiple Dates</span>
-                      </label>
-                    </div>
 
-                    <!-- Single date selection -->
-                    <div v-if="dateSelectionType === 'single'" class="flex items-center">
-                      <input 
-                        type="datetime-local" 
-                        v-model="form.date_time" 
-                        class="mt-1 w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                      />
-                    </div>
+        <div class="flex items-center space-x-4">
+          <div v-if="editingField.status" class="flex items-center space-x-2">
+            <select 
+              v-model="form.status"
+              class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              @change="saveField('status')"
+            >
+              <option v-for="status in VALID_STATUSES" :key="status" :value="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+          <div 
+            v-else 
+            @click="editingField.status = true"
+            :class="getStatusClasses(workOrderData.status)"
+            class="px-3 py-1 rounded-full text-sm font-medium cursor-pointer ring-1 hover:ring-2"
+          >
+            {{ workOrderData.status }}
+          </div>
 
-                    <!-- Date range selection -->
-                    <div v-if="dateSelectionType === 'range'" class="space-y-2">
-                      <div class="flex items-center">
-                        <span class="text-xs text-gray-400 mr-2 w-14">Start:</span>
-                        <input 
-                          type="datetime-local" 
-                          v-model="form.date_time" 
-                          class="mt-1 w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                        />
-                      </div>
-                      <div class="flex items-center">
-                        <span class="text-xs text-gray-400 mr-2 w-14">End:</span>
-                        <input 
-                          type="datetime-local" 
-                          v-model="form.end_date" 
-                          class="mt-1 w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                        />
-                      </div>
-                    </div>
-
-                    <!-- Multiple date selection -->
-                    <div v-if="dateSelectionType === 'multiple'" class="space-y-2">
-                      <div v-for="(date, index) in selectedDates" :key="index" class="flex items-center">
-                        <input 
-                          type="datetime-local" 
-                          v-model="selectedDates[index]" 
-                          class="mt-1 flex-grow rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-indigo-600 text-white sm:text-sm" 
-                        />
-                        <button 
-                          @click="removeDate(index)" 
-                          class="ml-2 text-red-400 hover:text-red-300"
-                          type="button"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      <button 
-                        @click="addNewDate" 
-                        class="text-sm text-lime-400 hover:text-lime-300 flex items-center"
-                        type="button"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Another Date
-                      </button>
-                    </div>
-                  </div>
-                  <span class="ml-2">
-                    <button v-if="!editingField.date_time" @click="startEditing('date_time')" class="text-lime-400 btn hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('date_time')" class="text-green-400 btn hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Add address and hours sections after the status section -->
-            <div class="flex justify-between items-start glossy-section">
-              <!-- Address field -->
-              <div class="w-2/3">
-                <p class="text-sm text-lime-400">Work Site Address:</p>
-                <p class="text-sm text-white">Location where the technician needs to be ON TIME!</p>
-                <div class="flex items-start">
-                  <div class="flex-grow">
-                    <span v-if="!editingField.address" class="text-white">{{ workOrder.address || 'No address set' }}</span>
-                    <input 
-                      v-else 
-                      type="text" 
-                      v-model="form.address" 
-                      placeholder="Enter complete work site address"
-                      class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-lime-600 text-white sm:text-sm"
-                    />
-                  </div>
-                  <span class="ml-2">
-                    <button v-if="!editingField.address" @click="startEditing('address')" class="text-lime-400 btn hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('address')" class="text-green-400 btn hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div>
-              
-              <!-- Hours field -->
-              <div class="w-1/3 pl-4">
-                <p class="text-sm text-lime-400">Approved Hours:</p>
-                <p class="text-sm text-white">Hours approved by customer</p>
-                <div class="flex items-start">
-                  <div class="flex-grow">
-                    <span v-if="!editingField.hours" class="text-white">{{ workOrder.hours || 'No hours set' }}</span>
-                    <input 
-                      v-else 
-                      type="number" 
-                      v-model="form.hours" 
-                      step="0.5"
-                      min="0"
-                      placeholder="Enter number of hours"
-                      class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-lime-600 focus:ring-lime-600 text-white sm:text-sm"
-                    />
-                  </div>
-                  <span class="ml-2">
-                    <button v-if="!editingField.hours" @click="startEditing('hours')" class="text-lime-400 btn hover:text-lime-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button v-else @click="saveField('hours')" class="text-green-400 btn hover:text-green-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Description section - Updated to be smaller and scrollable -->
-            <div>
-              <p class="text-sm text-lime-400">Description:</p>
-              <div class="flex">
-                <div class="flex-grow">
-                  <div v-if="!editingField.description" 
-                    class="whitespace-pre-line mt-1 text-sm bg-gray-900 p-3 rounded-md text-white overflow-y-auto max-h-[120px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900 touch-auto">
-                    {{ workOrder.description }}
-                  </div>
-                  <textarea v-else v-model="form.description" rows="4" class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:ring-lime-600 text-white sm:text-sm"></textarea>
-                </div>
-                <span class="ml-2 flex-shrink-0">
-                  <button v-if="!editingField.description" @click="startEditing('description')" class="text-lime-400 btn hover:text-lime-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
-                  <button v-else @click="saveField('description')" class="text-green-400 btn hover:text-green-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                </span>
-              </div>
-            </div>
-            
-            <!-- User section -->
-            <div>
-              <p class="text-sm text-lime-400">Assigned to:</p>
-              <div class="flex items-center">
-                <span v-if="!editingField.user_name" class="text-white">
-                  {{ getUserName(workOrder.user_name) }}
-                </span>
-                <select 
-                  v-else 
-                  v-model="form.user_name" 
-                  class="mt-1 block w-full rounded-md bg-gray-900 border-gray-800 shadow-sm focus:border-indigo-600 focus:ring-indigo-600 text-white sm:text-sm"
-                >
-                  <option v-for="user in $page.props.users" :key="user.name" :value="user.name">
-                    {{ user.name }}
-                  </option>
-                </select>
-                <span class="ml-2">
-                  <button v-if="!editingField.user_id" @click="startEditing('user_id')" class="text-lime-400 btn hover:text-lime-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
-                  <button v-else @click="saveField('user_id')" class="text-green-400 btn hover:text-green-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                </span>
-              </div>
-            </div>
-            
-            <!-- Attachments section - Updated with persistent upload button -->
-            <div class="glossy-section">
-              <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-400">Attachments:</p>
-              </div>
-              <ul role="list" class="mt-1 divide-y divide-gray-700 rounded-md border border-gray-700">
-                <li v-for="(attachment, index) in getAllAttachments()" :key="index" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                  <div class="flex w-0 flex-1 items-center">
-                    <!-- Make thumbnail clickable for images -->
-                    <div 
-                      class="flex-shrink-0 h-10 w-10 mr-3"
-                      :class="{ 'cursor-pointer hover:opacity-75': isImageFile(attachment) || isPdfFile(attachment) }"
-                      @click="isImageFile(attachment) || isPdfFile(attachment) ? handlePreviewAttachment(attachment) : null"
-                    >
-                      <img 
-                        v-if="isImageFile(attachment)" 
-                        :src="`/storage/${attachment}`" 
-                        alt="Attachment thumbnail" 
-                        class="h-full w-full object-cover rounded-md"
-                      />
-                      <PdfThumbnail
-                        v-else-if="isPdfFile(attachment)"
-                        :pdf-url="`/storage/${attachment}`"
-                        class="h-10 w-10 rounded-md"
-                      />
-                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <span class="ml-2 flex-1 truncate text-white">{{ getFileName(attachment) }}</span>
-                  </div>
-                  <div class="ml-4 flex-shrink-0 flex space-x-2">
-                    <a :href="`/storage/${attachment}`" class="btn rounded p-1 hover:text-gray-900" download>Download</a>
-                    <!-- Add delete button -->
-                    <button 
-                      v-if="$page.props.auth.user && $page.props.auth.user.role !== 'guest'"
-                      @click="deleteAttachment(attachment)" 
-                      class="text-red-500 hover:bg-red-400 hover:text-gray-900 btn rounded"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </li>
-                <li v-if="!editingField.images && getAllAttachments().length === 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                  <span class="text-gray-400">No attachments</span>
-                </li>
-                <li v-if="editingField.images" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                  <input 
-                    type="file" 
-                    id="images" 
-                    multiple 
-                    @change="handleImageUpload" 
-                    class="text-white" 
-                    accept=".jpg,.jpeg,.png,.gif,.pdf,.heic,.docx"
-                  />
-                  <!-- Update the supported files text -->
-                  <div class="text-xs text-gray-400 ml-2">
-                    Supports: PDF, JPG, JPEG, PNG, GIF, HEIC, DOCX
-                  </div>
-                  <button 
-                    @click="saveField('images')" 
-                    class="text-white btn hover:text-lime-500"
-                    :disabled="isUploading"
-                  >
-                    <span v-if="isUploading">Uploading...</span>
-                    <span v-else>Save</span>
-                  </button>
-                </li>
-                <!-- Add upload progress indicator -->
-                <li v-if="isUploading && uploadProgress > 0" class="flex items-center justify-between py-2 pl-3 pr-4 text-sm">
-                  <div class="w-3/4 mx-auto">
-                    <div class="bg-gray-700 rounded-full h-2.5 dark:bg-gray-700 w-full">
-                      <div class="bg-lime-500 h-2.5 rounded-full" :style="{ width: uploadProgress + '%' }"></div>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-1 text-center">{{ uploadProgress }}% complete</p>
-                  </div>
-                </li>
-                <!-- Display upload errors if any -->
-                <li v-if="uploadError" class="flex items-center py-2 pl-3 pr-4 text-sm text-red-400 bg-red-900/20 border border-red-800">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>{{ uploadError }}</span>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Image preview modal -->
-            <div v-if="previewAttachment" class="fixed inset-0 z-[10001] flex items-center justify-center">
-              <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="closePreview"></div>
-              <div class="relative max-w-4xl max-h-[90vh] overflow-auto glossy-preview-card bg-gray-900 rounded-lg p-1 z-[10002]">
-                <!-- Image preview -->
-                <img 
-                  v-if="isImageFile(previewAttachment)" 
-                  :src="`/storage/${previewAttachment}`" 
-                  class="max-w-full max-h-full object-contain" 
-                />
-                
-                <!-- PDF preview -->
-                <PdfViewer 
-                  v-if="previewAttachment && isPdfFile(previewAttachment)"
-                  :pdf-url="previewAttachment"
-                  :title="getFileName(previewAttachment)"
-                  :redirect-after-upload="true"
-                  :work-order-id="workOrder.id"
-                  @document-uploaded="handleDocumentUpload"
-                  @close="closePreview"
-                />
-                
-                <!-- Close button -->
-                <button 
-                  @click="closePreview" 
-                  class="absolute top-2 right-2 bg-gray-800 rounded-full p-1 text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-lime-400 z-10"
-                >
-                  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <!-- Notes section -->
-            <div v-if="workOrder.notes">
-              <p class="text-sm text-gray-400">Notes:</p>
-              <Messenger 
-                :initialNotes="workOrder.notes" 
-                :workOrderId="workOrder.id"
-                :userId="$page.props.auth.user.name"
-                :getUserName="getUserName"
-                :getUserAvatar="getUserAvatar"
-                :currentUserAvatar="$page.props.auth.user.profile_photo_url"
-              />
-            </div>
+          <!-- Action Buttons -->
+          <div class="flex items-center space-x-2">
+            <button 
+              v-if="workOrderData.status === 'Part Needed'"
+              @click="duplicateWorkOrder"
+              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              Duplicate
+            </button>
+            <button
+              @click="archiveWorkOrder"
+              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              Archive
+            </button>
           </div>
         </div>
       </div>
-      
-      <!-- Fixed footer -->
-      <div class="glossy-footer sticky bottom-0 z-30 px-4 py-3 sm:px-6 border-t border-gray-700/50">
-        <!-- Progress Bar for Status - moved here -->
-        <div class="mb-3">
-          <div class="w-full bg-gray-800 rounded-full h-2.5 dark:bg-gray-800">
-            <div 
-              class="h-2.5 rounded-full transition-all duration-500 ease-in-out" 
-              :class="getProgressBarColor(workOrder.status)"
-              :style="`width: ${getStatusProgress(workOrder.status)}%`"
-            ></div>
+    </header>
+
+    <!-- Loading State -->
+    <div v-if="isUploading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-xl">
+        <div class="flex items-center space-x-4">
+          <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <div>
+            <p class="text-lg font-medium">Uploading...</p>
+            <p class="text-gray-400">{{ uploadProgress }}%</p>
           </div>
-          <p class="text-xs text-gray-400 mt-1 flex justify-between">
-            <span>Progress</span>
-            <span>{{ getStatusProgress(workOrder.status) }}%</span>
-          </p>
-        </div>
-        
-        <!-- Footer buttons -->
-        <div class="sm:flex sm:flex-row-reverse">
-          <!-- Archive Work Order button -->
-          <button 
-            @click="archiveWorkOrder" 
-            :disabled="workOrder.status !== 'Complete'"
-            class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-green-400 hover:text-gray-900 hover:bg-green-400 font-bold sm:ml-2 sm:w-auto sm:text-xs"
-            :class="{
-              'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-green-400': workOrder.status !== 'Complete'
-            }"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-            </svg>
-            Archive
-          </button>
-          
-          <!-- Duplicate button -->
-          <button 
-            @click="duplicateWorkOrder($event)" 
-            :disabled="workOrder.status !== 'Part Needed'"
-            :class="[
-              'glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-purple-400 font-bold hover:bg-purple-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs',
-              { 'opacity-50 cursor-not-allowed': workOrder.status !== 'Part Needed' }
-            ]"
-            :title="workOrder.status !== 'Part Needed' ? 'Duplication is only available for work orders with Part Needed status' : 'Create a duplicate work order'"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Duplicate
-          </button>
-
-         <!-- Get Signature button -->
-          <button @click="getSignature" 
-            class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-blue-400 font-bold hover:bg-blue-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-            :disabled="!hasPdfAttachment"
-            :class="{ 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-indigo-400': !hasPdfAttachment }"
-            :title="!hasPdfAttachment ? 'A PDF document must be attached to get signatures' : `Click to sign ${getFileName(mostRecentPdfAttachment)}`"
-          >    
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">          
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.688 2.688 0 113.798 3.798L7.21 19.736a4.5 4.5 0 01-1.889 1.13l-2.7.9.9-2.7a4.5 4.5 0 011.13-1.89l12.75-12.75z" />
-            </svg>
-            Collect Signature
-          </button>
-          
-          <!-- Add a hidden file input -->
-          <input 
-            type="file" 
-            ref="fileInput"
-            multiple 
-            class="hidden"
-            @change="handleImageUpload" 
-            accept=".jpg,.jpeg,.png,.gif,.pdf,.heic,.docx"
-          />
-
-          <!-- Upload Files button -->
-           <button 
-            @click.prevent="$refs.fileInput.click()" 
-            v-if="!editingField.images"
-            class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 hover:bg-lime-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Upload Files
-          </button>
-          
-          <!-- Save button when editing -->
-          <button 
-            v-else
-            @click="saveField('images')" 
-            class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-green-400 hover:bg-green-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-            :disabled="isUploading"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            {{ isUploading ? 'Uploading...' : 'Save' }}
-          </button>
-          
-          <!-- Update Status button -->
-          <button
-            @click="updateStatus"
-            class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-indigo-400 font-bold hover:bg-indigo-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-          >
-            Update Status
-          </button>
-
-           
-
-          <!-- Delete button -->
-          <button 
-            @click="deleteWorkOrder" 
-            class="glossy-btn btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-red-400 font-bold hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-2 sm:w-auto sm:text-xs"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Delete
-          </button>
-
-          
         </div>
       </div>
     </div>
-  </div>
-
-
-  <div v-if="showDuplicateDateModal" class="fixed inset-0 z-[10002] flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="cancelDuplicate"></div>
-    <div class="relative bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 glossy-card">
-      <h3 class="text-lg font-medium text-lime-400 mb-4">Select Date for Duplicate</h3>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">New Work Order Date</label>
-          <input 
-            type="datetime-local"
-            v-model="duplicateDate"
-            class="w-full rounded-md bg-gray-800 border-gray-700 text-white focus:border-lime-500 focus:ring-lime-500"
-          />
-        </div>
+    
+    <!-- Duplicate Modal -->
+    <div v-if="showDuplicateDateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
+        <h3 class="text-xl font-bold mb-4">Select Date for Duplicate Work Order</h3>
+        <input
+          type="datetime-local"
+          v-model="duplicateDate"
+          class="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 mb-4"
+        >
         <div class="flex justify-end space-x-3">
-          <button 
+          <button
             @click="cancelDuplicate"
-            class="px-4 py-2 text-sm text-red-400 hover:bg-red-400 hover:text-black rounded-md border border-red-400"
+            class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
           >
             Cancel
           </button>
-          <button 
+          <button
             @click="confirmDuplicate"
-            class="px-4 py-2 text-sm text-lime-400 hover:bg-lime-400 hover:text-black rounded-md border border-lime-400 disabled:opacity-50"
             :disabled="isDuplicating"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            <div class="flex items-center">
-              <svg v-if="isDuplicating" class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>{{ isDuplicating ? 'Duplicating...' : 'Duplicate' }}</span>
-            </div>
+            {{ isDuplicating ? 'Creating...' : 'Create Duplicate' }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="p-6 space-y-6">
+      <NetworkStatusIndicator />
+      
+      <!-- Attachments Section -->
+      <div class="bg-gray-800 rounded-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Attachments</h2>
+        <div class="space-y-4">
+          <input
+            type="file"
+            @change="handleImageUpload"
+            multiple
+            accept="image/*,application/pdf,.doc,.docx"
+            class="hidden"
+            ref="fileInput"
+          >
+          <button
+            @click="$refs.fileInput.click()"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Upload Files
+          </button>
+
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+            <div
+              v-for="attachment in getAllAttachments()"
+              :key="attachment"
+              class="relative group"
+            >
+              <div 
+                @click="handlePreviewAttachment(attachment)"
+                class="cursor-pointer bg-gray-700 rounded-lg p-2 hover:bg-gray-600"
+              >
+                <div v-if="isPdfFile(attachment)" class="flex items-center space-x-2">
+                  <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 18h12a2 2 0 002-2V6a2 2 0 00-2-2h-3.93a2 2 0 01-1.66-.89l-.812-1.22A2 2 0 008.93 1H4a2 2 0 00-2 2v13a2 2 0 002 2z"></path>
+                  </svg>
+                  <span class="text-sm truncate">{{ getFileName(attachment) }}</span>
+                </div>
+                <img
+                  v-else-if="isImageFile(attachment)"
+                  :src="`/storage/${attachment}`"
+                  :alt="getFileName(attachment)"
+                  class="w-full h-32 object-cover rounded"
+                >
+                <div v-else class="flex items-center space-x-2">
+                  <svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 18h12a2 2 0 002-2V6a2 2 0 00-2-2h-3.93a2 2 0 01-1.66-.89l-.812-1.22A2 2 0 008.93 1H4a2 2 0 00-2 2v13a2 2 0 002 2z"></path>
+                  </svg>
+                  <span class="text-sm truncate">{{ getFileName(attachment) }}</span>
+                </div>
+              </div>
+              <button
+                @click="deleteAttachment(attachment)"
+                class="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Modal -->
+      <div v-if="previewAttachment" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="max-w-4xl w-full bg-gray-800 rounded-lg overflow-hidden">
+          <div class="flex justify-between items-center p-4 border-b border-gray-700">
+            <h3 class="text-lg font-medium">{{ getFileName(previewAttachment) }}</h3>
+            <button @click="closePreview" class="text-gray-400 hover:text-white">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="p-4">
+            <img
+              v-if="isImageFile(previewAttachment)"
+              :src="`/storage/${previewAttachment}`"
+              :alt="getFileName(previewAttachment)"
+              class="max-w-full max-h-[80vh] mx-auto"
+            >
+            <PdfViewer
+              v-else-if="isPdfFile(previewAttachment)"
+              :url="`/storage/${previewAttachment}`"
+              @close="handlePdfClose"
+              @upload="handleDocumentUpload"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -684,14 +219,16 @@
 </template>
 
 <script>
-  import { ref, watch, onMounted, computed, nextTick } from 'vue';
+  import { ref, computed, nextTick, watch } from 'vue';
+  import { useForm, router } from '@inertiajs/vue3';
+  import axios from 'axios';
   import { format, parseISO } from 'date-fns';
-  import { useForm, usePage, router } from '@inertiajs/vue3';  // Updated import
+
   import Messenger from '@/Components/Messenger.vue';
   import PdfViewer from '@/Components/PdfViewer.vue';
   import PdfThumbnail from '@/Components/PdfThumbnail.vue';
   import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
-  import axios from 'axios';
+  import Timeline from '@/Components/Timeline.vue'; // Import the Timeline component
 
   export default {
     name: 'WorkOrder',
@@ -699,13 +236,14 @@
       Messenger,
       PdfViewer, 
       PdfThumbnail,
-      NetworkStatusIndicator, 
+      NetworkStatusIndicator,
+      Timeline,
     },
     emits: ['close', 'work-order-archived'],  // Add this line to declare emits
     props: {
       workOrder: {
         type: Object,
-        required: true,
+        default: null,
       },
       showModal: {
         type: Boolean,
@@ -717,49 +255,23 @@
       },
     },
     setup(props, { emit }) {
-      // Improved error handling for missing or invalid props
+      // Early return with empty state if workOrder prop is missing
       if (!props.workOrder) {
-        console.error('WorkOrder prop is missing or invalid.');
+        console.warn('WorkOrder prop is missing or invalid');
         return {
-          closeModal: () => emit('close'),
-          // Provide minimal required return values to prevent errors
-          getStatusClasses: () => 'bg-gray-800 text-gray-300 ring-gray-700',
-          workOrder: {},
           form: useForm({}),
-          formatDate: () => 'Invalid Date',
-          getProgressBarColor: () => 'bg-gray-600',
-          getStatusProgress: () => 0,
-          VALID_STATUSES: [],
-          // Add empty functions for all methods used in the template
-          startEditing: () => {},
-          saveField: () => {},
+          isEditing: ref(false),
+          editingField: ref({}),
+          showPdfViewer: ref(false),
+          previewAttachment: ref(null),
+          closeModal: () => emit('close'),
+          // Add minimal required properties to prevent undefined errors
+          formatDate: () => 'No date available',
+          getStatusClasses: () => '',
           getAllAttachments: () => [],
-          getUserName: () => 'Unknown User',
-          getUserAvatar: () => '/images/avatars/default.png',
-          handleImageUpload: () => {}, // Add missing function
-          isPdfFile: () => false,
-          isImageFile: () => false,
-          isDocumentFile: () => false,
-          getFileName: () => '',
-          handlePreviewAttachment: () => {},
-          closePreview: () => {},
-          formatMultipleDates: () => '',
-          formatDateShort: () => '',
-          dateSelectionType: ref('single'),
-          selectedDates: ref([]),
-          addNewDate: () => {},
-          removeDate: () => {},
-          archiveWorkOrder: () => {},
-          deleteAttachment: () => {},
-          isUploading: ref(false),
-          uploadProgress: ref(0),
-          uploadError: ref(''),
-          showDuplicateDateModal: ref(false),
-          duplicateDate: ref(''),
-          isDuplicating: ref(false),
-          duplicateWorkOrder: () => {},
-          cancelDuplicate: () => {},
-          confirmDuplicate: () => {},
+          formatMultipleDates: () => 'No dates available',
+          hasPdfAttachment: computed(() => false),
+          mostRecentPdfAttachment: computed(() => null),
         };
       }
 
@@ -781,13 +293,11 @@
           console.warn('CSRF token not found in the document. Some features might not work correctly.');
         }
         
-        axios.defaults.withCredentials = true; 
-        axios.defaults.headers.common = {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-TOKEN': csrf || '',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        };
+        // Don't override all default headers, just set the ones we need
+        axios.defaults.withCredentials = true;
+        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+        axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf || '';
+        axios.defaults.headers.common['Accept'] = 'application/json';
       } catch (error) {
         console.error('Error setting up Axios defaults:', error);
       }
@@ -1075,19 +585,25 @@
         console.log(`Updating ${field} with:`, data);
 
         try {
-          // Get fresh CSRF token
+          // Get a fresh CSRF token before each request
           const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-          // Use web route instead of API route with explicit headers
+          
+          // Create request config with the latest CSRF token
+          const config = {
+            withCredentials: true,
+            headers: {
+              'X-CSRF-TOKEN': csrf,
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          };
+          
+          // Use web route instead of API route with proper headers
           const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
             ...data,
             field: field // Send field name separately
-          }, {
-            headers: {
-              'X-CSRF-TOKEN': csrf,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            }
-          });
+          }, config);
           
           if (response.data.success) {
             // Update local state
@@ -1200,9 +716,6 @@
         }
       };
       
-      // ... rest of existing functions ...
-
-      // Add these new refs near the top with other refs
       // Replace the existing duplicateWorkOrder function with this version    
       const duplicateWorkOrder = (event) => {
         console.log('Duplicate button clicked');
@@ -1332,23 +845,47 @@
             console.log('FormData entry:', pair[0], pair[1]);
           }
 
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          // Get CSRF token from meta tag
+          let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
           if (!csrfToken) {
             throw new Error('CSRF token not found. Please refresh the page and try again.');
           }
-
+          
+          // Also add the X-XSRF-TOKEN cookie value as a header for additional security
+          // Get both types of CSRF tokens - Laravel uses both mechanisms
+          const xsrfToken = getCookie('XSRF-TOKEN');
+          
+          // Refresh the CSRF token first
+          try {
+            // Get a fresh token from the server
+            const refreshResponse = await axios.post('/csrf/refresh', {}, {
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              withCredentials: true
+            });
+            
+            // Use the fresh token if available
+            if (refreshResponse.data && refreshResponse.data.csrfToken) {
+              csrfToken = refreshResponse.data.csrfToken;
+              console.log('Using fresh CSRF token');
+            }
+          } catch (refreshError) {
+            console.warn('Failed to refresh CSRF token, using existing token', refreshError);
+          }
+          
           const response = await axios.post(
             `/work-orders/${props.workOrder.id}/attachments`,
             formData,
             {
               headers: {
                 'X-CSRF-TOKEN': csrfToken,
+                'X-XSRF-TOKEN': xsrfToken ? xsrfToken : '',
                 'Accept': 'application/json',
-                // Let the browser set the Content-Type with boundary
-                'Content-Type': 'multipart/form-data',
               },
-              // Prevent axios from trying to transform the data
-              transformRequest: [(data) => data],
+              // Make sure cookies are included with the request
+              withCredentials: true,
               onUploadProgress: (progressEvent) => {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                 uploadProgress.value = percentCompleted;
@@ -1439,16 +976,21 @@
             throw new Error('CSRF token not found. Please refresh the page and try again.');
           }
 
+          // Create request config with the latest CSRF token
+          const config = {
+            withCredentials: true,
+            headers: {
+              'X-CSRF-TOKEN': csrf,
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          };
+
           const response = await axios.post(
             `/work-orders/${props.workOrder.id}/archive`,
             { archive: true },
-            {
-              headers: {
-                'X-CSRF-TOKEN': csrf,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              }
-            }
+            config
           );
 
           if (response.data.success) {
@@ -1552,136 +1094,25 @@
         }
       };
 
-   
-
-      const getStatusProgress = (status) => {
-        if (!status) return 0;
-        const statusLower = status.toLowerCase();
-        
-        if (statusLower.includes('complete')) {
-          return 100;
-        } else if (statusLower.includes('part') || statusLower.includes('return')) {
-          return 75;
-        } else if (statusLower.includes('progress')) {
-          return 50;
-        } else if (statusLower.includes('scheduled')) {
-          return 10;
-        } else if (statusLower.includes('cancel')) {
-          return 0;
+      // Make sure workOrderData is always defined with safe fallback values
+      const workOrderData = computed(() => {
+        if (!props.workOrder) {
+          return {
+            title: 'Untitled Work Order',
+            status: 'unknown',
+            created_at: null,
+            updated_at: null,
+            attachments: [],
+          };
         }
-        
-        return 0;
-      };
-
-      const getProgressBarColor = (status) => {
-        if (!status) return 'bg-gray-600';
-        
-        const statusLower = status.toLowerCase();
-        
-        if (statusLower.includes('complete')) {
-          return 'bg-green-500';
-        } else if (statusLower.includes('part') || statusLower.includes('return')) {
-          return 'bg-purple-500';
-        } else if (statusLower.includes('progress')) {
-          return 'bg-yellow-500';
-        } else if (statusLower.includes('scheduled')) {
-          return 'bg-blue-500';
-        } else if (statusLower.includes('cancel')) {
-          return 'bg-red-500';
-        }
-        
-        return 'bg-gray-600';
-      };
-
-      // Define the getUserName function
-      const getUserName = (userName) => {
-        return userName || 'Unknown User';
-      };
-
-      const getUserAvatar = (userName) => {
-        // Replace this logic with the actual implementation for fetching user avatars
-        return `/images/avatars/${userName || 'default'}.png`;
-      };
-
-      const deleteWorkOrder = async () => {
-        if (!confirm('Are you sure you want to delete this work order?')) {
-          return;
-        }
-      
-        try {
-          const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-          if (!csrf) {
-            throw new Error('CSRF token not found');
-          }
-      
-          const response = await axios.delete(`/work-orders/${props.workOrder.id}`, {
-            headers: {
-              'X-CSRF-TOKEN': csrf,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            }
-          });
-      
-          if (response.data.success) {
-            emit('close');
-            window.location.reload();
-          } else {
-            throw new Error(response.data.message || 'Failed to delete work order');
-          }
-        } catch (error) {
-          console.error('Error deleting work order:', error);
-          alert(error.response?.data?.message || error.message || 'Failed to delete work order');
-        }
-      };
-
-      const statusSelect = ref(null);
-
-      const updateStatus = () => {
-        if (!editingField.value.status) {
-          startEditing('status');
-          // Use nextTick to ensure the select element is rendered before focusing
-          nextTick(() => {
-            if (statusSelect.value) {
-              statusSelect.value.focus();
-              // Optionally scroll the status field into view
-              statusSelect.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          });
-        } else {
-          saveField('status');
-        }
-      };
-
-      const startEditing = (field) => {
-        if (field === 'images') {
-          // Directly trigger file input click instead of setting editing mode
-          return;
-        }
-        Object.keys(editingField.value).forEach(key => {
-          editingField.value[key] = false;
-        });
-        editingField.value[field] = true;
-      };
-
-      // Add the computed property for PDF attachment check
-      const hasPdfAttachment = computed(() => {
-        const attachments = getAllAttachments();
-        return attachments.some(attachment => isPdfFile(attachment));
+        return {
+          title: props.workOrder.title || 'Untitled Work Order',
+          status: props.workOrder.status || 'unknown',
+          created_at: props.workOrder.created_at,
+          updated_at: props.workOrder.updated_at,
+          attachments: props.workOrder.attachments || [],
+        };
       });
-
-      // Add computed property to get most recent PDF attachment
-      const mostRecentPdfAttachment = computed(() => {
-        const attachments = getAllAttachments();
-        const pdfAttachments = attachments.filter(attachment => isPdfFile(attachment));
-        return pdfAttachments[pdfAttachments.length - 1];
-      });
-
-      // Add getSignature method
-      const getSignature = () => {
-        if (mostRecentPdfAttachment.value) {
-          handlePreviewAttachment(mostRecentPdfAttachment.value);
-        }
-      };
 
       return {
         getStatusClasses,
@@ -1738,6 +1169,7 @@
         hasPdfAttachment,
         mostRecentPdfAttachment,
         getSignature,
+        workOrderData, // Expose the computed workOrderData
       };
     },
     // Add an errorCaptured hook to handle and log errors
@@ -1752,6 +1184,20 @@
 </script>
 
 <style scoped>
+.image-icon {
+  color: rgb(96 165 250); /* text-blue-400 */
+}
+
+.file-icon {
+  flex-shrink: 0;
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.pdf-icon {
+  color: rgb(248 113 113); /* text-red-400 */
+}
+
 /* Base styles */
 .description {
   word-wrap: break-word;
@@ -1760,21 +1206,9 @@
   max-width: 100%;
 }
 
-/* Basic styles for focus and icons */
+/* Focus outline */
 :focus {
-  outline-color: theme('colors.lime.400');
-}
-
-.image-icon {
-  @apply text-blue-400;
-}
-
-.file-icon {
-  @apply flex-shrink-0 h-5 w-5;
-}
-
-.pdf-icon {
-  @apply text-red-400;
+  outline-color: rgb(163 230 53); /* lime-400 */
 }
 
 /* Animation keyframes */

@@ -55,6 +55,30 @@ class WorkOrderController extends Controller
 
             // Create the work order
             $workOrder = WorkOrder::create($validated);
+            
+            // Log creation activity for each field
+            foreach ($validated as $field => $value) {
+                WorkOrderActivity::create([
+                    'work_order_id' => $workOrder->id,
+                    'user_id' => auth()->id(),
+                    'field_name' => $field,
+                    'old_value' => null,
+                    'new_value' => $value,
+                    'action_type' => 'create',
+                    'description' => 'Created work order field: ' . $field
+                ]);
+            }
+
+            // Create a general creation activity
+            WorkOrderActivity::create([
+                'work_order_id' => $workOrder->id,
+                'user_id' => auth()->id(),
+                'field_name' => 'work_order',
+                'old_value' => null,
+                'new_value' => null,
+                'action_type' => 'create',
+                'description' => 'Work order created'
+            ]);
 
             return response()->json(['success' => true, 'message' => 'Work order created successfully.', 'workOrder' => $workOrder], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -401,6 +425,19 @@ public function updateImages(Request $request, $id)
             
             $allFiles = array_merge($existingFiles, $newFiles);
             $workOrder->images = json_encode($allFiles);
+
+            // Log activity for image uploads
+            foreach ($newFiles as $file) {
+                WorkOrderActivity::create([
+                    'work_order_id' => $workOrder->id,
+                    'user_id' => auth()->id(),
+                    'field_name' => 'images',
+                    'old_value' => null,
+                    'new_value' => $file,
+                    'action_type' => 'update',
+                    'description' => 'Added new ' . (str_contains($file, 'documents') ? 'document' : 'image')
+                ]);
+            }
         } else {
             // Fallback - use file_attachments column if images doesn't exist
             $existingFiles = $workOrder->file_attachments ? json_decode($workOrder->file_attachments, true) : [];
@@ -437,6 +474,11 @@ public function updateField(Request $request, $id)
     $field = key($request->all());
     $value = $request->input($field);
     
+    // Use the field name from the request if it's explicitly specified
+    if ($request->has('field_name')) {
+        $field = $request->input('field_name');
+    }
+    
     // Validate field name to prevent mass assignment vulnerabilities
     $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'price', 'hours', 'address'];
     
@@ -448,8 +490,23 @@ public function updateField(Request $request, $id)
     }
     
     try {
+        // Store the old value before updating
+        $oldValue = $workOrder->{$field};
+        
+        // Update the field
         $workOrder->{$field} = $value;
         $workOrder->save();
+        
+        // Record the activity
+        WorkOrderActivity::create([
+            'work_order_id' => $workOrder->id,
+            'user_id' => auth()->id(),
+            'field_name' => $field,
+            'old_value' => $oldValue,
+            'new_value' => $value,
+            'action_type' => 'update',
+            'description' => 'Updated ' . $this->getFieldDisplayName($field)
+        ]);
         
         return response()->json([
             'success' => true,
@@ -898,4 +955,48 @@ public function createInvoice($id)
     ]);
 }
 
+/**
+     * Get a human-readable display name for a field
+     */
+    private function getFieldDisplayName($field)
+    {
+        $displayNames = [
+            'customer_id' => 'Customer',
+            'user_id' => 'Assigned User',
+            'title' => 'Title',
+            'description' => 'Description',
+            'date_time' => 'Date',
+            'end_date' => 'End Date',
+            'status' => 'Status',
+            'price' => 'Price',
+            'hours' => 'Hours',
+            'address' => 'Address',
+            'work_order' => 'Work Order',
+            'images' => 'Images',
+            'file_attachments' => 'Attachments'
+        ];
+        
+        return $displayNames[$field] ?? ucfirst(str_replace('_', ' ', $field));
+    }
+
+/**
+ * Get activities for a work order
+ */
+public function getActivities($id)
+{
+    try {
+        $workOrder = WorkOrder::findOrFail($id);
+        $activities = $workOrder->activities()->with('user')->get();
+        
+        return response()->json([
+            'success' => true,
+            'activities' => $activities
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 }

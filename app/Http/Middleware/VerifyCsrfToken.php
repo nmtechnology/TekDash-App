@@ -16,5 +16,6 @@ class VerifyCsrfToken extends Middleware
         'work-orders/*/duplicate',
         'work-orders/*/update-field',
         'api/work-orders/*/invoice',
+        'work-orders/*/attachments', // Added exception for attachments route
     ];
 }

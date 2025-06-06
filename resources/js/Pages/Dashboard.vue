@@ -6,6 +6,8 @@ import TeamDropdown from '@/Components/TeamDropdown.vue';
 import RevenueStats from '@/Components/RevenueStats.vue';
 import Search from '@/Components/Search.vue';
 import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
+import AddCustomerButton from '@/Components/AddCustomerButton.vue';
+import AddTechnicianButton from '@/Components/AddTechnicianButton.vue';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -209,7 +211,8 @@ const openArchivedModal = () => {
             <div class="flex space-x-4">
               <TeamDropdown :teams="props.teams" />
               <AddWorkorder />
-              
+              <AddCustomerButton />
+              <AddTechnicianButton />
             </div>
           </div>
         </div>
@@ -287,7 +290,7 @@ const openArchivedModal = () => {
                                     </h3>
                                     <button @click="closeModal" class="text-gray-400 hover:text-gray-200">
                                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
                                 </div>

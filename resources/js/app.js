@@ -1,5 +1,9 @@
 import '../css/app.css';
 import './bootstrap';
+// Import Font Awesome CSS
+import '@fortawesome/fontawesome-free/css/all.min.css';
+// Register Cally globally
+import 'cally';
 
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h } from 'vue';

@@ -6,6 +6,7 @@ import SectionBorder from '@/Components/SectionBorder.vue';
 import TwoFactorAuthenticationForm from '@/Pages/Profile/Partials/TwoFactorAuthenticationForm.vue';
 import UpdatePasswordForm from '@/Pages/Profile/Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from '@/Pages/Profile/Partials/UpdateProfileInformationForm.vue';
+import NotificationSettingsForm from '@/Pages/Profile/Partials/NotificationSettingsForm.vue';
 
 defineProps({
     confirmsTwoFactorAuthentication: Boolean,
@@ -40,6 +41,12 @@ defineProps({
                         :requires-confirmation="confirmsTwoFactorAuthentication"
                         class="mt-10 sm:mt-0"
                     />
+
+                    <SectionBorder />
+                </div>
+
+                <div v-if="$page.props.jetstream.canManageNotifications">
+                    <NotificationSettingsForm class="mt-10 sm:mt-0" />
 
                     <SectionBorder />
                 </div>

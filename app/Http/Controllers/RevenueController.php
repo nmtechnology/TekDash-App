@@ -152,14 +152,14 @@ class RevenueController extends Controller
         
         $monthlyQuery = WorkOrder::whereIn('status', $revenueStatuses)
             ->where($completedDateColumn, '>=', $yearStart)
-            ->select(DB::raw("MONTH($completedDateColumn) as month"), DB::raw('SUM(price) as revenue'))
+            ->select(DB::raw("strftime('%m', $completedDateColumn) as month"), DB::raw('SUM(price) as revenue'))
             ->groupBy('month')
             ->orderBy('month')
             ->get();
         
         $monthlyRevenue = $monthlyQuery->map(function ($item) {
             return [
-                'month' => Carbon::create()->month($item->month)->format('M'),
+                'month' => Carbon::create()->month((int)$item->month)->format('M'),
                 'revenue' => (float) $item->revenue
             ];
         });
@@ -178,14 +178,12 @@ class RevenueController extends Controller
     private function calculateMonthOverMonthGrowth($revenueStatuses, $completedDateColumn)
     {
         $currentMonth = Carbon::now()->month;
-        $lastMonth = Carbon::now()->subMonth()->month;
-        
-        $currentMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
-            ->whereMonth($completedDateColumn, $currentMonth)
+        $lastMonth = Carbon::now()->subMonth()->month;            $currentMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
+            ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $currentMonth)])
             ->sum('price');
             
         $lastMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
-            ->whereMonth($completedDateColumn, $lastMonth)
+            ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $lastMonth)])
             ->sum('price');
             
         $comparedToLastMonth = $lastMonthRevenue > 0
@@ -201,11 +199,11 @@ class RevenueController extends Controller
         $lastYear = Carbon::now()->subYear()->year;
         
         $thisYearRevenue = WorkOrder::whereIn('status', $revenueStatuses)
-            ->whereYear($completedDateColumn, $thisYear)
+            ->whereRaw("strftime('%Y', $completedDateColumn) = ?", [$thisYear])
             ->sum('price');
             
         $lastYearRevenue = WorkOrder::whereIn('status', $revenueStatuses)
-            ->whereYear($completedDateColumn, $lastYear)
+            ->whereRaw("strftime('%Y', $completedDateColumn) = ?", [$lastYear])
             ->sum('price');
             
         return $lastYearRevenue > 0
