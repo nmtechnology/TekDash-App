@@ -436,7 +436,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
           </h2>
           <div class="flex space-x-4">
             <TeamDropdown :teams="props.teams" />
-            <AddWorkorder />
+            <AddWorkorder :auth="$page.props.auth" />
             <button 
               @click="openArchivedModal"
               class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center"

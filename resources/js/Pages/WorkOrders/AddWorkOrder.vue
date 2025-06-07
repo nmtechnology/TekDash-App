@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button @click="openCreateModal" class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
+    <button @click="() => showModal = true" class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
@@ -8,8 +8,8 @@
     </button>
 
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full mt-4">
-        <div class="glossy-header px-4 pt-5 pb-4">
+      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[85vh] flex flex-col">
+        <div class="glossy-header px-6 pt-5 pb-4">
           <div class="flex justify-between items-center">
             <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
               Add Work Order
@@ -27,7 +27,7 @@
         </div>
 
         <!-- Steps component -->
-        <ul class="steps mb-4">
+        <ul class="steps px-6 mb-4">
           <li v-for="step in totalSteps" :key="step" 
               class="step" 
               :class="{'step-info': step <= currentStep, 'step-error': step > currentStep}"
@@ -36,12 +36,14 @@
           </li>
         </ul>
 
-        <div class="overflow-y-auto px-4 py-5 bg-gray-900 bg-opacity-90">
-          <form @submit.prevent="submitForm">
-            <div v-if="currentStep === 1">
+        <form @submit.prevent="submitForm" class="flex flex-col flex-grow">
+          <div class="overflow-y-auto px-6 py-5 bg-gray-900 bg-opacity-90 flex-grow">
+            <!-- Step 1: Customer Selection -->
+            <div v-show="currentStep === 1">
               <div class="glossy-section mb-4">
-                <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label><p class="text-sm text-white">Choose a customer from the dropdown menu below.</p>
-                <select v-model="form.customer_id" id="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label>
+                <p class="text-sm text-white">Choose a customer from the dropdown menu below.</p>
+                <select v-model="form.customer_id" id="customer_id" name="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                   <option value="Advanced Project Solutions">Advanced Project Solutions</option>
                   <option value="Barrister Global Service Network">Barrister Global Service Network</option>
                   <option value="Bass-Security">Bass-Security</option>
@@ -52,9 +54,32 @@
                   <option value="Telaid">Telaid</option>
                 </select>
               </div>
+              <!-- Selection Summary -->
+              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                <div class="text-center">
+                  <div class="text-sm text-gray-400">Selected Customer:</div>
+                  <div class="text-lime-400 font-bold text-lg">{{ form.customer_id || 'None selected' }}</div>
+                </div>
+              </div>
+
+              <!-- Technician Selection -->
+              <div class="glossy-section mt-4 mb-4">
+                <label for="technician_id" class="text-green-400 block text-sm font-medium">Assign Technician</label>
+                <p class="text-sm text-white">Optionally assign a technician to this work order.</p>
+                <select 
+                  v-model="form.technician_id" 
+                  id="technician_id" 
+                  name="technician_id" 
+                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm"
+                >
+                  <option value="">Select a technician (optional)</option>
+                  <option v-for="tech in technicians" :key="tech.id" :value="tech.id">{{ tech.name }}</option>
+                </select>
+              </div>
             </div>
 
-            <div v-if="currentStep === 2">
+            <!-- Step 2: Work Order Title -->
+            <div v-show="currentStep === 2">
               <div class="glossy-section mb-4">
                 <h3 class="text-lime-400 text-lg font-medium mb-2">Title</h3>
                 <!-- Work order title fields -->
@@ -71,6 +96,7 @@
                         v-model="workOrderNumber" 
                         @blur="checkExistingWorkOrder" 
                         id="workOrderNumber" 
+                        name="workOrderNumber"
                         class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
                         :class="{'border-red-500': duplicateWorkOrderFound}"
                         required
@@ -86,7 +112,7 @@
                   
                   <div class="mb-4 p-2 w-full">
                     <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
-                    <select v-model="workType" id="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                    <select v-model="workType" id="workType" name="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                       <option value="" disabled>Select work type</option>
                       <option value="CCTV">CCTV</option>
                       <option value="ALARM">ALARM</option>
@@ -106,7 +132,7 @@
                 </div>
                   <div class="mb-4 p-2 w-full mr-1">
                   <label for="location" class="block text-sm font-medium text-green-400">Location/Business name</label>
-                  <select v-model="location" id="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                  <select v-model="location" id="location" name="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                     <option value="" disabled>Select business name</option>
                     <option value="Chili's">Chili's</option>
                     <option value="Brinks">Brinks</option>
@@ -131,57 +157,205 @@
                   </div>
                 </div>
               </div>
+              <!-- Selection Summary -->
+              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                <div class="text-center">
+                  <div class="text-sm text-gray-400">Generated Title:</div>
+                  <div class="text-lime-400 font-bold text-lg">{{ formattedTitle || 'No title generated' }}</div>
+                </div>
+              </div>
             </div>
             
-            <div v-if="currentStep === 3" class="glossy-section mb-4">
+            <!-- Step 3: Description -->
+            <div v-show="currentStep === 3" class="glossy-section mb-4">
               <label for="description" class="block text-sm font-medium text-green-400">Service Description</label><p class="text-sm text-white">Enter the details of what was requested on the work order sent by the customer, here's a hint, you can copy and paste the description from the work orders into here which saves you time.</p>
-              <textarea v-model="form.description" id="description" placeholder="What is the Field Technician doing onsite?" class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
-            </div>
-
-            <div v-if="currentStep === 4" class="glossy-section mb-4">
-              <label for="date_time" class="block text-sm font-medium text-green-400">Date and Time Selection</label>
-
-              <!-- Cally Date Picker -->
-              <calendar-date 
-                class="cally bg-base-100 border border-base-300 shadow-lg rounded-box mt-2"
-                @input="(value) => form.date_time = value"
-              >
-                <svg aria-label="Previous" class="fill-current size-4" slot="previous" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
-                <svg aria-label="Next" class="fill-current size-4" slot="next" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
-                <calendar-month></calendar-month>
-              </calendar-date>
-
-              <!-- Time Selector -->
-              <div class="flex items-center gap-2 mt-4">
-                <select v-model="selectedTime.hour" class="glossy-content text-lime-400 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
-                  <option v-for="hour in 12" :key="hour" :value="hour">{{ hour }}</option>
-                </select>
-                <span class="text-white">:</span>
-                <select v-model="selectedTime.minute" class="glossy-content text-lime-400 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
-                  <option v-for="minute in 60" :key="minute" :value="minute < 10 ? '0' + minute : minute">{{ minute < 10 ? '0' + minute : minute }}</option>
-                </select>
-                <select v-model="selectedTime.period" class="glossy-content text-lime-400 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm">
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
+              <textarea v-model="form.description" id="description" name="description" placeholder="What is the Field Technician doing onsite?" class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
+              <!-- Selection Summary -->
+              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                <div class="text-center">
+                  <div class="text-sm text-gray-400">Entered Description:</div>
+                  <div class="text-lime-400 font-bold text-base whitespace-pre-line">{{ form.description || 'No description entered' }}</div>
+                </div>
               </div>
             </div>
 
-            <!-- New address field -->
-            <div v-if="currentStep === 5" class="glossy-section mb-4">
+            <!-- Step 4: Date/Time -->
+            <div v-show="currentStep === 4" class="glossy-section mb-4">
+              <label class="block text-sm font-medium text-green-400">Date and Time Selection</label>
+              <p class="text-sm text-white mb-3">Select the date and time for this work order using our enhanced date picker.</p>
+              <div class="bg-lime-600/20 border border-lime-600/30 rounded-md p-3 mb-4">
+                <div class="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span>
+                </div>
+              </div>
+              
+              <!-- Enhanced Date Picker -->
+              <div class="mt-2">
+                <!-- Date Display and Popover Button -->
+                <Popover class="relative">
+                  <PopoverButton 
+                    class="glossy-content flex justify-between items-center w-full p-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lime-400 transition-all duration-200"
+                  >
+                    <div class="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>{{ selectedDateFormatted || 'Select a date' }}</span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </PopoverButton>
+
+                  <PopoverPanel class="absolute z-10 w-full bg-gray-800 border border-gray-700 mt-1 rounded-lg shadow-lg p-2">
+                    <!-- Calendar UI -->
+                    <div class="p-2">
+                      <!-- Month Navigation -->
+                      <div class="flex justify-between items-center mb-4">
+                        <button 
+                          @click="prevMonth" 
+                          class="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white"
+                          type="button"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        <div class="text-lime-400 font-semibold">{{ currentMonthName }}</div>
+                        <button 
+                          @click="nextMonth" 
+                          class="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white"
+                          type="button"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <!-- Days of Week Header -->
+                      <div class="grid grid-cols-7 mb-1">
+                        <div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-center text-xs text-gray-400 py-1">
+                          {{ day }}
+                        </div>
+                      </div>
+                      
+                      <!-- Calendar Grid -->
+                      <div class="grid grid-cols-7 gap-1">
+                        <div 
+                          v-for="(day, index) in calendarDays" 
+                          :key="index" 
+                          class="aspect-square relative"
+                        >
+                          <button
+                            v-if="day"
+                            @click="selectDate(day)"
+                            type="button"
+                            :class="[
+                              'w-full h-full flex items-center justify-center rounded-md text-sm transition-colors duration-200 calendar-day-button',
+                              isSameDate(day, selectedDate) 
+                                ? 'calendar-day-selected' 
+                                : checkIsToday(day) 
+                                  ? 'calendar-day-today' 
+                                  : 'hover:bg-gray-700 text-white'
+                            ]"
+                          >
+                            {{ day.getDate() }}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <!-- Quick Select Buttons -->
+                      <div class="mt-4 grid grid-cols-3 gap-2">
+                        <button 
+                          @click="quickSelectDate('today')" 
+                          type="button"
+                          class="glossy-content p-2 rounded-md text-xs text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200"
+                        >
+                          Today
+                        </button>
+                        <button 
+                          @click="quickSelectDate('tomorrow')" 
+                          type="button"
+                          class="glossy-content p-2 rounded-md text-xs text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200"
+                        >
+                          Tomorrow
+                        </button>
+                        <button 
+                          @click="quickSelectDate('nextWeek')" 
+                          type="button"
+                          class="glossy-content p-2 rounded-md text-xs text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200"
+                        >
+                          Next Week
+                        </button>
+                      </div>
+                    </div>
+                  </PopoverPanel>
+                </Popover>
+
+                <!-- Time Selector -->
+                <div class="mt-6">
+                  <label class="block text-sm font-medium text-green-400 mb-2">Time</label>
+                  <div class="flex items-center gap-2">
+                    <select 
+                      v-model="selectedTime.hour" 
+                      class="glossy-content text-lime-400 p-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                    >
+                      <option v-for="hour in 12" :key="hour" :value="hour">{{ hour < 10 ? '0' + hour : hour }}</option>
+                    </select>
+                    <span class="text-white font-bold">:</span>
+                    <select 
+                      v-model="selectedTime.minute" 
+                      class="glossy-content text-lime-400 p-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                    >
+                      <option v-for="minute in ['00', '15', '30', '45']" :key="minute" :value="minute">{{ minute }}</option>
+                    </select>
+                    <select 
+                      v-model="selectedTime.period" 
+                      class="glossy-content text-lime-400 p-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Selected Date/Time Preview -->
+                <div class="mt-6 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                  <div class="text-center">
+                    <div class="text-sm text-gray-400">Selected Date & Time:</div>
+                    <div class="text-xl text-lime-400 font-semibold mt-1">{{ formattedDateTime }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 5: Address -->
+            <div v-show="currentStep === 5" class="glossy-section mb-4">
               <label for="address" class="block text-sm font-medium text-green-400">Work Site Address</label><p class="text-sm text-white">Enter the address for the site where the technician needs to be ON TIME!</p>
               <input 
                 type="text" 
                 v-model="form.address" 
                 id="address" 
+                name="address"
                 placeholder="Enter complete work site address" 
                 class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
                 required
               >
+              <!-- Selection Summary -->
+              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                <div class="text-center">
+                  <div class="text-sm text-gray-400">Entered Address:</div>
+                  <div class="text-lime-400 font-bold text-base whitespace-pre-line">{{ form.address || 'No address entered' }}</div>
+                </div>
+              </div>
             </div>
 
-            <!-- New hours field -->
-            <div v-if="currentStep === 6" class="glossy-section mb-4">
+            <!-- Step 6: Hours -->
+            <div v-show="currentStep === 6" class="glossy-section mb-4">
               <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label>
               <p class="text-sm text-white mb-4">Enter the amount of hours approved by the customer, if we need more time onsite then we will call at that time to request the estimated hours to complete the WO. This is usually about 2-4 hours for our first trip.</p>
               
@@ -213,6 +387,7 @@
                   type="range" 
                   v-model="form.hours" 
                   id="hours" 
+                  name="hours"
                   min="2"
                   max="16"
                   step="2"
@@ -232,7 +407,8 @@
               </div>
             </div>
             
-            <div v-if="currentStep === 7" class="glossy-section mb-4">
+            <!-- Step 7: Rate & Travel -->
+            <div v-show="currentStep === 7" class="glossy-section mb-4">
               <label for="hourlyRate" class="block text-sm font-medium text-green-400">Hourly Rate</label>
               <p class="text-sm text-white mb-4">Select the hourly rate. The total price will be calculated based on the approved hours.</p>
               
@@ -264,6 +440,7 @@
                   type="range" 
                   v-model="form.hourlyRate" 
                   id="hourlyRate" 
+                  name="hourlyRate"
                   min="55"
                   max="200"
                   step="5"
@@ -284,6 +461,8 @@
                     type="checkbox" 
                     v-model="form.includeTravel" 
                     class="checkbox checkbox-success"
+                    id="includeTravel"
+                    name="includeTravel"
                   />
                   <span class="text-white">Include Travel Expense</span>
                 </label>
@@ -325,6 +504,8 @@
                       max="400"
                       step="5"
                       class="slider-purple w-full"
+                      id="travelMiles"
+                      name="travelMiles"
                     />
                     <div class="flex justify-between text-xs text-gray-400 mt-1">
                       <template v-for="value in [45, 100, 150, 200, 250, 300, 350, 400]" :key="value">
@@ -371,13 +552,25 @@
                   </div>
                 </div>
               </div>
+              <!-- Selection Summary -->
+              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                <div class="text-center">
+                  <div class="text-sm text-gray-400">Selected Options:</div>
+                  <div class="text-lime-400 font-bold text-base">
+                    <div>Labor: ${{ laborCost }}</div>
+                    <div v-if="form.includeTravel">Travel: ${{ travelCost }}</div>
+                    <div>Total: ${{ totalPrice }}</div>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div v-if="currentStep === 8" class="glossy-section mb-4">
+            <!-- Step 8: Status -->
+            <div v-show="currentStep === 8" class="glossy-section mb-4">
               <label class="block text-sm font-medium text-green-400 mb-4">Status</label>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <button 
-                  v-for="status in ['Scheduled', 'In Progress', 'Part/Return', 'Complete', 'Cancelled']" 
+                  v-for="status in ['Scheduled', 'In Progress', 'Part Needed', 'Complete', 'Cancelled']" 
                   :key="status"
                   type="button"
                   @click="form.status = status"
@@ -385,7 +578,7 @@
                   :class="{
                     'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': status === 'Scheduled' && form.status === status,
                     'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500': status === 'In Progress' && form.status === status,
-                    'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500': status === 'Part/Return' && form.status === status,
+                    'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500': status === 'Part Needed' && form.status === status,
                     'bg-green-600 hover:bg-green-700 focus:ring-green-500': status === 'Complete' && form.status === status,
                     'bg-red-600 hover:bg-red-700 focus:ring-red-500': status === 'Cancelled' && form.status === status,
                     'bg-gray-800 hover:bg-gray-700': form.status !== status,
@@ -404,9 +597,17 @@
                   </svg>
                 </button>
               </div>
+              <!-- Selection Summary -->
+              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                <div class="text-center">
+                  <div class="text-sm text-gray-400">Selected Status:</div>
+                  <div class="text-lime-400 font-bold text-lg">{{ form.status || 'No status selected' }}</div>
+                </div>
+              </div>
             </div>
             
-            <div v-if="currentStep === 9" class="glossy-section mb-4">
+            <!-- Step 9: Attachments -->
+            <div v-show="currentStep === 9" class="glossy-section mb-4">
               <label class="block text-sm font-medium text-green-400 mb-2">Attachments</label>
               <p class="text-sm text-white mb-4">Upload any relevant files or documents for this work order.</p>
               
@@ -416,6 +617,7 @@
                     type="file" 
                     @change="handleFileUpload" 
                     id="file_attachments" 
+                    name="file_attachments"
                     class="file-input file-input-bordered file-input-success w-full max-w-lg bg-gray-800/50 text-lime-400"
                     multiple
                   />
@@ -429,15 +631,16 @@
                          class="relative group">
                       <div class="aspect-square rounded-lg overflow-hidden bg-gray-800/50">
                         <!-- PDF Preview -->
-                        <PDFThumbnail
+                        <PdfThumbnail
                           v-if="file.type === 'application/pdf'"
-                          :file="file"
+                          :pdf-url="getFileObjectURL(file)"
+                          :filename="file.name"
                           class="w-full h-full object-cover"
                         />
                         <!-- Image Preview -->
                         <img
                           v-else-if="file.type.startsWith('image/')"
-                          :src="URL.createObjectURL(file)"
+                          :src="getFileObjectURL(file)"
                           :alt="file.name"
                           class="w-full h-full object-cover"
                         />
@@ -479,535 +682,566 @@
               {{ form.errors.user_id }}
             </div>
 
-            <input type="hidden" v-model="form.user_id" />
+            <input type="hidden" v-model="form.user_id" name="user_id" />
             <progress v-if="form.progress" :value="form.progress.percentage" min="0" max="100" class="w-full rounded-md">
               {{ form.progress.percentage }}%
             </progress>
-
-            <div class="flex justify-between mt-4">
-              <button 
-                v-if="currentStep > 1" 
-                type="button" 
-                @click="currentStep--" 
-                class="btn btn-secondary"
-              >
-                Back
-              </button>
+          </div>
+        </form>
+        
+        <!-- Fixed footer with navigation buttons -->
+        <div class="glossy-footer px-6 py-4 border-t border-gray-700 mt-auto">
+          <div class="flex justify-between items-center">
+            <button 
+              v-if="currentStep > 1" 
+              type="button" 
+              @click="prevStep" 
+              class="btn glass-button flex items-center space-x-1 px-5 py-2 bg-gray-700/50 text-white hover:bg-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Back</span>
+            </button>
+            <div v-else></div>
+            
+            <div>
               <button 
                 v-if="currentStep < totalSteps" 
                 type="button" 
-                @click="currentStep++" 
-                class="btn btn-primary"
+                @click="nextStep" 
+                class="btn glass-button flex items-center space-x-1 px-6 py-2 bg-blue-600/60 text-white hover:bg-blue-700"
               >
-                Next
+                <span>Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
               </button>
               <button 
                 v-if="currentStep === totalSteps" 
-                type="submit" 
-                class="btn btn-success"
+                type="button" 
+                @click="submitForm" 
+                :disabled="!validateCurrentStep() || form.processing || duplicateWorkOrderFound"
+                class="btn glass-button flex items-center space-x-2 px-6 py-2 bg-lime-600/60 text-white hover:bg-lime-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Submit
+                <span>Submit</span>
+                <svg v-if="form.processing" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import { useForm, router } from '@inertiajs/vue3';
+<script setup>
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { useForm } from '@inertiajs/vue3';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
-import PDFThumbnail from '@/Components/PDFThumbnail.vue';
+import PdfThumbnail from '@/Components/PdfThumbnail.vue';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
+import { format, parseISO, isToday, isValid, addDays, setHours, setMinutes } from 'date-fns';
 import axios from 'axios';
-import 'cally';
 
-export default {
-  components: {
-    NetworkStatusIndicator,
-    PDFThumbnail,
-  },
-  props: {
-    auth: Object,
-  },
-  data() {
-    return {
-      showModal: false,
-      currentStep: 1,
-      totalSteps: 9,
-      workType: '',
-      workOrderNumber: '',
-      location: '',
-      dateSelectionType: 'single',
-      selectedDates: [{ date: new Date().toISOString().slice(0, 16) }],
-      isSubmitting: false,
-      checkingWorkOrder: false,
-      duplicateWorkOrderFound: false,
-      debounceTimer: null,
-      form: useForm({
-        customer_id: '',
-        title: '',
-        description: '',
-        date_time: '',
-        end_date: '',
-        visit_dates: [],
-        price: '120.00',
-        hourlyRate: 120,
-        status: 'Scheduled',
-        file_attachments: [],
-        notes: '',
-        progress: null,
-        user_id: '',
-        users_name: '',
-        address: '',
-        hours: 4,
-        includeTravel: false,
-        travelMiles: 45,
-        mileageRate: 1.00,
-      }),
-      selectedTime: {
-        hour: 12,
-        minute: '00',
-        period: 'AM',
-      },
-    };
-  },
-  watch: {
-    workOrderNumber(newValue) {
-      // Clear previous validation
-      this.duplicateWorkOrderFound = false;
-      
-      // Debounce the check to avoid too many requests
-      clearTimeout(this.debounceTimer);
-      
-      // Only check if there's a value and it's at least 3 characters
-      if (newValue && newValue.length >= 3) {
-        this.debounceTimer = setTimeout(() => {
-          this.checkExistingWorkOrder();
-        }, 500);
+// Data
+const isLoading = ref(false);
+const showModal = ref(false);
+const currentStep = ref(1);
+const totalSteps = 9;
+const workType = ref('');
+const workOrderNumber = ref('');
+const location = ref('');
+const dateSelectionType = ref('single');
+const selectedDates = ref([{ date: new Date().toISOString().slice(0, 16) }]);
+const isSubmitting = ref(false);
+const checkingWorkOrder = ref(false);
+const duplicateWorkOrderFound = ref(false);
+const debounceTimer = ref(null);
+const selectedDate = ref(new Date());
+const currentMonth = ref(new Date());
+const calendarDays = ref([]);
+const technicians = ref([]);
+
+const selectedTime = ref({
+  hour: 12,
+  minute: '00',
+  period: 'AM'
+});
+
+const form = useForm({
+  customer_id: '',
+  title: '',
+  description: '',
+  date_time: '',
+  end_date: '',
+  visit_dates: [],
+  price: '120.00',
+  hourlyRate: 120,
+  status: 'Scheduled',
+  file_attachments: [],
+  notes: '',
+  progress: null,
+  user_id: '',
+  users_name: '',
+  address: '',
+  hours: 4,
+  includeTravel: false,
+  travelMiles: 45,
+  mileageRate: 1.00,
+  technician_id: '',
+});
+
+// Computed properties
+const formattedTitle = computed(() => {
+  if (!workType.value && !workOrderNumber.value && !location.value) {
+    return '';
+  }
+  return `${workType.value || 'Unknown'} / ${workOrderNumber.value || 'No WO#'} / ${location.value || 'No Location'}`;
+});
+
+const laborCost = computed(() => {
+  return (form.hours * form.hourlyRate).toFixed(2);
+});
+
+const travelCost = computed(() => {
+  if (!form.includeTravel) return 0;
+  return (form.travelMiles * form.mileageRate * 2).toFixed(2);
+});
+
+const totalPrice = computed(() => {
+  return (parseFloat(laborCost.value) + parseFloat(travelCost.value)).toFixed(2);
+});
+
+const currentMonthName = computed(() => {
+  return format(currentMonth.value, 'MMMM yyyy');
+});
+
+const selectedDateFormatted = computed(() => {
+  return isValid(selectedDate.value) ? format(selectedDate.value, 'EEEE, MMMM d, yyyy') : '';
+});
+
+const formattedDateTime = computed(() => {
+  if (!isValid(selectedDate.value)) return 'Please select a date';
+  
+  const hour = parseInt(selectedTime.value.hour);
+  let formattedHour = hour;
+  
+  // Convert to 24-hour format if PM
+  if (selectedTime.value.period === 'PM' && hour !== 12) {
+    formattedHour += 12;
+  }
+  // Handle 12 AM case
+  if (selectedTime.value.period === 'AM' && hour === 12) {
+    formattedHour = 0;
+  }
+  
+  // Format date with time
+  const dateWithTime = new Date(selectedDate.value);
+  dateWithTime.setHours(formattedHour);
+  dateWithTime.setMinutes(parseInt(selectedTime.value.minute));
+  
+  return format(dateWithTime, 'MMMM d, yyyy h:mm a');
+});
+
+// Methods
+const openCreateModal = () => {
+  showModal.value = true;
+  currentStep.value = 1;
+  // Reset form fields
+  form.customer_id = '';
+  form.title = '';
+  form.description = '';
+  form.date_time = '';
+  form.end_date = '';
+  form.visit_dates = [];
+  form.price = '120.00';
+  form.hourlyRate = 120;
+  form.status = 'Scheduled';
+  form.file_attachments = [];
+  form.notes = '';
+  form.progress = null;
+  form.user_id = '';
+  form.users_name = '';
+  form.address = '';
+  form.hours = 4;
+  form.includeTravel = false;
+  form.travelMiles = 45;
+  form.mileageRate = 1.00;
+  // Reset other component state
+  workType.value = '';
+  workOrderNumber.value = '';
+  location.value = '';
+  duplicateWorkOrderFound.value = false;
+  selectedTime.value = {
+    hour: 12,
+    minute: '00',
+    period: 'AM'
+  };
+};
+
+const validateCurrentStep = () => {
+  switch(currentStep.value) {
+    case 1:
+      return !!form.customer_id && form.customer_id.trim() !== '';
+    case 2:
+      return workType.value && 
+             workOrderNumber.value && 
+             location.value && 
+             !duplicateWorkOrderFound.value;
+    case 3:
+      return !!form.description && form.description.trim() !== '';
+    case 4:
+      return !!form.date_time;
+    case 5:
+      return !!form.address && form.address.trim() !== '';
+    case 6:
+      return form.hours >= 2 && form.hours <= 16;
+    case 7:
+      return !!form.hourlyRate && form.hourlyRate >= 55;
+    case 8:
+      return !!form.status;
+    case 9:
+      return true; // Files are optional
+    default:
+      return false;
+  }
+};
+
+const nextStep = async () => {
+  if (validateCurrentStep()) {
+    isLoading.value = true;
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (currentStep.value < totalSteps) {
+        currentStep.value++;
+        this.$nextTick(() => {
+          const formElement = document.querySelector('.overflow-y-auto');
+          if (formElement) {
+            formElement.scrollTop = 0;
+          }
+        });
       }
-    },
-    // Update form.date_time when time changes
-    selectedTime: {
-      handler(newTime) {
-        const [year, month, day] = this.form.date_time.split('-');
-        const hour = newTime.period === 'PM' && newTime.hour !== 12 ? newTime.hour + 12 : newTime.hour;
-        const minute = newTime.minute;
-        this.form.date_time = `${year}-${month}-${day}T${hour}:${minute}`;
-      },
-      deep: true,
-    },
-    // Update price when hourly rate changes
-    'form.hourlyRate': {
-      handler(newRate) {
-        this.form.price = (newRate * this.form.hours).toFixed(2);
-      },
-      immediate: true
-    },
-    // Update price when hours change
-    'form.hours': {
-      handler(newHours) {
-        this.form.price = (this.form.hourlyRate * newHours).toFixed(2);
-      },
-      immediate: true
-    },
-    'form.hourlyRate': {
-      handler(newRate) {
-        this.form.price = (newRate * this.form.hours).toFixed(2);
-      },
-      immediate: true
-    },
-    'form.hours': {
-      handler(newHours) {
-        this.form.price = (this.form.hourlyRate * newHours).toFixed(2);
-      },
-      immediate: true
+    } finally {
+      isLoading.value = false;
     }
-  },    computed: {
-      formattedTitle() {
-        // Combine the three fields into one title string
-        if (!this.workType && !this.workOrderNumber && !this.location) return '';
-        
-        return `${this.workType || 'Unknown'} / ${this.workOrderNumber || 'No WO#'} / ${this.location || 'No Location'}`;
-      },
-      laborCost() {
-        return (this.form.hourlyRate * this.form.hours).toFixed(2);
-      },
-      travelCost() {
-        return this.form.includeTravel ? (this.form.travelMiles * this.form.mileageRate * 2).toFixed(2) : '0.00';
-      },
-      totalPrice() {
-        const labor = this.form.hourlyRate * this.form.hours;
-        const travel = this.form.includeTravel ? this.form.travelMiles * 1 * 2 : 0;
-        return (labor + travel).toFixed(2);
-      },
-      rateValues() {
-        const values = [];
-        for (let rate = 55; rate <= 200; rate += 5) {
-          values.push(rate);
-        }
-        return values;
-      }
-  },
-  methods: {
-    async checkExistingWorkOrder() {
-      // Don't check if work order number is empty or too short
-      if (!this.workOrderNumber || this.workOrderNumber.length < 3) return;
-      
-      // Skip this check in edit mode for the current work order
-      if (this.mode === 'edit' && this.form.id) {
-        const currentWorkOrderNumber = this.extractWorkOrderNumber(this.form.title);
-        if (currentWorkOrderNumber === this.workOrderNumber) {
-          this.duplicateWorkOrderFound = false;
-          return;
-        }
-      }
-      
-      this.checkingWorkOrder = true;
-      
-      try {
-        const response = await axios.get(`/api/check-work-order-exists`, {
-          params: { workOrderNumber: this.workOrderNumber }
-        });
-        
-        this.duplicateWorkOrderFound = response.data.exists;
-        
-      } catch (error) {
-        console.error('Error checking work order:', error);
-        // Don't block submission on API error
-        this.duplicateWorkOrderFound = false;
-      } finally {
-        this.checkingWorkOrder = false;
-      }
-    },
-    
-    extractWorkOrderNumber(title) {
-      // Extract work order number from title (format: "Type / WO# / Location")
-      if (!title) return '';
-      
-      const parts = title.split('/');
-      return parts.length > 1 ? parts[1].trim() : '';
-    },
-    
-    openCreateModal() {
-      this.mode = 'create';
-      this.form.reset();
-      this.workType = '';
-      this.workOrderNumber = '';
-      this.location = '';
-      this.dateSelectionType = 'single';
-      this.selectedDates = [{ date: new Date().toISOString().slice(0, 16) }];
-      // Set user ID from auth immediately when opening modal
-      this.form.user_id = this.$page.props.auth.user.id;
-      this.form.file_attachments = []; // Reset to empty array
-      this.showModal = true;
-      
-      // Clear the file input
-      setTimeout(() => {
-        const fileInput = document.getElementById('file_attachments');
-        if (fileInput) fileInput.value = '';
-      }, 50);
-      this.duplicateWorkOrderFound = false;
-      this.checkingWorkOrder = false;
-    },
-    openEditModal(workOrder) {
-      this.mode = 'edit';
-      this.form = useForm({
-        ...workOrder,
-        file_attachments: [],
-        progress: null,
-        user_id: this.$page.props.auth.user.id,
-      });
-      
-      // Initialize date selection type and dates
-      if (workOrder.visit_dates && workOrder.visit_dates.length > 0) {
-        this.dateSelectionType = 'multiple';
-        this.selectedDates = workOrder.visit_dates.map(date => ({ date }));
-      } else if (workOrder.end_date) {
-        this.dateSelectionType = 'range';
-      } else {
-        this.dateSelectionType = 'single';
-        this.selectedDates = [{ date: workOrder.date_time || new Date().toISOString().slice(0, 16) }];
-      }
-      
-      this.showModal = true;
-      this.duplicateWorkOrderFound = false;
-      this.checkingWorkOrder = false;
-      
-      // Extract work order number, type and location from title
-      if (workOrder.title) {
-        const parts = workOrder.title.split('/');
-        if (parts.length >= 3) {
-          this.workType = parts[0].trim();
-          this.workOrderNumber = parts[1].trim();
-          this.location = parts[2].trim();
-        }
-      }
-    },
-    submitForm() {
-      // Prevent submission if duplicate work order is found
-      if (this.duplicateWorkOrderFound || this.checkingWorkOrder) {
-        return;
-      }
-      
-      // Check for duplicates one more time before submission
-      this.checkExistingWorkOrder().then(() => {
-        if (this.duplicateWorkOrderFound) return;
-        
-        // Set the combined title before submitting
-        this.form.title = this.formattedTitle;
-        
-        // Explicitly set the user ID again before submission to ensure it's present
-        this.form.user_id = this.$page.props.auth.user.id;
-        
-        // Handle date field based on selection type
-        if (this.dateSelectionType === 'single') {
-          this.form.end_date = null;
-          this.form.visit_dates = [this.form.date_time];
-          this.submitSingleWorkOrder();
-        } 
-        else if (this.dateSelectionType === 'range') {
-          this.form.visit_dates = this.generateDateRange(this.form.date_time, this.form.end_date);
-          this.submitSingleWorkOrder();
-        } 
-        else if (this.dateSelectionType === 'multiple') {
-          // Filter out any empty dates
-          const validDates = this.selectedDates
-            .map(d => d.date)
-            .filter(date => date && date.trim() !== '')
-            .sort();
+  }
+};
 
-          if (validDates.length === 0) {
-            alert('Please select at least one valid date');
-            return;
-          }
-
-          // Handle multiple dates as separate work orders
-          this.submitMultipleWorkOrders(validDates);
+const prevStep = async () => {
+  isLoading.value = true;
+  try {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    if (currentStep.value > 1) {
+      currentStep.value--;
+      this.$nextTick(() => {
+        const formElement = document.querySelector('.overflow-y-auto');
+        if (formElement) {
+          formElement.scrollTop = 0;
         }
       });
-    },
-    
-    // New method to submit a single work order
-    submitSingleWorkOrder() {
-      if (this.isSubmitting) return; // Prevent multiple submissions
-      this.isSubmitting = true;
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleFileUpload = (event) => {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  
+  // Add the files to the form.file_attachments array
+  form.file_attachments = [...form.file_attachments, ...Array.from(files)];
+  
+  // Clear the input to allow selecting the same file again if needed
+  event.target.value = null;
+};
+
+const removeFile = (index) => {
+  // Remove a file from the attachments array by index
+  form.file_attachments = form.file_attachments.filter((_, i) => i !== index);
+};
+
+const checkExistingWorkOrder = () => {
+  // Implement validation for duplicate work orders if needed
+  // For now, just a placeholder to prevent errors
+  duplicateWorkOrderFound.value = false;
+};
+
+const submitForm = () => {
+  if (currentStep.value === totalSteps && validateCurrentStep()) {
+    try {
+      // Set the title from formattedTitle
+      form.title = formattedTitle.value;
       
-      // Always use post() directly with the form instance for proper file handling
-      if (this.mode === 'create') {
-        this.form.post('/work-orders', {
-          onSuccess: () => {
-            this.showModal = false;
-            this.resetForm();
-            const userName = this.$page.props.auth.user.name;
-            const timestamp = new Date().toLocaleString();
-            this.$emit('formSubmitted', `${userName} successfully created work order '${this.formattedTitle}' at ${timestamp}`);
-            this.isSubmitting = false;
-          },
-          onError: (errors) => {
-            console.error('Validation errors:', errors);
-            this.isSubmitting = false;
-            
-            // Check if we have a CSRF token error (419)
-            if (errors.response && errors.response.status === 419) {
-              this.refreshCsrfTokenAndRetry();
-            }
-          },
-          forceFormData: true
+      // Set the user_id from auth if available
+      if (!form.user_id && this.$page.props.auth.user) {
+        form.user_id = this.$page.props.auth.user.id;
+        form.users_name = this.$page.props.auth.user.name;
+      }
+      
+      // Format the form data
+      const formData = new FormData();
+      
+      // Add all required fields
+      formData.append('customer_id', form.customer_id);
+      formData.append('title', form.title);
+      formData.append('description', form.description);
+      formData.append('date_time', form.date_time);
+      formData.append('address', form.address);
+      formData.append('hours', parseFloat(form.hours));
+      formData.append('price', parseFloat(totalPrice.value));
+      formData.append('status', form.status);
+      formData.append('user_id', form.user_id);
+      if (form.technician_id) {
+        formData.append('technician_id', form.technician_id);
+      }
+      
+      // Add optional fields if they exist
+      if (form.end_date) {
+        formData.append('end_date', form.end_date);
+      }
+      
+      // Add file attachments if any
+      if (form.file_attachments.length > 0) {
+        form.file_attachments.forEach((file, index) => {
+          formData.append(`attachments[${index}]`, file);
         });
-      } else {
-        this.form.post(`/work-orders/${this.form.id}?_method=PUT`, {
-          onSuccess: () => {
-            this.showModal = false;
-            const userName = this.$page.props.auth.user.name;
-            const timestamp = new Date().toLocaleString();
-            this.$emit('formSubmitted', `${userName} successfully updated work order '${this.formattedTitle}' at ${timestamp}`);
-            this.isSubmitting = false;
-          },
-          onError: (errors) => {
-            console.error('Validation errors:', errors);
-            this.isSubmitting = false;
-            
-            // Check if we have a CSRF token error (419)
-            if (errors.response && errors.response.status === 419) {
-              this.refreshCsrfTokenAndRetry();
-            }
-          },
-          forceFormData: true
-        });
       }
-    },
-    
-    // New method to submit multiple work orders
-    async submitMultipleWorkOrders(dates) {
-      if (this.isSubmitting) return;
-      this.isSubmitting = true;
 
-      try {
-        const totalDates = dates.length;
-        let successCount = 0;
-
-        for (let i = 0; i < dates.length; i++) {
-          const date = dates[i];
-
-          // Prepare the form data for this work order
-          const formData = {
-            customer_id: this.form.customer_id,
-            title: `${this.formattedTitle} (${new Date(date).toLocaleDateString()})`,
-            description: this.form.description,
-            date_time: date,
-            end_date: null, // Ensure end_date is null for single-date work orders
-            address: this.form.address,
-            hours: this.form.hours,
-            price: this.form.price,
-            status: this.form.status,
-            user_id: this.form.user_id,
-          };
-
-          // Send the request to create the work order
-          await axios.post('/work-orders', formData);
-
-          successCount++;
-        }
-
-        // Close the modal and reset the form
-        this.showModal = false;
-        this.resetForm();
-        const userName = this.$page.props.auth.user.name;
-        const timestamp = new Date().toLocaleString();
-        this.$emit('formSubmitted', `${userName} successfully created ${successCount} work orders for '${this.formattedTitle}' at ${timestamp}`);
-      } catch (error) {
-        console.error('Error creating multiple work orders:', error);
-        alert('There was an error creating some work orders. Please check the input data and try again.');
-      } finally {
-        this.isSubmitting = false;
-      }
-    },
-    
-    // Add a method to refresh CSRF token
-    async refreshCsrfTokenAndRetry() {
-      try {
-        // Get a fresh CSRF token
-        const response = await axios.get('/csrf-token');
-        if (response.data && response.data.csrfToken) {
-          // Update the token in meta tag
-          const tokenElement = document.querySelector('meta[name="csrf-token"]');
-          if (tokenElement) {
-            tokenElement.setAttribute('content', response.data.csrfToken);
-          }
-          
-          // Retry submission after a short delay
-          setTimeout(() => {
-            this.isSubmitting = false;
-            this.submitForm();
-          }, 500);
-        }
-      } catch (error) {
-        console.error('Failed to refresh CSRF token:', error);
-        this.isSubmitting = false;
-      }
-    },
-    handleFileUpload(event) {
-      const files = event.target.files;
-      
-      if (files && files.length > 0) {
-        this.form.file_attachments = Array.from(files);
-      }
-    },
-    
-    removeFile(index) {
-      // Create a new FileList without the removed file
-      const dtTransfer = new DataTransfer();
-      
-      this.form.file_attachments.forEach((file, i) => {
-        if (i !== index) {
-          dtTransfer.items.add(file);
-        }
+      // Log the form data being sent
+      const formDataObj = {};
+      formData.forEach((value, key) => {
+        formDataObj[key] = value;
       });
-      
-      // Update the file input's files
-      const fileInput = document.getElementById('file_attachments');
-      if (fileInput) {
-        fileInput.files = dtTransfer.files;
-      }
-      
-      // Update the form's file attachments
-      this.form.file_attachments = Array.from(dtTransfer.files);
-    },
-    
-    resetForm() {
-      // Clear the file input separately since form.reset() doesn't clear it
-      const fileInput = document.getElementById('file_attachments');
-      if (fileInput) fileInput.value = '';
-      
-      this.form.reset();
-      this.form.clearErrors();
-      this.workType = '';
-      this.workOrderNumber = '';
-      this.location = '';
-      this.dateSelectionType = 'single';
-      this.selectedDates = [{ date: new Date().toISOString().slice(0, 16) }];
-      this.form.file_attachments = []; // Reset to empty array
-    },
-    duplicateWorkOrder() {
-      router.post(`/work-orders/${this.form.id}/duplicate`, {}, {
-        onSuccess: () => {
-          this.showModal = false;
-          this.$emit('formSubmitted', 'Work order duplicated successfully.');
+      console.log('Submitting form data:', formDataObj);
+
+      // Submit the form
+      isSubmitting.value = true;
+      form.post('/work-orders', {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (response) => {
+          console.log('Success response:', response);
+          showModal.value = false;
+          isSubmitting.value = false;
+          resetForm();
         },
         onError: (errors) => {
-          console.error('Error duplicating work order. Please try again:', errors);
+          console.error('Form submission errors:', {
+            errors,
+            formData: formDataObj,
+            validationState: validateCurrentStep()
+          });
+          
+          // Show more specific error messages
+          let errorMessage = 'An error occurred while creating the work order.\n\n';
+          if (typeof errors === 'string') {
+            errorMessage += errors;
+          } else if (errors.error) {
+            errorMessage += errors.error;
+          } else {
+            // Create a formatted error message from all validation errors
+            for (const [field, messages] of Object.entries(errors)) {
+              errorMessage += `${field}: ${messages.join(', ')}\n`;
+            }
+          }
+          
+          alert(errorMessage.trim());
+          isSubmitting.value = false;
         },
-      });
-    },
-    deleteWorkOrder() {
-      if (confirm('Are you sure you want to delete this work order?')) {
-        router.delete(`/work-orders/${this.form.id}`, {
-          onSuccess: () => {
-            this.showModal = false;
-            this.$emit('formSubmitted', 'Work order deleted successfully.');
-          },
-          onError: (errors) => {
-            console.error('Error deleting work order. Please try again:', errors);
-          },
-        });
-      }
-    },
-    // Functions for date selection
-    addNewDate() {
-      this.selectedDates.push({ date: new Date().toISOString().slice(0, 16) });
-    },
-    removeDate(index) {
-      if (this.selectedDates.length > 1) {
-        this.selectedDates.splice(index, 1);
-      }
-    },
-    // Generate array of dates between start and end for range selection
-    generateDateRange(start, end) {
-      if (!start || !end) return [];
-      
-      try {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        
-        if (isNaN(startDate) || isNaN(endDate)) return [];
-        
-        const dateArray = [];
-        let currentDate = new Date(startDate);
-        
-        // Add all dates between start and end
-        while (currentDate <= endDate) {
-          dateArray.push(new Date(currentDate).toISOString().slice(0, 16));
-          currentDate.setDate(currentDate.getDate() + 1);
+        onFinish: () => {
+          isSubmitting.value = false;
         }
-        
-        return dateArray;
-      } catch (error) {
-        console.error("Error generating date range:", error);
-        return [];
+      });
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      alert('An unexpected error occurred. Please try again.');
+      isSubmitting.value = false;
+    }
+  } else {
+    console.warn('Form validation failed:', validateCurrentStep());
+  }
+};
+
+// Date picker methods
+const generateCalendar = () => {
+  const year = currentMonth.value.getFullYear();
+  const month = currentMonth.value.getMonth();
+  
+  // Get first day of the month
+  const firstDay = new Date(year, month, 1);
+  // Get last day of the month
+  const lastDay = new Date(year, month + 1, 0);
+  
+  // Start from the week that contains the first day
+  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday, 6 = Saturday
+  
+  // Create array with empty slots for days before the first of the month
+  const calendarArray = Array(startingDayOfWeek).fill(null);
+  
+  // Add all days of the month
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    calendarArray.push(new Date(year, month, day));
+  }
+  
+  calendarDays.value = calendarArray;
+};
+
+const nextMonth = () => {
+  currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1, 1);
+  generateCalendar();
+};
+
+const prevMonth = () => {
+  currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() - 1, 1);
+  generateCalendar();
+};
+
+const selectDate = (date) => {
+  selectedDate.value = date;
+};
+
+const isSameDate = (date1, date2) => {
+  if (!date1 || !date2) return false;
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+};
+
+// Add this method to fix the isToday error
+const checkIsToday = (date) => {
+  return isToday(date);
+};
+
+const quickSelectDate = (type) => {
+  const today = new Date();
+  switch (type) {
+    case 'today':
+      selectedDate.value = today;
+      break;
+    case 'tomorrow':
+      selectedDate.value = addDays(today, 1);
+      break;
+    case 'nextWeek':
+      selectedDate.value = addDays(today, 7);
+      break;
+  }
+  
+  // Update current month to show the selected date
+  currentMonth.value = new Date(selectedDate.value.getFullYear(), selectedDate.value.getMonth(), 1);
+  generateCalendar();
+};
+
+// Add getFileObjectURL method for file/image preview
+const getFileObjectURL = (file) => {
+  if (!file) return '';
+  if (file.previewUrl) return file.previewUrl;
+  // Create a new object URL and cache it on the file object
+  const url = URL.createObjectURL(file);
+  file.previewUrl = url;
+  return url;
+};
+
+const updateFormDateTime = () => {
+  // Skip if no valid selected date
+  if (!isValid(selectedDate.value)) return;
+  
+  // Convert hour to 24-hour format if needed
+  let hour = parseInt(selectedTime.value.hour);
+  if (selectedTime.value.period === 'PM' && hour < 12) {
+    hour += 12;
+  } else if (selectedTime.value.period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  // Create new date with selected date and time
+  const dateWithTime = new Date(selectedDate.value);
+  dateWithTime.setHours(hour);
+  dateWithTime.setMinutes(parseInt(selectedTime.value.minute) || 0);
+  
+  // Update form.date_time with ISO string format
+  form.date_time = format(dateWithTime, "yyyy-MM-dd'T'HH:mm:ss");
+  
+  // Log to verify the date is being set correctly
+  console.log('Date updated:', form.date_time);
+};
+
+onMounted(() => {
+  // Initialize calendar for date picker after DOM update
+  nextTick(() => {
+    generateCalendar();
+  });
+  
+  // Set initial form.date_time based on selected date and time
+  const initialDate = new Date();
+  
+  // Convert hour to 24-hour format if needed
+  let hour = parseInt(selectedTime.value.hour);
+  if (selectedTime.value.period === 'PM' && hour < 12) {
+    hour += 12;
+  } else if (selectedTime.value.period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  initialDate.setHours(hour);
+  initialDate.setMinutes(parseInt(selectedTime.value.minute));
+  
+  form.date_time = format(initialDate, "yyyy-MM-dd'T'HH:mm:ss");
+
+  loadTechnicians();
+});
+
+// Watchers
+watch(currentStep, async (newStep) => {
+  // Scroll to top of form when step changes
+  await nextTick(() => {
+    const formElement = document.querySelector('.overflow-y-auto');
+    if (formElement) {
+      formElement.scrollTop = 0;
+    }
+  });
+  
+  // Regenerate calendar when entering Step 4
+  if (newStep === 4) {
+    await nextTick(() => {
+      generateCalendar();
+    });
+  }
+}, { flush: 'post' });
+
+watch([selectedDate, () => selectedTime.value.hour, () => selectedTime.value.minute, () => selectedTime.value.period], () => {
+  updateFormDateTime();
+});
+
+watch(() => form.customer_id, async (newCustomerId) => {
+  if (newCustomerId) {
+    try {
+      const response = await axios.get(`/customers/${newCustomerId}`);
+      if (response.data && response.data.pay_rate) {
+        // Update the hourly rate with the customer's pay rate
+        form.hourlyRate = parseFloat(response.data.pay_rate);
       }
-    },
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+      // Keep the default rate if there's an error
+    }
+  }
+});
+
+// Methods for API calls
+const loadTechnicians = async () => {
+  try {
+    const response = await axios.get('/api/technicians/active');
+    technicians.value = response.data;
+  } catch (error) {
+    console.error('Error loading technicians:', error);
   }
 };
 </script>
@@ -1137,46 +1371,24 @@ export default {
 
 /* Glass morphism styles */
 .glossy-card {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  height: auto; 
-  max-height: 60vh;
-  width: 95%;
-  max-width: 650px;
+  background: rgba(15, 23, 42, 0.85);
+  max-width: 90vw;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .glossy-header {
-  background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
-  position: relative;
-  overflow: hidden;
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
-  flex-shrink: 0;
-  padding: 1rem;
-}
-
-.glossy-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.3), transparent);
+  background: linear-gradient(to right, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.85));
 }
 
 .glossy-footer {
-  background: linear-gradient(0deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  position: relative;
+  background: linear-gradient(to right, rgba(20, 30, 48, 0.9), rgba(30, 41, 59, 0.85));
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-  flex-shrink: 0;
+  z-index: 10;
 }
 
 .glossy-section {
@@ -1201,7 +1413,8 @@ export default {
   scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
   scrollbar-width: thin;
   padding: 0.75rem;
-  max-height: calc(75vh - 120px); /* Adjust space for header and footer */
+  max-height: 65vh; /* Allow more space in the modal */
+  scroll-behavior: smooth;
 }
 
 /* Custom scrollbar */
@@ -1249,32 +1462,40 @@ progress::-moz-progress-bar {
   
   .glossy-card {
     height: auto;
-    max-height: 70vh;
+    max-height: 90vh;
     width: 95%;
+  }
+  
+  /* Adjust padding for smaller screens */
+  .px-6 {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
-input, select, textarea {
-  padding: 0.5rem;
-  margin: 0.25rem 0;
+/* Enhanced glossy card and footer styles */
+.glossy-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.85);
+  max-width: 90vw;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-/* Additional styles for validation */
-.border-red-500 {
-  border-color: #ef4444 !important;
-  border-width: 2px !important;
+.glossy-header {
+  background: linear-gradient(to right, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.85));
 }
 
-.opacity-50 {
-  opacity: 0.5;
+.glossy-footer {
+  background: linear-gradient(to right, rgba(20, 30, 48, 0.9), rgba(30, 41, 59, 0.85));
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  z-index: 10;
 }
 
-.cursor-not-allowed {
-  cursor: not-allowed;
-}
-
-/* Update existing styles or add at the end */
-
+/* Glass button styling */
 .glass-button {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(4px);
@@ -1282,81 +1503,30 @@ input, select, textarea {
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .glass-button:hover {
-  background: rgba(139, 92, 246, 0.3); /* Purple color with transparency */
+  background: rgba(139, 92, 246, 0.3);
   border-color: rgba(139, 92, 246, 0.5);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
-  color: rgb(255, 255, 255); /* Matching purple text color */
+  color: rgb(255, 255, 255);
+}
+
+.glass-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+  background: rgba(139, 92, 246, 0.4);
 }
 
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
-  .glass-button {
-    background: rgba(30, 30, 30, 0.4);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .glass-button:hover {
-    background: rgba(139, 92, 246, 0.25);
-    border-color: rgba(139, 92, 246, 0.4);
-  }
-}
-
-/* Custom styles for the Cally date picker */
-calendar-date {
-  /* Primary colors */
-  --cally-primary-color: #84cc16;
-  --cally-primary-color-light: #a3e635;
-  --cally-primary-color-dark: #65a30d;
-  
-  /* Text colors */
-  --cally-text-color: #ffffff;
-  --cally-text-color-secondary: #9ca3af;
-  
-  /* Background colors */
-  --cally-background-color: rgba(17, 24, 39, 0.95);
-  --cally-surface-color: rgba(31, 41, 55, 0.85);
-  
-  /* Border colors */
-  --cally-border-color: rgba(255, 255, 255, 0.08);
-  
-  /* Hover and focus states */
-  --cally-hover-color: rgba(132, 204, 22, 0.1);
-  --cally-focus-ring-color: rgba(132, 204, 22, 0.5);
-  
-  /* Additional customization */
-  --cally-border-radius: 0.5rem;
-  --cally-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  
-  /* Add backdrop filter for glossy effect */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* Style the calendar container to match glossy-card */
-calendar-date::part(container) {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Style selected date to use lime color */
-calendar-date::part(selected) {
-  background-color: #84cc16 !important;
-  color: #ffffff !important;
-}
-
-/* Style today's date */
-calendar-date::part(today) {
-  border-color: #84cc16 !important;
-}
-
-/* Style hover state */
-calendar-date::part(day):hover {
-  background-color: rgba(132, 204, 22, 0.1) !important;
+  /* Dark mode glass button styles are now handled in the enhanced styling section */
 }
 
 /* Style the range slider */
@@ -1440,12 +1610,12 @@ calendar-date::part(day):hover {
 
 .slider-purple::-moz-range-thumb {
   width: 18px;
-  height: 18px;
+   height: 18px;
   background: #9333ea;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1);
+  box-shadow:  0 0 0 4px rgba(147, 51, 234, 0.1);
   border: none;
 }
 
@@ -1473,15 +1643,11 @@ calendar-date::part(day):hover {
   border-color: rgba(132, 204, 22, 0.3);
 }
 
-.glossy-content.p-4.bg-lime-600 {
-  background: linear-gradient(135deg, #84cc16, #65a30d);
-  border-color: rgba(163, 230, 53, 0.3);
-}
 
 .status-badge {
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255,  0.18);
   transform: translateY(0);
   transition: all 0.2s ease;
 }
@@ -1493,5 +1659,73 @@ calendar-date::part(day):hover {
 
 .status-badge:active {
   transform: translateY(0);
+}
+
+/* Loading spinner styles */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced date picker styling */
+.calendar-picker {
+  background: rgba(31, 41, 55, 0.95);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.calendar-day-button {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+
+.calendar-day-button:hover {
+  background-color: rgba(132, 204, 22, 0.2);
+}
+
+.calendar-day-selected {
+  background-color: rgba(132, 204, 22, 0.8) !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.calendar-day-today {
+  border: 1px solid rgba(132, 204, 22, 0.5);
+  font-weight: 500;
+  background-color: rgba(132, 204, 22, 0.1);
+}
+
+/* Form content scrolling improvements */
+.overflow-y-auto {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.5) rgba(31, 41, 55, 0.6);
+  scroll-behavior: smooth;
+}
+
+/* Footer button focus and active states */
+.glass-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+  background: rgba(139, 92, 246, 0.4);
+}
+
+/* Add additional space for content */
+.glossy-section {
+  margin-bottom: 1.5rem;
 }
 </style>

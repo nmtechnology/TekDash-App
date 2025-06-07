@@ -10,7 +10,10 @@ use Illuminate\Http\Request;
 class CsrfController extends Controller
 {
     /**
-     * Get a new CSRF token
+     * Refresh the CSRF token.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function refresh(Request $request)
     {

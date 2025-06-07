@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('poc_email');
             $table->string('fax')->nullable();
             $table->enum('net_terms', ['Net 7', 'Net 15', 'Net 30', 'Net 60'])->default('Net 30');
+            $table->decimal('pay_rate', 8, 2)->nullable(); // Hourly pay rate for customer work
             $table->json('attachable_files')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

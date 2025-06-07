@@ -7,6 +7,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import ToastContainer from '@/Components/ToastContainer.vue';
 import axios from 'axios';
 import NotificationsDropdown from '@/Components/NotificationsDropdown.vue';
 import Search from '@/Components/Search.vue';
@@ -170,6 +171,8 @@ function logout() {
                         <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
                             <li><a href="/dashboard">Dashboard</a></li>
                             <li><a href="/work-orders">Work Orders</a></li>
+                            <li><a href="/customers">Customers</a></li>
+                            <li><a href="/technicians">Technicians</a></li>
                             <li><a href="/gallery">Gallery</a></li>
                             <li><a>About</a></li>
                         </ul>
@@ -205,6 +208,9 @@ function logout() {
                     </div>
                 </div>
             </nav>
+
+            <!-- Toast Container -->
+            <ToastContainer />
 
             <!-- Background Element -->
             <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">

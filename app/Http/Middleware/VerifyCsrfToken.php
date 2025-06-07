@@ -12,10 +12,8 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        'api/*',
-        'work-orders/*/duplicate',
-        'work-orders/*/update-field',
-        'api/work-orders/*/invoice',
-        'work-orders/*/attachments', // Added exception for attachments route
+        'public/*', // Only exclude truly public routes
+        'sanctum/csrf-cookie', // Allow CSRF cookie endpoint
+        'csrf/refresh', // Allow CSRF refresh endpoint
     ];
 }

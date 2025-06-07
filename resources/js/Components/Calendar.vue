@@ -16,39 +16,12 @@
         <AddWorkorder class="px-3 py-1 rounded" />
       </div>
     </div>
+    
     <div class="glass-card p-4 rounded-lg">
-      <FullCalendar :options="calendarOptions">
-        <!-- Custom event rendering as cards -->
-        <template v-slot:eventContent="arg">
-          <div class="w-full flex rounded-md shadow-sm event-card overflow-hidden glossy-content">
-            <!-- Left colored section with status indicator -->
-            <div 
-  :style="{ 
-    backgroundColor: getStatusColor(arg.event.extendedProps.status),
-    color: getTextColorForStatus(arg.event.extendedProps.status)
-  }" 
-  class="flex w-8 shrink-0 items-center justify-center rounded-l-md text-xs font-bold border-r border-white/20 glossy-btn"
-  :title="arg.event.extendedProps.status"
->
-  {{ getStatusText(arg.event.extendedProps.status) }}
-</div>
-            
-            <!-- Right content section -->
-            <div class="glossy-btn flex flex-1 items-center justify-between truncate rounded-r-md bg-white/10 dark:bg-gray-700/40 backdrop-blur-sm">
-              <div class="flex-1 truncate px-1 py-1 text-xs">
-                <p class="font-medium text-gray-800 dark:text-white truncate">
-                  {{ arg.event.title }}
-                  <span v-if="arg.event.extendedProps.isMultiDayEvent && arg.event.extendedProps.visitNumber" 
-                        class="ml-1 text-xs text-gray-400 dark:text-gray-300">
-                    ({{ arg.event.extendedProps.visitNumber }}/{{ arg.event.extendedProps.totalVisits }})
-                  </span>
-                </p>
-                <p class="text-gray-600 dark:text-gray-300 truncate text-xs">{{ formatEventTime(arg.event) }}</p>
-              </div>
-            </div>
-          </div>
-        </template>
-      </FullCalendar>
+      <FullCalendar 
+        ref="calendarRef"
+        :options="calendarOptions"
+      />
     </div>
   </div>
 
@@ -147,269 +120,41 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, defineEmits } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
+import { CalendarOptions } from '@fullcalendar/core';
 import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
 import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 
-// Define the emits for component communication
-const emit = defineEmits(['workOrderSelected']);
-
-// Get CSRF token from Inertia page props
-const page = usePage();
-const csrf = (page.props as any).csrf || '';
-
-// Setup axios to include CSRF token
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-axios.defaults.withCredentials = true; // Include cookies with requests
-
-const token = document.head.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
-if (token) {
-  axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
-} else {
-  console.error('CSRF token not found');
-}
-
-// Add this function to format the time
-function formatEventTime(event: any): string {
-  if (!event.start) return '';
-  
-  const start = new Date(event.start);
-  let timeString = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  
-  if (event.end) {
-    const end = new Date(event.end);
-    if (event.extendedProps.isMultiDayEvent) {
-      // Format for multi-day events
-      const startDate = start.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      const endDate = end.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      timeString = `${startDate} - ${endDate}`;
-    } else {
-      // Same day event with end time
-      timeString += ' - ' + end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    }
-  }
-  
-  // If it's a multi-visit event without end time, show visit number
-  if (event.extendedProps.isMultiDayEvent && event.extendedProps.visitNumber && !event.end) {
-    const date = start.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    timeString = `${date} ${timeString}`;
-  }
-  
-  return timeString;
-}
-
-// Add the CSRF token using Inertia's page props first, then try meta tag
-if (csrf) {
-  axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;
-} else {
-  // Fallback to meta tag
-  const token = document.head.querySelector('meta[name="csrf-token"]');
-  if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = (token as HTMLMetaElement).content;
-  } else {
-    console.warn('CSRF token not found! This could cause CSRF protection issues.');
-  }
-}
-
-// Track loading state
+const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
 const isLoading = ref(true);
-
-// Define selected work order
-const selectedWorkOrder = ref(null);
-
-// Define showWorkOrderModal
 const showWorkOrderModal = ref(false);
+const selectedWorkOrder = ref<any>(null);
 
-async function openWorkOrderModal(workOrderId) {
-  try {
-    console.log('Opening work order with ID:', workOrderId);
-    
-    const response = await axios.get(`/work-orders/${workOrderId}/details`, {
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-    
-    selectedWorkOrder.value = response.data;
-    showWorkOrderModal.value = true;
-  } catch (error) {
-    console.error('Error loading work order:', error);
-    
-    if (error.response) {
-      if (error.response.status === 404) {
-        alert('This work order no longer exists. It may have been deleted.');
-      } else {
-        alert(`Error: ${error.response.data.message || 'Something went wrong'}`);
-      }
-    } else {
-      alert('Network error. Please check your connection and try again.');
-    }
-  }
-}
-
-// Use the web route instead of the API route
-// Update the fetchEvents function to handle multiple dates and date ranges
-async function fetchEvents() {
-  try {
-    isLoading.value = true;
-    
-    // Use the web route instead of the API route
-    const response = await fetch('/calendar-data', {
-      headers: {
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      credentials: 'same-origin'
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Calendar events response:', data);
-
-    if (data && Array.isArray(data)) {
-      // Process work orders into calendar events
-      const events = [];
-      
-      data.forEach((workOrder) => {
-        // Check if we have visit_dates array for multiple dates
-        if (workOrder.visit_dates && Array.isArray(workOrder.visit_dates) && workOrder.visit_dates.length > 0) {
-          // Create separate event for each visit date
-          workOrder.visit_dates.forEach((visitDate, index) => {
-            events.push({
-              id: workOrder.id,
-              title: workOrder.title,
-              start: visitDate,
-              description: workOrder.description || '',
-              status: workOrder.status,
-              user_id: workOrder.user_id,
-              customer_id: workOrder.customer_id,
-              backgroundColor: getStatusColor(workOrder.status),
-              borderColor: getStatusColor(workOrder.status),
-              extendedProps: {
-                description: workOrder.description || '',
-                status: workOrder.status,
-                customer_id: workOrder.customer_id,
-                isMultiDayEvent: workOrder.visit_dates.length > 1,
-                visitNumber: index + 1,
-                totalVisits: workOrder.visit_dates.length
-              }
-            });
-          });
-        }
-        // Fall back to regular start date if no visit_dates
-        else {
-          events.push({
-            id: workOrder.id,
-            title: workOrder.title,
-            start: workOrder.start || workOrder.date_time,
-            end: workOrder.end || workOrder.end_date,
-            description: workOrder.description || '',
-            status: workOrder.status,
-            user_id: workOrder.user_id,
-            customer_id: workOrder.customer_id,
-            backgroundColor: getStatusColor(workOrder.status),
-            borderColor: getStatusColor(workOrder.status),
-            extendedProps: {
-              description: workOrder.description || '',
-              status: workOrder.status,
-              customer_id: workOrder.customer_id,
-              isMultiDayEvent: workOrder.end_date ? true : false
-            }
-          });
-        }
-      });
-
-      // Update the calendar options with the processed events
-      calendarOptions.events = events;
-    }
-  } catch (error) {
-    console.error('Error fetching work orders for calendar:', error);
-    calendarOptions.events = [];
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Function to get text color based on background color for optimal contrast
-function getTextColorForStatus(status: string): string {
-  // Dark backgrounds need white text, light backgrounds need dark text
-  switch (status?.toLowerCase()) {
-    case 'cancelled':
-    case 'complete':
-    case 'in progress':
-      return 'white'; // For darker backgrounds
-    default:
-      return '#1a202c'; // Dark text for lighter backgrounds
-  }
-}
-
-// Function to get status text for display
-function getStatusText(status: string): string {
-  if (!status) return 'N/A';
-  
-  // Format the status text (capitalize first letter or use abbreviations)
-  switch (status.toLowerCase()) {
-    case 'complete':
-      return 'C';
-    case 'scheduled':
-      return 'S';
-    case 'in progress':
-      return 'IP';
-    case 'cancelled':
-      return 'X';
-    case 'part/return':
-      return 'PR';
-    default:
-      return status.charAt(0).toUpperCase();
-  }
-}
-
-// Function to get color based on work order status
 function getStatusColor(status: string): string {
   switch (status?.toLowerCase()) {
     case 'complete':
-      return '#279c54'; // green
+      return '#279c54';
     case 'scheduled':
-      return '#223694'; // blue
+      return '#223694';
     case 'in progress':
-      return '#b59023'; // amber
+      return '#b59023';
     case 'cancelled':
-      return '#ef4444'; // red
+      return '#ef4444';
     case 'part/return':
-      return '#844ac4'; // purple
+      return '#844ac4';
     default:
-      return '#844ac4'; // slate
+      return '#844ac4';
   }
 }
 
-// Define the event handlers
-function handleDateClick(arg: any) {
-  const clickedDate = arg.dateStr;
-  // You can implement date click handling here
-}
-
-// Update the handleEventClick function to directly open the work order modal
-function handleEventClick(arg: any) {
-  // Get the work order ID from the clicked event
-  const workOrderId = arg.event.id;
-  
-  // Open the work order modal directly
-  console.log('Event clicked, opening work order:', workOrderId);
-  openWorkOrderModal(workOrderId);
-}
-
-// Define the calendar options
-const calendarOptions = reactive({
+const calendarOptions: CalendarOptions = {
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, resourceTimelinePlugin],
   initialView: 'dayGridMonth',
   editable: true,
@@ -418,31 +163,105 @@ const calendarOptions = reactive({
     center: 'title',
     right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
   },
-  dateClick: handleDateClick,
-  events: [], // Will be populated by fetchEvents
-  eventClick: handleEventClick,
+  events: [],
+  eventClick: async (info) => {
+    const workOrderId = info.event.id;
+    try {
+      const response = await axios.get(`/work-orders/${workOrderId}/details`);
+      selectedWorkOrder.value = response.data;
+      showWorkOrderModal.value = true;
+    } catch (error) {
+      console.error('Error loading work order:', error);
+      alert('Failed to load work order details');
+    }
+  },
   weekends: true,
   height: 'auto',
-  themeSystem: 'standard',
   eventTimeFormat: {
     hour: 'numeric',
     minute: '2-digit',
-    meridiem: 'short' as 'short'
+    meridiem: 'short' as 'short' | 'narrow' | 'lowercase'
   }
-});
+};
 
-// Fetch events when the component is mounted
-onMounted(() => {
-  fetchEvents();
-});
+async function fetchEvents() {
+  try {
+    const response = await fetch('/calendar-data', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    });
 
-// Toggle weekends visibility
-function toggleWeekends() {
-  calendarOptions.weekends = !calendarOptions.weekends;
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+    
+    if (!Array.isArray(data)) throw new Error('Invalid data format');
+
+    const events = data.flatMap(workOrder => {
+      const baseEvent = {
+        id: workOrder.id,
+        title: workOrder.title,
+        description: workOrder.description || '',
+        status: workOrder.status,
+        backgroundColor: getStatusColor(workOrder.status),
+        borderColor: getStatusColor(workOrder.status),
+      };
+
+      if (workOrder.visit_dates?.length) {
+        return workOrder.visit_dates.map((visitDate, index) => ({
+          ...baseEvent,
+          start: visitDate,
+          extendedProps: {
+            ...baseEvent,
+            isMultiDayEvent: true,
+            visitNumber: index + 1,
+            totalVisits: workOrder.visit_dates.length
+          }
+        }));
+      }
+
+      return [{
+        ...baseEvent,
+        start: workOrder.date_time,
+        end: workOrder.end_date,
+        extendedProps: {
+          ...baseEvent,
+          isMultiDayEvent: Boolean(workOrder.end_date)
+        }
+      }];
+    });
+
+    if (calendarRef.value) {
+      const calendar = calendarRef.value.getApi();
+      calendar.removeAllEvents();
+      calendar.addEventSource(events);
+    }
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+  } finally {
+    isLoading.value = false;
+  }
 }
+
+function toggleWeekends() {
+  if (calendarRef.value) {
+    const calendar = calendarRef.value.getApi();
+    calendar.setOption('weekends', !calendar.getOption('weekends'));
+  }
+}
+
+function closeModal() {
+  showWorkOrderModal.value = false;
+  selectedWorkOrder.value = null;
+}
+
+onMounted(fetchEvents);
 </script>
 
-<style>
+<style scoped>
 /* Additional header glow effect */
 .glossy-header::after {
   content: '';

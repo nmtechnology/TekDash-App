@@ -34,6 +34,21 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('/groq/query', [GroqController::class, 'query'])->name('groq.query');
     Route::post('/api/groq/query', [GroqController::class, 'query']);
     
+    // Customer Management
+    Route::get('/customers', [App\Http\Controllers\CustomerController::class, 'index'])->name('customers.index');
+    Route::get('/customers/{customer}', [App\Http\Controllers\CustomerController::class, 'show'])->name('customers.show');
+    Route::post('/customers', [App\Http\Controllers\CustomerController::class, 'store'])->name('customers.store');
+    Route::put('/customers/{customer}', [App\Http\Controllers\CustomerController::class, 'update'])->name('customers.update');
+    Route::delete('/customers/{customer}', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('customers.destroy');
+    Route::get('/customers/{customer}/work-orders', [App\Http\Controllers\CustomerController::class, 'workOrders'])->name('customers.work-orders');
+    Route::get('/customers/{customer}/work-orders/{workOrder}', [App\Http\Controllers\CustomerController::class, 'workOrderDetails'])->name('customers.work-order-details');
+    Route::post('/customers/{customer}/upload-files', [App\Http\Controllers\CustomerController::class, 'uploadFiles'])->name('customers.upload-files');
+    Route::delete('/customers/{customer}/delete-file', [App\Http\Controllers\CustomerController::class, 'deleteFile'])->name('customers.delete-file');
+    Route::get('/customers/{customer}/files', [App\Http\Controllers\CustomerController::class, 'getFiles'])->name('customers.get-files');
+    Route::post('/customers/{customer}/update-field', [App\Http\Controllers\CustomerController::class, 'updateField'])->name('customers.update-field');
+    Route::post('/customers/{customer}/update-images', [App\Http\Controllers\CustomerController::class, 'updateImages'])->name('customers.update-images');
+    Route::delete('/customers/{customer}/delete-attachment', [App\Http\Controllers\CustomerController::class, 'deleteAttachment'])->name('customers.delete-attachment');
+   
     // Groq test routes
     Route::get('/groq/test', [App\Http\Controllers\GroqTestController::class, 'test']);
     Route::post('/groq/chat', [App\Http\Controllers\GroqTestController::class, 'chat']);
@@ -259,7 +274,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
 // Admin only routes
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::post('/work-orders', [WorkOrderController::class, 'store'])->name('work-orders.store');
     Route::put('/work-orders/{workOrder}', [WorkOrderController::class, 'update'])->name('work-orders.update');
     Route::delete('/work-orders/{workOrder}', [WorkOrderController::class, 'destroy'])->name('work-orders.destroy');
     Route::post('/work-orders/{workOrder}/archive', [WorkOrderController::class, 'archive'])->name('work-orders.archive');
@@ -269,11 +283,20 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 // Tech and Admin routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/work-orders', [WorkOrderController::class, 'index'])->name('work-orders.index');
+    Route::post('/work-orders', [WorkOrderController::class, 'store'])->name('work-orders.store');
     Route::get('/work-orders/{workOrder}', [WorkOrderController::class, 'show'])->name('work-orders.show');
     Route::post('/work-orders/{workOrder}/status', [WorkOrderController::class, 'updateStatus'])->name('work-orders.update-status');
     Route::post('/work-orders/{workOrder}/notes', [WorkOrderController::class, 'addNotes'])->name('work-orders.add-notes');
     Route::post('/work-orders/{workOrder}/images', [WorkOrderController::class, 'uploadImages'])->name('work-orders.upload-images');
     Route::post('/work-orders/{workOrder}/signature', [WorkOrderController::class, 'getSignature'])->name('work-orders.get-signature');
+
+    // Technician routes
+    Route::get('/technicians', [App\Http\Controllers\TechnicianController::class, 'index'])
+        ->name('technicians.index');
+    Route::get('/technicians/{technician}', [App\Http\Controllers\TechnicianController::class, 'show'])
+        ->name('technicians.show');
+    Route::put('/technicians/{technician}', [App\Http\Controllers\TechnicianController::class, 'update'])
+        ->name('technicians.update');
 });
 
 // QuickBooks Integration Routes

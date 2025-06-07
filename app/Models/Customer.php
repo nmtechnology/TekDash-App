@@ -17,6 +17,7 @@ class Customer extends Model
         'poc_email',
         'fax',
         'net_terms',
+        'pay_rate',
         'attachable_files',
         'is_active',
     ];
@@ -24,6 +25,7 @@ class Customer extends Model
     protected $casts = [
         'attachable_files' => 'array',
         'is_active' => 'boolean',
+        'pay_rate' => 'decimal:2',
     ];
 
     /**

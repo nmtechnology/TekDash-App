@@ -39,19 +39,19 @@ const submit = () => {
             <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[46.125rem] -translate-x-1/2 rotate-[45deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 20.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)" />
         </div>
         
-        <div class="glossy-card w-full sm:max-w-md mt-6 px-6 py-4 shadow-md overflow-hidden sm:rounded-lg">
-            <div class="glossy-header py-4 -mx-6 -mt-4 mb-6 px-6">
+        <div class="glossy-card w-full sm:max-w-md mx-auto">
+            <div class="glossy-header py-6 -mx-6 -mt-4 px-6">
                 <div class="flex justify-center">
                     <ApplicationMark class="w-16 h-16" />
                 </div>
-                <h1 class="text-2xl font-bold text-center text-green-400 mt-2">TekDash</h1>
+                <h1 class="text-2xl font-bold text-center text-green-400 mt-4">TekDash</h1>
             </div>
 
-            <div v-if="status" class="mb-4 font-medium text-sm text-green-600 bg-green-50 p-3 rounded">
+            <div v-if="status" class="mb-4 font-medium text-sm text-green-600 bg-green-50 p-3 rounded mx-6">
                 {{ status }}
             </div>
 
-            <form @submit.prevent="submit" class="glossy-content p-4 rounded-lg">
+            <form @submit.prevent="submit" class="glossy-content mx-6">
                 <div>
                     <InputLabel for="email" value="Email" class="text-gray-300" />
                     <TextInput
@@ -120,16 +120,22 @@ const submit = () => {
 .glossy-card {
   display: flex;
   flex-direction: column;
-  height: 43vh; /* Adjust this value as needed */
-  max-height: 65vh;
+  min-height: fit-content; /* Change from fixed height to fit content */
+  width: 100%;
+  margin: 2rem auto;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
 }
 
 /* Fixed header styling */
 .glossy-header {
-  background: linear-gradient(180deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
-  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
+  position: relative;
+  overflow: hidden;
 }
 
 /* Scrollable content area */
@@ -142,39 +148,6 @@ const submit = () => {
 
 /* Fixed footer styling */
 .glossy-footer {
-  background: linear-gradient(0deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
-  border-bottom-left-radius: 0.5rem;
-  border-bottom-right-radius: 0.5rem;
-  flex-shrink: 0;
-}
-
-/* Glass morphism styles */
-.glossy-card {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.5rem;
-}
-
-.glossy-header {
-  background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.glossy-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.3), transparent);
-}
-
-.glossy-footer {
   background: linear-gradient(0deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   position: relative;
@@ -186,6 +159,8 @@ const submit = () => {
   background: linear-gradient(145deg, rgba(31, 41, 55, 0.6), rgba(17, 24, 39, 0.4));
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  margin: 1rem 0;
 }
 
 /* Button styling to match the glossy theme */

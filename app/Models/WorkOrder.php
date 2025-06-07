@@ -31,6 +31,7 @@ class WorkOrder extends Model
         'archived_at',
         'address',
         'hours',
+        'technician_id',  // Add this line
     ];
 
     protected $with = ['notes'];
@@ -144,5 +145,13 @@ class WorkOrder extends Model
     public function activities()
     {
         return $this->hasMany(WorkOrderActivity::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the technician assigned to this work order.
+     */
+    public function technician()
+    {
+        return $this->belongsTo(Technician::class);
     }
 }

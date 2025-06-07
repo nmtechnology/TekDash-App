@@ -18,12 +18,11 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue';
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 
-// Set the worker source to use a CDN
-const pdfVersion = pdfjsLib.version || '3.11.174';
-pdfjsLib.GlobalWorkerOptions.workerSrc = 
-  `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfVersion}/build/pdf.worker.min.js`;
+// Set the worker source to the local worker file via Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default {
   name: 'PdfThumbnail',
@@ -51,11 +50,8 @@ export default {
 
     const generateThumbnail = async () => {
       try {
-        // Add cMapUrl configuration with consistent versioning
         const loadingTask = pdfjsLib.getDocument({
           url: props.pdfUrl,
-          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfVersion}/cmaps/`,
-          cMapPacked: true,
         });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
@@ -101,6 +97,9 @@ export default {
   display: inline-block;
   cursor: pointer;
   transition: transform 0.2s;
+  width: 100%;
+  max-width: 180px;
+  min-width: 100px;
 }
 
 .pdf-thumbnail-wrapper:hover {
@@ -108,10 +107,14 @@ export default {
 }
 
 .pdf-thumbnail {
-  width: 40px;
-  height: 50px;
+  width: 100%;
+  aspect-ratio: 3/4;
+  min-width: 100px;
+  max-width: 180px;
+  min-height: 120px;
+  max-height: 240px;
   border: 1px solid #263343;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   background: #2a2a2a;
   display: flex;
@@ -123,14 +126,19 @@ export default {
 
 .thumbnail-canvas {
   width: 100%;
-  height: 75px;
+  height: auto;
+  min-height: 120px;
+  max-height: 200px;
   object-fit: contain;
   background: #010101;
+  display: block;
 }
 
 .pdf-icon {
   width: 100%;
-  height: 80px;
+  height: 60%;
+  min-height: 120px;
+  max-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -138,19 +146,45 @@ export default {
 }
 
 .pdf-icon svg {
-  width: 70px;
-  height: 40px;
+  width: 80px;
+  height: 60px;
   fill: #6fff00e9;
 }
 
 .filename {
   padding: 8px;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   color: #1f2937;
   text-align: center;
   word-break: break-word;
   background: #272727;
   width: 100%;
   border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 600px) {
+  .pdf-thumbnail-wrapper {
+    max-width: 120px;
+    min-width: 80px;
+  }
+  .pdf-thumbnail {
+    min-width: 80px;
+    max-width: 120px;
+    min-height: 80px;
+    max-height: 160px;
+    border-radius: 8px;
+  }
+  .thumbnail-canvas, .pdf-icon {
+    min-height: 80px;
+    max-height: 120px;
+  }
+  .pdf-icon svg {
+    width: 48px;
+    height: 36px;
+  }
+  .filename {
+    font-size: 0.8rem;
+    padding: 6px;
+  }
 }
 </style>

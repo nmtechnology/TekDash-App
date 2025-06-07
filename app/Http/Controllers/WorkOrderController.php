@@ -9,6 +9,7 @@ use App\Models\Note;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use App\Models\Customer;
 
 class WorkOrderController extends Controller
 {
@@ -39,9 +40,21 @@ class WorkOrderController extends Controller
     public function store(Request $request)
     {
         try {
-            // Validate request
+            // Log the incoming request data for debugging
+            Log::info('Work order creation attempt', [
+                'request_data' => $request->all()
+            ]);
+
+            // First find or create the customer by business name
+            $customerName = $request->input('customer_id'); // Contains business name
+            $customer = Customer::where('business_name', $customerName)->first();
+            
+            if (!$customer) {
+                throw new \Exception("Customer with business name '{$customerName}' not found. Please create the customer first.");
+            }
+
+            // Validate request with other fields
             $validated = $request->validate([
-                'customer_id' => 'required|string',
                 'title' => 'required|string',
                 'description' => 'required|string',
                 'date_time' => 'required|date',
@@ -49,15 +62,27 @@ class WorkOrderController extends Controller
                 'address' => 'required|string',
                 'hours' => 'required|numeric|min:0',
                 'price' => 'required|numeric|min:0',
-                'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
+                'status' => 'required|string|in:Scheduled,In Progress,Part Needed,Complete,Cancelled',
                 'user_id' => 'required|exists:users,id',
+                'technician_id' => 'nullable|exists:technicians,id',
             ]);
+
+            // Convert any Part/Return status to Part Needed
+            if ($validated['status'] === 'Part/Return') {
+                $validated['status'] = 'Part Needed';
+            }
+
+            // Add the actual customer_id to the validated data
+            $validated['customer_id'] = $customer->id;
 
             // Create the work order
             $workOrder = WorkOrder::create($validated);
             
             // Log creation activity for each field
             foreach ($validated as $field => $value) {
+                if ($field === 'status' && $value === 'Part/Return') {
+                    $value = 'Part Needed';
+                }
                 WorkOrderActivity::create([
                     'work_order_id' => $workOrder->id,
                     'user_id' => auth()->id(),
@@ -80,16 +105,36 @@ class WorkOrderController extends Controller
                 'description' => 'Work order created'
             ]);
 
-            return response()->json(['success' => true, 'message' => 'Work order created successfully.', 'workOrder' => $workOrder], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Work order created successfully.',
+                'workOrder' => $workOrder
+            ]);
+            
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Log validation errors for debugging
-            \Log::error('Validation failed for work order creation:', $e->errors());
+            Log::error('Validation failed for work order creation', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
 
-            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+            return response()->json([
+                'error' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+            
         } catch (\Exception $e) {
-            \Log::error('Error creating work order:', $e->getMessage());
+            Log::error('Error creating work order', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
 
-            return response()->json(['success' => false, 'message' => 'An error occurred while creating the work order.'], 500);
+            return response()->json([
+                'error' => 'An error occurred while creating the work order.',
+                'message' => $e->getMessage(),
+                'debug' => config('app.debug') ? $e->getTrace() : null
+            ], 500);
         }
     }
 
