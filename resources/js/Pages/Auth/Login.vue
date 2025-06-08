@@ -8,6 +8,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
+import axios from 'axios';
 
 defineProps({
     canResetPassword: Boolean,
@@ -20,11 +21,32 @@ const form = useForm({
     remember: false,
 });
 
-const submit = () => {
+const submit = async () => {
+    // Ensure we have a fresh CSRF token before submitting
+    try {
+        const response = await axios.get('/csrf/refresh', {
+            withCredentials: true,
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        if (response.data?.token) {
+            axios.defaults.headers.common['X-CSRF-TOKEN'] = response.data.token;
+            axios.defaults.headers.common['X-XSRF-TOKEN'] = response.data.token;
+        }
+    } catch (error) {
+        console.warn('Failed to refresh CSRF token before login:', error);
+    }
+
     form.transform(data => ({
         ...data,
         remember: form.remember ? 'on' : '',
     })).post(route('login'), {
+        onError: (errors) => {
+            if (errors?.response?.status === 419) {
+                // If we get a CSRF error, try to refresh and retry once
+                submit();
+            }
+        },
         onFinish: () => form.reset('password'),
     });
 };

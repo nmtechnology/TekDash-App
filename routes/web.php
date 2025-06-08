@@ -3,12 +3,20 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CsrfController;
 use App\Http\Controllers\GroqController;
 use App\Http\Controllers\WorkOrderController;
 use App\Http\Controllers\QuickBooksAuthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PDFController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+
+// CSRF and session setup routes
+Route::middleware(['web'])->group(function () {
+    Route::get('/csrf/refresh', [CsrfController::class, 'refresh'])->name('csrf.refresh');
+    Route::post('/csrf/refresh', [CsrfController::class, 'refresh'])->name('csrf.token');
+});
 
 // Public routes
 Route::get('/', function () {
@@ -19,6 +27,11 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+// CSRF Token Routes
+Route::get('/csrf/refresh', [CsrfController::class, 'refresh'])
+    ->middleware(['web'])
+    ->name('csrf.refresh');
 
 // Groq diagnostic routes - no auth required for debugging
 Route::get('/groq/diagnose', [App\Http\Controllers\GroqDiagnosticController::class, 'diagnose']);
@@ -356,3 +369,8 @@ Route::post('/email/verification-notification', function (Request $request) {
 
     return back()->with('status', 'verification-link-sent');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
+// Debug login route
+Route::get('/debug/login', function () {
+    return Inertia::render('Auth/DebugLogin');
+})->middleware('web');

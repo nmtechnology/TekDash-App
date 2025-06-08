@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 
-/**
- * Controller for refreshing CSRF tokens
- */
 class CsrfController extends Controller
 {
     /**
@@ -17,8 +15,12 @@ class CsrfController extends Controller
      */
     public function refresh(Request $request)
     {
+        // Regenerate CSRF token
+        $token = csrf_token();
+        
         return response()->json([
-            'csrfToken' => csrf_token(),
+            'token' => $token,
+            'header' => 'X-CSRF-TOKEN'
         ]);
     }
 }
