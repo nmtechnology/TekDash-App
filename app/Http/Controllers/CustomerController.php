@@ -113,20 +113,60 @@ class CustomerController extends Controller
     public function update(Request $request, Customer $customer)
     {
         try {
-            $validated = $request->validate([
-                'business_name' => 'required|string|max:255|unique:customers,business_name,' . $customer->id,
-                'address' => 'required|string|max:255',
-                'poc_name' => 'required|string|max:255',
-                'poc_email' => 'required|email|max:255',
-                'fax' => 'nullable|string|max:20',
-                'net_terms' => 'required|in:Net 7,Net 15,Net 30,Net 60',
-                'pay_rate' => 'nullable|numeric|min:0',
-                'attachable_files' => 'nullable|array',
-                'is_active' => 'boolean'
-            ]);
-
+            // Get only the fields that are being updated
+            $updateData = $request->all();
+            $validationRules = [];
+            
+            // Only validate the fields that are present in the request
+            if (array_key_exists('business_name', $updateData)) {
+                $validationRules['business_name'] = 'required|string|max:255|unique:customers,business_name,' . $customer->id;
+            }
+            
+            if (array_key_exists('address', $updateData)) {
+                $validationRules['address'] = 'required|string|max:255';
+            }
+            
+            if (array_key_exists('poc_name', $updateData)) {
+                $validationRules['poc_name'] = 'required|string|max:255';
+            }
+            
+            if (array_key_exists('poc_email', $updateData)) {
+                $validationRules['poc_email'] = 'required|email|max:255';
+            }
+            
+            if (array_key_exists('fax', $updateData)) {
+                $validationRules['fax'] = 'nullable|string|max:20';
+            }
+            
+            if (array_key_exists('net_terms', $updateData)) {
+                $validationRules['net_terms'] = 'required|in:Net 7,Net 15,Net 30,Net 60';
+            }
+            
+            if (array_key_exists('pay_rate', $updateData)) {
+                $validationRules['pay_rate'] = 'nullable|numeric|min:0';
+            }
+            
+            if (array_key_exists('attachable_files', $updateData)) {
+                $validationRules['attachable_files'] = 'nullable|array';
+            }
+            
+            if (array_key_exists('is_active', $updateData)) {
+                $validationRules['is_active'] = 'boolean';
+            }
+            
+            // If we have no validation rules, that means no valid fields to update
+            if (empty($validationRules)) {
+                return response()->json([
+                    'message' => 'No valid fields to update',
+                ], 400);
+            }
+            
+            // Validate the fields being updated
+            $validated = $request->validate($validationRules);
+            
+            // Update only the validated fields
             $customer->update($validated);
-
+            
             return response()->json([
                 'message' => 'Customer updated successfully',
                 'customer' => $customer

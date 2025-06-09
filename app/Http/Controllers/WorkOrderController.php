@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\WorkOrder;
 use App\Models\User;
+use App\Models\WorkOrderActivity;
 use Inertia\Inertia;
 use App\Models\Note;
 use Illuminate\Support\Facades\Log;
@@ -42,15 +43,27 @@ class WorkOrderController extends Controller
         try {
             // Log the incoming request data for debugging
             Log::info('Work order creation attempt', [
-                'request_data' => $request->all()
+                'request_data' => $request->all(),
+                'customer_id_type' => gettype($request->input('customer_id')),
+                'user_id' => $request->input('user_id')
             ]);
 
-            // First find or create the customer by business name
-            $customerName = $request->input('customer_id'); // Contains business name
-            $customer = Customer::where('business_name', $customerName)->first();
+            // Get customer_id from the request
+            $customerId = $request->input('customer_id');
             
-            if (!$customer) {
-                throw new \Exception("Customer with business name '{$customerName}' not found. Please create the customer first.");
+            // Check if the input is numeric (direct ID) or a string (business name)
+            if (is_numeric($customerId)) {
+                // Find customer by ID
+                $customer = Customer::find($customerId);
+                if (!$customer) {
+                    throw new \Exception("Customer with ID '{$customerId}' not found. Please create the customer first.");
+                }
+            } else {
+                // Find customer by business name
+                $customer = Customer::where('business_name', $customerId)->first();
+                if (!$customer) {
+                    throw new \Exception("Customer with business name '{$customerId}' not found. Please create the customer first.");
+                }
             }
 
             // Validate request with other fields
@@ -72,38 +85,90 @@ class WorkOrderController extends Controller
                 $validated['status'] = 'Part Needed';
             }
 
-            // Add the actual customer_id to the validated data
+            // Make sure we're using the correct customer_id in the validated data
             $validated['customer_id'] = $customer->id;
+            Log::info('Using customer ID: ' . $customer->id);
 
+            // Add more detailed debug logging
+            Log::info('About to create work order', [
+                'validated_data' => $validated,
+                'customer' => $customer->toArray(),
+                'has_technician_id' => isset($validated['technician_id']),
+                'has_hours' => isset($validated['hours']),
+                'file_attachments' => $request->hasFile('file_attachments') ? 'yes' : 'no'
+            ]);
+            
+            // Handle file attachments if any
+            if ($request->hasFile('file_attachments')) {
+                try {
+                    $fileAttachments = [];
+                    foreach ($request->file('file_attachments') as $file) {
+                        $path = $file->store('work_orders', 'public');
+                        $fileAttachments[] = $path;
+                    }
+                    $validated['file_attachments'] = json_encode($fileAttachments);
+                    
+                    Log::info('File attachments processed', [
+                        'count' => count($fileAttachments),
+                        'paths' => $fileAttachments
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Error processing file attachments', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Continue without file attachments rather than failing
+                    $validated['file_attachments'] = '[]';
+                }
+            }
+            
             // Create the work order
             $workOrder = WorkOrder::create($validated);
             
             // Log creation activity for each field
-            foreach ($validated as $field => $value) {
-                if ($field === 'status' && $value === 'Part/Return') {
-                    $value = 'Part Needed';
+            try {
+                // Get the authenticated user ID, or use a fallback value
+                $userId = auth()->id() ?? $validated['user_id'] ?? 1;
+                
+                foreach ($validated as $field => $value) {
+                    if ($field === 'status' && $value === 'Part/Return') {
+                        $value = 'Part Needed';
+                    }
+                    
+                    // Convert value to string for safe storage
+                    if (is_array($value)) {
+                        $value = json_encode($value);
+                    }
+                    
+                    WorkOrderActivity::create([
+                        'work_order_id' => $workOrder->id,
+                        'user_id' => $userId,
+                        'field_name' => $field,
+                        'old_value' => null,
+                        'new_value' => $value,
+                        'action_type' => 'create',
+                        'description' => 'Created work order field: ' . $field
+                    ]);
                 }
+
+                // Create a general creation activity
                 WorkOrderActivity::create([
                     'work_order_id' => $workOrder->id,
-                    'user_id' => auth()->id(),
-                    'field_name' => $field,
+                    'user_id' => $userId,
+                    'field_name' => 'work_order',
                     'old_value' => null,
-                    'new_value' => $value,
+                    'new_value' => null,
                     'action_type' => 'create',
-                    'description' => 'Created work order field: ' . $field
+                    'description' => 'Work order created'
                 ]);
+            } catch (\Exception $e) {
+                // Log error but continue with response
+                Log::error('Error creating work order activity logs', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Continue execution - don't let activity logging failure prevent work order creation
             }
-
-            // Create a general creation activity
-            WorkOrderActivity::create([
-                'work_order_id' => $workOrder->id,
-                'user_id' => auth()->id(),
-                'field_name' => 'work_order',
-                'old_value' => null,
-                'new_value' => null,
-                'action_type' => 'create',
-                'description' => 'Work order created'
-            ]);
 
             return response()->json([
                 'success' => true,

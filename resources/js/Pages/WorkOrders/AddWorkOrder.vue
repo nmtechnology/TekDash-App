@@ -746,7 +746,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
 import PdfThumbnail from '@/Components/PdfThumbnail.vue';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
@@ -919,7 +919,7 @@ const resetForm = () => {
 const validateCurrentStep = () => {
   switch(currentStep.value) {
     case 1:
-      return !!form.customer_id && form.customer_id.trim() !== '';
+      return !!form.customer_id && String(form.customer_id).trim() !== '';
     case 2:
       return workType.value && 
              workOrderNumber.value && 
@@ -951,7 +951,8 @@ const nextStep = async () => {
       await new Promise(resolve => setTimeout(resolve, 100));
       if (currentStep.value < totalSteps) {
         currentStep.value++;
-        this.$nextTick(() => {
+        // Use nextTick from Vue instead of this.$nextTick
+        nextTick(() => {
           const formElement = document.querySelector('.overflow-y-auto');
           if (formElement) {
             formElement.scrollTop = 0;
@@ -970,7 +971,7 @@ const prevStep = async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     if (currentStep.value > 1) {
       currentStep.value--;
-      this.$nextTick(() => {
+      nextTick(() => {
         const formElement = document.querySelector('.overflow-y-auto');
         if (formElement) {
           formElement.scrollTop = 0;
@@ -1010,10 +1011,21 @@ const submitForm = () => {
       // Set the title from formattedTitle
       form.title = formattedTitle.value;
       
-      // Set the user_id from auth if available
-      if (!form.user_id && this.$page.props.auth.user) {
-        form.user_id = this.$page.props.auth.user.id;
-        form.users_name = this.$page.props.auth.user.name;
+      // Set the user_id from auth if available using usePage() instead of this.$page
+      const page = usePage();
+      // Add proper null checking to avoid undefined errors
+      if (!form.user_id && page.props.value && page.props.value.auth && page.props.value.auth.user) {
+        form.user_id = page.props.value.auth.user.id;
+        form.users_name = page.props.value.auth.user.name;
+      } else {
+        // Fallback to set user_id if not available from auth
+        // This might happen when the component is in a modal or iframe context
+        console.log('Auth user not available, using fallback values');
+        if (!form.user_id) {
+          // You might want to get these values from props or a store if available
+          form.user_id = 1; // Default to admin or system user
+          form.users_name = form.users_name || 'System User';
+        }
       }
       
       // Format the form data
@@ -1041,7 +1053,8 @@ const submitForm = () => {
       // Add file attachments if any
       if (form.file_attachments.length > 0) {
         form.file_attachments.forEach((file, index) => {
-          formData.append(`attachments[${index}]`, file);
+          // Fix: use file_attachments instead of attachments to match backend
+          formData.append(`file_attachments[${index}]`, file);
         });
       }
 
@@ -1076,10 +1089,31 @@ const submitForm = () => {
             errorMessage += errors;
           } else if (errors.error) {
             errorMessage += errors.error;
+          } else if (errors.message) {
+            errorMessage += errors.message;
           } else {
             // Create a formatted error message from all validation errors
             for (const [field, messages] of Object.entries(errors)) {
               errorMessage += `${field}: ${messages.join(', ')}\n`;
+            }
+          }
+          
+          // Add response status if available
+          if (errors.response && errors.response.status) {
+            errorMessage += `\nResponse status: ${errors.response.status}`;
+            
+            // For 500 errors, add more info
+            if (errors.response.status === 500) {
+              errorMessage += "\n\nThis is a server error. Please check the server logs for more details.";
+              
+              // Try to extract more error information if available
+              if (errors.response.data && errors.response.data.debug) {
+                console.log('Server error debug info:', errors.response.data.debug);
+              }
+              
+              if (errors.response.data && errors.response.data.message) {
+                errorMessage += `\nError message: ${errors.response.data.message}`;
+              }
             }
           }
           
@@ -1092,7 +1126,13 @@ const submitForm = () => {
       });
     } catch (error) {
       console.error('Error in form submission:', error);
-      alert('An unexpected error occurred. Please try again.');
+      // Add more detailed debugging information
+      const page = usePage();
+      console.log('Page props available:', page?.props?.value ? 'Yes' : 'No');
+      console.log('Auth props available:', page?.props?.value?.auth ? 'Yes' : 'No');
+      
+      // Show more helpful error message
+      alert('An unexpected error occurred. Please try again. ' + error.message);
       isSubmitting.value = false;
     }
   } else {
