@@ -13,7 +13,7 @@
           </svg>
           Toggle Weekends
         </button>
-        <AddWorkorder class="px-3 py-1 rounded" />
+        <AddWorkOrder class="px-3 py-1 rounded" />
       </div>
     </div>
     
@@ -130,7 +130,10 @@ import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import { CalendarOptions } from '@fullcalendar/core';
 import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
-import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
+import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
+
+// Define the events emitted by this component
+const emit = defineEmits(['workOrderSelected']);
 
 const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
 const isLoading = ref(true);
@@ -166,6 +169,10 @@ const calendarOptions: CalendarOptions = {
   events: [],
   eventClick: async (info) => {
     const workOrderId = info.event.id;
+    // Emit the event to the parent component
+    emit('workOrderSelected', workOrderId);
+    
+    // Also handle it internally if needed
     try {
       const response = await axios.get(`/work-orders/${workOrderId}/details`);
       selectedWorkOrder.value = response.data;

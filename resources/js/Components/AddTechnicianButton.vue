@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="tech-button-container">
     <button
       @click="showModal = true"
       class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm text-green-400 transition-all duration-300"
@@ -9,110 +9,115 @@
       </svg>
       Add Technician
     </button>
-
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-lg w-full flex flex-col">
-        <div class="glossy-header px-6 pt-5 pb-4">
-          <div class="flex justify-between items-center">
-            <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
-              Add New Technician
-            </h3>
-            <button
-              @click="showModal = false"
-              class="btn btn-circle btn-outline ml-4 text-gray-400 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
-              aria-label="Close modal"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+  </div>
+  
+  <!-- Teleport the modal to body to fix positioning issues -->
+  <Teleport to="body">
+    <Transition name="modal-fade">
+      <div v-if="showModal" class="modal-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-4" @click="closeModal">
+        <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform flex flex-col" @click.stop>
+          <div class="glossy-header px-6 pt-5 pb-4">
+            <div class="flex justify-between items-center">
+              <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
+                Add New Technician
+              </h3>
+              <button
+                @click="closeModal"
+                class="btn btn-circle btn-outline ml-4 text-gray-400 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
+                aria-label="Close modal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="glossy-section flex-grow overflow-y-auto px-6 py-4">
-          <form @submit.prevent="addTechnician">
-            <div class="mb-4">
-              <label for="first_name" class="block text-sm font-medium text-green-400">First Name</label>
-              <input
-                v-model="form.first_name"
-                type="text"
-                id="first_name"
-                class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
-                required
-              />
-            </div>
-
-            <div class="mb-4">
-              <label for="last_name" class="block text-sm font-medium text-green-400">Last Name</label>
-              <input
-                v-model="form.last_name"
-                type="text"
-                id="last_name"
-                class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
-                required
-              />
-            </div>
-
-            <div class="mb-4">
-              <label for="email" class="block text-sm font-medium text-green-400">Email</label>
-              <input
-                v-model="form.email"
-                type="email"
-                id="email"
-                class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
-                required
-              />
-            </div>
-
-            <div class="mb-4">
-              <label for="phone_number" class="block text-sm font-medium text-green-400">Phone Number</label>
-              <input
-                v-model="form.phone_number"
-                type="text"
-                id="phone_number"
-                class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
-                required
-              />
-            </div>
-
-            <div class="mb-4">
-              <label for="pay_rate" class="block text-sm font-medium text-green-400">Pay Rate</label>
-              <div class="relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">$</span>
+          <div class="glossy-section flex-grow overflow-y-auto px-6 py-4">
+            <form @submit.prevent="addTechnician">
+              <div class="mb-4">
+                <label for="first_name" class="block text-sm font-medium text-green-400">First Name</label>
                 <input
-                  v-model="form.pay_rate"
-                  type="number"
-                  step="0.01"
-                  id="pay_rate"
-                  class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50 pl-8"
+                  v-model="form.first_name"
+                  type="text"
+                  id="first_name"
+                  class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
                   required
                 />
               </div>
-            </div>
-          </form>
-        </div>
 
-        <div class="glossy-footer px-6 py-4 border-t border-gray-700">
-          <div class="flex justify-end space-x-3">
-            <button
-              type="button"
-              @click="showModal = false"
-              class="glass-button px-4 py-2 bg-gray-700/50 text-white hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="glass-button px-4 py-2 bg-lime-600/60 text-white hover:bg-lime-700"
-              @click="addTechnician"
-            >
-              Add Technician
-            </button>
+              <div class="mb-4">
+                <label for="last_name" class="block text-sm font-medium text-green-400">Last Name</label>
+                <input
+                  v-model="form.last_name"
+                  type="text"
+                  id="last_name"
+                  class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
+                  required
+                />
+              </div>
+
+              <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-green-400">Email</label>
+                <input
+                  v-model="form.email"
+                  type="email"
+                  id="email"
+                  class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
+                  required
+                />
+              </div>
+
+              <div class="mb-4">
+                <label for="phone_number" class="block text-sm font-medium text-green-400">Phone Number</label>
+                <input
+                  v-model="form.phone_number"
+                  type="text"
+                  id="phone_number"
+                  class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50"
+                  required
+                />
+              </div>
+
+              <div class="mb-4">
+                <label for="pay_rate" class="block text-sm font-medium text-green-400">Pay Rate</label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">$</span>
+                  <input
+                    v-model="form.pay_rate"
+                    type="number"
+                    step="0.01"
+                    id="pay_rate"
+                    class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500/50 pl-8"
+                    required
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="glossy-footer px-6 py-4 border-t border-gray-700">
+            <div class="flex justify-end space-x-3">
+              <button
+                type="button"
+                @click="closeModal"
+                class="glass-button px-4 py-2 bg-gray-700/50 text-white hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="glass-button px-4 py-2 bg-lime-600/60 text-white hover:bg-lime-700"
+                @click="addTechnician"
+              >
+                Add Technician
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -120,6 +125,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { useToast } from '@/Composables/useToast';
 import { defineEmits } from 'vue';
+// Teleport is a built-in component in Vue 3 - no need to import it explicitly
 
 const showModal = ref(false);
 const form = ref({
@@ -133,6 +139,10 @@ const form = ref({
 const emit = defineEmits(['technician-added']);
 const toast = useToast ? useToast() : null;
 
+function closeModal() {
+  showModal.value = false;
+}
+
 async function addTechnician() {
   try {
     // Optionally, get CSRF cookie for Sanctum
@@ -140,7 +150,7 @@ async function addTechnician() {
     const response = await axios.post('/api/technicians', form.value);
     if (toast) toast.success('Technician added successfully!');
     emit('technician-added', response.data);
-    showModal.value = false;
+    closeModal();
     form.value = {
       first_name: '',
       last_name: '',
@@ -160,10 +170,17 @@ async function addTechnician() {
 .glossy-card {
   display: flex;
   flex-direction: column;
-  background: rgba(15, 23, 42, 0.85);
-  max-width: 90vw;
+  background: rgba(15, 23, 42, 0.95);
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  z-index: 10000;
+  position: relative;
+  margin: 0 auto;
+  transform: translateY(-5vh); /* This gives the appearance of being centered */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .glossy-header {
@@ -237,5 +254,53 @@ async function addTechnician() {
 .overflow-y-auto::-webkit-scrollbar-thumb {
   background-color: rgba(75, 85, 99, 0.5);
   border-radius: 3px;
+}
+
+/* Center modal container */
+.tech-button-container {
+  position: relative;
+}
+
+/* Modal animation */
+.transform {
+  transition: all 0.3s ease-out;
+}
+
+@media (max-height: 700px) {
+  .glossy-card {
+    max-height: 90vh;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .glossy-card {
+    max-width: 95vw;
+  }
+}
+
+/* Modal fade transition */
+.modal-fade-enter-active, .modal-fade-leave-active {
+  transition: all 0.3s ease;
+}
+.modal-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-5vh) scale(0.95);
+}
+.modal-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-5vh) scale(0.95);
+}
+.modal-fade-enter-to, .modal-fade-leave-from {
+  opacity: 1;
+  transform: translateY(-5vh) scale(1);
+}
+
+/* Modal fade transition */
+.modal-fade-enter-active, .modal-fade-leave-active {
+  transition: opacity 0.5s;
+}
+.modal-fade-enter, .modal-fade-leave-to /* .modal-fade-leave-active in <2.1.8 */ {
+  opacity: 0;
 }
 </style>

@@ -5,7 +5,7 @@ import CurrentTime from '@/Components/CurrentTime.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
 import RevenueStats from '@/Components/RevenueStats.vue';
 import Search from '@/Components/Search.vue';
-import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
+import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 import AddCustomerButton from '@/Components/AddCustomerButton.vue';
 import AddTechnicianButton from '@/Components/AddTechnicianButton.vue';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
@@ -210,7 +210,7 @@ const openArchivedModal = () => {
             </h2>
             <div class="flex space-x-4">
               <TeamDropdown :teams="props.teams" />
-              <AddWorkorder />
+              <AddWorkOrder />
               <AddCustomerButton />
               <AddTechnicianButton />
             </div>

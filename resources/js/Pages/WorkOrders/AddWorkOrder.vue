@@ -1,21 +1,21 @@
 <template>
   <div>
-    <button @click="() => showModal = true" class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
+    <button @click="handleShowModal" class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       Add Work Order
     </button>
 
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[85vh] flex flex-col">
+    <div v-show="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70" @click="handleHideModal">
+      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[85vh] flex flex-col" @click.stop>
         <div class="glossy-header px-6 pt-5 pb-4">
           <div class="flex justify-between items-center">
             <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
               Add Work Order
             </h3>
             <button 
-              @click="showModal = false" 
+              @click="handleHideModal" 
               class="btn btn-circle btn-outline ml-4 text-gray-900 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
               aria-label="Close modal"
             >
@@ -43,22 +43,25 @@
               <div class="glossy-section mb-4">
                 <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label>
                 <p class="text-sm text-white">Choose a customer from the dropdown menu below.</p>
-                <select v-model="form.customer_id" id="customer_id" name="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                  <option value="Advanced Project Solutions">Advanced Project Solutions</option>
-                  <option value="Barrister Global Service Network">Barrister Global Service Network</option>
-                  <option value="Bass-Security">Bass-Security</option>
-                  <option value="Actron Security">Actron Security</option>
-                  <option value="Field Nation">Field Nation</option>
-                  <option value="Navco">Navco</option>
-                  <option value="NuTech National">NuTech National</option>
-                  <option value="Telaid">Telaid</option>
+                <div v-if="isLoadingCustomers" class="text-center py-3">
+                  <div class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full"></div>
+                  <span class="ml-2 text-lime-400">Loading customers...</span>
+                </div>
+                <select v-else v-model="form.customer_id" id="customer_id" name="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                  <option value="" disabled>Select a customer</option>
+                  <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.business_name }}</option>
                 </select>
+                <div v-if="customers.length === 0 && !isLoadingCustomers" class="mt-2 text-red-400 text-sm">
+                  No customers found. Please add customers first.
+                </div>
               </div>
               <!-- Selection Summary -->
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                 <div class="text-center">
                   <div class="text-sm text-gray-400">Selected Customer:</div>
-                  <div class="text-lime-400 font-bold text-lg">{{ form.customer_id || 'None selected' }}</div>
+                    <div class="text-lime-400 font-bold text-lg">
+                    {{ customers.find(c => c.id === form.customer_id)?.business_name || 'None selected' }}
+                    </div>
                 </div>
               </div>
 
@@ -750,8 +753,22 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { format, parseISO, isToday, isValid, addDays, setHours, setMinutes } from 'date-fns';
 import axios from 'axios';
 
+// Props
+const props = defineProps({
+  customerId: {
+    type: [String, Number],
+    default: null
+  },
+  customerName: {
+    type: String,
+    default: null
+  }
+});
+
 // Data
 const isLoading = ref(false);
+const isLoadingCustomers = ref(false);
+const customers = ref([]);
 const showModal = ref(false);
 const currentStep = ref(1);
 const totalSteps = 9;
@@ -768,6 +785,7 @@ const selectedDate = ref(new Date());
 const currentMonth = ref(new Date());
 const calendarDays = ref([]);
 const technicians = ref([]);
+const rateValues = ref([55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200]);
 
 const selectedTime = ref({
   hour: 12,
@@ -851,11 +869,23 @@ const formattedDateTime = computed(() => {
 });
 
 // Methods
-const openCreateModal = () => {
+const handleShowModal = () => {
+  resetForm();
   showModal.value = true;
+  loadCustomers();
+  loadTechnicians();
+};
+
+const handleHideModal = () => {
+  showModal.value = false;
+  resetForm();
+};
+
+const resetForm = () => {
+  console.log('Resetting form');
   currentStep.value = 1;
   // Reset form fields
-  form.customer_id = '';
+  form.customer_id = props.customerId || '';
   form.title = '';
   form.description = '';
   form.date_time = '';
@@ -1174,10 +1204,7 @@ const updateFormDateTime = () => {
 };
 
 onMounted(() => {
-  // Initialize calendar for date picker after DOM update
-  nextTick(() => {
-    generateCalendar();
-  });
+  console.log('Component mounted');
   
   // Set initial form.date_time based on selected date and time
   const initialDate = new Date();
@@ -1194,8 +1221,24 @@ onMounted(() => {
   initialDate.setMinutes(parseInt(selectedTime.value.minute));
   
   form.date_time = format(initialDate, "yyyy-MM-dd'T'HH:mm:ss");
-
-  loadTechnicians();
+  
+  // Apply props if provided
+  if (props.customerName) {
+    location.value = props.customerName;
+  }
+  
+  if (props.customerId) {
+    form.customer_id = props.customerId;
+  }
+  
+  // Initialize calendar on next tick to ensure DOM is ready
+  nextTick(() => {
+    try {
+      generateCalendar();
+    } catch (error) {
+      console.error('Calendar generation error:', error);
+    }
+  });
 });
 
 // Watchers
@@ -1235,13 +1278,60 @@ watch(() => form.customer_id, async (newCustomerId) => {
   }
 });
 
+// Watcher for showModal
+watch(showModal, (newValue) => {
+  console.log('Modal visibility changed:', newValue);
+  
+  if (newValue === true) {
+    try {
+      // If the modal is now open, initialize step 1 data
+      if (props.customerId) {
+        form.customer_id = props.customerId;
+      }
+      if (props.customerName) {
+        location.value = props.customerName;
+      }
+    } catch (error) {
+      console.error('Error in showModal watcher:', error);
+    }
+  } else {
+    // If modal is closed, perform cleanup to avoid memory leaks
+    try {
+      // Reset potentially problematic state
+      calendarDays.value = [];
+      
+      // Other cleanup as needed
+      // ...
+    } catch (error) {
+      console.error('Error during modal cleanup:', error);
+    }
+  }
+});
+
+// Import the customer store
+import customerStore from '@/Stores/customerStore';
+
 // Methods for API calls
+const loadCustomers = async () => {
+  isLoadingCustomers.value = true;
+  try {
+    // Use the customer store to load customers
+    customers.value = await customerStore.loadCustomers();
+  } catch (error) {
+    customers.value = [];
+    console.error('Failed to load customers:', error);
+  } finally {
+    isLoadingCustomers.value = false;
+  }
+};
+
 const loadTechnicians = async () => {
   try {
     const response = await axios.get('/api/technicians/active');
     technicians.value = response.data;
   } catch (error) {
-    console.error('Error loading technicians:', error);
+    technicians.value = [];
+    console.error('Failed to load technicians:', error);
   }
 };
 </script>
@@ -1668,6 +1758,7 @@ progress::-moz-progress-bar {
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
+
   100% { transform: rotate(360deg); }
 }
 

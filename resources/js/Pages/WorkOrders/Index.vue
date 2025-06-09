@@ -2,7 +2,7 @@
 import { ref, computed, onErrorCaptured } from 'vue';
 import format from 'date-fns/format';
 import { usePage, router } from '@inertiajs/vue3';
-import AddWorkorder from '@/Pages/WorkOrders/AddWorkOrder.vue';
+import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import WorkOrder from './WorkOrder.vue';
 import axios from 'axios';
@@ -436,7 +436,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
           </h2>
           <div class="flex space-x-4">
             <TeamDropdown :teams="props.teams" />
-            <AddWorkorder :auth="$page.props.auth" />
+            <AddWorkOrder :auth="$page.props.auth" />
             <button 
               @click="openArchivedModal"
               class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center"

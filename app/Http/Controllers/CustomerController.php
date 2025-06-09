@@ -73,7 +73,11 @@ class CustomerController extends Controller
             
             // Make sure business name is unique
             if (Customer::where('business_name', $validated['business_name'])->exists()) {
-                throw new \Exception('Business name already exists');
+                Log::warning('Duplicate business name attempt: ' . $validated['business_name']);
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => ['business_name' => ['Business name already exists']]
+                ], 422); // Return 422 Unprocessable Entity for validation errors
             }
 
             // Process file uploads if present
