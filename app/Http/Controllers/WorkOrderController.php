@@ -18,7 +18,7 @@ class WorkOrderController extends Controller
     public function index()
     {
         return Inertia::render('WorkOrders/Index', [
-            'workOrders' => WorkOrder::latest()->paginate(10)
+            'workOrders' => WorkOrder::with('customer')->latest()->paginate(10)
         ]);
     }
 
@@ -236,7 +236,7 @@ public function getDetails($id)
         }
         
         // Load relationships safely
-        $workOrder->load(['user:id,name,email']);
+        $workOrder->load(['user:id,name,email', 'customer', 'technician']);
         
         // Format dates if needed
         if ($workOrder->date_time) {
@@ -618,11 +618,17 @@ public function updateField(Request $request, $id)
             'description' => 'Updated ' . $this->getFieldDisplayName($field)
         ]);
         
+        // Reload work order with relationships if customer_id changed
+        if ($field === 'customer_id') {
+            $workOrder = WorkOrder::with(['customer', 'technician'])->find($id);
+        }
+        
         return response()->json([
             'success' => true,
             'message' => 'Field updated successfully',
             'field' => $field,
-            'value' => $value
+            'value' => $value,
+            'workOrder' => $field === 'customer_id' ? $workOrder : null
         ]);
     } catch (\Exception $e) {
         return response()->json([
@@ -635,12 +641,51 @@ public function updateField(Request $request, $id)
 public function calendarEvents()
     {
         try {
-            $workOrders = WorkOrder::select('id', 'title', 'description', 'date_time as start', 'status', 'user_id', 'customer_id')
+            $workOrders = WorkOrder::select(
+                    'id', 
+                    'title', 
+                    'description', 
+                    'date_time', 
+                    'end_date', 
+                    'status', 
+                    'user_id', 
+                    'customer_id',
+                    'technician_id'
+                )
+                ->with([
+                    'customer:id,business_name,name', // Include customer details
+                    'technician:id,name,email' // Include technician details
+                ])
                 ->orderBy('date_time', 'asc')
-                ->get();
+                ->get()
+                ->map(function($workOrder) {
+                    // Transform the data to ensure proper formatting for the calendar
+                    $data = $workOrder->toArray();
+                    
+                    // Ensure we have the correct date format
+                    if (!empty($workOrder->date_time)) {
+                        $data['start'] = $workOrder->date_time;
+                    }
+                    
+                    // Include customer information in the event data
+                    if ($workOrder->customer) {
+                        $data['customer_name'] = $workOrder->customer->business_name;
+                        $data['customer_business_name'] = $workOrder->customer->business_name;
+                    }
+                    
+                    // Include technician information in the event data
+                    if ($workOrder->technician) {
+                        $data['technician_name'] = $workOrder->technician->name;
+                    }
+                    
+                    return $data;
+                });
                 
             return response()->json($workOrders);
         } catch (\Exception $e) {
+            \Log::error('Error fetching calendar events: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -816,7 +861,8 @@ public function search(Request $request)
 public function details($id)
 {
     try {
-        $workOrder = WorkOrder::findOrFail($id);
+        // Include the customer relationship to access business name
+        $workOrder = WorkOrder::with(['customer', 'technician'])->findOrFail($id);
         
         // Make sure essential properties are present
         $responseData = $workOrder->toArray();

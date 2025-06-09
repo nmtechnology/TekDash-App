@@ -5,7 +5,11 @@ import { debounce } from 'lodash';
 const props = defineProps({
   placeholder: {
     type: String,
-    default: 'Search2...'
+    default: 'Search...'
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -31,8 +35,9 @@ function clearSearch() {
 </script>
 
 <template>
-  <label class="input input-success input-bordered flex items-center gap-2">
-    <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <label class="input input-bordered flex items-center gap-2 search-container">
+    <div v-if="loading" class="loading loading-spinner loading-xs"></div>
+    <svg v-else class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
       <g
         stroke-linejoin="round"
         stroke-linecap="round"
@@ -49,8 +54,11 @@ function clearSearch() {
       type="search"
       class="grow"
       :placeholder="placeholder"
+      :disabled="loading"
     />
-    <kbd class="kbd kbd-sm">⌘</kbd>
-    <kbd class="kbd kbd-sm">K</kbd>
+    <div class="flex items-center gap-1 opacity-50">
+      <kbd class="kbd kbd-sm">⌘</kbd>
+      <kbd class="kbd kbd-sm">K</kbd>
+    </div>
   </label>
 </template>

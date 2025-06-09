@@ -4,6 +4,7 @@ import QRCode from 'qrcode.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { DocumentIcon, PhotoIcon, DocumentTextIcon, QrCodeIcon } from '@heroicons/vue/24/outline';
 import Messenger from '@/Components/Messenger.vue';
+import Timeline from '@/Components/Timeline.vue';
 
 /**
  * @typedef {Object} WorkOrder
@@ -196,7 +197,7 @@ const isImage = (doc) => {
                                 </div>
                                
                                 <div class="mt-4 bg-gray-800 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 rounded-lg">
-                                    <dt class="text-sm font-medium text-purple-500">Price</dt>
+                                    <dt class="text-sm font-medium text-purple-500">Hourly Rate</dt>
                                     <dd class="mt-1 text-sm text-blue-400 sm:mt-0 sm:col-span-2">
                                         {{ formatPrice(workOrder.price) }}
                                     </dd>
@@ -276,6 +277,11 @@ const isImage = (doc) => {
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Timeline Section -->
+                <div class="bg-gray-900 overflow-hidden shadow-xl sm:rounded-lg mb-6">
+                    <Timeline :workOrderId="workOrder.id" />
                 </div>
 
                 <!-- Messages Section -->

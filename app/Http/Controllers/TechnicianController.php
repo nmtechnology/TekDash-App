@@ -26,8 +26,16 @@ class TechnicianController extends Controller
 
     public function show(Technician $technician)
     {
+        // Get the technician's recent work orders
+        $recentWorkOrders = \App\Models\WorkOrder::where('technician_id', $technician->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->with(['customer']) // Include customer relationship
+            ->get();
+
         return Inertia::render('Technicians/Show', [
-            'technician' => $technician
+            'technician' => $technician,
+            'recentWorkOrders' => $recentWorkOrders
         ]);
     }
 

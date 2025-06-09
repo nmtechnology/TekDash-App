@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
+import axios from 'axios';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import WorkOrder from '@/Pages/WorkOrders/WorkOrder.vue';
 
@@ -32,6 +33,19 @@ function handleImageError() {
 
 const selectedWorkOrder = ref(null);
 const showWorkOrderModal = ref(false);
+
+async function openWorkOrder(workOrderId) {
+  try {
+    // Fetch work order with customer details
+    const response = await axios.get(`/work-orders/${workOrderId}/details`);
+    selectedWorkOrder.value = response.data;
+    showWorkOrderModal.value = true;
+  } catch (error) {
+    console.error('Error loading work order:', error);
+    alert('Failed to load work order details');
+  }
+}
+
 function closeWorkOrderModal() {
   showWorkOrderModal.value = false;
   selectedWorkOrder.value = null;
@@ -105,6 +119,10 @@ function closeWorkOrderModal() {
                           :users="$page.props.users || []"
                           @close="closeWorkOrderModal"
                       />
+                    </div>
+                    <!-- Debug customers data -->
+                    <div v-if="false" class="hidden">
+                      {{ $page.props.customers ? $page.props.customers.length + ' customers available' : 'No customers data' }}
                     </div>
                 </main>
 

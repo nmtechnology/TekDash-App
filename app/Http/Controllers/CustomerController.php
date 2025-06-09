@@ -11,10 +11,34 @@ class CustomerController extends Controller
 {
     public function index()
     {
+        $customers = Customer::where('is_active', true)
+            ->orderBy('business_name')
+            ->paginate(10);
+        
+        // Get the ids of all customers in the current page
+        $customerIds = $customers->pluck('id');
+        
+        // Get recent work orders for each customer in the current page
+        $recentWorkOrders = \App\Models\WorkOrder::whereIn('customer_id', $customerIds)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('customer_id');
+
+        // Add recent work orders to each customer
+        $customers->getCollection()->transform(function ($customer) use ($recentWorkOrders) {
+            if (isset($recentWorkOrders[$customer->id])) {
+                $customer->recent_work_orders = $recentWorkOrders[$customer->id]
+                    ->take(3) // Limit to 3 most recent
+                    ->values()
+                    ->toArray();
+            } else {
+                $customer->recent_work_orders = [];
+            }
+            return $customer;
+        });
+
         return Inertia::render('Customers/Index', [
-            'customers' => Customer::where('is_active', true)
-                ->orderBy('business_name')
-                ->paginate(10)
+            'customers' => $customers
         ]);
     }
 
@@ -107,7 +131,16 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        return response()->json($customer->load('workOrders'));
+        // Get the customer's recent work orders
+        $recentWorkOrders = \App\Models\WorkOrder::where('customer_id', $customer->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+            
+        return response()->json([
+            'customer' => $customer,
+            'recentWorkOrders' => $recentWorkOrders
+        ]);
     }
 
     public function update(Request $request, Customer $customer)
@@ -213,5 +246,17 @@ class CustomerController extends Controller
             ->get();
 
         return response()->json($customers);
+    }
+
+    public function workOrders(Customer $customer)
+    {
+        $workOrders = \App\Models\WorkOrder::where('customer_id', $customer->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        
+        return Inertia::render('Customers/WorkOrders', [
+            'customer' => $customer,
+            'workOrders' => $workOrders
+        ]);
     }
 }

@@ -25,6 +25,8 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'customers' => \App\Models\Customer::select(['id', 'business_name'])->orderBy('business_name')->get(),
+        'users' => \App\Models\User::select(['id', 'name'])->get(),
     ]);
 });
 

@@ -369,7 +369,51 @@
                             <h3 class="text-lg font-bold text-lime-400">Work Orders</h3>
                             <AddWorkOrder :customer-id="currentCustomer.id" :customer-name="currentCustomer.business_name" />
                         </div>
-                        <p class="text-gray-400">Recent work orders will appear here</p>
+                        
+                        <div v-if="currentCustomer.recent_work_orders && currentCustomer.recent_work_orders.length > 0" class="overflow-x-auto">
+                            <table class="min-w-full bg-gray-800 text-white rounded-lg overflow-hidden mt-2">
+                                <thead class="bg-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-lime-400">Title</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-lime-400">Status</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-lime-400">Date</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-lime-400">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="order in currentCustomer.recent_work_orders" :key="order.id" class="border-t border-gray-700">
+                                        <td class="px-4 py-2">{{ order.title }}</td>
+                                        <td class="px-4 py-2">
+                                            <span 
+                                                :class="{
+                                                    'bg-green-800 text-green-100': order.status === 'Complete',
+                                                    'bg-blue-800 text-blue-100': order.status === 'Scheduled',
+                                                    'bg-yellow-800 text-yellow-100': order.status === 'In Progress',
+                                                    'bg-red-800 text-red-100': order.status === 'Cancelled',
+                                                    'bg-purple-800 text-purple-100': order.status === 'Part Needed'
+                                                }"
+                                                class="px-2 py-1 rounded-full text-xs">
+                                                {{ order.status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2">{{ formatDate(order.date_time || order.created_at) }}</td>
+                                        <td class="px-4 py-2">
+                                            <Link :href="route('work-orders.show', order.id)" class="text-blue-400 hover:underline">View</Link>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <div class="mt-3 text-right">
+                                <Link 
+                                    :href="`/customers/${currentCustomer.id}/work-orders`" 
+                                    class="text-lime-400 hover:text-lime-300 text-sm"
+                                >
+                                    View all work orders →
+                                </Link>
+                            </div>
+                        </div>
+                        <p v-else class="text-gray-400">No recent work orders for this customer.</p>
                     </div>
                 </div>
             </div>
@@ -391,6 +435,7 @@
 
 <script>
 import { defineComponent } from 'vue'
+import { Link } from '@inertiajs/vue3'
 import { useToast } from '@/Composables/useToast'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import Modal from '@/Components/Modal.vue'
@@ -416,10 +461,10 @@ export default defineComponent({
         Select,
         Pagination,
         SecondaryButton,
-        PrimaryButton,
         DangerButton,
-        AddCustomerButton,
         AddWorkOrder,
+        AddCustomerButton,
+        Link
     },
 
     props: {
@@ -476,6 +521,21 @@ export default defineComponent({
                 pay_rate: '',
                 attachable_files: [],
             }
+        },
+        
+        formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            if (isNaN(date)) return dateString;
+            
+            const options = { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return date.toLocaleDateString('en-US', options);
         },
 
         async performSearch() {

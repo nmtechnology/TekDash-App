@@ -148,6 +148,53 @@
             </div>
           </div>
         </div>
+        
+        <!-- Recent Work Orders Section -->
+        <div class="mt-8 bg-gray-900/50 overflow-hidden shadow-xl sm:rounded-lg backdrop-blur-xl">
+          <div class="p-6">
+            <h3 class="text-lg font-medium text-lime-400 mb-4">Recent Work Orders</h3>
+            
+            <div v-if="recentWorkOrders && recentWorkOrders.length > 0" class="overflow-x-auto">
+              <table class="min-w-full bg-gray-800/50 text-white rounded-lg overflow-hidden">
+                <thead class="bg-gray-800">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-lime-400">Title</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-lime-400">Customer</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-lime-400">Status</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-lime-400">Date</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-lime-400">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="order in recentWorkOrders" :key="order.id" class="border-t border-gray-700">
+                    <td class="px-4 py-3">{{ order.title }}</td>
+                    <td class="px-4 py-3">{{ order.customer ? order.customer.business_name : 'N/A' }}</td>
+                    <td class="px-4 py-3">
+                      <span 
+                        :class="{
+                          'bg-green-800 text-green-100': order.status === 'Complete',
+                          'bg-blue-800 text-blue-100': order.status === 'Scheduled',
+                          'bg-yellow-800 text-yellow-100': order.status === 'In Progress',
+                          'bg-red-800 text-red-100': order.status === 'Cancelled',
+                          'bg-purple-800 text-purple-100': order.status === 'Part Needed'
+                        }"
+                        class="px-2 py-1 rounded-full text-xs">
+                        {{ order.status }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">{{ formatDate(order.date_time || order.created_at) }}</td>
+                    <td class="px-4 py-3">
+                      <Link :href="route('work-orders.show', order.id)" class="text-blue-400 hover:underline">View</Link>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="bg-gray-800/50 p-4 rounded-lg">
+              <p class="text-gray-400">No recent work orders found for this technician.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </AppLayout>
@@ -157,11 +204,16 @@
 import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
+import { format, parseISO } from 'date-fns'
 
 const props = defineProps({
   technician: {
     type: Object,
     required: true
+  },
+  recentWorkOrders: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -186,5 +238,15 @@ const saveTechnician = () => {
       // Show success message
     },
   })
+}
+
+// Format date for work order display
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A'
+  try {
+    return format(parseISO(dateString), 'MMM d, yyyy h:mm a')
+  } catch (error) {
+    return dateString
+  }
 }
 </script>

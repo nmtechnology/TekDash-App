@@ -436,7 +436,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
           </h2>
           <div class="flex space-x-4">
             <TeamDropdown :teams="props.teams" />
-            <AddWorkOrder :auth="$page.props.auth" />
+            <AddWorkOrder />
             <button 
               @click="openArchivedModal"
               class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center"
@@ -568,7 +568,9 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
                             <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
                           </td>
                           <td class="px-4 py-4 text-sm text-accent">
-                            <div class="text-white" :title="workOrder.customer_id">{{ workOrder.customer_id }}</div>
+                            <div class="text-white" :title="workOrder.customer?.business_name || 'No Customer'">
+                              {{ workOrder.customer?.business_name || 'No Customer' }}
+                            </div>
                           </td>
                           <td class="px-4 py-4 text-sm text-accent">
                             <div class="text-white" :title="getUserName(workOrder.user_id)">{{ getUserName(workOrder.user_id) }}</div>

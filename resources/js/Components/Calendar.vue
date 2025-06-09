@@ -49,7 +49,7 @@
               </div>
               
               <!-- Work order details -->
-              <div class="text-gray-300 space-y-3">
+              <!-- <div class="text-gray-300 space-y-3">
                 <div v-if="selectedWorkOrder.title" class="mb-2">
                   <h4 class="text-lg font-medium text-white">{{ selectedWorkOrder.title }}</h4>
                 </div>
@@ -76,10 +76,9 @@
                   </div>
                 </div>
                 
-                <div v-if="selectedWorkOrder.customer_id || selectedWorkOrder.customer_name" class="mt-4">
+                <div class="mt-4">
                   <p class="text-sm text-gray-400">Customer:</p>
-                  <p v-if="selectedWorkOrder.customer_name">{{ selectedWorkOrder.customer_name }}</p>
-                  <p v-if="selectedWorkOrder.customer_id" class="text-sm">ID: {{ selectedWorkOrder.customer_id }}</p>
+                  <p class="text-white">{{ selectedWorkOrder.customer?.business_name || 'No Customer' }}</p>
                 </div>
                 
                 <div v-if="selectedWorkOrder.created_at || selectedWorkOrder.date">
@@ -100,22 +99,28 @@
                     {{ selectedWorkOrder.address }}
                   </p>
                 </div>
+                
+                <div class="mt-4">
+                  <p class="text-sm text-gray-400">Technician:</p>
+                  <p class="text-white">{{ selectedWorkOrder.technician?.name || 'No Technician Assigned' }}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
         
         <!-- Modal footer -->
-        <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <!-- <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <a :href="`/work-orders/${selectedWorkOrder.id}`" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">
             View Full Details
           </a>
           <button @click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
             Close
           </button>
-        </div>
-      </div>
-    </div>
+        </div> -->
+        </div></div>
+      </div></div> -->
+  </div>
   </div>
 </template>
 
@@ -131,6 +136,9 @@ import { CalendarOptions } from '@fullcalendar/core';
 import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
 import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/animations/shift-away.css';
 
 // Define the events emitted by this component
 const emit = defineEmits(['workOrderSelected']);
@@ -167,6 +175,41 @@ const calendarOptions: CalendarOptions = {
     right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
   },
   events: [],
+  eventContent: (info) => {
+    const eventEl = document.createElement('div');
+    eventEl.classList.add('glass-event-pill');
+    
+    // Add status color indicator
+    const statusBar = document.createElement('div');
+    statusBar.classList.add('status-indicator');
+    statusBar.style.backgroundColor = info.event.backgroundColor;
+    
+    // Create content wrapper
+    const contentWrapper = document.createElement('div');
+    contentWrapper.classList.add('event-content');
+    
+    // Add title
+    const titleEl = document.createElement('div');
+    titleEl.classList.add('event-title');
+    titleEl.textContent = info.event.title;
+    
+    // Add time if available
+    if (info.event.start) {
+      const timeEl = document.createElement('div');
+      timeEl.classList.add('event-time');
+      timeEl.textContent = new Date(info.event.start).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      contentWrapper.appendChild(timeEl);
+    }
+
+    contentWrapper.appendChild(titleEl);
+    eventEl.appendChild(statusBar);
+    eventEl.appendChild(contentWrapper);
+    
+    return { domNodes: [eventEl] };
+  },
   eventClick: async (info) => {
     const workOrderId = info.event.id;
     // Emit the event to the parent component
@@ -174,13 +217,84 @@ const calendarOptions: CalendarOptions = {
     
     // Also handle it internally if needed
     try {
+      // Use the detailed endpoint that includes relationships
       const response = await axios.get(`/work-orders/${workOrderId}/details`);
+      console.log('Fetched work order details:', response.data);
       selectedWorkOrder.value = response.data;
       showWorkOrderModal.value = true;
     } catch (error) {
       console.error('Error loading work order:', error);
       alert('Failed to load work order details');
     }
+  },
+  eventDidMount: (info) => {
+    // Enhanced tooltips with more work order information
+    const tooltip = document.createElement('div');
+    tooltip.classList.add('calendar-tooltip');
+    
+    // Get customer name and business name from extended props
+    const customerName = info.event.extendedProps?.customer_name || '';
+    const businessName = info.event.extendedProps?.customer_business_name || '';
+      
+    // Get technician name if available
+    const technicianName = info.event.extendedProps?.technician_name || '';
+    
+    tooltip.innerHTML = `
+      <div class="tooltip-header">
+        <div class="tooltip-title">${info.event.title}</div>
+        <div class="tooltip-status-pill" style="background-color: ${info.event.backgroundColor}">
+          ${info.event.extendedProps?.status || 'Unknown'}
+        </div>
+      </div>
+      <div class="tooltip-body">
+        ${businessName ? `<div class="tooltip-item tooltip-customer-highlight">
+          <span class="tooltip-label">Customer:</span>
+          <span class="tooltip-value">${businessName}</span>
+        </div>` : ''}
+        ${technicianName ? `<div class="tooltip-item">
+          <span class="tooltip-label">Technician:</span>
+          <span class="tooltip-value">${technicianName}</span>
+        </div>` : ''}
+        ${info.event.extendedProps?.description ? `
+        <div class="tooltip-description-wrapper">
+          <span class="tooltip-label">Description:</span>
+          <div class="tooltip-description">${info.event.extendedProps.description.substring(0, 100)}${info.event.extendedProps.description.length > 100 ? '...' : ''}</div>
+        </div>` : ''}
+        <div class="tooltip-item">
+          <span class="tooltip-label">Date:</span>
+          <span class="tooltip-value">${info.event.start ? new Date(info.event.start).toLocaleDateString() : ''}</span>
+        </div>
+        <div class="tooltip-item">
+          <span class="tooltip-label">Time:</span>
+          <span class="tooltip-value">${info.event.start ? new Date(info.event.start).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : ''}</span>
+        </div>
+      </div>
+    `;
+    
+    // Add tooltip to the event element
+    tippy(info.el, {
+      content: tooltip,
+      allowHTML: true,
+      theme: 'tekdash-glass',
+      placement: 'top',
+      arrow: true,
+      animation: 'shift-away',
+      duration: [200, 150],
+      interactive: true,
+      maxWidth: 350,
+      appendTo: () => document.body,
+      popperOptions: {
+        modifiers: [{
+          name: 'preventOverflow',
+          options: {
+            padding: 10
+          }
+        }]
+      }
+    });
   },
   weekends: true,
   height: 'auto',
@@ -207,16 +321,50 @@ async function fetchEvents() {
     
     if (!Array.isArray(data)) throw new Error('Invalid data format');
 
+    // Debug: log the raw work order data
+    console.log('Raw calendar data:', data);
+    
     const events = data.flatMap(workOrder => {
+      // Debug: log each work order's date fields to check format
+      console.log(`Work Order #${workOrder.id}:`, {
+        title: workOrder.title,
+        date_time: workOrder.date_time,
+        end_date: workOrder.end_date,
+        visit_dates: workOrder.visit_dates
+      });
+      
       const baseEvent = {
         id: workOrder.id,
-        title: workOrder.title,
+        title: workOrder.title, // Just use the work order title without customer name
         description: workOrder.description || '',
         status: workOrder.status,
         backgroundColor: getStatusColor(workOrder.status),
         borderColor: getStatusColor(workOrder.status),
+        customer_name: workOrder.customer_name || '',
+        technician_name: workOrder.technician_name || '',
+        customer_business_name: workOrder.customer_business_name || '',
       };
 
+      // Always use workOrder.date_time as the main event date if present
+      if (workOrder.date_time) {
+        return [{
+          ...baseEvent,
+          start: workOrder.date_time,
+          end: workOrder.end_date || undefined,
+          extendedProps: {
+            ...baseEvent,
+            isMultiDayEvent: Boolean(workOrder.end_date),
+            visit_dates: workOrder.visit_dates || [],
+            customer_name: workOrder.customer_name || '',
+            customer_business_name: workOrder.customer_business_name || '',
+            technician_name: workOrder.technician_name || '',
+            description: workOrder.description || '',
+            status: workOrder.status || 'Unknown'
+          }
+        }];
+      }
+
+      // Fallback: if visit_dates exist but no date_time, show all visit_dates
       if (workOrder.visit_dates?.length) {
         return workOrder.visit_dates.map((visitDate, index) => ({
           ...baseEvent,
@@ -225,21 +373,22 @@ async function fetchEvents() {
             ...baseEvent,
             isMultiDayEvent: true,
             visitNumber: index + 1,
-            totalVisits: workOrder.visit_dates.length
+            totalVisits: workOrder.visit_dates.length,
+            customer_name: workOrder.customer_name || '',
+            customer_business_name: workOrder.customer_business_name || '',
+            technician_name: workOrder.technician_name || '',
+            description: workOrder.description || '',
+            status: workOrder.status || 'Unknown'
           }
         }));
       }
 
-      return [{
-        ...baseEvent,
-        start: workOrder.date_time,
-        end: workOrder.end_date,
-        extendedProps: {
-          ...baseEvent,
-          isMultiDayEvent: Boolean(workOrder.end_date)
-        }
-      }];
+      // If no date info, skip event
+      return [];
     });
+
+    // Debug: log the processed events
+    console.log('Processed events:', events);
 
     if (calendarRef.value) {
       const calendar = calendarRef.value.getApi();
@@ -449,68 +598,109 @@ body {
   font-size: 0.7rem; /* Make text smaller */
 }
 
-/* Add these new styles for list view hover colors */
+/* List view glassmorphism styling */
+.fc .fc-list-event {
+  transition: all 0.2s ease;
+}
+
 .fc .fc-list-event:hover td {
-  background-color: #53415c !important; /* Dark hover color */
+  background: rgba(83, 65, 92, 0.4) !important; /* Semi-transparent hover color */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .dark .fc .fc-list-event:hover td {
-  background-color: #020617 !important; /* Even darker hover color for dark mode */
+  background: rgba(2, 6, 23, 0.7) !important; /* Even darker hover color for dark mode */
 }
 
-/* Optional: Style the list event titles and headers */
+/* Add a subtle border to list items */
+.fc .fc-list-event td {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Style the list event titles with the same styling as pill events */
 .fc .fc-list-event-title a {
   color: #f8fafc !important; /* Light text color */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 500;
 }
 
 .dark .fc .fc-list-event-title a {
   color: #f1f5f9 !important; /* Light text color for dark mode */
 }
 
+/* Style the day headers with glassmorphism */
 .fc .fc-list-day-cushion {
-  background-color: #1e293b !important; /* Header background color */
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .dark .fc .fc-list-day-cushion {
-  background-color: #0f172a !important; /* Darker header background for dark mode */
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.9) 0%, rgba(9, 15, 25, 0.8) 100%) !important;
 }
 
-/* Add these new styles for day grid customization */
-/* Day grid background colors */
+/* Add color indicator to list events */
+.fc .fc-list-event-dot {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Glassmorphism day grid styling */
+/* Day grid background colors with glassmorphism effect */
 .fc .fc-daygrid-day {
-  background-color: #141b2a; /* Light theme background */
+  background: rgba(20, 27, 42, 0.4); /* Semi-transparent background */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.2s ease;
 }
 
-/* Current day highlighting */
+/* Current day highlighting with glow effect */
 .fc .fc-day-today {
-  background-color: rgba(80, 200, 246, 0.1) !important; /* Light blue highlight */
+  background: rgba(80, 200, 246, 0.08) !important; 
+  box-shadow: inset 0 0 20px rgba(80, 200, 246, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Days from other months */
 .fc .fc-day-other {
-  background-color: #141b2a; /* Slightly darker for "other" days */
+  background: rgba(20, 27, 42, 0.25); /* More transparent for "other" days */
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
-/* Dark mode overrides */
+/* Dark mode overrides with enhanced glassmorphism */
 .dark .fc .fc-daygrid-day {
-  background-color: #1e293b; /* Dark theme background */
+  background: rgba(30, 41, 59, 0.4); /* Dark semi-transparent background */
 }
 
 .dark .fc .fc-day-today {
-  background-color: #0091ff6f !important; /* Darker blue highlight */
+  background: rgba(0, 145, 255, 0.1) !important; /* Darker blue highlight */
+  box-shadow: inset 0 0 30px rgba(0, 145, 255, 0.15);
 }
 
 .dark .fc .fc-day-other {
-  background-color: #0f1523; /* Even darker for "other" days in dark mode */
+  background: rgba(15, 21, 35, 0.3); /* More transparent for "other" days in dark mode */
 }
 
-/* Optional: customize the header row background */
+/* Header row with gradient glassmorphism */
 .fc .fc-col-header-cell {
-  background-color: #141b2a; /* Light header background */
+  background: linear-gradient(180deg, rgba(20, 27, 42, 0.9), rgba(20, 27, 42, 0.7));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .dark .fc .fc-col-header-cell {
-  background-color: #1d3872; /* Dark header background */
+  background: linear-gradient(180deg, rgba(29, 56, 114, 0.9), rgba(29, 56, 114, 0.7));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Subtle hover effect for day cells */
+.fc .fc-daygrid-day:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 /* Your other existing styles... */
@@ -608,7 +798,133 @@ body {
   border-color: rgba(139, 92, 246, 0.6);
 }
 
-.fc-theme-standard td, 
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Glassmorphism Tooltip Styles */
+.tippy-box[data-theme~='tekdash-glass'] {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+              inset 0 0 15px rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Arrow styling for different placements */
+.tippy-box[data-theme~='tekdash-glass'][data-placement^='top'] > .tippy-arrow::before {
+  border-top-color: rgba(17, 24, 39, 0.85);
+}
+
+.tippy-box[data-theme~='tekdash-glass'][data-placement^='bottom'] > .tippy-arrow::before {
+  border-bottom-color: rgba(17, 24, 39, 0.85);
+}
+
+.tippy-box[data-theme~='tekdash-glass'][data-placement^='left'] > .tippy-arrow::before {
+  border-left-color: rgba(17, 24, 39, 0.85);
+}
+
+.tippy-box[data-theme~='tekdash-glass'][data-placement^='right'] > .tippy-arrow::before {
+  border-right-color: rgba(17, 24, 39, 0.85);
+}
+
+/* Enhanced calendar tooltip structure */
+.calendar-tooltip {
+  overflow: hidden;
+}
+
+.calendar-tooltip .tooltip-header {
+  background: linear-gradient(90deg, rgba(55, 65, 81, 0.8) 0%, rgba(31, 41, 55, 0.9) 100%);
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.calendar-tooltip .tooltip-header:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+.calendar-tooltip .tooltip-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 6px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-tooltip .tooltip-status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2),
+              0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+  margin-top: 3px;
+}
+
+.calendar-tooltip .tooltip-body {
+  padding: 12px 15px;
+  background: rgba(17, 24, 39, 0.5);
+}
+
+.calendar-tooltip .tooltip-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-tooltip .tooltip-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.calendar-tooltip .tooltip-value {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-tooltip .tooltip-description-wrapper {
+  margin: 10px 0;
+}
+
+.calendar-tooltip .tooltip-description {
+  font-size: 12px;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 8px;
+  max-height: 100px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Highlight customer information in tooltip */
+.calendar-tooltip .tooltip-customer-highlight {
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin: -5px -8px 6px;
+  border-left: 2px solid rgba(139, 92, 246, 0.4);
+} 
 .fc-theme-standard th {
   border-color: rgba(255, 255, 255, 0.1);
 }
@@ -618,15 +934,77 @@ body {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* Event card specific styles */
-.event-card {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: transform 0.2s ease;
+/* Glassmorphism Pill Event Styles */
+.glass-event-pill {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  min-height: 22px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+              inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
 }
 
-.event-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+.glass-event-pill:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+              inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.status-indicator {
+  width: 6px;
+  height: 100%;
+  margin-right: 3px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.event-content {
+  flex: 1;
+  padding: 2px 6px 2px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.event-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.event-time {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1px;
+}
+
+/* If in day or week view, make events taller */
+.fc-timeGridDay-view .glass-event-pill,
+.fc-timeGridWeek-view .glass-event-pill {
+  border-radius: 10px;
+  padding: 2px 0;
+}
+
+.fc-timeGridDay-view .event-title,
+.fc-timeGridWeek-view .event-title {
+  font-size: 12px;
+}
+
+.fc-timeGridDay-view .event-time,
+.fc-timeGridWeek-view .event-time {
+  font-size: 11px;
 }
 </style>

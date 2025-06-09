@@ -51,49 +51,34 @@ function handleScroll() {
     }
 }
 
-// Work order search functionality with better error handling
-let searchTimeout;
+// Work order search functionality
 function handleSearch(query) {
+    isSearching.value = true;
     searchQuery.value = query;
-    clearTimeout(searchTimeout);
     
     if (query.length < 2) {
         workOrders.value = [];
         showSearchResults.value = false;
+        isSearching.value = false;
         return;
     }
     
-    isSearching.value = true;
     showSearchResults.value = true;
     
-    // Use a debounce to avoid too many API calls while typing
-    searchTimeout = setTimeout(async () => {
-        try {
-            // Connect to your actual Laravel backend endpoint for searching work orders
-            const response = await axios.get('/search-work-orders', {
-                params: { query }
-            });
-            
-            console.log('Search response:', response.data);
-            
-            // Update the workOrders with the data from your actual database
-            workOrders.value = response.data;
-            
-            // If it's an error response, handle it appropriately
-            if (response.data.error) {
-                console.error('Search error:', response.data.error);
-                workOrders.value = [];
-            }
-        } catch (error) {
-            console.error('Error searching work orders:', error);
-            workOrders.value = [];
-            
-            // Show a user-friendly error message
-            alert('There was an error performing your search. Please try again later.');
-        } finally {
-            isSearching.value = false;
-        }
-    }, 300);
+    // Connect to your actual Laravel backend endpoint for searching work orders
+    axios.get('/search-work-orders', {
+        params: { query }
+    })
+    .then(response => {
+        workOrders.value = response.data;
+    })
+    .catch(error => {
+        console.error('Error searching work orders:', error);
+        workOrders.value = [];
+    })
+    .finally(() => {
+        isSearching.value = false;
+    });
 }
 
 // View work order details with better error handling
@@ -182,8 +167,8 @@ function logout() {
                     <a class="btn-ghost text-xl">TekDash</a>
                 </div>
                 <div class="navbar-end">
-                    <div class="">
-                        <Search placeholder="Search..." @search="handleSearch" class="input input-bordered w-24 md:w-auto" />
+                    <div class="w-24 md:w-auto">
+                        <Search placeholder="Search Work Orders..." @search="handleSearch" />
                     </div>
                     <NotificationsDropdown />
                     <div class="dropdown dropdown-end">
@@ -233,8 +218,8 @@ function logout() {
 </template>
 
 <style scoped>
-/* .search-container {
-    width: 300px;
+.search-container {
+    width: 200px;
     max-width: 100%;
 }
 
@@ -244,7 +229,7 @@ function logout() {
     }
 }
 
-/* Add specific styling for team dropdown */
+
 .dark .dropdown-content {
     background-color: #1f2937;
     border-color: #374151;
