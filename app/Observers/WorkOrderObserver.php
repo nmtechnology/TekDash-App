@@ -7,6 +7,24 @@ use App\Models\WorkOrderActivity;
 
 class WorkOrderObserver
 {
+    /**
+     * Handle the WorkOrder "saving" event.
+     * This happens before both creating and updating events
+     */
+    public function saving(WorkOrder $workOrder)
+    {
+        // If price-affecting fields are changed, recalculate grand_total
+        if ($workOrder->isDirty('hours') || 
+            $workOrder->isDirty('hourly_rate') || 
+            $workOrder->isDirty('travel_cost') || 
+            $workOrder->isDirty('has_travel')) {
+            
+            $laborTotal = $workOrder->hourly_rate * $workOrder->hours;
+            $travelCost = $workOrder->has_travel ? $workOrder->travel_cost : 0;
+            $workOrder->grand_total = $laborTotal + $travelCost;
+        }
+    }
+
     public function created(WorkOrder $workOrder)
     {
         WorkOrderActivity::create([

@@ -71,7 +71,10 @@ export default {
         const response = await axios.get(`/work-orders/${props.workOrderId}/activities`);
         
         if (response.data.success) {
-          activities.value = response.data.activities;
+          // Sort activities by created_at in descending order (newest first)
+          activities.value = response.data.activities.sort((a, b) => {
+            return new Date(b.created_at) - new Date(a.created_at);
+          });
         } else {
           console.error('Failed to fetch activities:', response.data.error);
         }
@@ -128,6 +131,19 @@ export default {
     
     onMounted(() => {
       fetchActivities();
+      
+      // Listen for timeline refresh events
+      document.addEventListener('timeline-refresh', (event) => {
+        if (event.detail && event.detail.activities) {
+          // Update activities directly from the event data, sorting newest first
+          activities.value = event.detail.activities.sort((a, b) => {
+            return new Date(b.created_at) - new Date(a.created_at);
+          });
+        } else {
+          // If no activities in event, fetch them
+          fetchActivities();
+        }
+      });
     });
     
     return {

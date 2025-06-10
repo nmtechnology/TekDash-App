@@ -22,11 +22,11 @@ class RevenueController extends Controller
             $sampleData = WorkOrder::take(3)->get();
             Log::info('Sample work order data: ' . json_encode($sampleData));
             
-            // Check if the price column exists
-            $hasPriceColumn = in_array('price', $columns);
-            if (!$hasPriceColumn) {
-                Log::error('Work orders table does not have a price column!');
-                return $this->errorResponse('Work orders table does not have a price column');
+            // Check if the grand_total column exists
+            $hasGrandTotalColumn = in_array('grand_total', $columns);
+            if (!$hasGrandTotalColumn) {
+                Log::error('Work orders table does not have a grand_total column!');
+                return $this->errorResponse('Work orders table does not have a grand_total column');
             }
             
             // Check if we have a completed_at column, otherwise use updated_at
@@ -76,10 +76,32 @@ class RevenueController extends Controller
                 }
             }
             
+            // Look for In Progress status
+            $inProgressStatus = null;
+            $possibleInProgressStatuses = ['in progress', 'In Progress', 'IN PROGRESS', 'inprogress', 'InProgress'];
+            foreach ($possibleInProgressStatuses as $status) {
+                if (in_array($status, $availableStatuses)) {
+                    $inProgressStatus = $status;
+                    break;
+                }
+            }
+            
             // Create an array of statuses to include in revenue calculations
-            $revenueStatuses = [$completedStatus];
+            $revenueStatuses = [];
+            if ($completedStatus) {
+                $revenueStatuses[] = $completedStatus;
+            }
             if ($archivedStatus) {
                 $revenueStatuses[] = $archivedStatus;
+            }
+            if ($inProgressStatus) {
+                $revenueStatuses[] = $inProgressStatus;
+            }
+            
+            // If no statuses found, use all available statuses
+            if (empty($revenueStatuses) && !empty($availableStatuses)) {
+                $revenueStatuses = $availableStatuses;
+                Log::warning('No specific status match found, using all available statuses');
             }
             
             Log::info('Including statuses in revenue calculations: ' . json_encode($revenueStatuses));
@@ -89,25 +111,20 @@ class RevenueController extends Controller
             $last7DaysRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->where($completedDateColumn, '>=', $last7Days)
                 ->get()
-                ->sum(function($order) {
-                    return $order->price * $order->hours;
-                });
+                ->sum('grand_total');
             
             // Calculate revenue for the last 30 days
             $last30Days = Carbon::now()->subDays(30);
             $last30DaysRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->where($completedDateColumn, '>=', $last30Days)
                 ->get()
-                ->sum(function($order) {
-                    return $order->price * $order->hours;
-                });
+                ->sum('grand_total');
             
             // Calculate total revenue
             $totalRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->get()
-                ->sum(function($order) {
-                    return $order->price * $order->hours;
-                });
+                ->sum('grand_total');
+            Log::info('All work orders: ' . json_encode($allWorkOrders));
             
             // Get monthly revenue data
             $monthlyRevenue = $this->getMonthlyRevenue($revenueStatuses, $completedDateColumn);
@@ -160,30 +177,23 @@ class RevenueController extends Controller
     {
         $yearStart = Carbon::now()->startOfYear();
         
-        $monthlyRevenue = WorkOrder::whereIn('status', $revenueStatuses)
+        $workOrders = WorkOrder::whereIn('status', $revenueStatuses)
             ->where($completedDateColumn, '>=', $yearStart)
-            ->get()
+            ->get(['id', 'status', 'grand_total', $completedDateColumn]);
+        
+        $monthlyRevenue = $workOrders
             ->groupBy(function($order) use ($completedDateColumn) {
                 return Carbon::parse($order->{$completedDateColumn})->format('m');
             })
-            ->map(function($orders) {
+            ->map(function($orders) use ($completedDateColumn) {
                 return [
                     'month' => Carbon::create()->month((int)$orders->first()->{$completedDateColumn}->format('m'))->format('M'),
-                    'revenue' => $orders->sum(function($order) {
-                        return $order->price * $order->hours;
-                    })
+                    'revenue' => $orders->sum('grand_total')
                 ];
             })
             ->values();
         
-        $monthlyRevenue = $monthlyQuery->map(function ($item) {
-            return [
-                'month' => Carbon::create()->month((int)$item->month)->format('M'),
-                'revenue' => (float) $item->revenue
-            ];
-        });
-        
-        // Fill in missing months
+        // Fill in missing months up to current month
         $allMonths = [];
         for ($i = 1; $i <= Carbon::now()->month; $i++) {
             $monthName = Carbon::create()->month($i)->format('M');
@@ -197,19 +207,17 @@ class RevenueController extends Controller
     private function calculateMonthOverMonthGrowth($revenueStatuses, $completedDateColumn)
     {
         $currentMonth = Carbon::now()->month;
-        $lastMonth = Carbon::now()->subMonth()->month;            $currentMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
+        $lastMonth = Carbon::now()->subMonth()->month;
+        
+        $currentMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $currentMonth)])
                 ->get()
-                ->sum(function($order) {
-                    return $order->price * $order->hours;
-                });
+                ->sum('grand_total');
             
         $lastMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $lastMonth)])
                 ->get()
-                ->sum(function($order) {
-                    return $order->price * $order->hours;
-                });
+                ->sum('grand_total');
             
         $comparedToLastMonth = $lastMonthRevenue > 0
             ? round((($currentMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1)
@@ -225,11 +233,11 @@ class RevenueController extends Controller
         
         $thisYearRevenue = WorkOrder::whereIn('status', $revenueStatuses)
             ->whereRaw("strftime('%Y', $completedDateColumn) = ?", [$thisYear])
-            ->sum('price');
+            ->sum('grand_total');
             
         $lastYearRevenue = WorkOrder::whereIn('status', $revenueStatuses)
             ->whereRaw("strftime('%Y', $completedDateColumn) = ?", [$lastYear])
-            ->sum('price');
+            ->sum('grand_total');
             
         return $lastYearRevenue > 0
             ? round((($thisYearRevenue - $lastYearRevenue) / $lastYearRevenue) * 100, 1)

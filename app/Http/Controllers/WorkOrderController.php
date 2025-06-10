@@ -874,29 +874,123 @@ public function updateImages(Request $request, $id)
         }
     }
 
-    public function updateGrandTotal($id)
+    public function updateGrandTotal(Request $request, $id)
     {
         try {
+            // Find the work order
             $workOrder = WorkOrder::findOrFail($id);
             
-            // Calculate grand total: (hourly_rate * hours) + (has_travel ? travel_cost : 0)
-            $laborTotal = ($workOrder->hourly_rate ?? 0) * ($workOrder->hours ?? 0);
-            $travelCost = $workOrder->has_travel ? ($workOrder->travel_cost ?? 0) : 0;
+            // Calculate grand total
+            $laborTotal = $workOrder->hourly_rate * $workOrder->hours;
+            $travelCost = $workOrder->has_travel ? $workOrder->travel_cost : 0;
             $grandTotal = $laborTotal + $travelCost;
             
-            // Update the grand total
-            $workOrder->update(['grand_total' => $grandTotal]);
+            // Update the work order
+            $workOrder->grand_total = $grandTotal;
+            $workOrder->save();
             
+            // Return success response
             return response()->json([
                 'success' => true,
-                'grand_total' => $grandTotal,
-                'labor_total' => $laborTotal,
-                'travel_cost' => $travelCost
+                'message' => 'Grand total updated successfully',
+                'grand_total' => $grandTotal
             ]);
         } catch (\Exception $e) {
+            Log::error('Error updating grand total', [
+                'error' => $e->getMessage(),
+                'work_order_id' => $id
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => 'Failed to update grand total: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Update all fields of a work order at once
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateAll(Request $request, $id)
+    {
+        try {
+            // Find the work order
+            $workOrder = WorkOrder::findOrFail($id);
+            
+            // Get the original values for activity logging
+            $originalValues = $workOrder->only([
+                'title', 'description', 'address', 'hours', 
+                'hourly_rate', 'travel_cost', 'has_travel', 'status'
+            ]);
+            
+            // Validate the request
+            $validatedData = $request->validate([
+                'title' => 'string',
+                'description' => 'string|nullable',
+                'address' => 'string|nullable',
+                'hours' => 'numeric|min:0',
+                'hourly_rate' => 'numeric|min:0',
+                'travel_cost' => 'numeric|min:0|nullable',
+                'has_travel' => 'boolean',
+                'status' => 'string|in:Scheduled,In Progress,Part Needed,Complete,Cancelled',
+            ]);
+            
+            // Update the work order with validated data
+            $workOrder->fill($validatedData);
+            
+            // Calculate grand total (if price affecting fields were updated)
+            $priceAffectingFieldsUpdated = false;
+            foreach (['hours', 'hourly_rate', 'travel_cost', 'has_travel'] as $field) {
+                if (isset($validatedData[$field]) && $originalValues[$field] != $validatedData[$field]) {
+                    $priceAffectingFieldsUpdated = true;
+                    break;
+                }
+            }
+            
+            if ($priceAffectingFieldsUpdated) {
+                $laborTotal = $workOrder->hourly_rate * $workOrder->hours;
+                $travelCost = $workOrder->has_travel ? $workOrder->travel_cost : 0;
+                $workOrder->grand_total = $laborTotal + $travelCost;
+            }
+            
+            // Save the work order
+            $workOrder->save();
+            
+            // Create activity logs for each changed field
+            foreach ($validatedData as $field => $value) {
+                if ($originalValues[$field] != $value) {
+                    $workOrder->activities()->create([
+                        'user_id' => auth()->id(),
+                        'action' => 'update',
+                        'description' => "Updated {$field}",
+                        'details' => json_encode([
+                            'field' => $field,
+                            'old_value' => $originalValues[$field],
+                            'new_value' => $value
+                        ])
+                    ]);
+                }
+            }
+            
+            // Return success response
+            return response()->json([
+                'success' => true,
+                'message' => 'Work order updated successfully',
+                'workOrder' => $workOrder
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating work order', [
+                'error' => $e->getMessage(),
+                'work_order_id' => $id
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update work order: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -155,7 +155,23 @@
         <!-- Footer section with all action buttons -->
         <div class="glossy-footer p-4 border-t border-gray-700">
           <!-- Footer buttons -->
-          <div class="sm:flex sm:flex-row-reverse">
+          <div class="sm:flex sm:justify-between">
+            <!-- Save All button (left side) - only shown when in edit mode -->
+            <button 
+              v-if="isAnyFieldBeingEdited"
+              @click="saveAllChanges" 
+              class="glossy-btn btn w-full mb-2 sm:mb-0 inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-amber-400 font-bold hover:bg-amber-400 hover:text-black sm:w-auto sm:text-xs"
+              :class="{ 'animate-pulse': hasChanges }"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              Save All Changes
+            </button>
+            <div v-else class="hidden sm:block"></div>
+            
+            <!-- Right side buttons container -->
+            <div class="sm:flex sm:flex-row-reverse">
             <!-- Archive Work Order button -->
             <button 
               @click="archiveWorkOrder" 
@@ -334,7 +350,44 @@
           </div>
         </div>
       </div>
-    </div></div>
+    </div>
+    
+    <!-- Toast notification -->
+    <div v-if="toast.show" 
+      class="fixed bottom-4 right-4 z-70 p-4 rounded-lg shadow-lg flex items-center"
+      :class="{
+        'bg-green-700 text-white': toast.type === 'success',
+        'bg-red-700 text-white': toast.type === 'error',
+        'bg-yellow-600 text-white': toast.type === 'warning',
+        'bg-blue-700 text-white': toast.type === 'info'
+      }"
+    >
+      <!-- Icon based on toast type -->
+      <svg v-if="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <svg v-if="toast.type === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+      </svg>
+      <svg v-if="toast.type === 'warning'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+      </svg>
+      <svg v-if="toast.type === 'info'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd" />
+      </svg>
+      
+      <!-- Toast message -->
+      <div class="mr-8">{{ toast.message }}</div>
+      
+      <!-- Close button -->
+      <button @click="hideToast" class="absolute top-2 right-2 text-white hover:text-gray-100">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  </div>
 </template>
 
 <script setup>
@@ -509,6 +562,9 @@ const saveField = async (field) => {
       if (['hours', 'hourly_rate', 'travel_cost', 'has_travel'].includes(field)) {
         await updateGrandTotal();
       }
+      
+      // Refresh timeline to show the new activity
+      await refreshTimeline();
     }
   } catch (error) {
     console.error(`Error saving ${field}:`, error);
@@ -692,8 +748,8 @@ const getUserAvatar = (userId) => {
 
 // Computed property for total amount
 const totalAmount = computed(() => {
-  const laborTotal = (props.workOrder?.hourly_rate || 0) * (props.workOrder?.hours || 0);
-  const travelCost = props.workOrder?.has_travel ? (props.workOrder?.travel_cost || 0) : 0;
+  const laborTotal = (form.value.hourly_rate || 0) * (form.value.hours || 0);
+  const travelCost = form.value.has_travel ? (form.value.travel_cost || 0) : 0;
   return laborTotal + travelCost;
 });
 
@@ -765,6 +821,126 @@ const archiveWorkOrder = () => {
       .catch(error => {
         console.error('Error archiving work order:', error);
       });
+  }
+};
+
+// Toast notification system
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success', // 'success', 'error', 'warning', 'info'
+  timeout: null
+});
+
+// Show toast notification
+const showToast = (message, type = 'success', duration = 3000) => {
+  // Clear any existing timeout
+  if (toast.value.timeout) {
+    clearTimeout(toast.value.timeout);
+  }
+  
+  // Set toast properties
+  toast.value.show = true;
+  toast.value.message = message;
+  toast.value.type = type;
+  
+  // Auto hide the toast after duration
+  toast.value.timeout = setTimeout(() => {
+    toast.value.show = false;
+  }, duration);
+};
+
+// Hide toast notification
+const hideToast = () => {
+  toast.value.show = false;
+  if (toast.value.timeout) {
+    clearTimeout(toast.value.timeout);
+  }
+};
+
+// Track whether there are unsaved changes
+const hasChanges = computed(() => {
+  // Compare original work order with current form values
+  return (
+    form.value.title !== props.workOrder.title ||
+    form.value.description !== props.workOrder.description ||
+    form.value.address !== props.workOrder.address ||
+    form.value.hours !== props.workOrder.hours ||
+    form.value.hourly_rate !== props.workOrder.hourly_rate ||
+    form.value.travel_cost !== props.workOrder.travel_cost ||
+    form.value.has_travel !== props.workOrder.has_travel ||
+    form.value.status !== props.workOrder.status
+  );
+});
+
+// Check if any field is currently being edited
+const isAnyFieldBeingEdited = computed(() => {
+  return Object.values(editingField.value).some(value => value === true);
+});
+
+// Save all changes at once
+const saveAllChanges = async () => {
+  if (!hasChanges.value) {
+    showToast('No changes to save', 'info');
+    return;
+  }
+  
+  try {
+    // Prepare data to send
+    const updatedData = {
+      title: form.value.title,
+      description: form.value.description,
+      address: form.value.address,
+      hours: form.value.hours,
+      hourly_rate: form.value.hourly_rate,
+      travel_cost: form.value.travel_cost,
+      has_travel: form.value.has_travel,
+      status: form.value.status,
+      '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    };
+    
+    // Make the API call to update all fields at once
+    const response = await axios.post(`/work-orders/${props.workOrder.id}/update-all`, updatedData);
+    
+    if (response.data.success) {
+      // Update the local workOrder object with the returned data
+      if (response.data.workOrder) {
+        Object.assign(props.workOrder, response.data.workOrder);
+      }
+      
+      // Exit edit mode for all fields
+      Object.keys(editingField.value).forEach(key => {
+        editingField.value[key] = false;
+      });
+      
+      // Update timeline
+      await refreshTimeline();
+      
+      // Show success notification
+      showToast('Work order updated successfully', 'success');
+    }
+  } catch (error) {
+    console.error('Error saving all changes:', error);
+    showToast('Failed to save changes: ' + (error.response?.data?.message || 'Unknown error'), 'error');
+  }
+};
+
+// Function to refresh the timeline
+const refreshTimeline = async () => {
+  try {
+    // Get the current activities from the API
+    const response = await axios.get(`/work-orders/${props.workOrder.id}/activities`);
+    
+    // Emit a custom event that the Timeline component can listen for
+    const timelineRefreshEvent = new CustomEvent('timeline-refresh', { 
+      detail: { activities: response.data.activities } 
+    });
+    document.dispatchEvent(timelineRefreshEvent);
+    
+    return true;
+  } catch (error) {
+    console.error('Error refreshing timeline:', error);
+    return false;
   }
 };
 

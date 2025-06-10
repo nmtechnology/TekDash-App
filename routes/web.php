@@ -76,6 +76,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('/api/work-orders', [WorkOrderController::class, 'index']);
     Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate']);
     Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
+    Route::post('/work-orders/{id}/update-all', [WorkOrderController::class, 'updateAll'])->name('work-orders.update-all');
     Route::post('/work-orders/{id}/update-images', [WorkOrderController::class, 'updateImages'])->name('work-orders.update-images');
     Route::post('/work-orders/{id}/update-total', [WorkOrderController::class, 'updateGrandTotal'])->name('work-orders.update-total');
     Route::delete('/work-orders/{id}/attachments', [WorkOrderController::class, 'deleteAttachment'])->name('work-orders.delete-attachment');
