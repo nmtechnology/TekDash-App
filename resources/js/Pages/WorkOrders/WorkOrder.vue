@@ -1,16 +1,16 @@
 <template>
-  <div v-if="showModal">
+  <div v-if="props.showModal">
     <!-- Background overlay -->
     <div @click="closeModal" class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
     
     <!-- Work Order Modal (left side, wider) -->
-    <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-      <div class="relative z-50 w-full max-w-5xl h-[75vh] ml-8 mt-16 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
+    <div class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none pl-8">
+      <div class="relative z-50 w-full max-w-6xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
         <!-- Header section -->
         <div class="glossy-header p-4 border-b border-gray-700">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-100">Work Order Details</h2>
-            <button @click="closeModal" class="text-gray-400 hover:text-gray-200">
+            <button @click="closeModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -19,16 +19,16 @@
         </div>
 
         <!-- Content section -->
-        <div class="flex-1 p-4 overflow-y-auto timeline-container">
+        <div class="flex-1 p-5 pb-8 overflow-y-auto timeline-container">
           <!-- Work Order Status and Time -->
           <div class="mb-4 flex flex-wrap justify-between items-center">
             <div>
-              <span :class="getStatusClasses(workOrder.status)" @click="updateStatus">
-                {{ workOrder.status }}
+              <span :class="getStatusClasses(props.workOrder.status)" @click="updateStatus">
+                {{ props.workOrder.status }}
               </span>
             </div>
             <div class="text-gray-300 text-sm">
-              {{ formatDate(workOrder.date_time) }}
+              {{ formatDate(props.workOrder.date_time) }}
             </div>
           </div>
 
@@ -141,10 +141,10 @@
           <div>
             <h3 class="text-lg font-medium text-gray-200 mb-2">Messages</h3>
             <Messenger 
-              :workOrderId="workOrder.id"
-              :userId="workOrder.user_id"
-              :messages="workOrder.messages || []"
-              :currentUserId="workOrder.user_id"
+              :workOrderId="props.workOrder.id"
+              :userId="props.workOrder.user_id"
+              :messages="props.workOrder.messages || []"
+              :currentUserId="props.workOrder.user_id"
               :getUserName="getUserName"
               :getUserAvatar="getUserAvatar"
               :users="users"
@@ -159,10 +159,10 @@
             <!-- Archive Work Order button -->
             <button 
               @click="archiveWorkOrder" 
-              :disabled="workOrder.status !== 'Complete'"
+              :disabled="props.workOrder.status !== 'Complete'"
               class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-green-400 hover:text-gray-900 hover:bg-green-400 font-bold sm:ml-2 sm:w-auto sm:text-xs"
               :class="{
-                'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-green-400': workOrder.status !== 'Complete'
+                'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-green-400': props.workOrder.status !== 'Complete'
               }"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,12 +174,12 @@
             <!-- Duplicate button -->
             <button 
               @click="duplicateWorkOrder($event)" 
-              :disabled="workOrder.status !== 'Part Needed'"
+              :disabled="props.workOrder.status !== 'Part Needed'"
               :class="[
                 'glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-purple-400 font-bold hover:bg-purple-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs',
-                { 'opacity-50 cursor-not-allowed': workOrder.status !== 'Part Needed' }
+                { 'opacity-50 cursor-not-allowed': props.workOrder.status !== 'Part Needed' }
               ]"
-              :title="workOrder.status !== 'Part Needed' ? 'Duplication is only available for work orders with Part Needed status' : 'Create a duplicate work order'"
+              :title="props.workOrder.status !== 'Part Needed' ? 'Duplication is only available for work orders with Part Needed status' : 'Create a duplicate work order'"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -222,18 +222,38 @@
               Upload Files
             </button>
             
-            <!-- Save button when editing -->
-            <button 
-              v-else
-              @click="saveField('images')" 
-              class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-green-400 hover:bg-green-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-              :disabled="isUploading"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              {{ isUploading ? 'Uploading...' : 'Save' }}
-            </button>
+            <!-- Save button and upload progress when editing -->
+            <div v-else class="flex flex-col w-full sm:w-auto">
+              <button 
+                @click="saveField('images')" 
+                class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-green-400 hover:bg-green-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
+                :disabled="isUploading"
+              >
+                <svg v-if="!isUploading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <svg v-else class="animate-spin h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ isUploading ? 'Uploading...' : 'Save' }}
+              </button>
+              
+              <!-- Upload progress indicator -->
+              <div v-if="isUploading" class="mt-2 relative w-full h-1 bg-gray-700 rounded-full overflow-hidden sm:ml-2">
+                <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{width: uploadProgress + '%'}"></div>
+              </div>
+              
+              <!-- Upload error message -->
+              <div v-if="uploadError" class="mt-1 text-xs text-red-400 sm:ml-2">
+                {{ uploadError }}
+              </div>
+              
+              <!-- Files selected indicator -->
+              <div v-if="form.images && form.images.length && !isUploading" class="mt-1 text-xs text-gray-400 sm:ml-2">
+                {{ form.images.length }} file(s) selected
+              </div>
+            </div>
             
             <!-- Update Status button -->
             <button
@@ -280,7 +300,41 @@
         </div>
       </div>
     </div>
-  </div>
+    
+    <!-- Timeline Modal (positioned closer to work order modal) -->
+    <div class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none">
+      <div class="flex gap-6 w-full px-8 mt-60 pointer-events-none">
+        <!-- Work order modal space -->
+        <div class="w-full max-w-6xl pointer-events-none"></div>
+        
+        <!-- Timeline modal container -->
+        <div class="w-80 flex-shrink-0 pointer-events-auto">
+          <div class="relative z-60 w-full h-[55vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
+            <!-- Timeline Header -->
+            <div class="glossy-header p-4 border-b border-gray-700">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-lime-400">Activity Timeline</h2>
+                <button @click="closeModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Timeline Content -->
+            <div class="flex-1 overflow-y-auto p-3 timeline-container">
+              <Timeline :workOrderId="props.workOrder.id" />
+            </div>
+            
+            <!-- Timeline Footer -->
+            <div class="glossy-footer p-3 border-t border-gray-700">
+              <!-- You can add footer content or buttons here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
 </template>
 
 <script setup>
@@ -369,20 +423,87 @@ const saveField = async (field) => {
       form.value.visit_dates = [...selectedDates.value]; // Make a copy
     }
   } else if (field === 'images') {
-    // For images, we would normally upload them here
-    isUploading.value = false;
-    uploadProgress.value = 0;
-    uploadError.value = null;
+    // For images, we need to use FormData to handle file uploads
+    try {
+      isUploading.value = true;
+      uploadProgress.value = 0;
+      uploadError.value = null;
+      
+      const formData = new FormData();
+      
+      // Append each file to the FormData object
+      if (form.value.images && form.value.images.length > 0) {
+        form.value.images.forEach((file, index) => {
+          formData.append(`attachments[]`, file); // Laravel convention for file arrays
+        });
+      }
+      
+      // We need to add the work order ID to identify the relationship
+      formData.append('work_order_id', props.workOrder.id);
+      
+      // Make the API call to upload files
+      const response = await axios.post(
+        `/work-orders/${props.workOrder.id}/attachments`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            }
+          }
+        }
+      );
+      
+      // Handle successful upload
+      if (response.data.success || response.status === 200) {
+        editingField.value.images = false;
+        // Update the work order with new attachments
+        if (response.data.attachments) {
+          props.workOrder.attachments = response.data.attachments;
+        } else if (response.data.workOrder && response.data.workOrder.attachments) {
+          props.workOrder.attachments = response.data.workOrder.attachments;
+        }
+        
+        // Clear the file input for subsequent uploads
+        if (fileInput.value) {
+          fileInput.value.value = '';
+        }
+        
+        isUploading.value = false;
+        uploadProgress.value = 100;
+        
+        // Show success message
+        uploadError.value = null;
+      }
+      
+      return; // Skip the regular field update since we've handled the upload
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      uploadError.value = error.response?.data?.message || 'Failed to upload files. Please try again.';
+      isUploading.value = false;
+      return; // Skip the rest of the function
+    }
   }
   
   try {
-    const response = await axios.put(`/work-orders/${props.workOrder.id}`, {
-      [field]: form.value[field]
+    // For regular fields (not images), use the updateField endpoint
+    const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
+      [field]: form.value[field],
+      '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     });
     
     if (response.data.success) {
       // Update was successful
       editingField.value[field] = false;
+      
+      // Update the local workOrder object with the returned data if available
+      if (response.data.workOrder) {
+        Object.assign(props.workOrder, response.data.workOrder);
+      }
       
       // If we're updating hours or rates, recalculate grand total
       if (['hours', 'hourly_rate', 'travel_cost', 'has_travel'].includes(field)) {
@@ -491,11 +612,26 @@ const uploadError = ref(null);
 const handleImageUpload = (event) => {
   const files = event.target.files;
   if (!files.length) return;
+  
+  // Clear any previous error
+  uploadError.value = null;
       
-  // Set images to uploaded files (simplified)
-  form.value.images = Array.from(files);
+  // Validate files (optional)
+  const validFiles = Array.from(files).filter(file => {
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'image/heic', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    return validTypes.includes(file.type);
+  });
+  
+  if (validFiles.length !== files.length) {
+    uploadError.value = 'Some files were not recognized as valid file types';
+  }
+  
+  // Set images to validated files
+  form.value.images = validFiles;
   editingField.value.images = true;
-  isUploading.value = false; // This would normally be set true during upload
+  
+  // We'll set isUploading to true in the saveField function when actually uploading
 };
 
 // Attachment management
@@ -722,7 +858,7 @@ const formatMultipleDates = (dates) => {
 
 <style scoped>
 .timeline-container {
-  max-height: 65vh;
+  max-height: vh; /* Reduced to match the modal height */
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
@@ -744,7 +880,7 @@ const formatMultipleDates = (dates) => {
 /* Glass morphism styles */
 .glossy-card {
   background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.85));
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);

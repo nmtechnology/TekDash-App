@@ -1,0 +1,1 @@
+import{d as e,o as t,t as o,s as n}from"./app-BMexHfaY.js";const l={class:"block font-medium text-sm text-lime-400"},c={key:0},r={key:1},m={__name:"InputLabel",props:{value:String},setup(s){return(a,i)=>(t(),e("label",l,[s.value?(t(),e("span",c,o(s.value),1)):(t(),e("span",r,[n(a.$slots,"default")]))]))}};export{m as _};

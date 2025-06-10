@@ -578,540 +578,258 @@ public function updateImages(Request $request, $id)
     }
 }
 
-public function updateField(Request $request, $id)
-{
-    $workOrder = WorkOrder::findOrFail($id);
-    $field = key($request->all());
-    $value = $request->input($field);
-    
-    // Use the field name from the request if it's explicitly specified
-    if ($request->has('field_name')) {
-        $field = $request->input('field_name');
-    }
-    
-    // Validate field name to prevent mass assignment vulnerabilities
-    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'price', 'hours', 'address'];
-    
-    if (!in_array($field, $allowedFields)) {
-        return response()->json([
-            'success' => false,
-            'error' => 'Invalid field name'
-        ], 422);
-    }
-    
-    try {
-        // Store the old value before updating
-        $oldValue = $workOrder->{$field};
-        
-        // Update the field
-        $workOrder->{$field} = $value;
-        $workOrder->save();
-        
-        // Record the activity
-        WorkOrderActivity::create([
-            'work_order_id' => $workOrder->id,
-            'user_id' => auth()->id(),
-            'field_name' => $field,
-            'old_value' => $oldValue,
-            'new_value' => $value,
-            'action_type' => 'update',
-            'description' => 'Updated ' . $this->getFieldDisplayName($field)
-        ]);
-        
-        // Reload work order with relationships if customer_id changed
-        if ($field === 'customer_id') {
-            $workOrder = WorkOrder::with(['customer', 'technician'])->find($id);
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Field updated successfully',
-            'field' => $field,
-            'value' => $value,
-            'workOrder' => $field === 'customer_id' ? $workOrder : null
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-public function calendarEvents()
+    /**
+     * Update a specific field in the work order
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateField(Request $request, $id)
     {
         try {
-            $workOrders = WorkOrder::select(
-                    'id', 
-                    'title', 
-                    'description', 
-                    'date_time', 
-                    'end_date', 
-                    'status', 
-                    'user_id', 
-                    'customer_id',
-                    'technician_id'
-                )
-                ->with([
-                    'customer:id,business_name,name', // Include customer details
-                    'technician:id,name,email' // Include technician details
-                ])
-                ->orderBy('date_time', 'asc')
-                ->get()
-                ->map(function($workOrder) {
-                    // Transform the data to ensure proper formatting for the calendar
-                    $data = $workOrder->toArray();
-                    
-                    // Ensure we have the correct date format
-                    if (!empty($workOrder->date_time)) {
-                        $data['start'] = $workOrder->date_time;
-                    }
-                    
-                    // Include customer information in the event data
-                    if ($workOrder->customer) {
-                        $data['customer_name'] = $workOrder->customer->business_name;
-                        $data['customer_business_name'] = $workOrder->customer->business_name;
-                    }
-                    
-                    // Include technician information in the event data
-                    if ($workOrder->technician) {
-                        $data['technician_name'] = $workOrder->technician->name;
-                    }
-                    
-                    return $data;
-                });
-                
-            return response()->json($workOrders);
-        } catch (\Exception $e) {
-            \Log::error('Error fetching calendar events: ' . $e->getMessage(), [
-                'exception' => $e
-            ]);
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function getStats()
-    {
-        try {
-            // Get current month's data
-            $currentMonthOrders = WorkOrder::whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->get();
-                
-            // Get previous month's data for comparison
-            $previousMonthOrders = WorkOrder::whereMonth('created_at', now()->subMonth()->month)
-                ->whereYear('created_at', now()->subMonth()->year)
-                ->get();
-                
-            // Calculate totals for current month - using archived instead of completed
-            $currentTotalRevenue = $currentMonthOrders->where('archived', true)->sum('price');
-            $currentArchivedCount = $currentMonthOrders->where('archived', true)->count();
-            $currentPendingCount = $currentMonthOrders->where('archived', false)->count();
-            $currentAvgPrice = $currentArchivedCount > 0 
-                ? $currentTotalRevenue / $currentArchivedCount
-                : 0;
-                
-            // Calculate totals for previous month - using archived instead of completed
-            $previousTotalRevenue = $previousMonthOrders->where('archived', true)->sum('price');
-            $previousArchivedCount = $previousMonthOrders->where('archived', true)->count();
-            $previousPendingCount = $previousMonthOrders->where('archived', false)->count();
-            $previousAvgPrice = $previousArchivedCount > 0 
-                ? $previousTotalRevenue / $previousArchivedCount
-                : 0;
-                
-            // Calculate percentage changes
-            $revenueChange = $previousTotalRevenue > 0 
-                ? (($currentTotalRevenue - $previousTotalRevenue) / $previousTotalRevenue) * 100 
-                : 0;
-                
-            $archivedChange = $previousArchivedCount > 0 
-                ? (($currentArchivedCount - $previousArchivedCount) / $previousArchivedCount) * 100 
-                : 0;
-                
-            $pendingChange = $previousPendingCount > 0 
-                ? (($currentPendingCount - $previousPendingCount) / $previousPendingCount) * 100 
-                : 0;
-                
-            $avgPriceChange = $previousAvgPrice > 0 
-                ? (($currentAvgPrice - $previousAvgPrice) / $previousAvgPrice) * 100 
-                : 0;
-                
-            // Format the stats array with updated labels
-            $stats = [
-                [
-                    'name' => 'Total Revenue (Archived)',
-                    'value' => '$' . number_format($currentTotalRevenue, 2),
-                    'change' => ($revenueChange >= 0 ? '+' : '') . number_format($revenueChange, 2) . '%',
-                    'changeType' => $revenueChange >= 0 ? 'positive' : 'negative'
-                ],
-                [
-                    'name' => 'Archived Orders',
-                    'value' => $currentArchivedCount,
-                    'change' => ($archivedChange >= 0 ? '+' : '') . number_format($archivedChange, 2) . '%',
-                    'changeType' => $archivedChange >= 0 ? 'positive' : 'negative'
-                ],
-                [
-                    'name' => 'Active Orders',
-                    'value' => $currentPendingCount,
-                    'change' => ($pendingChange >= 0 ? '+' : '') . number_format($pendingChange, 2) . '%',
-                    'changeType' => $pendingChange <= 0 ? 'positive' : 'negative' // Less pending is positive
-                ],
-                [
-                    'name' => 'Average Price (Archived)',
-                    'value' => '$' . number_format($currentAvgPrice, 2),
-                    'change' => ($avgPriceChange >= 0 ? '+' : '') . number_format($avgPriceChange, 2) . '%',
-                    'changeType' => $avgPriceChange >= 0 ? 'positive' : 'negative'
-                ]
-            ];
+            // Find the work order
+            $workOrder = WorkOrder::findOrFail($id);
             
-            return response()->json($stats);
-        } catch (\Exception $e) {
-            \Log::error('Error calculating work order stats: ' . $e->getMessage());
+            // Get the field to update
+            $field = array_keys($request->except('_token'))[0];
+            $value = $request->input($field);
+            
+            // Validate based on field
+            if ($field === 'hours' || $field === 'hourly_rate' || $field === 'travel_cost') {
+                $request->validate([
+                    $field => 'numeric|min:0'
+                ]);
+            } elseif ($field === 'status') {
+                $request->validate([
+                    $field => 'string|in:Scheduled,In Progress,Part Needed,Complete,Cancelled'
+                ]);
+            } elseif ($field === 'has_travel') {
+                $value = (bool) $value;
+            }
+            
+            // Update the field
+            $workOrder->$field = $value;
+            $workOrder->save();
+            
+            // Create activity log
+            $workOrder->activities()->create([
+                'user_id' => auth()->id(),
+                'action' => 'update',
+                'description' => "Updated {$field}",
+                'details' => json_encode([
+                    'field' => $field,
+                    'value' => $value
+                ])
+            ]);
+            
+            // Return success response
             return response()->json([
-                ['name' => 'Error', 'value' => 'Could not load stats', 'change' => '', 'changeType' => 'neutral']
+                'success' => true,
+                'message' => 'Field updated successfully',
+                'workOrder' => $workOrder
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating work order field', [
+                'error' => $e->getMessage(),
+                'work_order_id' => $id,
+                'field' => $request->keys()[0] ?? 'unknown'
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update field: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Upload attachments for a work order
+     *
+     * @param Request $request
+     * @param WorkOrder $workOrder
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function uploadAttachments(Request $request, $workOrder)
+    {
+        try {
+            // Convert string ID to model if needed
+            if (!($workOrder instanceof WorkOrder)) {
+                $workOrder = WorkOrder::findOrFail($workOrder);
+            }
+            
+            // Validate the request
+            $request->validate([
+                'attachments' => 'required|array',
+                'attachments.*' => 'file|max:10240', // 10MB max per file
+            ]);
+            
+            $attachments = [];
+            
+            // Process each uploaded file
+            foreach ($request->file('attachments') as $file) {
+                // Store the file in the storage/app/public/work-orders directory
+                $path = $file->store('work-orders/' . $workOrder->id, 'public');
+                
+                // Generate a URL for the stored file
+                $url = asset('storage/' . $path);
+                
+                // Store attachment info in the database
+                $attachment = $workOrder->attachments()->create([
+                    'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'url' => $url
+                ]);
+                
+                $attachments[] = $url;
+            }
+            
+            // Log the activity
+            $workOrder->activities()->create([
+                'user_id' => auth()->id() ?? 1,
+                'action' => 'upload',
+                'description' => count($attachments) . ' files uploaded',
+                'details' => json_encode($attachments)
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Files uploaded successfully',
+                'attachments' => $workOrder->attachments,
+                'workOrder' => $workOrder->load('attachments')
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error uploading work order attachments', [
+                'error' => $e->getMessage(),
+                'work_order_id' => $workOrder->id ?? 'unknown'
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload files: ' . $e->getMessage()
             ], 500);
         }
     }
 
-/**
- * Search for work orders based on the query
- *
- * @param  \Illuminate\Http\Request  $request
- * @return \Illuminate\Http\Response
- */
-public function search(Request $request)
-{
-    try {
-        $query = $request->input('query');
+    /**
+     * Create an invoice in QuickBooks
+     * 
+     * @param WorkOrder $workOrder
+     * @return string Invoice ID
+     */
+    private function createQuickBooksInvoice($workOrder)
+    {
+        // This is a placeholder method - replace with your actual QuickBooks integration
+        // For example, using QuickBooks SDK or API
         
-        if (empty($query) || strlen($query) < 2) {
-            return response()->json([]);
+        try {
+            // Implement your QuickBooks invoice creation logic here
+            // Examples might include:
+            // 1. Preparing customer data
+            // 2. Setting up line items based on work order
+            // 3. Making API calls to QuickBooks
+            
+            // For demonstration purposes, returning a dummy invoice ID
+            return 'INV-' . time() . '-' . $workOrder->id;
+            
+        } catch (\Exception $e) {
+            \Log::error('QuickBooks invoice creation failed: ' . $e->getMessage());
+            throw $e;
         }
-
-        // Check if our search columns exist in the database
-        $workOrderColumns = Schema::getColumnListing('work_orders');
-        
-        // Start building the query
-        $searchQuery = WorkOrder::query();
-        
-        // Add OR conditions for all searchable fields that exist in the database
-        $searchQuery->where(function($q) use ($query, $workOrderColumns) {
-            if (in_array('title', $workOrderColumns)) {
-                $q->orWhere('title', 'like', "%{$query}%");
-            }
-            
-            if (in_array('description', $workOrderColumns)) {
-                $q->orWhere('description', 'like', "%{$query}%");
-            }
-            
-            if (in_array('customer_id', $workOrderColumns)) {
-                $q->orWhere('customer_id', 'like', "%{$query}%");
-            }
-            
-            if (in_array('customer_name', $workOrderColumns)) {
-                $q->orWhere('customer_name', 'like', "%{$query}%");
-            }
-            
-            // Also match on direct ID if it's numeric
-            if (is_numeric($query)) {
-                $q->orWhere('id', $query);
-            }
-        });
-        
-        // Select only the fields we need for the search results list
-        $selectFields = ['id'];
-        foreach(['title', 'status', 'customer_id', 'customer_name', 'created_at'] as $field) {
-            if (in_array($field, $workOrderColumns)) {
-                $selectFields[] = $field;
-            }
-        }
-        
-        $workOrders = $searchQuery->select($selectFields)
-            ->limit(10)
-            ->get();
-            
-        // Add fallback values for fields that may not exist
-        $workOrders = $workOrders->map(function($order) {
-            // Make sure these key properties are defined even if null
-            if (!isset($order->title)) $order->title = 'Work Order #' . $order->id;
-            if (!isset($order->status)) $order->status = 'Unknown';
-            if (!isset($order->customer_id) && !isset($order->customer_name)) {
-                $order->customer_id = 'Unknown';
-            }
-            return $order;
-        });
-        
-        return response()->json($workOrders);
-        
-    } catch (\Exception $e) {
-        Log::error('Error in search method: ' . $e->getMessage());
-        return response()->json([
-            'error' => 'An error occurred while searching',
-            'message' => config('app.debug') ? $e->getMessage() : 'Search failed. Please try again later.'
-        ], 500);
     }
-}
 
-/**
- * Get details for a specific work order
- *
- * @param  int  $id
- * @return \Illuminate\Http\Response
- */
-public function details($id)
-{
-    try {
-        // Include the customer relationship to access business name
-        $workOrder = WorkOrder::with(['customer', 'technician'])->findOrFail($id);
+    /**
+     * Check if a work order with the given work order number exists
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function checkWorkOrderExists(Request $request)
+    {
+        $workOrderNumber = $request->input('workOrderNumber');
         
-        // Make sure essential properties are present
-        $responseData = $workOrder->toArray();
-        
-        // Add any necessary computed fields or formatting
-        if (isset($responseData['created_at'])) {
-            $responseData['formatted_date'] = date('Y-m-d H:i:s', strtotime($responseData['created_at']));
+        if (empty($workOrderNumber)) {
+            return response()->json(['exists' => false]);
         }
-        
-        return response()->json($responseData);
-        
-    } catch (\Exception $e) {
-        Log::error('Error in details method: ' . $e->getMessage());
-        
-        // If the work order doesn't exist
-        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return response()->json([
-                'error' => 'Work order not found',
-                'message' => "No work order exists with ID {$id}"
-            ], 404);
-        }
-        
-        // For any other error
-        return response()->json([
-            'error' => 'An error occurred',
-            'message' => config('app.debug') ? $e->getMessage() : 'Failed to retrieve work order details.'
-        ], 500);
+
+        // Search for the work order number within the title field
+        // Using LIKE with wildcards to find it anywhere in the title
+        $exists = WorkOrder::where('title', 'like', '%' . $workOrderNumber . '%')->exists();
+
+        return response()->json(['exists' => $exists]);
     }
-}
 
-/**
- * Delete a specific attachment from a work order
- *
- * @param Request $request
- * @param int $id
- * @return \Illuminate\Http\JsonResponse
- */
-
-public function deleteAttachment(Request $request, WorkOrder $workOrder)
-{
-    try {
-        if (!$request->user()->can('delete', $workOrder)) {
-            return back()->with('error', 'You are not authorized to delete attachments.');
-        }
-
-        $attachmentPath = $request->input('attachment_path');
-        
-        if (!Storage::disk('public')->exists($attachmentPath)) {
-            return back()->with('error', 'File not found.');
-        }
-        
-        Storage::disk('public')->delete($attachmentPath);
-        
-        // Remove the attachment from both images and file_attachments arrays
-        $images = is_array($workOrder->images) ? $workOrder->images : [];
-        $fileAttachments = is_array($workOrder->file_attachments) ? $workOrder->file_attachments : [];
-        
-        $images = array_filter($images, fn($img) => $img !== $attachmentPath);
-        $fileAttachments = array_filter($fileAttachments, fn($file) => $file !== $attachmentPath);
-        
-        $workOrder->images = $images;
-        $workOrder->file_attachments = $fileAttachments;
-        $workOrder->save();
-
-        return back()->with('success', 'Attachment deleted successfully.');
-        
-    } catch (\Exception $e) {
-        \Log::error('Error deleting attachment: ' . $e->getMessage());
-        return back()->with('error', 'Failed to delete attachment.');
-    }
-}
-
-public function uploadAttachments(Request $request, WorkOrder $workOrder)
-{
-    $request->validate([
-        'attachments.*' => 'required|file|mimes:jpeg,jpg,png,gif,pdf,heic,docx|max:10240',
-        // Make sure 'jpeg' is explicitly listed in mimes
-    ]);
-    
-    // Add some debug logging
-    \Log::info('File upload attempt', [
-        'files' => $request->file('attachments'),
-        'mimetypes' => array_map(function($file) {
-            return $file->getMimeType();
-        }, $request->file('attachments') ?? [])
-    ]);
-
-    try {
-        $attachments = [];
-        
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('work-orders/' . $workOrder->id, $filename, 'public');
-                $attachments[] = $path;
-            }
-
-            // Get existing attachments as arrays
-            $existingImages = is_array($workOrder->images) ? $workOrder->images : 
-                            (is_string($workOrder->images) ? json_decode($workOrder->images, true) : []);
-            $existingFiles = is_array($workOrder->file_attachments) ? $workOrder->file_attachments : 
-                            (is_string($workOrder->file_attachments) ? json_decode($workOrder->file_attachments, true) : []);
-
-            // Ensure arrays are not null
-            $existingImages = $existingImages ?? [];
-            $existingFiles = $existingFiles ?? [];
-
-            // Update the work order with merged arrays
-            $workOrder->images = array_values(array_merge($existingImages, $attachments));
-            $workOrder->file_attachments = array_values(array_merge($existingFiles, $attachments));
+    public function archive(WorkOrder $workOrder)
+    {
+        try {
+            $workOrder->archived = true;
+            $workOrder->archived_at = now();
             $workOrder->save();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Files uploaded successfully',
-                'attachments' => $attachments
+                'message' => 'Work order has been archived successfully.'
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive work order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Removed duplicate updateHours method as it's now handled by updateField
+
+    /**
+     * Update the address for the specified work order.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateAddress(Request $request, $id)
+    {
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        $request->validate([
+            'address' => 'nullable|string|max:255',
+        ]);
+        
+        $workOrder->address = $request->address;
+        $workOrder->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Address updated successfully',
+            'address' => $workOrder->address
+        ]);
+    }
+
+    public function createInvoice($id)
+    {
+        $workOrder = WorkOrder::find($id);
+
+        if (!$workOrder) {
+            return response()->json(['message' => 'Work order not found'], 404);
         }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'No files were uploaded'
-        ], 400);
-    } catch (\Exception $e) {
-        \Log::error('Error uploading attachments: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-/**
- * Create an invoice in QuickBooks
- * 
- * @param WorkOrder $workOrder
- * @return string Invoice ID
- */
-private function createQuickBooksInvoice($workOrder)
-{
-    // This is a placeholder method - replace with your actual QuickBooks integration
-    // For example, using QuickBooks SDK or API
-    
-    try {
-        // Implement your QuickBooks invoice creation logic here
-        // Examples might include:
-        // 1. Preparing customer data
-        // 2. Setting up line items based on work order
-        // 3. Making API calls to QuickBooks
-        
-        // For demonstration purposes, returning a dummy invoice ID
-        return 'INV-' . time() . '-' . $workOrder->id;
-        
-    } catch (\Exception $e) {
-        \Log::error('QuickBooks invoice creation failed: ' . $e->getMessage());
-        throw $e;
-    }
-}
-
-/**
- * Check if a work order with the given work order number exists
- *
- * @param  \Illuminate\Http\Request  $request
- * @return \Illuminate\Http\JsonResponse
- */
-public function checkWorkOrderExists(Request $request)
-{
-    $workOrderNumber = $request->input('workOrderNumber');
-    
-    if (empty($workOrderNumber)) {
-        return response()->json(['exists' => false]);
-    }
-
-    // Search for the work order number within the title field
-    // Using LIKE with wildcards to find it anywhere in the title
-    $exists = WorkOrder::where('title', 'like', '%' . $workOrderNumber . '%')->exists();
-
-    return response()->json(['exists' => $exists]);
-}
-
-public function archive(WorkOrder $workOrder)
-{
-    try {
-        $workOrder->archived = true;
-        $workOrder->archived_at = now();
-        $workOrder->save();
+        // Logic to create an invoice
+        $invoice = Invoice::create([
+            'work_order_id' => $workOrder->id,
+            'amount' => $workOrder->price,
+            // Add other necessary fields
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Work order has been archived successfully.'
+            'invoiceId' => $invoice->id,
+            'message' => 'Invoice created successfully'
         ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to archive work order: ' . $e->getMessage()
-        ], 500);
-    }
-}
-
-// Removed duplicate updateHours method as it's now handled by updateField
-
-/**
- * Update the address for the specified work order.
- *
- * @param  \Illuminate\Http\Request  $request
- * @param  int  $id
- * @return \Illuminate\Http\Response
- */
-public function updateAddress(Request $request, $id)
-{
-    $workOrder = WorkOrder::findOrFail($id);
-    
-    $request->validate([
-        'address' => 'nullable|string|max:255',
-    ]);
-    
-    $workOrder->address = $request->address;
-    $workOrder->save();
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Address updated successfully',
-        'address' => $workOrder->address
-    ]);
-}
-
-public function createInvoice($id)
-{
-    $workOrder = WorkOrder::find($id);
-
-    if (!$workOrder) {
-        return response()->json(['message' => 'Work order not found'], 404);
     }
 
-    // Logic to create an invoice
-    $invoice = Invoice::create([
-        'work_order_id' => $workOrder->id,
-        'amount' => $workOrder->price,
-        // Add other necessary fields
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'invoiceId' => $invoice->id,
-        'message' => 'Invoice created successfully'
-    ]);
-}
-
-/**
+    /**
      * Get a human-readable display name for a field
      */
     private function getFieldDisplayName($field)
@@ -1135,51 +853,51 @@ public function createInvoice($id)
         return $displayNames[$field] ?? ucfirst(str_replace('_', ' ', $field));
     }
 
-/**
- * Get activities for a work order
- */
-public function getActivities($id)
-{
-    try {
-        $workOrder = WorkOrder::findOrFail($id);
-        $activities = $workOrder->activities()->with('user')->get();
-        
-        return response()->json([
-            'success' => true,
-            'activities' => $activities
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ], 500);
+    /**
+     * Get activities for a work order
+     */
+    public function getActivities($id)
+    {
+        try {
+            $workOrder = WorkOrder::findOrFail($id);
+            $activities = $workOrder->activities()->with('user')->get();
+            
+            return response()->json([
+                'success' => true,
+                'activities' => $activities
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
-public function updateGrandTotal($id)
-{
-    try {
-        $workOrder = WorkOrder::findOrFail($id);
-        
-        // Calculate grand total: (hourly_rate * hours) + (has_travel ? travel_cost : 0)
-        $laborTotal = ($workOrder->hourly_rate ?? 0) * ($workOrder->hours ?? 0);
-        $travelCost = $workOrder->has_travel ? ($workOrder->travel_cost ?? 0) : 0;
-        $grandTotal = $laborTotal + $travelCost;
-        
-        // Update the grand total
-        $workOrder->update(['grand_total' => $grandTotal]);
-        
-        return response()->json([
-            'success' => true,
-            'grand_total' => $grandTotal,
-            'labor_total' => $laborTotal,
-            'travel_cost' => $travelCost
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ], 500);
+    public function updateGrandTotal($id)
+    {
+        try {
+            $workOrder = WorkOrder::findOrFail($id);
+            
+            // Calculate grand total: (hourly_rate * hours) + (has_travel ? travel_cost : 0)
+            $laborTotal = ($workOrder->hourly_rate ?? 0) * ($workOrder->hours ?? 0);
+            $travelCost = $workOrder->has_travel ? ($workOrder->travel_cost ?? 0) : 0;
+            $grandTotal = $laborTotal + $travelCost;
+            
+            // Update the grand total
+            $workOrder->update(['grand_total' => $grandTotal]);
+            
+            return response()->json([
+                'success' => true,
+                'grand_total' => $grandTotal,
+                'labor_total' => $laborTotal,
+                'travel_cost' => $travelCost
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 }
