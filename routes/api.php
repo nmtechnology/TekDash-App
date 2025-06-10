@@ -92,30 +92,30 @@ Route::get('/revenue-stats', function (Request $request) {
     $lastMonthStart = $monthStart->copy()->subMonth();
     $lastMonthEnd = $monthEnd->copy()->subMonth();
     $weeklyWorkOrders = WorkOrder::whereBetween('date_time', [$weekStart, $weekEnd])->get();
-    $weeklyRevenue = $weeklyWorkOrders->sum('price');
+    $weeklyRevenue = $weeklyWorkOrders->sum('grand_total');
     $weeklyCompleted = $weeklyWorkOrders->where('status', 'Complete')->count();
     $weeklyCompletionRate = $weeklyWorkOrders->count() > 0 
                            ? round(($weeklyCompleted / $weeklyWorkOrders->count()) * 100) 
                            : 0;
-    $weeklyAveragePrice = $weeklyWorkOrders->count() > 0 
+    $weeklyAverageRevenue = $weeklyWorkOrders->count() > 0 
                          ? $weeklyRevenue / $weeklyWorkOrders->count() 
                          : 0;
     $lastWeekWorkOrders = WorkOrder::whereBetween('date_time', [$lastWeekStart, $lastWeekEnd])->get();
-    $lastWeekRevenue = $lastWeekWorkOrders->sum('price');
+    $lastWeekRevenue = $lastWeekWorkOrders->sum('grand_total');
     $weeklyChangePercent = $lastWeekRevenue > 0 
                           ? round((($weeklyRevenue - $lastWeekRevenue) / $lastWeekRevenue) * 100, 1) . '%' 
                           : '0%';
     $monthlyWorkOrders = WorkOrder::whereBetween('date_time', [$monthStart, $monthEnd])->get();
-    $monthlyRevenue = $monthlyWorkOrders->sum('price');
+    $monthlyRevenue = $monthlyWorkOrders->sum('grand_total');
     $monthlyCompleted = $monthlyWorkOrders->where('status', 'Complete')->count();
     $monthlyCompletionRate = $monthlyWorkOrders->count() > 0 
                             ? round(($monthlyCompleted / $monthlyWorkOrders->count()) * 100) 
                             : 0;
-    $monthlyAveragePrice = $monthlyWorkOrders->count() > 0 
+    $monthlyAverageRevenue = $monthlyWorkOrders->count() > 0 
                           ? $monthlyRevenue / $monthlyWorkOrders->count() 
                           : 0;
     $lastMonthWorkOrders = WorkOrder::whereBetween('date_time', [$lastMonthStart, $lastMonthEnd])->get();
-    $lastMonthRevenue = $lastMonthWorkOrders->sum('price');
+    $lastMonthRevenue = $lastMonthWorkOrders->sum('grand_total');
     $monthlyChangePercent = $lastMonthRevenue > 0 
                            ? round((($monthlyRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1) . '%' 
                            : '0%';
@@ -124,14 +124,14 @@ Route::get('/revenue-stats', function (Request $request) {
             'revenue' => $weeklyRevenue,
             'workOrders' => $weeklyWorkOrders->count(),
             'completionRate' => $weeklyCompletionRate,
-            'averagePrice' => $weeklyAveragePrice,
+            'averageRevenue' => $weeklyAverageRevenue,
             'changePercent' => $weeklyChangePercent
         ],
         'monthly' => [
             'revenue' => $monthlyRevenue,
             'workOrders' => $monthlyWorkOrders->count(),
             'completionRate' => $monthlyCompletionRate,
-            'averagePrice' => $monthlyAveragePrice,
+            'averageRevenue' => $monthlyAverageRevenue,
             'changePercent' => $monthlyChangePercent
         ]
     ];

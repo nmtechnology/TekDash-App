@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Response;
 use App\Services\QuickBooksService;
+use App\Models\WorkOrder;
+use App\Observers\WorkOrderObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register observers
+        WorkOrder::observe(WorkOrderObserver::class);
+        
         // Force HTTPS in production
         if (config('app.env') === 'production') {
             URL::forceScheme('https');

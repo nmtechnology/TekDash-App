@@ -1155,4 +1155,31 @@ public function getActivities($id)
         ], 500);
     }
 }
+
+public function updateGrandTotal($id)
+{
+    try {
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        // Calculate grand total: (hourly_rate * hours) + (has_travel ? travel_cost : 0)
+        $laborTotal = ($workOrder->hourly_rate ?? 0) * ($workOrder->hours ?? 0);
+        $travelCost = $workOrder->has_travel ? ($workOrder->travel_cost ?? 0) : 0;
+        $grandTotal = $laborTotal + $travelCost;
+        
+        // Update the grand total
+        $workOrder->update(['grand_total' => $grandTotal]);
+        
+        return response()->json([
+            'success' => true,
+            'grand_total' => $grandTotal,
+            'labor_total' => $laborTotal,
+            'travel_cost' => $travelCost
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 }

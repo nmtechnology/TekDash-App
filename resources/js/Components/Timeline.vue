@@ -15,7 +15,7 @@
     
     <div v-else class="timeline">
       <div v-for="(activity, index) in activities" :key="activity.id" class="timeline-item">
-        <div class="timeline-marker">
+        <div class="timeline-marker relative">
           <div class="timeline-dot"></div>
           <div v-if="index !== activities.length - 1" class="timeline-line"></div>
         </div>
@@ -153,20 +153,23 @@ export default {
 }
 
 .timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   position: relative;
-  margin-left: 1rem;
 }
 
 .timeline-item {
   display: flex;
-  margin-bottom: 1.5rem;
   position: relative;
+  margin-bottom: 1rem;
 }
 
 .timeline-marker {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-right: 1rem;
-  min-width: 24px;
 }
 
 .timeline-dot {
@@ -174,27 +177,29 @@ export default {
   width: 16px;
   background-color: rgb(132, 204, 22);
   border-radius: 50%;
-  position: absolute;
-  top: 0;
-  left: 4px;
+  position: relative;
   z-index: 2;
+  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.2);
 }
 
 .timeline-line {
   position: absolute;
-  left: 12px;
-  top: 20px;
-  bottom: -32px;
+  top: 16px;
+  left: 7px; /* Centers the line with the dot */
   width: 2px;
   background-color: rgba(132, 204, 22, 0.4);
+  height: calc(100% + 1.5rem); /* Extends the line to the next dot */
   z-index: 1;
 }
 
 .timeline-content {
   flex: 1;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   background: rgba(31, 41, 55, 0.5);
   border-radius: 0.375rem;
   border: 1px solid rgba(75, 85, 99, 0.2);
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 </style>

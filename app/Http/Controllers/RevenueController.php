@@ -88,16 +88,26 @@ class RevenueController extends Controller
             $last7Days = Carbon::now()->subDays(7);
             $last7DaysRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->where($completedDateColumn, '>=', $last7Days)
-                ->sum('price');
+                ->get()
+                ->sum(function($order) {
+                    return $order->price * $order->hours;
+                });
             
             // Calculate revenue for the last 30 days
             $last30Days = Carbon::now()->subDays(30);
             $last30DaysRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->where($completedDateColumn, '>=', $last30Days)
-                ->sum('price');
+                ->get()
+                ->sum(function($order) {
+                    return $order->price * $order->hours;
+                });
             
             // Calculate total revenue
-            $totalRevenue = WorkOrder::whereIn('status', $revenueStatuses)->sum('price');
+            $totalRevenue = WorkOrder::whereIn('status', $revenueStatuses)
+                ->get()
+                ->sum(function($order) {
+                    return $order->price * $order->hours;
+                });
             
             // Get monthly revenue data
             $monthlyRevenue = $this->getMonthlyRevenue($revenueStatuses, $completedDateColumn);
@@ -150,12 +160,21 @@ class RevenueController extends Controller
     {
         $yearStart = Carbon::now()->startOfYear();
         
-        $monthlyQuery = WorkOrder::whereIn('status', $revenueStatuses)
+        $monthlyRevenue = WorkOrder::whereIn('status', $revenueStatuses)
             ->where($completedDateColumn, '>=', $yearStart)
-            ->select(DB::raw("strftime('%m', $completedDateColumn) as month"), DB::raw('SUM(price) as revenue'))
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+            ->get()
+            ->groupBy(function($order) use ($completedDateColumn) {
+                return Carbon::parse($order->{$completedDateColumn})->format('m');
+            })
+            ->map(function($orders) {
+                return [
+                    'month' => Carbon::create()->month((int)$orders->first()->{$completedDateColumn}->format('m'))->format('M'),
+                    'revenue' => $orders->sum(function($order) {
+                        return $order->price * $order->hours;
+                    })
+                ];
+            })
+            ->values();
         
         $monthlyRevenue = $monthlyQuery->map(function ($item) {
             return [
@@ -179,12 +198,18 @@ class RevenueController extends Controller
     {
         $currentMonth = Carbon::now()->month;
         $lastMonth = Carbon::now()->subMonth()->month;            $currentMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
-            ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $currentMonth)])
-            ->sum('price');
+                ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $currentMonth)])
+                ->get()
+                ->sum(function($order) {
+                    return $order->price * $order->hours;
+                });
             
         $lastMonthRevenue = WorkOrder::whereIn('status', $revenueStatuses)
-            ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $lastMonth)])
-            ->sum('price');
+                ->whereRaw("strftime('%m', $completedDateColumn) = ?", [sprintf("%02d", $lastMonth)])
+                ->get()
+                ->sum(function($order) {
+                    return $order->price * $order->hours;
+                });
             
         $comparedToLastMonth = $lastMonthRevenue > 0
             ? round((($currentMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1)

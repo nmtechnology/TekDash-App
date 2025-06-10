@@ -77,6 +77,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('/work-orders/{id}/duplicate', [WorkOrderController::class, 'duplicate']);
     Route::post('/work-orders/{id}/update-field', [WorkOrderController::class, 'updateField'])->name('work-orders.update-field');
     Route::post('/work-orders/{id}/update-images', [WorkOrderController::class, 'updateImages'])->name('work-orders.update-images');
+    Route::post('/work-orders/{id}/update-total', [WorkOrderController::class, 'updateGrandTotal'])->name('work-orders.update-total');
     Route::delete('/work-orders/{id}/attachments', [WorkOrderController::class, 'deleteAttachment'])->name('work-orders.delete-attachment');
     Route::get('/work-orders/{id}/activities', [WorkOrderController::class, 'getActivities'])->name('work-orders.activities');
     
@@ -114,13 +115,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         $workOrders = \App\Models\WorkOrder::all();
         $totalCount = $workOrders->count();
         $completedCount = \App\Models\WorkOrder::where('status', 'completed')->count();
-        $totalRevenue = \App\Models\WorkOrder::where('status', 'completed')->sum('price');
+        $totalRevenue = \App\Models\WorkOrder::where('status', 'completed')->sum('grand_total');
         
         return [
             'totalWorkOrders' => $totalCount,
             'completedWorkOrders' => $completedCount,
             'totalRevenue' => $totalRevenue,
-            'sampleOrders' => \App\Models\WorkOrder::take(5)->get(['id', 'title', 'status', 'price', 'created_at', 'updated_at']),
+            'sampleOrders' => \App\Models\WorkOrder::take(5)->get(['id', 'title', 'status', 'grand_total', 'created_at', 'updated_at']),
             'dbColumns' => \Illuminate\Support\Facades\Schema::getColumnListing('work_orders'),
             'availableStatuses' => \App\Models\WorkOrder::distinct()->pluck('status'),
         ];
@@ -131,9 +132,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         // This is a simple example. Replace with your actual data fetching logic
         $completedCount = DB::table('work_orders')->where('status', 'Complete')->count();
         $pendingCount = DB::table('work_orders')->whereIn('status', ['Scheduled', 'In Progress', 'Part/Return'])->count();
-        $totalRevenue = DB::table('work_orders')->where('status', 'Complete')->sum('price');
-        $avgPrice = $completedCount > 0 
-            ? number_format(DB::table('work_orders')->where('status', 'Complete')->avg('price'), 2) 
+        $totalRevenue = DB::table('work_orders')->where('status', 'Complete')->sum('grand_total');
+        $avgRevenue = $completedCount > 0 
+            ? number_format(DB::table('work_orders')->where('status', 'Complete')->avg('grand_total'), 2) 
             : 0;
         
         // Get last month's data for comparison
@@ -148,7 +149,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             ->where('status', 'Complete')
             ->whereMonth('created_at', $lastMonth->month)
             ->whereYear('created_at', $lastMonth->year)
-            ->sum('price');
+            ->sum('grand_total');
         
         // Calculate changes
         $revenueChange = $lastMonthRevenue > 0 
@@ -178,8 +179,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                 'changeType' => 'neutral'
             ],
             [
-                'name' => 'Average Price', 
-                'value' => '$' . $avgPrice, 
+                'name' => 'Average Revenue', 
+                'value' => '$' . $avgRevenue, 
                 'change' => '0%', // No comparison yet
                 'changeType' => 'neutral'
             ],

@@ -24,14 +24,16 @@ class WorkOrder extends Model
         'status',
         'user_id',
         'images',
-        'price',
+        'hourly_rate',
         'customer_id',
         'file_attachments',
         'archived',
         'archived_at',
         'address',
         'hours',
-        'technician_id',  // Add this line
+        'travel_cost',
+        'has_travel',
+        'grand_total',
     ];
 
     protected $with = ['notes'];
@@ -40,11 +42,14 @@ class WorkOrder extends Model
     protected $casts = [
         'scheduled_at' => 'datetime',
         'images' => 'array',
-        'price' => 'decimal:2',
+        'hourly_rate' => 'decimal:2',
         'file_attachments' => 'array',
         'archived_at' => 'datetime',
         'status' => 'string',
         'hours' => 'decimal:2',
+        'travel_cost' => 'decimal:2',
+        'grand_total' => 'decimal:2',
+        'has_travel' => 'boolean',
         'archived' => 'boolean',
     ];
 
@@ -105,6 +110,11 @@ class WorkOrder extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function activities()
+    {
+        return $this->hasMany(WorkOrderActivity::class);
+    }
+
     /**
      * Get all attachments, combining file_attachments and images
      */
@@ -137,21 +147,5 @@ class WorkOrder extends Model
         }
         
         return $allAttachments;
-    }
-    
-    /**
-     * Get all activities for this work order
-     */
-    public function activities()
-    {
-        return $this->hasMany(WorkOrderActivity::class)->orderBy('created_at', 'desc');
-    }
-
-    /**
-     * Get the technician assigned to this work order.
-     */
-    public function technician()
-    {
-        return $this->belongsTo(Technician::class);
     }
 }

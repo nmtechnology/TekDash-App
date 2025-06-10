@@ -67,7 +67,7 @@
                                   Customer
                               </th>
                               <th class="px-6 py-3 text-left text-xs font-medium text-lime-400 uppercase tracking-wider">
-                                  Price
+                                  Revenue
                               </th>
                               <th class="px-6 py-3 text-left text-xs font-medium text-lime-400 uppercase tracking-wider">
                                   Status
@@ -151,7 +151,7 @@
                                   {{ order.customer?.name || 'N/A' }}
                               </td>
                               <td class="px-6 py-4 whitespace-nowrap">
-                                  {{ order.formatted_price }}
+                                  {{ order.formatted_revenue }}
                               </td>
                               <td class="px-6 py-4 whitespace-nowrap">
                                   <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
@@ -220,18 +220,18 @@ export default {
       }
     };
 
-    const formatPrice = (price) => {
+    const formatRevenue = (revenue) => {
       try {
-        // Convert string prices to numbers and handle null/undefined
-        const numPrice = price ? parseFloat(price) : 0;
-        if (isNaN(numPrice)) return '$0.00';
+        // Convert string revenues to numbers and handle null/undefined
+        const numRevenue = revenue ? parseFloat(revenue) : 0;
+        if (isNaN(numRevenue)) return '$0.00';
         
         return new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: 'USD',
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
-        }).format(numPrice);
+        }).format(numRevenue);
       } catch {
         return '$0.00';
       }
@@ -251,7 +251,7 @@ export default {
           },
           formatted_date: formatDate(order.created_at),
           formatted_archived_at: formatDate(order.archived_at),
-          formatted_price: formatPrice(order.price || 0)
+          formatted_revenue: formatRevenue(order.grand_total || 0)
         };
       } catch (err) {
         console.error('Error processing work order:', err);
