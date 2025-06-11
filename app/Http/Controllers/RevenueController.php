@@ -124,7 +124,6 @@ class RevenueController extends Controller
             $totalRevenue = WorkOrder::whereIn('status', $revenueStatuses)
                 ->get()
                 ->sum('grand_total');
-            Log::info('All work orders: ' . json_encode($allWorkOrders));
             
             // Get monthly revenue data
             $monthlyRevenue = $this->getMonthlyRevenue($revenueStatuses, $completedDateColumn);

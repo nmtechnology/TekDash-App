@@ -12,8 +12,15 @@ const state = reactive({
 
 // Create a function to load customers
 const loadCustomers = async () => {
+  console.log('customerStore: loadCustomers called. Current state:', { 
+    customersCount: state.customers.length, 
+    initialized: state.initialized,
+    isLoading: state.isLoading
+  });
+  
   if (state.customers.length > 0 && state.initialized) {
     // If customers are already loaded, no need to fetch them again
+    console.log('customerStore: Returning cached customers:', state.customers.length);
     return state.customers;
   }
 
@@ -21,14 +28,45 @@ const loadCustomers = async () => {
   state.error = null;
 
   try {
-    const response = await axios.get('/api/customers');
-    state.customers = response.data;
-    state.initialized = true;
-    return state.customers;
+    console.log('customerStore: Fetching customers from API');
+    const response = await axios.get('/api/customers', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    // Check if we have a valid response
+    if (response.data && typeof response.data === 'object') {
+      let customersData;
+      
+      // Case 1: Array of customers directly
+      if (Array.isArray(response.data)) {
+        customersData = response.data;
+        console.log('customerStore: API returned customers array:', customersData.length);
+      }
+      // Case 2: Object with data property containing array
+      else if (response.data.data && Array.isArray(response.data.data)) {
+        customersData = response.data.data;
+        console.log('customerStore: API returned customers in data property:', customersData.length);
+      }
+      // No valid customers array found
+      else {
+        console.error('customerStore: Invalid response format, no customers array:', response.data);
+        throw new Error('Invalid response format from API');
+      }
+      
+      state.customers = customersData;
+      state.initialized = true;
+      return state.customers;
+    } else {
+      console.error('customerStore: Invalid response type:', typeof response.data);
+      throw new Error('Invalid response type from API');
+    }
   } catch (error) {
-    console.error('Failed to load customers:', error);
+    console.error('customerStore: Failed to load customers:', error);
     state.error = error;
-    return [];
+    throw error; // Re-throw so calling components can handle it
   } finally {
     state.isLoading = false;
   }

@@ -8,7 +8,7 @@ import Search from '@/Components/Search.vue';
 import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 import AddCustomerButton from '@/Components/AddCustomerButton.vue';
 import AddTechnicianButton from '@/Components/AddTechnicianButton.vue';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 
@@ -196,6 +196,18 @@ const viewWorkOrder = (id) => {
 const openArchivedModal = () => {
     router.post(route('work-orders.archive', { workOrder: 0 }));
 };
+
+// Add this reference to track the AddWorkOrder component
+const addWorkOrderRef = ref(null);
+
+// Debug logs for the AddWorkOrder modal
+watch(() => addWorkOrderRef.value?.showModal, (newValue) => {
+  if (newValue === true) {
+    console.log('Dashboard: AddWorkOrder modal opened');
+  } else if (newValue === false) {
+    console.log('Dashboard: AddWorkOrder modal closed');
+  }
+}, { deep: true });
 </script>
 
 <template>
@@ -210,7 +222,7 @@ const openArchivedModal = () => {
             </h2>
             <div class="flex space-x-4">
               <TeamDropdown :teams="props.teams" />
-              <AddWorkOrder />
+              <AddWorkOrder ref="addWorkOrderRef" />
               <AddCustomerButton />
               <AddTechnicianButton />
             </div>

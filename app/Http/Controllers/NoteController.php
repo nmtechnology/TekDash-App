@@ -18,6 +18,21 @@ class NoteController extends Controller
             $workOrder = WorkOrder::findOrFail($workOrderId);
             $notes = $workOrder->notes()->with('user:id,name')->get();
             
+            // Add user initials to each note for front-end display
+            $notes = $notes->map(function ($note) {
+                $initials = '';
+                if ($note->user) {
+                    $nameParts = explode(' ', $note->user->name);
+                    if (count($nameParts) >= 2) {
+                        $initials = strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[count($nameParts)-1], 0, 1));
+                    } else if (count($nameParts) == 1) {
+                        $initials = strtoupper(substr($nameParts[0], 0, 2));
+                    }
+                }
+                $note->user_initials = $initials;
+                return $note;
+            });
+            
             return response()->json($notes);
         } catch (\Exception $e) {
             Log::error('Error fetching notes: ' . $e->getMessage());

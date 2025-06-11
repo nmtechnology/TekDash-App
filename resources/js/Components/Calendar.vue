@@ -49,30 +49,30 @@
               </div>
               
               <!-- Work order details -->
-              <!-- <div class="text-gray-300 space-y-3">
+                <div class="text-gray-300 space-y-3">
                 <div v-if="selectedWorkOrder.title" class="mb-2">
                   <h4 class="text-lg font-medium text-white">{{ selectedWorkOrder.title }}</h4>
                 </div>
                 
                 <div v-if="selectedWorkOrder.status" class="flex justify-between">
                   <div>
-                    <p class="text-sm text-gray-400">Status:</p>
-                    <span class="inline-flex px-2 py-1 text-xs rounded" 
-                          :class="{
-                            'bg-green-800 text-green-100': selectedWorkOrder.status.toLowerCase().includes('complete'),
-                            'bg-blue-800 text-blue-100': selectedWorkOrder.status.toLowerCase().includes('scheduled'),
-                            'bg-yellow-800 text-yellow-100': selectedWorkOrder.status.toLowerCase().includes('progress'),
-                            'bg-red-800 text-red-100': selectedWorkOrder.status.toLowerCase().includes('cancel'),
-                            'bg-purple-800 text-purple-100': selectedWorkOrder.status.toLowerCase().includes('part') || 
-                                                          selectedWorkOrder.status.toLowerCase().includes('return')
-                          }">
-                      {{ selectedWorkOrder.status }}
-                    </span>
+                  <p class="text-sm text-gray-400">Status:</p>
+                  <span class="inline-flex px-2 py-1 text-xs rounded" 
+                      :class="{
+                      'bg-green-800 text-green-100': selectedWorkOrder.status.toLowerCase().includes('complete'),
+                      'bg-blue-800 text-blue-100': selectedWorkOrder.status.toLowerCase().includes('scheduled'),
+                      'bg-yellow-800 text-yellow-100': selectedWorkOrder.status.toLowerCase().includes('progress'),
+                      'bg-red-800 text-red-100': selectedWorkOrder.status.toLowerCase().includes('cancel'),
+                      'bg-purple-800 text-purple-100': selectedWorkOrder.status.toLowerCase().includes('part') || 
+                                      selectedWorkOrder.status.toLowerCase().includes('return')
+                      }">
+                    {{ selectedWorkOrder.status }}
+                  </span>
                   </div>
                   
                   <div v-if="selectedWorkOrder.price">
-                    <p class="text-sm text-gray-400">Price:</p>
-                    <span>${{ selectedWorkOrder.price }}</span>
+                  <p class="text-sm text-gray-400">Price:</p>
+                  <span>${{ selectedWorkOrder.price }}</span>
                   </div>
                 </div>
                 
@@ -89,14 +89,14 @@
                 <div v-if="selectedWorkOrder.description" class="mt-4">
                   <p class="text-sm text-gray-400">Description:</p>
                   <p class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md">
-                    {{ selectedWorkOrder.description }}
+                  {{ selectedWorkOrder.description }}
                   </p>
                 </div>
                 
                 <div v-if="selectedWorkOrder.address" class="mt-4">
                   <p class="text-sm text-gray-400">Address:</p>
                   <p class="whitespace-pre-line mt-1 text-sm bg-gray-800 p-3 rounded-md">
-                    {{ selectedWorkOrder.address }}
+                  {{ selectedWorkOrder.address }}
                   </p>
                 </div>
                 
@@ -104,20 +104,20 @@
                   <p class="text-sm text-gray-400">Technician:</p>
                   <p class="text-white">{{ selectedWorkOrder.technician?.name || 'No Technician Assigned' }}</p>
                 </div>
-              </div>
+                </div>
             </div>
           </div>
         </div>
         
         <!-- Modal footer -->
-        <!-- <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <div class="bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <a :href="`/work-orders/${selectedWorkOrder.id}`" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">
             View Full Details
           </a>
           <button @click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-700 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
             Close
           </button>
-        </div> -->
+        </div>
         </div></div>
       </div></div> -->
   </div>
@@ -307,22 +307,58 @@ const calendarOptions: CalendarOptions = {
 
 async function fetchEvents() {
   try {
-    const response = await fetch('/calendar-data', {
+    console.log('Fetching calendar events...');
+    const response = await fetch('/api/work-orders-calendar', {
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
       },
       credentials: 'same-origin'
     });
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      console.error(`Calendar API error: ${response.status}`, await response.text());
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    const data = await response.json();
+    const rawResponse = await response.text();
+    let parsedData;
     
-    if (!Array.isArray(data)) throw new Error('Invalid data format');
+    try {
+      // Try to parse the response as JSON
+      parsedData = JSON.parse(rawResponse);
+    } catch (parseError) {
+      console.error('Failed to parse calendar response as JSON:', parseError);
+      throw new Error(`Invalid JSON response: ${rawResponse.substring(0, 100)}...`);
+    }
+    
+    // Handle different response formats
+    let calendarData;
+    
+    if (Array.isArray(parsedData)) {
+      // Direct array response
+      calendarData = parsedData;
+      console.log('Calendar data is a direct array:', calendarData.length);
+    } else if (parsedData && typeof parsedData === 'object') {
+      // Object response that might contain data property
+      if (Array.isArray(parsedData.data)) {
+        calendarData = parsedData.data;
+        console.log('Calendar data found in data property:', calendarData.length);
+      } else if (parsedData.events && Array.isArray(parsedData.events)) {
+        calendarData = parsedData.events;
+        console.log('Calendar data found in events property:', calendarData.length);
+      } else {
+        console.error('No array found in response object:', parsedData);
+        throw new Error('Response contains an object but no usable array data');
+      }
+    } else {
+      console.error('Unhandled response format:', typeof parsedData);
+      throw new Error(`Invalid data format: Expected array or object but got ${typeof parsedData}`);
+    }
 
-    // Debug: log the raw work order data
-    console.log('Raw calendar data:', data);
+    // Debug: log the processed calendar data
+    console.log('Processed calendar data:', calendarData);
     
     const events = data.flatMap(workOrder => {
       // Debug: log each work order's date fields to check format

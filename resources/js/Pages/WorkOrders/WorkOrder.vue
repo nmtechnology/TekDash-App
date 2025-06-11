@@ -9,7 +9,26 @@
         <!-- Header section -->
         <div class="glossy-header p-4 border-b border-gray-700">
           <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-gray-100">Work Order Details</h2>
+            <div class="flex-grow relative group">
+              <div v-if="!editingField.title" @click="startEditing('title')" class="text-xl font-semibold text-gray-100 cursor-pointer hover:text-indigo-400 flex items-center">
+                <span>{{ form.title || 'Untitled Work Order' }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </div>
+              <div v-else class="w-full max-w-xl">
+                <input 
+                  type="text" 
+                  v-model="form.title" 
+                  @blur="saveField('title')" 
+                  class="block w-full px-3 py-1 text-xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" 
+                  ref="titleInput"
+                  @keyup.enter="saveField('title')"
+                  placeholder="Enter work order title"
+                  autofocus
+                />
+              </div>
+            </div>
             <button @click="closeModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -23,9 +42,15 @@
           <!-- Work Order Status and Time -->
           <div class="mb-4 flex flex-wrap justify-between items-center">
             <div>
-              <span :class="getStatusClasses(props.workOrder.status)" @click="updateStatus">
+              <span v-if="!editingField.status" :class="getStatusClasses(props.workOrder.status)" @click="updateStatus" class="cursor-pointer">
                 {{ props.workOrder.status }}
               </span>
+              <div v-else class="inline-block">
+                <select v-model="form.status" @blur="saveField('status')" @change="saveField('status')" 
+                  class="bg-gray-800 border border-gray-600 rounded-md text-white px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                  <option v-for="status in VALID_STATUSES" :key="status" :value="status">{{ status }}</option>
+                </select>
+              </div>
             </div>
             <div class="text-gray-300 text-sm">
               {{ formatDate(props.workOrder.date_time) }}
@@ -35,17 +60,6 @@
           <!-- Work Order Details -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div class="space-y-4">
-              <!-- Title -->
-              <div>
-                <label class="block text-sm font-medium text-gray-300">Title</label>
-                <div v-if="!editingField.title" @click="startEditing('title')" class="text-gray-100">
-                  {{ form.title }}
-                </div>
-                <div v-else class="mt-1">
-                  <input type="text" v-model="form.title" @blur="saveField('title')" class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                </div>
-              </div>
-
               <!-- Description -->
               <div>
                 <label class="block text-sm font-medium text-gray-300">Description</label>
@@ -143,7 +157,7 @@
             <Messenger 
               :workOrderId="props.workOrder.id"
               :userId="props.workOrder.user_id"
-              :messages="props.workOrder.messages || []"
+              :initialNotes="props.workOrder.notes || []"
               :currentUserId="props.workOrder.user_id"
               :getUserName="getUserName"
               :getUserAvatar="getUserAvatar"
@@ -154,6 +168,17 @@
 
         <!-- Footer section with all action buttons -->
         <div class="glossy-footer p-4 border-t border-gray-700">
+          <!-- Upload progress bar - always visible in footer when uploading -->
+          <div v-if="isUploading" class="mb-3 w-full">
+            <div class="flex justify-between mb-1">
+              <span class="text-xs text-gray-300">Uploading Files...</span>
+              <span class="text-xs text-gray-300">{{ uploadProgress }}%</span>
+            </div>
+            <div class="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+              <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{width: uploadProgress + '%'}"></div>
+            </div>
+          </div>
+          
           <!-- Footer buttons -->
           <div class="sm:flex sm:justify-between">
             <!-- Save All button (left side) - only shown when in edit mode -->
@@ -206,9 +231,9 @@
            <!-- Get Signature button -->
             <button @click="getSignature" 
               class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-blue-400 font-bold hover:bg-blue-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-              :disabled="!hasPdfAttachment"
-              :class="{ 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-indigo-400': !hasPdfAttachment }"
-              :title="!hasPdfAttachment ? 'A PDF document must be attached to get signatures' : `Click to sign ${getFileName(mostRecentPdfAttachment)}`"
+              :disabled="!hasPdfAttachment || props.workOrder.status === 'Scheduled'"
+              :class="{ 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-indigo-400': !hasPdfAttachment || props.workOrder.status === 'Scheduled' }"
+              :title="getSignatureButtonTitle"
             >    
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">          
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.688 2.688 0 113.798 3.798L7.21 19.736a4.5 4.5 0 01-1.889 1.13l-2.7.9.9-2.7a4.5 4.5 0 011.13-1.89l12.75-12.75z" />
@@ -329,7 +354,7 @@
             <!-- Timeline Header -->
             <div class="glossy-header p-4 border-b border-gray-700">
               <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-lime-400">Activity Timeline</h2>
+                <h2 class="text-lg font-semibold text-lime-400">{{ form.title }} - Activity</h2>
                 <button @click="closeModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -391,7 +416,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import Timeline from '@/Components/Timeline.vue';
 import PdfThumbnail from '@/Components/PdfThumbnail.vue';
 import PdfViewer from '@/Components/PdfViewer.vue';
@@ -447,12 +472,24 @@ const form = ref({
   has_travel: props.workOrder?.has_travel || false
 });
 
+// Reference for the title input field to allow focusing
+const titleInput = ref(null);
+
 // Function to start editing a field
 const startEditing = (field) => {
   Object.keys(editingField.value).forEach(key => {
     editingField.value[key] = false;
   });
   editingField.value[field] = true;
+  
+  // If editing title, wait for the DOM to update then focus the input
+  if (field === 'title') {
+    nextTick(() => {
+      if (titleInput.value) {
+        titleInput.value.focus();
+      }
+    });
+  }
 };
 
 // Function to save a field
@@ -723,7 +760,8 @@ const duplicateWorkOrder = (event) => {
 };
 
 const getSignature = () => {
-  if (!hasPdfAttachment.value) return;
+  // Don't proceed if no PDF attachment or status is Scheduled
+  if (!hasPdfAttachment.value || props.workOrder.status === 'Scheduled') return;
       
   console.log('Getting signature for', getFileName(mostRecentPdfAttachment.value));
   // This would normally open a signature dialog
@@ -746,11 +784,29 @@ const getUserAvatar = (userId) => {
   return user?.profile_photo_url || null;
 };
 
+// Computed property for signature button title
+const getSignatureButtonTitle = computed(() => {
+  if (props.workOrder.status === 'Scheduled') {
+    return 'Cannot collect signatures for work orders in Scheduled status';
+  } else if (!hasPdfAttachment.value) {
+    return 'A PDF document must be attached to get signatures';
+  } else {
+    return `Click to sign ${getFileName(mostRecentPdfAttachment.value)}`;
+  }
+});
+
 // Computed property for total amount
 const totalAmount = computed(() => {
-  const laborTotal = (form.value.hourly_rate || 0) * (form.value.hours || 0);
-  const travelCost = form.value.has_travel ? (form.value.travel_cost || 0) : 0;
-  return laborTotal + travelCost;
+  // Ensure we're working with numbers by using parseFloat
+  const hourlyRate = parseFloat(form.value.hourly_rate || 0);
+  const hours = parseFloat(form.value.hours || 0);
+  const laborTotal = hourlyRate * hours;
+  
+  // Only include travel cost if has_travel is true
+  const travelCost = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
+  
+  // Add the values as numbers and round to 2 decimal places
+  return parseFloat((laborTotal + travelCost).toFixed(2));
 });
 
 // Format numbers to USD currency

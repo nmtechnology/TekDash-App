@@ -423,15 +423,62 @@ public function getDetails($id)
     ]);
 
     $note->save();
+    
+    // Refresh the relationship to ensure the note is in the workOrder's notes collection
+    $workOrder->refresh();
 
-    // Return note with user info for the frontend
+    // Get user initials for frontend display
+    $nameParts = explode(' ', $user->name);
+    $initials = '';
+    if (count($nameParts) >= 2) {
+        $initials = strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[count($nameParts)-1], 0, 1));
+    } else if (count($nameParts) == 1) {
+        $initials = strtoupper(substr($nameParts[0], 0, 2));
+    }
+
+    // Return enhanced note with user info for the frontend
     return response()->json([
         'id' => $note->id,
         'text' => $note->text,
         'user_id' => $user->id,
         'user_name' => $user->name,
+        'user_initials' => $initials,
         'created_at' => $note->created_at,
+        'work_order_id' => (int)$workOrderId,
+        'updated_at' => $note->updated_at,
     ], 201);
+}
+
+/**
+ * Add notes to a work order - Support for the Messenger component
+ * 
+ * @param Request $request
+ * @param int $workOrderId
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function addNotes(Request $request, $workOrderId)
+{
+    // Call the existing addNote method but track the activity specifically as a "messenger note"
+    $response = $this->addNote($request, $workOrderId);
+    
+    if ($response->getStatusCode() === 201) {
+        // Add an activity log for this note
+        $workOrder = WorkOrder::findOrFail($workOrderId);
+        $user = auth()->user();
+        
+        // Log the activity
+        WorkOrderActivity::create([
+            'work_order_id' => $workOrderId,
+            'user_id' => $user->id,
+            'field_name' => 'notes',
+            'old_value' => null,
+            'new_value' => $request->input('text'),
+            'action_type' => 'create',
+            'description' => 'Added note via messenger'
+        ]);
+    }
+    
+    return $response;
 }
 
 // Removed duplicate getWorkOrdersForCalendar method
@@ -615,12 +662,11 @@ public function updateImages(Request $request, $id)
             // Create activity log
             $workOrder->activities()->create([
                 'user_id' => auth()->id(),
-                'action' => 'update',
-                'description' => "Updated {$field}",
-                'details' => json_encode([
-                    'field' => $field,
-                    'value' => $value
-                ])
+                'action_type' => 'update',
+                'field_name' => $field,
+                'old_value' => $workOrder->getOriginal($field),
+                'new_value' => $value,
+                'description' => "Updated {$field}"
             ]);
             
             // Return success response

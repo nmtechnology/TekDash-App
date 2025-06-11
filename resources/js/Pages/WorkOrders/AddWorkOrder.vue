@@ -49,10 +49,10 @@
                 </div>
                 <select v-else v-model="form.customer_id" id="customer_id" name="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
                   <option value="" disabled>Select a customer</option>
-                  <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.business_name }}</option>
+                  <option v-for="customer in customersArray" :key="customer.id" :value="customer.id">{{ customer.business_name }}</option>
                 </select>
-                <div v-if="customers.length === 0 && !isLoadingCustomers" class="mt-2 text-red-400 text-sm">
-                  No customers found. Please add customers first.
+                <div v-if="(customersArray.length === 0 || loadError) && !isLoadingCustomers" class="mt-2 text-red-400 text-sm">
+                  {{ loadError ? 'Error loading customers. Please try again.' : 'No customers found. Please add customers first.' }}
                 </div>
               </div>
               <!-- Selection Summary -->
@@ -60,7 +60,7 @@
                 <div class="text-center">
                   <div class="text-sm text-gray-400">Selected Customer:</div>
                     <div class="text-lime-400 font-bold text-lg">
-                    {{ customers.find(c => c.id === form.customer_id)?.business_name || 'None selected' }}
+                    {{ getSelectedCustomerName() || 'None selected' }}
                     </div>
                 </div>
               </div>
@@ -769,6 +769,8 @@ const props = defineProps({
 const isLoading = ref(false);
 const isLoadingCustomers = ref(false);
 const customers = ref([]);
+const customersArray = ref([]);
+const loadError = ref(false);
 const showModal = ref(false);
 const currentStep = ref(1);
 const totalSteps = 9;
@@ -870,10 +872,22 @@ const formattedDateTime = computed(() => {
 
 // Methods
 const handleShowModal = () => {
+  console.log('AddWorkOrder: handleShowModal called');
   resetForm();
   showModal.value = true;
-  loadCustomers();
-  loadTechnicians();
+  
+  // Add a slight delay to ensure modal is fully shown before loading data
+  setTimeout(() => {
+    Promise.all([
+      loadCustomers().catch(err => console.error('Error loading customers:', err)),
+      loadTechnicians().catch(err => console.error('Error loading technicians:', err))
+    ]).then(() => {
+      console.log('AddWorkOrder: All data loaded', {
+        customersCount: customers.value.length,
+        techniciansCount: technicians.value.length
+      });
+    });
+  }, 100);
 };
 
 const handleHideModal = () => {
@@ -1214,9 +1228,14 @@ const getFileObjectURL = (file) => {
   if (!file) return '';
   if (file.previewUrl) return file.previewUrl;
   // Create a new object URL and cache it on the file object
-  const url = URL.createObjectURL(file);
-  file.previewUrl = url;
-  return url;
+  try {
+    const url = URL.createObjectURL(file);
+    file.previewUrl = url;
+    return url;
+  } catch (error) {
+    console.error('Error creating object URL for file:', error);
+    return '';
+  }
 };
 
 const updateFormDateTime = () => {
@@ -1351,27 +1370,136 @@ watch(showModal, (newValue) => {
 // Import the customer store
 import customerStore from '@/Stores/customerStore';
 
+// Helper function to get selected customer name
+const getSelectedCustomerName = () => {
+  if (!form.customer_id || !customersArray.value || !Array.isArray(customersArray.value)) {
+    return null;
+  }
+  const selectedCustomer = customersArray.value.find(c => c.id === form.customer_id);
+  return selectedCustomer ? selectedCustomer.business_name : null;
+};
+
 // Methods for API calls
 const loadCustomers = async () => {
+  console.log('AddWorkOrder: loadCustomers started');
   isLoadingCustomers.value = true;
+  loadError.value = false;
+  
   try {
-    // Use the customer store to load customers
-    customers.value = await customerStore.loadCustomers();
+    // Direct API call approach with explicit JSON header
+    const response = await axios.get('/api/customers', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    // Better response handling
+    console.log('AddWorkOrder: Customer response type:', typeof response.data);
+    
+    // Make sure we have a valid array response
+    if (response.data && Array.isArray(response.data)) {
+      console.log('AddWorkOrder: Customers loaded from direct API call:', response.data.length);
+      customers.value = response.data;
+      customersArray.value = response.data;
+      return response.data;
+    } 
+    // If not an array but a valid JSON object that has some data property
+    else if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+      console.log('AddWorkOrder: Customers found in data property:', response.data.data.length);
+      customers.value = response.data.data;
+      customersArray.value = response.data.data;
+      return response.data.data;
+    } 
+    // If we got a string, try to parse it as JSON
+    else if (typeof response.data === 'string') {
+      console.log('AddWorkOrder: Got string response, attempting to parse as JSON');
+      try {
+        const parsedData = JSON.parse(response.data);
+        if (Array.isArray(parsedData)) {
+          console.log('AddWorkOrder: Successfully parsed string to array:', parsedData.length);
+          customers.value = parsedData;
+          customersArray.value = parsedData;
+          return parsedData;
+        } else if (parsedData && typeof parsedData === 'object' && Array.isArray(parsedData.data)) {
+          console.log('AddWorkOrder: Successfully parsed string to object with data array:', parsedData.data.length);
+          customers.value = parsedData.data;
+          customersArray.value = parsedData.data;
+          return parsedData.data;
+        } else {
+          throw new Error('Parsed string but result is not a valid array format');
+        }
+      } catch (parseError) {
+        console.error('AddWorkOrder: Failed to parse string as JSON:', parseError);
+        throw new Error('Response is a string that could not be parsed as JSON');
+      }
+    }
+    // Not a valid format
+    else {
+      throw new Error('Invalid response format: Expected array but got ' + typeof response.data);
+    }
   } catch (error) {
+    console.error('AddWorkOrder: Failed to load customers:', error);
     customers.value = [];
-    console.error('Failed to load customers:', error);
+    customersArray.value = [];
+    loadError.value = true;
+    
+    // If customer ID is set from props, create a minimal customer array with just that customer
+    if (props.customerId && props.customerName) {
+      const singleCustomer = {
+        id: props.customerId,
+        business_name: props.customerName
+      };
+      customersArray.value = [singleCustomer];
+      console.log('AddWorkOrder: Using single customer from props:', singleCustomer);
+    }
+    
+    // Try alternative endpoint as fallback
+    try {
+      console.log('AddWorkOrder: Trying fallback endpoint for customers');
+      const fallbackResponse = await axios.get('/customers', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (fallbackResponse.data && Array.isArray(fallbackResponse.data)) {
+        console.log('AddWorkOrder: Customers loaded from fallback endpoint:', fallbackResponse.data.length);
+        customers.value = fallbackResponse.data;
+        customersArray.value = fallbackResponse.data;
+        loadError.value = false;
+        return fallbackResponse.data;
+      } else if (fallbackResponse.data && typeof fallbackResponse.data === 'object' && Array.isArray(fallbackResponse.data.data)) {
+        console.log('AddWorkOrder: Customers found in fallback data property:', fallbackResponse.data.data.length);
+        customers.value = fallbackResponse.data.data;
+        customersArray.value = fallbackResponse.data.data;
+        loadError.value = false;
+        return fallbackResponse.data.data;
+      }
+    } catch (fallbackError) {
+      console.error('AddWorkOrder: Fallback endpoint also failed:', fallbackError);
+    }
+    
+    return [];
   } finally {
     isLoadingCustomers.value = false;
   }
 };
 
 const loadTechnicians = async () => {
+  console.log('AddWorkOrder: loadTechnicians started');
   try {
     const response = await axios.get('/api/technicians/active');
+    console.log('AddWorkOrder: Technicians loaded:', response.data.length);
     technicians.value = response.data;
+    return response.data;
   } catch (error) {
+    console.error('AddWorkOrder: Failed to load technicians:', error);
     technicians.value = [];
-    console.error('Failed to load technicians:', error);
+    return [];
   }
 };
 </script>

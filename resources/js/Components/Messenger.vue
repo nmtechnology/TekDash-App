@@ -7,11 +7,11 @@
         v-for="note in notes" 
         :key="note.id"
       >
-        <!-- User avatar - Always show initials for consistent UI -->
+        <!-- User avatar - Show note author's initials -->
         <div class="chat-image">
           <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700 mask mask-hexagon">
-            <div class="avatar-initials text-white text-lg font-bold">
-              {{ getCurrentUserInitials() }}
+            <div class="avatar-initials text-white text-lg font-bold" :title="note.user_name || 'Unknown'">
+              {{ note.user_initials || getUserInitials(note.user_id) }}
             </div>
           </div>
         </div>
@@ -26,7 +26,7 @@
           <p class="message-text">{{ note.text }}</p>
         </div>
         <div class="chat-header text-xs text-blue-300 mb-1">
-          {{ formatTimestamp(note.created_at) }}
+          <span class="font-semibold">{{ note.user_name || 'User' }}</span> • {{ formatTimestamp(note.created_at) }}
         </div>
       </div>
     </div>
@@ -156,6 +156,36 @@ export default {
     const messageInput = ref(null);
     const showEmojiPickerModal = ref(false);
     
+    // Function to fetch notes from the server
+    const fetchNotes = () => {
+      axios.get(`/work-orders/${props.workOrderId}/notes`)
+        .then(response => {
+          // Process the notes data to ensure each note has user initials
+          notes.value = response.data.map(note => {
+            if (!note.user_initials && note.user && note.user.name) {
+              const nameParts = note.user.name.split(' ').filter(part => part.trim().length > 0);
+              if (nameParts.length >= 2) {
+                note.user_initials = (nameParts[0][0] + nameParts[nameParts.length-1][0]).toUpperCase();
+              } else if (nameParts.length === 1) {
+                note.user_initials = nameParts[0].substring(0, 2).toUpperCase();
+              }
+            }
+            return note;
+          });
+          
+          // Scroll to the most recent message
+          setTimeout(() => {
+            const messagesContainer = document.querySelector('.messages');
+            if (messagesContainer) {
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+          }, 100);
+        })
+        .catch(error => {
+          console.error('Error fetching notes:', error);
+        });
+    };
+    
     // Format timestamps for display
     const formatTimestamp = (timestamp) => {
       try {
@@ -252,13 +282,8 @@ export default {
     };
 
     onMounted(() => {
-      // Scroll to the most recent message
-      setTimeout(() => {
-        const messagesContainer = document.querySelector('.messages');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      }, 100);
+      // Fetch notes on component mount
+      fetchNotes();
     });
     
     // Improved add note functionality
@@ -314,6 +339,9 @@ export default {
         if (noteIndex !== -1 && response.data) {
           // Update the temporary note with the server data
           notes.value[noteIndex] = { ...response.data, isNew: false };
+          
+          // Fetch all notes to ensure we have the complete updated list
+          fetchNotes();
         }
       }).catch(error => {
         console.error('Error adding note:', error);
@@ -337,6 +365,7 @@ export default {
       getUserInitials,
       getCurrentUserInitials,
       addNote,
+      fetchNotes,
       showEmojiPickerModal,
       insertEmoji,
       getCsrfToken,

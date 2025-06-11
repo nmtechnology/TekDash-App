@@ -1,6 +1,20 @@
 <template>
   <div class="glossy-section timeline-container">
-    <h3 class="text-xl text-lime-400 font-semibold mb-4">Activity Timeline</h3>
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl text-lime-400 font-semibold"></h3>
+      <div class="flex space-x-2">
+        <button @click="setSortOrder('desc')" class="sort-button" :class="{ 'active': sortOrder === 'desc' }" title="Newest First">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+        </button>
+        <button @click="setSortOrder('asc')" class="sort-button" :class="{ 'active': sortOrder === 'asc' }" title="Oldest First">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4V4" />
+          </svg>
+        </button>
+      </div>
+    </div>
     
     <div v-if="loading" class="flex justify-center my-4">
       <svg class="animate-spin h-8 w-8 text-lime-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -64,6 +78,29 @@ export default {
   setup(props) {
     const activities = ref([]);
     const loading = ref(true);
+    const sortOrder = ref('desc'); // Default sort order is descending (newest first)
+    const rawActivities = ref([]); // Store the original unsorted activities
+    
+    // Function to set sort order and re-sort activities
+    const setSortOrder = (order) => {
+      sortOrder.value = order;
+      sortActivities();
+    };
+    
+    // Function to sort activities based on current sort order
+    const sortActivities = () => {
+      if (sortOrder.value === 'desc') {
+        // Sort by created_at in descending order (newest first)
+        activities.value = [...rawActivities.value].sort((a, b) => {
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
+      } else {
+        // Sort by created_at in ascending order (oldest first)
+        activities.value = [...rawActivities.value].sort((a, b) => {
+          return new Date(a.created_at) - new Date(b.created_at);
+        });
+      }
+    };
     
     const fetchActivities = async () => {
       try {
@@ -71,10 +108,10 @@ export default {
         const response = await axios.get(`/work-orders/${props.workOrderId}/activities`);
         
         if (response.data.success) {
-          // Sort activities by created_at in descending order (newest first)
-          activities.value = response.data.activities.sort((a, b) => {
-            return new Date(b.created_at) - new Date(a.created_at);
-          });
+          // Store the raw activities
+          rawActivities.value = response.data.activities;
+          // Sort according to current sort order
+          sortActivities();
         } else {
           console.error('Failed to fetch activities:', response.data.error);
         }
@@ -135,10 +172,10 @@ export default {
       // Listen for timeline refresh events
       document.addEventListener('timeline-refresh', (event) => {
         if (event.detail && event.detail.activities) {
-          // Update activities directly from the event data, sorting newest first
-          activities.value = event.detail.activities.sort((a, b) => {
-            return new Date(b.created_at) - new Date(a.created_at);
-          });
+          // Store the raw activities from the event
+          rawActivities.value = event.detail.activities;
+          // Sort according to current sort order
+          sortActivities();
         } else {
           // If no activities in event, fetch them
           fetchActivities();
@@ -149,6 +186,8 @@ export default {
     return {
       activities,
       loading,
+      sortOrder,
+      setSortOrder,
       formatDate,
       getActivityTitle,
       getActivityDescription,
@@ -217,5 +256,29 @@ export default {
   position: relative;
   z-index: 2;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.sort-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: rgba(31, 41, 55, 0.5);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 4px;
+  color: rgba(132, 204, 22, 0.7);
+  transition: all 0.2s;
+}
+
+.sort-button:hover {
+  background-color: rgba(31, 41, 55, 0.8);
+  color: rgb(132, 204, 22);
+}
+
+.sort-button.active {
+  background-color: rgba(132, 204, 22, 0.2);
+  border-color: rgba(132, 204, 22, 0.5);
+  color: rgb(132, 204, 22);
 }
 </style>
