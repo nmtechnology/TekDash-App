@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WorkOrderActivity;
 use Inertia\Inertia;
 use App\Models\Note;
+use App\Models\Attachment;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -693,7 +694,7 @@ public function updateImages(Request $request, $id)
      * Upload attachments for a work order
      *
      * @param Request $request
-     * @param WorkOrder $workOrder
+     * @param int|WorkOrder $workOrder
      * @return \Illuminate\Http\JsonResponse
      */
     public function uploadAttachments(Request $request, $workOrder)
@@ -720,30 +721,35 @@ public function updateImages(Request $request, $id)
                 // Generate a URL for the stored file
                 $url = asset('storage/' . $path);
                 
-                // Store attachment info in the database
-                $attachment = $workOrder->attachments()->create([
+                // Store attachment info in the database using the new Attachment model
+                $attachment = new Attachment([
+                    'work_order_id' => $workOrder->id,
                     'file_path' => $path,
                     'file_name' => $file->getClientOriginalName(),
                     'file_type' => $file->getClientMimeType(),
                     'file_size' => $file->getSize(),
                     'url' => $url
                 ]);
+                $attachment->save();
                 
                 $attachments[] = $url;
             }
             
             // Log the activity
-            $workOrder->activities()->create([
+            WorkOrderActivity::create([
+                'work_order_id' => $workOrder->id,
                 'user_id' => auth()->id() ?? 1,
-                'action' => 'upload',
-                'description' => count($attachments) . ' files uploaded',
-                'details' => json_encode($attachments)
+                'field_name' => 'file_attachments',
+                'old_value' => null,
+                'new_value' => json_encode($attachments),
+                'action_type' => 'update',
+                'description' => count($attachments) . ' files uploaded'
             ]);
             
             return response()->json([
                 'success' => true,
                 'message' => 'Files uploaded successfully',
-                'attachments' => $workOrder->attachments,
+                'attachments' => $workOrder->attachments()->get(),
                 'workOrder' => $workOrder->load('attachments')
             ]);
         } catch (\Exception $e) {
@@ -1037,6 +1043,64 @@ public function updateImages(Request $request, $id)
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update work order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete an attachment from a work order
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteAttachment(Request $request)
+    {
+        try {
+            $request->validate([
+                'attachment_id' => 'required|exists:attachments,id'
+            ]);
+
+            $attachmentId = $request->input('attachment_id');
+            $attachment = Attachment::findOrFail($attachmentId);
+            $workOrderId = $attachment->work_order_id;
+            $filePath = $attachment->file_path;
+            
+            // Check if user has permission to delete this attachment
+            if (!auth()->user()->can('update', WorkOrder::find($workOrderId))) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'You do not have permission to delete this attachment'
+                ], 403);
+            }
+            
+            // Delete file from storage
+            if (\Storage::disk('public')->exists($filePath)) {
+                \Storage::disk('public')->delete($filePath);
+            }
+            
+            // Delete the attachment record
+            $attachment->delete();
+            
+            // Log activity
+            WorkOrderActivity::create([
+                'work_order_id' => $workOrderId,
+                'user_id' => auth()->id(),
+                'field_name' => 'attachments',
+                'old_value' => $filePath,
+                'new_value' => null,
+                'action_type' => 'delete',
+                'description' => 'Deleted attachment: ' . $attachment->file_name
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Attachment deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting attachment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete attachment: ' . $e->getMessage()
             ], 500);
         }
     }

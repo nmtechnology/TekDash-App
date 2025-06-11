@@ -116,6 +116,14 @@ class WorkOrder extends Model
     }
 
     /**
+     * Get the attachments for the work order.
+     */
+    public function attachments()
+    {
+        return $this->hasMany(Attachment::class);
+    }
+
+    /**
      * Get all attachments, combining file_attachments and images
      */
     public function getAllAttachmentsAttribute()
