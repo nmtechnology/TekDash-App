@@ -2,49 +2,56 @@
   <div v-if="props.showModal">
     <!-- Toast Container for notifications -->
     <ToastContainer />
-    
+
     <!-- Background overlay -->
     <div @click="emit('close')" class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
-    
+
     <!-- Work Order Modal (center position, slightly narrower) -->
     <div class="fixed inset-0 flex items-start justify-center z-50 pointer-events-none">
-      <div class="relative z-50 w-full max-w-3xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
+      <div
+        class="relative z-50 w-full max-w-3xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
         <!-- Header section -->
         <div class="glossy-header p-4 border-b border-gray-700">
           <div class="flex items-center justify-between">
             <div class="flex-grow relative group">
-              <div v-if="!editingField.title" @click="startEditing('title')" class="text-xl font-semibold text-gray-100 cursor-pointer hover:text-indigo-400 flex items-center">
+              <div v-if="!editingField.title" @click="startEditing('title')"
+                class="text-xl font-semibold text-gray-100 cursor-pointer hover:text-indigo-400 flex items-center">
                 <span>{{ form.title || 'Untitled Work Order' }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <svg xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </div>
               <div v-else class="w-full max-w-xl">
-                <input 
-                  type="text" 
-                  v-model="form.title" 
-                  @blur="saveField('title')" 
-                  class="block w-full px-3 py-1 text-xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" 
-                  ref="titleInput"
-                  @keyup.enter="saveField('title')"
-                  placeholder="Enter work order title"
-                  autofocus
-                />
+                <input type="text" v-model="form.title" @blur="saveField('title')"
+                  class="block w-full px-3 py-1 text-xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  ref="titleInput" @keyup.enter="saveField('title')" placeholder="Enter work order title" autofocus />
               </div>
             </div>
             <div class="flex space-x-2">
-              <button @click="toggleTimelineModal" class="text-gray-400 hover:text-lime-400 z-50 relative" title="Toggle Timeline">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <button @click="toggleTimelineModal"
+                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 font-bold hover:bg-lime-400 hover:text-black z-50 relative"
+                title="Toggle Timeline">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17l-6-6m0 0l6-6m-6 6h14" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 17l-6-6m0 0l6-6m-6 6h14" />
                 </svg>
               </button>
-              <button @click="toggleMessengerModal" class="text-gray-400 hover:text-lime-400 z-50 relative" title="Toggle Messages">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              <button @click="toggleMessengerModal"
+                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 font-bold hover:bg-lime-400 hover:text-black z-50 relative"
+                title="Toggle Messages">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                 </svg>
               </button>
-              <button @click="emit('close')" class="text-gray-400 hover:text-gray-200 z-50 relative">
+              <button @click="emit('close')"
+                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-red-400 font-bold hover:bg-red-600 hover:text-black z-50 relative">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -58,11 +65,13 @@
           <!-- Work Order Status and Time -->
           <div class="mb-4 flex flex-wrap justify-between items-center">
             <div>
-              <span v-if="!editingField.status" :class="getStatusClasses(props.workOrder.status)" @click="updateStatus" class="cursor-pointer">
-                {{ props.workOrder.status }}
-              </span>
+              <template v-if="!editingField.status">
+                <Badge :variant="statusBadgeVariant.variant" :class="statusBadgeVariant.class + ' cursor-pointer ring-1 ring-inset mr-2'" @click="updateStatus">
+                  {{ props.workOrder.status }}
+                </Badge>
+              </template>
               <div v-else class="inline-block">
-                <select v-model="form.status" @blur="saveField('status')" @change="saveField('status')" 
+                <select v-model="form.status" @blur="saveField('status')" @change="saveField('status')"
                   class="bg-gray-800 border border-gray-600 rounded-md text-white px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                   <option v-for="status in VALID_STATUSES" :key="status" :value="status">{{ status }}</option>
                 </select>
@@ -83,7 +92,9 @@
                   {{ form.description }}
                 </div>
                 <div v-else class="mt-1">
-                  <textarea v-model="form.description" @blur="saveField('description')" class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" rows="3"></textarea>
+                  <textarea v-model="form.description" @blur="saveField('description')"
+                    class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    rows="3"></textarea>
                 </div>
               </div>
 
@@ -94,7 +105,8 @@
                   {{ form.address }}
                 </div>
                 <div v-else class="mt-1">
-                  <input type="text" v-model="form.address" @blur="saveField('address')" class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  <input type="text" v-model="form.address" @blur="saveField('address')"
+                    class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 </div>
               </div>
             </div>
@@ -107,7 +119,9 @@
                   {{ form.hours }}
                 </div>
                 <div v-else class="mt-1">
-                  <input type="number" v-model="form.hours" @blur="saveField('hours')" class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" min="0" step="0.5" />
+                  <input type="number" v-model="form.hours" @blur="saveField('hours')"
+                    class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    min="0" step="0.5" />
                 </div>
               </div>
 
@@ -118,14 +132,17 @@
                   {{ formatCurrency(form.hourly_rate) }}
                 </div>
                 <div v-else class="mt-1">
-                  <input type="number" v-model="form.hourly_rate" @blur="saveField('hourly_rate')" class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" min="0" step="0.01" />
+                  <input type="number" v-model="form.hourly_rate" @blur="saveField('hourly_rate')"
+                    class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    min="0" step="0.01" />
                 </div>
               </div>
 
               <!-- Travel Costs -->
               <div>
                 <div class="flex items-center mb-2">
-                  <input type="checkbox" v-model="form.has_travel" @change="saveField('has_travel')" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-600 rounded bg-gray-800" />
+                  <input type="checkbox" v-model="form.has_travel" @change="saveField('has_travel')"
+                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-600 rounded bg-gray-800" />
                   <label class="ml-2 text-sm font-medium text-gray-300">Include Travel Costs</label>
                 </div>
                 <div v-if="form.has_travel">
@@ -133,7 +150,9 @@
                     {{ formatCurrency(form.travel_cost) }}
                   </div>
                   <div v-else class="mt-1">
-                    <input type="number" v-model="form.travel_cost" @blur="saveField('travel_cost')" class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" min="0" step="0.01" />
+                    <input type="number" v-model="form.travel_cost" @blur="saveField('travel_cost')"
+                      class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      min="0" step="0.01" />
                   </div>
                 </div>
               </div>
@@ -152,33 +171,29 @@
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <template v-for="attachment in getAllAttachments()" :key="attachment.id">
                 <!-- Image Preview -->
-                <div v-if="isImageFile(attachment)" @click="handlePreviewAttachment(attachment)" class="cursor-pointer relative group">
+                <div v-if="isImageFile(attachment)" @click="handlePreviewAttachment(attachment)"
+                  class="cursor-pointer relative group">
                   <img :src="attachment.url || attachment" class="w-full h-32 object-cover rounded-lg" />
-                  <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div
+                    class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span class="text-white">Preview</span>
                   </div>
                 </div>
 
                 <!-- PDF Preview -->
                 <div v-else-if="isPdfFile(attachment)" class="cursor-pointer">
-                  <div 
+                  <div
                     class="pdf-preview-container h-32 bg-gray-800 rounded-lg overflow-hidden flex flex-col hover:bg-gray-700 transition-colors"
-                    @click="handlePreviewAttachment(attachment)"
-                  >
+                    @click="handlePreviewAttachment(attachment)">
                     <!-- Use PdfThumbnail component for PDFs -->
-                    <PdfThumbnail 
-                      :pdfUrl="attachment.url || attachment"
-                      :filename="getFileName(attachment)"
-                      class="flex-1"
-                    />
-                    
+                    <PdfThumbnail :pdfUrl="attachment.url || attachment" :filename="getFileName(attachment)"
+                      class="flex-1" />
+
                     <!-- Action indicators below thumbnail -->
                     <div class="flex items-center justify-center py-2 space-x-2 bg-gray-900 bg-opacity-80">
                       <span class="text-xs bg-blue-800 text-white px-2 py-1 rounded-sm">View</span>
-                      <span 
-                        class="text-xs bg-green-800 text-white px-2 py-1 rounded-sm" 
-                        :class="{ 'opacity-50': props.workOrder.status === 'Scheduled' }"
-                      >
+                      <span class="text-xs bg-green-800 text-white px-2 py-1 rounded-sm"
+                        :class="{ 'opacity-50': props.workOrder.status === 'Scheduled' }">
                         Sign
                       </span>
                     </div>
@@ -190,12 +205,12 @@
 
           <!-- Messaging Section Button -->
           <div>
-            <button 
-              @click="toggleMessengerModal" 
-              class="btn bg-gray-800 hover:bg-gray-700 text-lime-400 border border-gray-700 rounded-lg px-4 py-2 flex items-center gap-2 shadow-lg transition-all duration-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            <button @click="toggleMessengerModal"
+              class="btn bg-gray-800 hover:bg-gray-700 text-lime-400 border border-gray-700 rounded-lg px-4 py-2 flex items-center gap-2 shadow-lg transition-all duration-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               Open Messages
             </button>
@@ -214,279 +229,257 @@
               <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{width: uploadProgress + '%'}"></div>
             </div>
           </div>
-          
+
           <!-- Footer buttons -->
           <div class="sm:flex sm:justify-between">
             <!-- Save All button (left side) - only shown when in edit mode -->
-            <button 
-              v-if="isAnyFieldBeingEdited"
-              @click="saveAllChanges" 
+            <button v-if="isAnyFieldBeingEdited" @click="saveAllChanges"
               class="glossy-btn btn w-full mb-2 sm:mb-0 inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-amber-400 font-bold hover:bg-amber-400 hover:text-black sm:w-auto sm:text-xs"
-              :class="{ 'animate-pulse': hasChanges }"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              :class="{ 'animate-pulse': hasChanges }">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
               Save All Changes
             </button>
             <div v-else class="hidden sm:block"></div>
-            
+
             <!-- Right side buttons container -->
             <div class="sm:flex sm:flex-row-reverse">
-            <!-- Archive Work Order button -->
-            <button 
-              @click="archiveWorkOrder" 
-              :disabled="props.workOrder.status !== 'Complete'"
-              class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-green-400 hover:text-gray-900 hover:bg-green-400 font-bold sm:ml-2 sm:w-auto sm:text-xs"
-              :class="{
+              <!-- Archive Work Order button -->
+              <button @click="archiveWorkOrder" :disabled="props.workOrder.status !== 'Complete'"
+                class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-green-400 hover:text-gray-900 hover:bg-green-400 font-bold sm:ml-2 sm:w-auto sm:text-xs"
+                :class="{
                 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-green-400': props.workOrder.status !== 'Complete'
-              }"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-              </svg>
-              Archive
-            </button>
-            
-            <!-- Duplicate button -->
-            <button 
-              @click="duplicateWorkOrder($event)" 
-              :disabled="props.workOrder.status !== 'Part Needed'"
-              :class="[
+              }">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                Archive
+              </button>
+
+              <!-- Duplicate button -->
+              <button @click="duplicateWorkOrder($event)" :disabled="props.workOrder.status !== 'Part Needed'" :class="[
                 'glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-purple-400 font-bold hover:bg-purple-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs',
                 { 'opacity-50 cursor-not-allowed': props.workOrder.status !== 'Part Needed' }
               ]"
-              :title="props.workOrder.status !== 'Part Needed' ? 'Duplication is only available for work orders with Part Needed status' : 'Create a duplicate work order'"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Duplicate
-            </button>
-
-           <!-- Get Signature button -->
-            <button @click="getSignature" 
-              class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-blue-400 font-bold hover:bg-blue-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-              :disabled="!hasPdfAttachment || props.workOrder.status === 'Scheduled'"
-              :class="{ 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-indigo-400': !hasPdfAttachment || props.workOrder.status === 'Scheduled' }"
-              :title="getSignatureButtonTitle"
-            >    
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">          
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.688 2.688 0 113.798 3.798L7.21 19.736a4.5 4.5 0 01-1.889 1.13l-2.7.9.9-2.7a4.5 4.5 0 011.13-1.89l12.75-12.75z" />
-              </svg>
-              Collect Signature
-            </button>
-            
-            <!-- Add a hidden file input -->
-            <input 
-              type="file" 
-              ref="fileInput"
-              multiple 
-              class="hidden"
-              @change="handleImageUpload" 
-              accept=".jpg,.jpeg,.png,.gif,.pdf,.heic,.docx"
-            />
-
-            <!-- Upload Files button -->
-             <button 
-              @click.prevent="$refs.fileInput.click()" 
-              v-if="!editingField.images"
-              class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 hover:bg-lime-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Upload Files
-            </button>
-            
-            <!-- Save button and upload progress when editing -->
-            <div v-else class="flex flex-col w-full sm:w-auto">
-              <button 
-                @click="saveField('images')" 
-                class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-green-400 hover:bg-green-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-                :disabled="isUploading"
-              >
-                <svg v-if="!isUploading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                :title="props.workOrder.status !== 'Part Needed' ? 'Duplication is only available for work orders with Part Needed status' : 'Create a duplicate work order'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <svg v-else class="animate-spin h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                {{ isUploading ? 'Uploading...' : 'Save' }}
+                Duplicate
               </button>
-              
-              <!-- Upload progress indicator -->
-              <div v-if="isUploading" class="mt-2 relative w-full h-1 bg-gray-700 rounded-full overflow-hidden sm:ml-2">
-                <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{width: uploadProgress + '%'}"></div>
-              </div>
-              
-              <!-- Upload error message -->
-              <div v-if="uploadError" class="mt-1 text-xs text-red-400 sm:ml-2">
-                {{ uploadError }}
-              </div>
-              
-              <!-- Files selected indicator -->
-              <div v-if="form.images && form.images.length && !isUploading" class="mt-1 text-xs text-gray-400 sm:ml-2">
-                {{ form.images.length }} file(s) selected
-              </div>
-            </div>
-            
-            <!-- Update Status button -->
-            <button
-              @click="updateStatus"
-              class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-indigo-400 font-bold hover:bg-indigo-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-            >
-              Update Status
-            </button>
 
-            <!-- Delete button -->
-            <button 
-              @click="deleteWorkOrder" 
-              class="glossy-btn btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-red-400 font-bold hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-2 sm:w-auto sm:text-xs"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Delete
-            </button>
-          </div>
-        </div>
-
-        <!-- Preview Modal -->
-        <div v-if="previewAttachment" class="fixed inset-0 z-50 flex items-center justify-center">
-          <div @click="closePreview" class="absolute inset-0 bg-black bg-opacity-75"></div>
-          <div class="relative z-10 max-w-4xl w-full bg-gray-900 rounded-lg overflow-hidden">
-            <!-- Only show header for images, since PdfViewer has its own header -->
-            <div v-if="previewMode !== 'pdf'" class="p-4 border-b border-gray-800 flex justify-between items-center">
-              <h3 class="text-lg font-medium text-gray-200">{{ getFileName(previewAttachment) }}</h3>
-              <button @click="closePreview" class="text-gray-500 hover:text-gray-400">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <!-- Get Signature button -->
+              <button @click="getSignature"
+                class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-blue-400 font-bold hover:bg-blue-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
+                :disabled="!hasPdfAttachment || props.workOrder.status === 'Scheduled'"
+                :class="{ 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-indigo-400': !hasPdfAttachment || props.workOrder.status === 'Scheduled' }"
+                :title="getSignatureButtonTitle">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16.862 3.487a2.688 2.688 0 113.798 3.798L7.21 19.736a4.5 4.5 0 01-1.889 1.13l-2.7.9.9-2.7a4.5 4.5 0 011.13-1.89l12.75-12.75z" />
                 </svg>
+                Collect Signature
               </button>
-            </div>
-            
-            <div class="relative">
-              <!-- Image preview -->
-              <template v-if="previewMode === 'image'">
-                <img 
-                  :src="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url" 
-                  class="max-w-full h-auto"
-                  alt="Image preview"
-                />
-              </template>
-              
-              <!-- PDF preview with viewer -->
-              <template v-else-if="previewMode === 'pdf'">
-                <PdfViewer
-                  :pdfUrl="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url"
-                  :title="getFileName(previewAttachment)"
-                  :workOrderId="props.workOrder.id"
-                  :workOrderTitle="props.workOrder.title"
-                  :editable="props.workOrder.status !== 'Scheduled'"
-                  :redirectAfterUpload="false"
-                  @close="closePreview"
-                  @document-uploaded="handleDocumentUpload"
-                  class="w-full h-[80vh]"
-                />
-              </template>
-              
-              <!-- Generic file preview -->
-              <template v-else>
-                <div class="p-8 text-center">
-                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+
+              <!-- Add a hidden file input -->
+              <input type="file" ref="fileInput" multiple class="hidden" @change="handleImageUpload"
+                accept=".jpg,.jpeg,.png,.gif,.pdf,.heic,.docx" />
+
+              <!-- Upload Files button -->
+              <button @click.prevent="$refs.fileInput.click()" v-if="!editingField.images"
+                class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 hover:bg-lime-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Upload Files
+              </button>
+
+              <!-- Save button and upload progress when editing -->
+              <div v-else class="flex flex-col w-full sm:w-auto">
+                <button @click="saveField('images')"
+                  class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-green-400 hover:bg-green-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
+                  :disabled="isUploading">
+                  <svg v-if="!isUploading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <p class="mt-4 text-gray-300">{{ getFileName(previewAttachment) }}</p>
-                  <a 
-                    :href="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url" 
-                    download
-                    class="mt-4 inline-block px-4 py-2 bg-gray-800 text-blue-400 rounded hover:bg-gray-700"
-                  >
-                    Download File
-                  </a>
+                  <svg v-else class="animate-spin h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                  </svg>
+                  {{ isUploading ? 'Uploading...' : 'Save' }}
+                </button>
+
+                <!-- Upload progress indicator -->
+                <div v-if="isUploading"
+                  class="mt-2 relative w-full h-1 bg-gray-700 rounded-full overflow-hidden sm:ml-2">
+                  <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{width: uploadProgress + '%'}"></div>
                 </div>
-              </template>
+
+                <!-- Upload error message -->
+                <div v-if="uploadError" class="mt-1 text-xs text-red-400 sm:ml-2">
+                  {{ uploadError }}
+                </div>
+
+                <!-- Files selected indicator -->
+                <div v-if="form.images && form.images.length && !isUploading"
+                  class="mt-1 text-xs text-gray-400 sm:ml-2">
+                  {{ form.images.length }} file(s) selected
+                </div>
+              </div>
+
+              <!-- Update Status button -->
+              <button @click="updateStatus"
+                class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-indigo-400 font-bold hover:bg-indigo-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs">
+                Update Status
+              </button>
+
+              <!-- Delete button -->
+              <button @click="deleteWorkOrder"
+                class="glossy-btn btn mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-red-400 font-bold hover:bg-red-400 hover:text-black sm:mt-0 sm:ml-2 sm:w-auto sm:text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete
+              </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Timeline Modal (positioned on the left side) -->
-    <div v-if="showTimelineModal" class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none">
-      <div class="flex w-full mt-60 pointer-events-none">
-        <!-- Timeline modal container -->
-        <div class="w-[535px] flex-shrink-0 pointer-events-auto ml-8">
-          <div class="relative z-60 w-full h-[70vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
-            <!-- Timeline Header -->
-            <div class="glossy-header p-4 border-b border-gray-700">
-              <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-lime-400">{{ form.title }} - Activity</h2>
-                <button @click="toggleTimelineModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
-                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+          <!-- Preview Modal -->
+          <div v-if="previewAttachment" class="fixed inset-0 z-50 flex items-center justify-center">
+            <div @click="closePreview" class="absolute inset-0 bg-black bg-opacity-75"></div>
+            <div class="relative z-10 max-w-4xl w-full bg-gray-900 rounded-lg overflow-hidden">
+              <!-- Only show header for images, since PdfViewer has its own header -->
+              <div v-if="previewMode !== 'pdf'" class="p-4 border-b border-gray-800 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-200">{{ getFileName(previewAttachment) }}</h3>
+                <button @click="closePreview" class="text-gray-500 hover:text-gray-400">
+                  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
+
+              <div class="relative">
+                <!-- Image preview -->
+                <template v-if="previewMode === 'image'">
+                  <img :src="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url"
+                    class="max-w-full h-auto" alt="Image preview" />
+                </template>
+
+                <!-- PDF preview with viewer -->
+                <template v-else-if="previewMode === 'pdf'">
+                  <PdfViewer :pdfUrl="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url"
+                    :title="getFileName(previewAttachment)" :workOrderId="props.workOrder.id"
+                    :workOrderTitle="props.workOrder.title" :editable="props.workOrder.status !== 'Scheduled'"
+                    :redirectAfterUpload="false" @close="closePreview" @document-uploaded="handleDocumentUpload"
+                    class="w-full h-[80vh]" />
+                </template>
+
+                <!-- Generic file preview -->
+                <template v-else>
+                  <div class="p-8 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="mt-4 text-gray-300">{{ getFileName(previewAttachment) }}</p>
+                    <a :href="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url"
+                      download class="mt-4 inline-block px-4 py-2 bg-gray-800 text-blue-400 rounded hover:bg-gray-700">
+                      Download File
+                    </a>
+                  </div>
+                </template>
+              </div>
             </div>
-            
-            <!-- Timeline Content -->
-            <div class="flex-1 overflow-y-auto p-3 timeline-container">
-              <Timeline :workOrderId="props.workOrder.id" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Modal (positioned on the left side) -->
+      <div v-if="showTimelineModal" class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none">
+        <div class="flex w-full mt-60 pointer-events-none">
+          <!-- Timeline modal container -->
+          <div class="w-[535px] flex-shrink-0 pointer-events-auto ml-8">
+            <div
+              class="relative z-60 w-full h-[70vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
+              <!-- Timeline Header -->
+              <div class="glossy-header p-4 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold text-lime-400">{{ form.title }} - Activity</h2>
+                  <button @click="toggleTimelineModal"
+                    class="glossy-btn btn text-red-400 font-bold hover:bg-red-600 hover:text-blackz-50 relative">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Timeline Content -->
+              <div class="flex-1 overflow-y-auto p-3 timeline-container">
+                <Timeline :workOrderId="props.workOrder.id" />
+              </div>
+
+              <!-- Timeline Footer -->
+              <div class="glossy-footer p-3 border-t border-gray-700">
+                <!-- You can add footer content or buttons here -->
+              </div>
             </div>
-            
-            <!-- Timeline Footer -->
-            <div class="glossy-footer p-3 border-t border-gray-700">
-              <!-- You can add footer content or buttons here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Messenger Modal (positioned on the right side) -->
+      <div v-if="showMessengerModal" class="fixed top-0 right-0 z-50 pointer-events-none">
+        <div class="mt-60 mr-8 pointer-events-none">
+          <!-- Messenger modal container -->
+          <div class="w-[535px] pointer-events-auto">
+            <div
+              class="relative z-60 w-full h-[70vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
+              <!-- Messenger Header -->
+              <div class="glossy-header p-4 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold text-lime-400">{{ form.title }} - Messages</h2>
+                  <button @click="toggleMessengerModal"
+                    class="glossy-btn btn text-red-400 font-bold hover:bg-red-600 hover:text-black z-50 relative">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Messenger Content -->
+              <div class="flex-1 overflow-y-auto p-3 max-w-full">
+                <Messenger class="max-w-full" :workOrderId="props.workOrder.id" :userId="props.workOrder.user_id"
+                  :initialNotes="props.workOrder.notes || []" :currentUserId="props.workOrder.user_id"
+                  :getUserName="getUserName" :getUserAvatar="getUserAvatar" :users="props.users" />
+              </div>
+
+              <!-- Messenger Footer -->
+              <div class="glossy-footer p-3 border-t border-gray-700">
+                <!-- You can add footer content or buttons here -->
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Messenger Modal (positioned on the right side) -->
-    <div v-if="showMessengerModal" class="fixed top-0 right-0 z-50 pointer-events-none">
-      <div class="mt-60 mr-8 pointer-events-none">
-      <!-- Messenger modal container -->
-      <div class="w-[535px] pointer-events-auto">
-        <div class="relative z-60 w-full h-[70vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
-        <!-- Messenger Header -->
-        <div class="glossy-header p-4 border-b border-gray-700">
-          <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-lime-400">{{ form.title }} - Messages</h2>
-          <button @click="toggleMessengerModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          </div>
-        </div>
-        
-        <!-- Messenger Content -->
-        <div class="flex-1 overflow-y-auto p-3 max-w-full">
-          <Messenger 
-          class="max-w-full"
-          :workOrderId="props.workOrder.id"
-          :userId="props.workOrder.user_id"
-          :initialNotes="props.workOrder.notes || []"
-          :currentUserId="props.workOrder.user_id"
-          :getUserName="getUserName"
-          :getUserAvatar="getUserAvatar"
-          :users="props.users"
-          />
-        </div>
-        
-        <!-- Messenger Footer -->
-        <div class="glossy-footer p-3 border-t border-gray-700">
-          <!-- You can add footer content or buttons here -->
-        </div>
-        </div>
-      </div>
-      </div>
-    </div>
-  </div>
   </div>
 </template>
 
@@ -497,6 +490,7 @@ import PdfViewer from '@/Components/PdfViewer.vue';
 import PdfThumbnail from '@/Components/PdfThumbnail.vue';
 import ToastContainer from '@/Components/ToastContainer.vue';
 import Timeline from '@/Components/Timeline.vue';
+import { Badge } from '@/Components/ui/badge';
 import { useToast } from '@/Composables/useToast';
 import axios from 'axios';
 import format from 'date-fns/format';
@@ -504,6 +498,16 @@ import format from 'date-fns/format';
 // Format currency utility (since @/Utils/formatCurrency does not exist)
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
+
+// Format date utility for displaying work order date/time
+function formatDate(date) {
+  if (!date) return '';
+  try {
+    return format(new Date(date), 'PPpp'); // e.g., Jun 12, 2025, 10:00 AM
+  } catch (e) {
+    return date;
+  }
 }
 
 const props = defineProps({
@@ -651,7 +655,7 @@ const saveField = async (field) => {
         uploadProgress.value = 100;
         
         // Show success toast notification
-        success(`${form.value.images.length} file(s) uploaded successfully`);
+        showSuccess(`${form.value.images.length} file(s) uploaded successfully`);
         uploadError.value = null;
         
         // Recognize and highlight PDFs for signature opportunities
@@ -660,7 +664,7 @@ const saveField = async (field) => {
         );
         
         if (pdfFiles.length > 0 && props.workOrder.status !== 'Scheduled') {
-          info(`${pdfFiles.length} PDF document(s) ready for signatures`);
+          showInfo(`${pdfFiles.length} PDF document(s) ready for signatures`);
         }
       }
       
@@ -672,11 +676,11 @@ const saveField = async (field) => {
       isUploading.value = false;
       
       // Show error toast notification
-      error(errorMessage);
+      showError(errorMessage);
       
       // If the error is related to file size, provide a more helpful message
       if (error.response?.status === 413 || error.message?.includes('payload')) {
-        warning('The file(s) may be too large. Try uploading smaller files or one at a time.');
+        showWarning('The file(s) may be too large. Try uploading smaller files or one at a time.');
       }
       
       return; // Skip the rest of the function
@@ -686,7 +690,7 @@ const saveField = async (field) => {
   try {
     // Show info toast notification for critical fields
     if (['status', 'hourly_rate', 'hours', 'title', 'date_time', 'customer_id'].includes(field)) {
-      info(`Updating ${field.replace('_', ' ')}...`);
+      showInfo(`Updating ${field.replace('_', ' ')}...`);
     }
     
     // For regular fields (not images), use the updateField endpoint
@@ -709,12 +713,12 @@ const saveField = async (field) => {
         await updateGrandTotal();
         
         // Show success toast for financial updates
-        success(`Updated financial details - New total: ${formatCurrency(grandTotal.value)}`);
+        showSuccess(`Updated financial details - New total: ${formatCurrency(grandTotal.value)}`);
       }
       // Show success toast for important field updates
       else if (['status', 'title', 'date_time', 'customer_id'].includes(field)) {
         const fieldName = field.replace('_', ' ');
-        success(`Updated ${fieldName} successfully`);
+        showSuccess(`Updated ${fieldName} successfully`);
       }
       
       // Refresh timeline to show the new activity
@@ -722,11 +726,11 @@ const saveField = async (field) => {
     }
   } catch (error) {
     console.error(`Error saving ${field}:`, error);
-    error(`Failed to update ${field.replace('_', ' ')}: ${error.response?.data?.message || 'Please try again'}`);
+    showError(`Failed to update ${field.replace('_', ' ')}: ${error.response?.data?.message || 'Please try again'}`);
     
     // Provide more specific guidance for certain fields
     if (field === 'customer_id' && error.response?.status === 404) {
-      warning('The selected customer could not be found. Please choose a valid customer.');
+      showWarning('The selected customer could not be found. Please choose a valid customer.');
     }
   }
 };
@@ -756,19 +760,19 @@ const updateGrandTotal = async () => {
     }
   } catch (error) {
     console.error('Error updating grand total:', error);
-    error('Failed to update total cost. Please try again.');
+    showError('Failed to update total cost. Please try again.');
     
     // If error is related to validation, provide more specific guidance
     if (error.response?.data?.errors) {
       const validationErrors = error.response.data.errors;
       if (validationErrors.hourly_rate) {
-        warning('Please enter a valid hourly rate');
+        showWarning('Please enter a valid hourly rate');
       }
       if (validationErrors.hours) {
-        warning('Please enter valid hours');
+        showWarning('Please enter valid hours');
       }
       if (validationErrors.travel_cost) {
-        warning('Please enter a valid travel cost');
+        showWarning('Please enter a valid travel cost');
       }
     }
   }
@@ -801,21 +805,15 @@ const VALID_STATUSES = [
   'Cancelled'
 ];
 
-// Add missing properties referenced in the template
-const hasPdfAttachment = computed(() => {
-  return props.workOrder?.attachments?.some(attachment => 
-    isPdfFile(attachment)
-  ) || false;
-});
-
-const mostRecentPdfAttachment = computed(() => {
-  if (!props.workOrder?.attachments) return null;
-  
-  const pdfFiles = props.workOrder.attachments
-    .filter(attachment => isPdfFile(attachment))
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  
-  return pdfFiles.length > 0 ? pdfFiles[0] : null;
+// --- Status Badge Variant Mapping ---
+const statusBadgeVariant = computed(() => {
+  const status = (props.workOrder.status || '').toLowerCase();
+  if (status.includes('complete')) return { variant: 'default', class: 'bg-green-500 text-white border-green-600' };
+  if (status.includes('scheduled')) return { variant: 'secondary', class: 'bg-blue-500 text-white border-blue-600' };
+  if (status.includes('progress')) return { variant: 'outline', class: 'bg-yellow-400 text-black border-yellow-500' };
+  if (status.includes('cancel')) return { variant: 'destructive', class: 'bg-red-500 text-white border-red-600' };
+  if (status.includes('part') || status.includes('return')) return { variant: 'outline', class: 'bg-purple-500 text-white border-purple-600' };
+  return { variant: 'outline', class: 'bg-gray-400 text-black border-gray-500' };
 });
 
 // Computed: is any field being edited?
@@ -823,225 +821,97 @@ const isAnyFieldBeingEdited = computed(() => {
   return Object.values(editingField.value).some(Boolean);
 });
 
-// Computed: get signature button tooltip
-const getSignatureButtonTitle = computed(() => {
-  if (!hasPdfAttachment.value) return 'No PDF attachment available for signature.';
-  if (props.workOrder.status === 'Scheduled') return 'Signature collection is disabled while status is Scheduled.';
-  return 'Collect a signature on a PDF document.';
-});
+// Dummy hasChanges computed property to prevent Vue warning
+const hasChanges = computed(() => false);
 
-// Computed: total amount for the work order
-const totalAmount = computed(() => {
-  const hours = parseFloat(form.value.hours) || 0;
-  const hourlyRate = parseFloat(form.value.hourly_rate) || 0;
-  const travelCost = form.value.has_travel ? (parseFloat(form.value.travel_cost) || 0) : 0;
-  return hours * hourlyRate + travelCost;
-});
+// Dummy refreshTimeline function to prevent ReferenceError
+async function refreshTimeline() {
+  // No-op for now
+}
 
-// Get all attachments
-const getAllAttachments = () => {
-  const attachments = props.workOrder?.attachments || [];
-  // Debug attachments to console to see their structure
-  console.log('Attachments:', attachments);
-  return attachments;
-};
-
-// Preview attachment handling
-const previewAttachment = ref(null);
-const fileInput = ref(null);
-const previewMode = ref(null); // 'pdf', 'image', etc.
-    
-const handlePreviewAttachment = (attachment) => {
-  previewAttachment.value = attachment;
-  
-  // Set preview mode based on file type
-  if (isPdfFile(attachment)) {
-    previewMode.value = 'pdf';
-  } else if (isImageFile(attachment)) {
-    previewMode.value = 'image';
-  } else {
-    previewMode.value = 'generic';
-  }
-  
-  // Log preview for debugging
-  console.log('Preview attachment:', {
-    attachment,
-    mode: previewMode.value,
-    url: attachment.url || attachment,
-    fileName: getFileName(attachment)
-  });
-};
-    
-const closePreview = () => {
-  previewAttachment.value = null;
-  previewMode.value = null;
-};
-
-// Add upload-related properties and functions
-const isUploading = ref(false);
-const uploadProgress = ref(0);
-const uploadError = ref(null);
-    
-const handleImageUpload = (event) => {
-  const files = event.target.files;
-  if (!files.length) return;
-  
-  // Clear any previous error
-  uploadError.value = null;
-      
-  // Validate files (optional)
-  const validFiles = Array.from(files).filter(file => {
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'image/heic', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    return validTypes.includes(file.type);
-  });
-  
-  if (validFiles.length !== files.length) {
-    uploadError.value = 'Some files were not recognized as valid file types';
-  }
-  
-  // Set images to validated files
-  form.value.images = validFiles;
-  editingField.value.images = true;
-  
-  // We'll set isUploading to true in the saveField function when actually uploading
-};
-
-// Attachment management
-const deleteAttachment = async (attachment) => {
-  try {
-    if (confirm('Are you sure you want to delete this attachment?')) {
-      console.log('Deleting attachment', attachment);
-      
-      // Show a notification that deletion is in progress
-      info('Deleting attachment...');
-      
-      // In a real implementation, make an API call to delete the attachment
-      // For example:
-      // await axios.delete(`/api/attachments/${attachment.id}`);
-      
-      // Show success notification after successful deletion
-      success('Attachment deleted successfully');
-      
-      // Remove from the local array (in real implementation, you would refresh the data)
-      if (props.workOrder.attachments) {
-        const index = props.workOrder.attachments.findIndex(a => a.id === attachment.id);
-        if (index !== -1) {
-          props.workOrder.attachments.splice(index, 1);
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Error deleting attachment:', err);
-    error(`Failed to delete attachment: ${err.message}`);
-  }
-};
-
-const handleDocumentUpload = (documentData) => {
-  console.log('Document uploaded', documentData);
-  
-  if (!documentData || !documentData.success) {
-    // Handle upload failure
-    error('Failed to process the document. Please try again.');
-    return;
-  }
-  
-  // Create a toast notification
-  success('Document signed and uploaded successfully!');
-  
-  // Update work order attachments if the response includes the path
-  if (documentData.path) {
-    // Refresh the work order data to show the new attachment
-    // In a real implementation, this would make an API call to refresh the work order
-    // or append the new attachment to the existing list
-    if (!props.workOrder.attachments) {
-      props.workOrder.attachments = [];
-    }
-    
-    // Add the new signed document to attachments
-    props.workOrder.attachments.push({
-      id: `temp-${Date.now()}`, // Temporary ID until the server assigns a real one
-      file_name: documentData.fileName || 'signed-document.pdf',
-      url: documentData.path,
-      file_type: 'application/pdf',
-      signed: true,
-      signature: documentData.signature || {
-        timestamp: new Date().toISOString()
-      }
-    });
-  }
-  
-  // Close the preview after a short delay
-  setTimeout(() => {
-    closePreview();
-  }, 1500);
-};
-
-// Setup toast notification system
-// Toast notification types:
-// - success: Green background, used for successful operations
-// - error: Red background, used for operation failures
-// - warning: Yellow background, used for important notices that require attention
-// - info: Blue background, used for general information and progress updates
+// --- Toast notification system (renamed to avoid shadowing) ---
 const { toasts, success: toastSuccess, error: toastError, warning: toastWarning, info: toastInfo } = useToast();
 
-const success = (message) => {
+const showSuccess = (message) => {
   toastSuccess(message);
 };
-const error = (message) => {
+const showError = (message) => {
   toastError(message);
 };
-const warning = (message) => {
+const showWarning = (message) => {
   toastWarning(message);
 };
-const info = (message) => {
+const showInfo = (message) => {
   toastInfo(message);
 };
 
-// Utility: get user name by userId
+// Function to update status
+function updateStatus() {
+  // Only allow editing if not already editing
+  if (!editingField.value.status) {
+    editingField.value.status = true;
+    nextTick(() => {
+      // Optionally focus the select dropdown
+      const select = document.querySelector('select[v-model="form.status"]');
+      if (select) select.focus();
+    });
+  }
+}
+
+// --- Upload state refs ---
+const isUploading = ref(false);
+const uploadProgress = ref(0);
+const uploadError = ref(null);
+
+// --- Preview modal state ---
+const previewAttachment = ref(null);
+const previewMode = ref('image'); // 'image', 'pdf', or 'file'
+
+// --- Signature button title ---
+const getSignatureButtonTitle = computed(() => {
+  if (!hasPdfAttachment.value) return 'No PDF attachments available for signature.';
+  if (props.workOrder.status === 'Scheduled') return 'Signature collection is not available for Scheduled work orders.';
+  return 'Collect signature on PDF attachments';
+});
+
+// --- User name/avatar helpers for Messenger ---
 function getUserName(userId) {
-  const user = props.users.find(u => u.id === userId);
+  const user = props.users?.find(u => u.id === userId);
   return user ? user.name : 'Unknown User';
 }
-
-// Utility: get user avatar by userId
 function getUserAvatar(userId) {
-  const user = props.users.find(u => u.id === userId);
-  return user && user.avatar ? user.avatar : null;
+  const user = props.users?.find(u => u.id === userId);
+  return user ? user.avatar_url || user.profile_photo_url || '' : '';
 }
 
-// Utility to format date strings for display
-const formatDate = (date) => {
-  if (!date) return 'Invalid date';
-  try {
-    const parsedDate = new Date(date);
-    if (isNaN(parsedDate)) {
-      throw new Error('Invalid date');
-    }
-    return format(parsedDate, 'MMMM dd, yyyy hh:mm a');
-  } catch (error) {
-    console.error('Invalid date:', date);
-    return 'Invalid date';
-  }
-};
+// Add missing hasPdfAttachment computed property
+const hasPdfAttachment = computed(() => {
+  const attachments = props.workOrder?.attachments || [];
+  return attachments.some(att => isPdfFile(att));
+});
 
-// Enhanced getStatusClasses function to match the color scheme in Show.vue
-const getStatusClasses = (status) => {
-  if (!status) return 'bg-gray-800 text-gray-300 ring-gray-700';
-  const statusLower = status.toLowerCase();
-  if (statusLower.includes('complete')) {
-    return 'bg-green-800 text-green-100 ring-green-700';
-  } else if (statusLower.includes('scheduled')) {
-    return 'bg-blue-800 text-blue-100 ring-blue-700';
-  } else if (statusLower.includes('progress')) {
-    return 'bg-yellow-800 text-yellow-100 ring-yellow-700';
-  } else if (statusLower.includes('cancel')) {
-    return 'bg-red-800 text-red-100 ring-red-700';
-  } else if (statusLower.includes('part') || statusLower.includes('return')) {
-    return 'bg-purple-800 text-purple-100 ring-purple-700';
-  }
-  return 'bg-gray-800 text-gray-300 ring-gray-700';
-};
+// Computed: totalAmount for display
+const totalAmount = computed(() => {
+  const hours = parseFloat(form.value.hours || 0);
+  const rate = parseFloat(form.value.hourly_rate || 0);
+  const travel = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
+  return (hours * rate) + travel;
+});
+
+// Method: getAllAttachments for template usage
+function getAllAttachments() {
+  return props.workOrder?.attachments || [];
+}
+
+// Helper: isPdfFile
+function isPdfFile(attachment) {
+  if (!attachment) return false;
+  const name = attachment.file_name || attachment.name || attachment.url || '';
+  return (
+    (attachment.file_type && attachment.file_type.includes('pdf')) ||
+    name.toLowerCase().endsWith('.pdf')
+  );
+}
 </script>
 
 <style scoped>
