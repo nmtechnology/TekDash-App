@@ -1,9 +1,13 @@
 <template>
-  <div class="messenger mt-2 bg-gray-800 rounded-lg border border-gray-700">
+  <div class="messenger bg-transparent flex flex-col h-full">
     <!-- Messages list -->
-    <div class="messages p-4 space-y-4 max-h-96 overflow-y-auto">
+    <div class="messages p-1 space-y-4 overflow-y-auto flex-1">
       <div 
-        class="chat chat-start" 
+        :class="[
+          'chat', 
+          note.user_id === userId ? 'chat-end' : 'chat-start',
+          note.isNew ? 'chat-new' : '',
+        ]" 
         v-for="note in notes" 
         :key="note.id"
       >
@@ -16,49 +20,66 @@
           </div>
         </div>
         
-        <!-- Message content as post-it note -->
+        <!-- Message content as chat bubble with varied colors -->
         <div 
-          class="chat-bubble post-it-note" 
-          :class="note.user_id === userId ? 'bg-blue-400' : 'bg-yellow-300'"
+          class="chat-bubble" 
+          :class="getBubbleClass(note)"
         >
-          <!-- Fake pin/tack for post-it note -->
-          <div class="post-it-pin"></div>
-          <p class="message-text">{{ note.text }}</p>
+          <div v-if="note.urgent" class="font-bold text-xs mb-1 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            URGENT
+          </div>
+          {{ note.text }}
         </div>
-        <div class="chat-header text-xs text-blue-300 mb-1">
+        <div class="chat-footer text-xs opacity-70 mt-1">
           <span class="font-semibold">{{ note.user_name || 'User' }}</span> • {{ formatTimestamp(note.created_at) }}
         </div>
       </div>
     </div>
     
-    <!-- Input area -->
-    <div class="border-t border-gray-800 p-4">
-      <div class="flex items-start space-x-1">
+    <!-- Input area with shadcn components -->
+    <div class="border-t border-gray-700 p-2 mt-auto">
+      <div class="flex items-start space-x-2">
         <!-- Current user avatar - Always show initials for consistency -->
-        <div class="flex-shrink-0">
+        <!-- <div class="flex-shrink-0">
           <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-900 mask mask-hexagon">
             <div class="avatar-initials text-lime-400 text-lg font-bold">
               {{ getCurrentUserInitials() }}
             </div>
           </div>
-        </div>
+        </div> -->
         
-        <!-- Message input -->
-        <div class="flex-1">
+        <!-- Message input using shadcn components -->
+        <div class="flex-1 grid gap-2">
           <div class="relative">
-            <textarea 
-              v-model="newNoteText" 
-              placeholder="Add a notation..." 
-              class="rounded-md bg-gray-900 border-gray-800 shadow-sm text-lime-400 text-sm"
+            <Textarea
+              v-model="newNoteText"
+              placeholder="Type your message here..."
               rows="1"
               @keydown.enter.prevent="addNote"
               ref="messageInput"
-            ></textarea>
+              class="resize-none min-h-[40px] pr-10"
+            />
             
-            <!-- Emoji button - Updated styling -->
+            <!-- Urgent message button -->
+            <button 
+              @click.stop="toggleUrgentMessage" 
+              class="absolute bottom-2 right-10 p-1 rounded-full hover:bg-gray-700"
+              :class="isUrgent ? 'text-red-500 hover:text-red-400 bg-gray-700' : 'text-red-400 hover:text-red-300'"
+              title="Mark as urgent"
+              type="button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </button>
+            
+            <!-- Emoji button -->
             <button 
               @click.stop="showEmojiPickerModal = true" 
-              class="btn bottom-2 right-2 text-yellow-400 hover:text-yellow-500 p-1 mask mask-hexagon"
+              class="absolute bottom-2 right-2 p-1 rounded-full hover:bg-gray-700 text-yellow-400 hover:text-yellow-300"
               title="Add emoji"
               type="button"
             >
@@ -68,12 +89,17 @@
             </button>
           </div>
           
-          <div class="flex justify-end mt-2">
+          <div class="flex justify-end">
             <button 
               @click="addNote" 
-              class="inline-flex items-center rounded-md btn px-3 py-2 text-sm font-semibold text-lime-400 shadow-sm hover:text-gray-900 hover:bg-lime-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
+              class="glossy-btn btn font-bold inline-flex justify-center rounded-md border px-4 py-2 text-lime-400 hover:bg-lime-400 hover:text-lime-500 text-base transition-all duration-200 shadow-lg"
+              :disabled="!newNoteText.trim()"
+              type="button"
             >
-              Post
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Send Message
             </button>
           </div>
         </div>
@@ -104,13 +130,16 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
-// Remove the Inertia import
 import EmojiPicker from './EmojiPicker.vue';
+import { Button } from '@/Components/ui/button';
+import { Textarea } from '@/Components/ui/textarea';
 
 
 export default {
   components: {
-    EmojiPicker
+    EmojiPicker,
+    Button,
+    Textarea
   },
   
   props: {
@@ -155,6 +184,7 @@ export default {
     const newNoteText = ref('');
     const messageInput = ref(null);
     const showEmojiPickerModal = ref(false);
+    const isUrgent = ref(false); // Flag for urgent messages
     
     // Function to fetch notes from the server
     const fetchNotes = () => {
@@ -260,6 +290,18 @@ export default {
       }
     };
     
+    // Toggle urgent message flag
+    const toggleUrgentMessage = () => {
+      isUrgent.value = !isUrgent.value;
+      
+      // Focus back to textarea after toggling
+      nextTick(() => {
+        if (messageInput.value) {
+          messageInput.value.focus();
+        }
+      });
+    };
+    
     // Improved CSRF token retrieval
     const getCsrfToken = () => {
       // Get from the meta tag (most reliable in Laravel)
@@ -300,14 +342,16 @@ export default {
         text: newNoteText.value.trim(),
         user_id: props.userId,
         created_at: new Date().toISOString(),
-        isNew: true
+        isNew: true,
+        urgent: isUrgent.value // Add the urgent flag
       };
       
       // Add it to our notes array
       notes.value.push(newNote);
       
-      // Clear the input
+      // Clear the input and reset urgent flag
       newNoteText.value = '';
+      isUrgent.value = false;
       
       // Scroll to bottom
       setTimeout(() => {
@@ -315,7 +359,7 @@ export default {
         if (messagesContainer) {
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
-      }, 100);
+      }, 10);
       
       // Get CSRF token
       const token = getCsrfToken();
@@ -331,7 +375,10 @@ export default {
       
       // Use axios.post instead of Inertia.post
       axios.post(`/work-orders/${props.workOrderId}/notes`, 
-        { text: newNote.text },
+        { 
+          text: newNote.text,
+          urgent: isUrgent.value // Include urgent flag in the API request
+        },
         config
       ).then(response => {
         console.log('Note saved successfully:', response.data);
@@ -357,6 +404,23 @@ export default {
       });
     };
 
+    // Function to get bubble classes based on message type and sender
+    const getBubbleClass = (note) => {
+      // If the message is urgent, always use chat-bubble-error (red)
+      if (note.urgent) {
+        return 'chat-bubble-error';
+      }
+      
+      // For the current user (messages on the left) - use green
+      if (note.user_id === props.userId) {
+        return 'chat-bubble-success'; // Green for sender
+      } 
+      // For other users (messages on the right) - use blue
+      else {
+        return 'chat-bubble-primary'; // Blue for receiver
+      }
+    };
+    
     return {
       notes,
       newNoteText,
@@ -368,7 +432,10 @@ export default {
       fetchNotes,
       showEmojiPickerModal,
       insertEmoji,
+      toggleUrgentMessage,
+      isUrgent,
       getCsrfToken,
+      getBubbleClass,
       getUserName: computed(() => typeof props.getUserName === 'function' 
         ? props.getUserName 
         : () => props.getUserName)
@@ -438,16 +505,19 @@ export default {
   user-select: none;
 }
 
-/* Make messenger height more adaptable */
+/* Make messenger a full-height flex container */
 .messenger {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 400px;
 }
 
 .messages {
   flex: 1;
-  min-height: 150px;
-  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Enhanced emoji picker styling */
@@ -580,101 +650,71 @@ export default {
   color: #F3F4F6;
 }
 
-/* Remove glossy message styles and replace with post-it note styling */
-.post-it-note {
-  position: relative;
-  padding: 1rem 1.25rem;
-  background: #FFFA99; /* Classic post-it yellow */
-  color: #333; /* Darker text for better readability */
-  border: none !important;
-  border-radius: 2px !important;
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.2);
-  transform: rotate(-2deg); /* Slight rotation for post-it effect */
-  transition: transform 0.2s ease;
-  margin-bottom: 0.75rem;
-  z-index: 1;
-}
-
-/* Every other post-it rotated differently for variety */
-.chat:nth-child(even) .post-it-note {
-  transform: rotate(1deg);
-  background: #FFDD99; /* Slightly different shade */
-}
-
-.chat:nth-child(3n) .post-it-note {
-  transform: rotate(-0.5deg);
-  background: #FFF5AB; /* Another post-it shade */
-}
-
-/* Hover effect */
-.post-it-note:hover {
-  transform: rotate(0deg) scale(1.02);
-  z-index: 2;
-}
-
-/* Post-it texture */
-.post-it-note::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000000' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-/* Pin/tack styling */
-.post-it-pin {
-  position: absolute;
-  top: 5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #F5F5F5 0%, #999 100%);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  z-index: 3;
-}
-
-/* Message text styling for post-its */
-.post-it-note .message-text {
-  position: relative;
-  z-index: 1;
-  color: #333;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
-  font-size: 0.95rem;
-  line-height: 1.4;
+/* DaisyUI chat bubble styling enhancements */
+.chat-bubble {
+  margin-bottom: 0.5rem;
   word-break: break-word;
+  max-width: 90%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Remove default Daisy UI chat bubble triangle */
+.chat-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced styling for urgent messages */
+.chat-bubble-error {
+  animation: urgentPulse 2s infinite;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.3);
+}
+
+@keyframes urgentPulse {
+  0% { box-shadow: 0 0 8px rgba(255, 0, 0, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(255, 0, 0, 0.5); }
+  100% { box-shadow: 0 0 8px rgba(255, 0, 0, 0.3); }
+}
+
+/* Ensure the chat bubble triangle is displayed */
 .chat-bubble:before {
-  display: none;
+  display: block;
 }
 
-/* Update chat layout to accommodate post-it notes better */
+/* Space between chats for better readability */
+.chat + .chat {
+  margin-top: 1rem;
+}
+
+/* Update chat layout for DaisyUI bubbles */
 .chat {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.75rem;
-  align-items: flex-start;
   margin-bottom: 1.5rem;
 }
 
-.chat-image {
-  grid-row: span 2;
-  align-self: center;
-}
-
 .chat-header {
-  grid-column: 2;
-  margin-top: -0.5rem;
+  position: relative;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  opacity: 0.8;
 }
 
-/* ... rest of existing styles ... */
+/* Glossy button styles */
+.glossy-btn {
+  background: linear-gradient(145deg, #394867, #2a2e3d);
+ 
+}
+
+.glossy-btn:disabled {
+  background: #2a2e3d;
+  box-shadow: none;
+}
+
+/* Custom button styles to match footer */
+.btn {
+  @apply inline-flex items-center justify-center rounded-md border border-transparent font-semibold text-sm transition-all duration-150;
+}
+
+.btn:disabled {
+  @apply cursor-not-allowed opacity-50;
+}
 </style>

@@ -1,11 +1,14 @@
 <template>
   <div v-if="props.showModal">
-    <!-- Background overlay -->
-    <div @click="closeModal" class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+    <!-- Toast Container for notifications -->
+    <ToastContainer />
     
-    <!-- Work Order Modal (left side, wider) -->
-    <div class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none pl-8">
-      <div class="relative z-50 w-full max-w-6xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
+    <!-- Background overlay -->
+    <div @click="emit('close')" class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+    
+    <!-- Work Order Modal (center position, slightly narrower) -->
+    <div class="fixed inset-0 flex items-start justify-center z-50 pointer-events-none">
+      <div class="relative z-50 w-full max-w-3xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
         <!-- Header section -->
         <div class="glossy-header p-4 border-b border-gray-700">
           <div class="flex items-center justify-between">
@@ -29,11 +32,24 @@
                 />
               </div>
             </div>
-            <button @click="closeModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div class="flex space-x-2">
+              <button @click="toggleTimelineModal" class="text-gray-400 hover:text-lime-400 z-50 relative" title="Toggle Timeline">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17l-6-6m0 0l6-6m-6 6h14" />
+                </svg>
+              </button>
+              <button @click="toggleMessengerModal" class="text-gray-400 hover:text-lime-400 z-50 relative" title="Toggle Messages">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </button>
+              <button @click="emit('close')" class="text-gray-400 hover:text-gray-200 z-50 relative">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -137,7 +153,7 @@
               <template v-for="attachment in getAllAttachments()" :key="attachment.id">
                 <!-- Image Preview -->
                 <div v-if="isImageFile(attachment)" @click="handlePreviewAttachment(attachment)" class="cursor-pointer relative group">
-                  <img :src="attachment" class="w-full h-32 object-cover rounded-lg" />
+                  <img :src="attachment.url || attachment" class="w-full h-32 object-cover rounded-lg" />
                   <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span class="text-white">Preview</span>
                   </div>
@@ -145,24 +161,44 @@
 
                 <!-- PDF Preview -->
                 <div v-else-if="isPdfFile(attachment)" class="cursor-pointer">
-                  <PdfThumbnail :file="attachment" @click="handlePreviewAttachment(attachment)" />
+                  <div 
+                    class="pdf-preview-container h-32 bg-gray-800 rounded-lg overflow-hidden flex flex-col hover:bg-gray-700 transition-colors"
+                    @click="handlePreviewAttachment(attachment)"
+                  >
+                    <!-- Use PdfThumbnail component for PDFs -->
+                    <PdfThumbnail 
+                      :pdfUrl="attachment.url || attachment"
+                      :filename="getFileName(attachment)"
+                      class="flex-1"
+                    />
+                    
+                    <!-- Action indicators below thumbnail -->
+                    <div class="flex items-center justify-center py-2 space-x-2 bg-gray-900 bg-opacity-80">
+                      <span class="text-xs bg-blue-800 text-white px-2 py-1 rounded-sm">View</span>
+                      <span 
+                        class="text-xs bg-green-800 text-white px-2 py-1 rounded-sm" 
+                        :class="{ 'opacity-50': props.workOrder.status === 'Scheduled' }"
+                      >
+                        Sign
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </template>
             </div>
           </div>
 
-          <!-- Messaging Section -->
+          <!-- Messaging Section Button -->
           <div>
-            <h3 class="text-lg font-medium text-gray-200 mb-2">Messages</h3>
-            <Messenger 
-              :workOrderId="props.workOrder.id"
-              :userId="props.workOrder.user_id"
-              :initialNotes="props.workOrder.notes || []"
-              :currentUserId="props.workOrder.user_id"
-              :getUserName="getUserName"
-              :getUserAvatar="getUserAvatar"
-              :users="users"
-            />
+            <button 
+              @click="toggleMessengerModal" 
+              class="btn bg-gray-800 hover:bg-gray-700 text-lime-400 border border-gray-700 rounded-lg px-4 py-2 flex items-center gap-2 shadow-lg transition-all duration-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              Open Messages
+            </button>
           </div>
         </div>
 
@@ -321,7 +357,8 @@
         <div v-if="previewAttachment" class="fixed inset-0 z-50 flex items-center justify-center">
           <div @click="closePreview" class="absolute inset-0 bg-black bg-opacity-75"></div>
           <div class="relative z-10 max-w-4xl w-full bg-gray-900 rounded-lg overflow-hidden">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+            <!-- Only show header for images, since PdfViewer has its own header -->
+            <div v-if="previewMode !== 'pdf'" class="p-4 border-b border-gray-800 flex justify-between items-center">
               <h3 class="text-lg font-medium text-gray-200">{{ getFileName(previewAttachment) }}</h3>
               <button @click="closePreview" class="text-gray-500 hover:text-gray-400">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -329,12 +366,47 @@
                 </svg>
               </button>
             </div>
+            
             <div class="relative">
-              <template v-if="isImageFile(previewAttachment)">
-                <img :src="previewAttachment" class="max-w-full h-auto" />
+              <!-- Image preview -->
+              <template v-if="previewMode === 'image'">
+                <img 
+                  :src="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url" 
+                  class="max-w-full h-auto"
+                  alt="Image preview"
+                />
               </template>
-              <template v-else-if="isPdfFile(previewAttachment)">
-                <PdfViewer :file="previewAttachment" />
+              
+              <!-- PDF preview with viewer -->
+              <template v-else-if="previewMode === 'pdf'">
+                <PdfViewer
+                  :pdfUrl="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url"
+                  :title="getFileName(previewAttachment)"
+                  :workOrderId="props.workOrder.id"
+                  :workOrderTitle="props.workOrder.title"
+                  :editable="props.workOrder.status !== 'Scheduled'"
+                  :redirectAfterUpload="false"
+                  @close="closePreview"
+                  @document-uploaded="handleDocumentUpload"
+                  class="w-full h-[80vh]"
+                />
+              </template>
+              
+              <!-- Generic file preview -->
+              <template v-else>
+                <div class="p-8 text-center">
+                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p class="mt-4 text-gray-300">{{ getFileName(previewAttachment) }}</p>
+                  <a 
+                    :href="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url" 
+                    download
+                    class="mt-4 inline-block px-4 py-2 bg-gray-800 text-blue-400 rounded hover:bg-gray-700"
+                  >
+                    Download File
+                  </a>
+                </div>
               </template>
             </div>
           </div>
@@ -342,20 +414,17 @@
       </div>
     </div>
     
-    <!-- Timeline Modal (positioned closer to work order modal) -->
-    <div class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none">
-      <div class="flex gap-6 w-full px-8 mt-60 pointer-events-none">
-        <!-- Work order modal space -->
-        <div class="w-full max-w-6xl pointer-events-none"></div>
-        
+    <!-- Timeline Modal (positioned on the left side) -->
+    <div v-if="showTimelineModal" class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none">
+      <div class="flex w-full mt-60 pointer-events-none">
         <!-- Timeline modal container -->
-        <div class="w-80 flex-shrink-0 pointer-events-auto">
-          <div class="relative z-60 w-full h-[55vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
+        <div class="w-[535px] flex-shrink-0 pointer-events-auto ml-8">
+          <div class="relative z-60 w-full h-[70vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
             <!-- Timeline Header -->
             <div class="glossy-header p-4 border-b border-gray-700">
               <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-lime-400">{{ form.title }} - Activity</h2>
-                <button @click="closeModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
+                <button @click="toggleTimelineModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -377,51 +446,65 @@
       </div>
     </div>
     
-    <!-- Toast notification -->
-    <div v-if="toast.show" 
-      class="fixed bottom-4 right-4 z-70 p-4 rounded-lg shadow-lg flex items-center"
-      :class="{
-        'bg-green-700 text-white': toast.type === 'success',
-        'bg-red-700 text-white': toast.type === 'error',
-        'bg-yellow-600 text-white': toast.type === 'warning',
-        'bg-blue-700 text-white': toast.type === 'info'
-      }"
-    >
-      <!-- Icon based on toast type -->
-      <svg v-if="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
-      <svg v-if="toast.type === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-      </svg>
-      <svg v-if="toast.type === 'warning'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-      </svg>
-      <svg v-if="toast.type === 'info'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd" />
-      </svg>
-      
-      <!-- Toast message -->
-      <div class="mr-8">{{ toast.message }}</div>
-      
-      <!-- Close button -->
-      <button @click="hideToast" class="absolute top-2 right-2 text-white hover:text-gray-100">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-      </button>
+    <!-- Messenger Modal (positioned on the right side) -->
+    <div v-if="showMessengerModal" class="fixed top-0 right-0 z-50 pointer-events-none">
+      <div class="mt-60 mr-8 pointer-events-none">
+      <!-- Messenger modal container -->
+      <div class="w-[535px] pointer-events-auto">
+        <div class="relative z-60 w-full h-[70vh] rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card flex flex-col pointer-events-auto">
+        <!-- Messenger Header -->
+        <div class="glossy-header p-4 border-b border-gray-700">
+          <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-lime-400">{{ form.title }} - Messages</h2>
+          <button @click="toggleMessengerModal" class="text-gray-400 hover:text-gray-200 z-50 relative">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          </div>
+        </div>
+        
+        <!-- Messenger Content -->
+        <div class="flex-1 overflow-y-auto p-3 max-w-full">
+          <Messenger 
+          class="max-w-full"
+          :workOrderId="props.workOrder.id"
+          :userId="props.workOrder.user_id"
+          :initialNotes="props.workOrder.notes || []"
+          :currentUserId="props.workOrder.user_id"
+          :getUserName="getUserName"
+          :getUserAvatar="getUserAvatar"
+          :users="props.users"
+          />
+        </div>
+        
+        <!-- Messenger Footer -->
+        <div class="glossy-footer p-3 border-t border-gray-700">
+          <!-- You can add footer content or buttons here -->
+        </div>
+        </div>
+      </div>
+      </div>
     </div>
   </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue';
-import Timeline from '@/Components/Timeline.vue';
-import PdfThumbnail from '@/Components/PdfThumbnail.vue';
-import PdfViewer from '@/Components/PdfViewer.vue';
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import Messenger from '@/Components/Messenger.vue';
+import PdfViewer from '@/Components/PdfViewer.vue';
+import PdfThumbnail from '@/Components/PdfThumbnail.vue';
+import ToastContainer from '@/Components/ToastContainer.vue';
+import Timeline from '@/Components/Timeline.vue';
+import { useToast } from '@/Composables/useToast';
 import axios from 'axios';
+import format from 'date-fns/format';
+
+// Format currency utility (since @/Utils/formatCurrency does not exist)
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
 
 const props = defineProps({
   workOrder: {
@@ -551,6 +634,7 @@ const saveField = async (field) => {
       // Handle successful upload
       if (response.data.success || response.status === 200) {
         editingField.value.images = false;
+        
         // Update the work order with new attachments
         if (response.data.attachments) {
           props.workOrder.attachments = response.data.attachments;
@@ -566,20 +650,45 @@ const saveField = async (field) => {
         isUploading.value = false;
         uploadProgress.value = 100;
         
-        // Show success message
+        // Show success toast notification
+        success(`${form.value.images.length} file(s) uploaded successfully`);
         uploadError.value = null;
+        
+        // Recognize and highlight PDFs for signature opportunities
+        const pdfFiles = form.value.images.filter(file => 
+          file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+        );
+        
+        if (pdfFiles.length > 0 && props.workOrder.status !== 'Scheduled') {
+          info(`${pdfFiles.length} PDF document(s) ready for signatures`);
+        }
       }
       
       return; // Skip the regular field update since we've handled the upload
     } catch (error) {
       console.error('Error uploading images:', error);
-      uploadError.value = error.response?.data?.message || 'Failed to upload files. Please try again.';
+      const errorMessage = error.response?.data?.message || 'Failed to upload files. Please try again.';
+      uploadError.value = errorMessage;
       isUploading.value = false;
+      
+      // Show error toast notification
+      error(errorMessage);
+      
+      // If the error is related to file size, provide a more helpful message
+      if (error.response?.status === 413 || error.message?.includes('payload')) {
+        warning('The file(s) may be too large. Try uploading smaller files or one at a time.');
+      }
+      
       return; // Skip the rest of the function
     }
   }
   
   try {
+    // Show info toast notification for critical fields
+    if (['status', 'hourly_rate', 'hours', 'title', 'date_time', 'customer_id'].includes(field)) {
+      info(`Updating ${field.replace('_', ' ')}...`);
+    }
+    
     // For regular fields (not images), use the updateField endpoint
     const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
       [field]: form.value[field],
@@ -598,6 +707,14 @@ const saveField = async (field) => {
       // If we're updating hours or rates, recalculate grand total
       if (['hours', 'hourly_rate', 'travel_cost', 'has_travel'].includes(field)) {
         await updateGrandTotal();
+        
+        // Show success toast for financial updates
+        success(`Updated financial details - New total: ${formatCurrency(grandTotal.value)}`);
+      }
+      // Show success toast for important field updates
+      else if (['status', 'title', 'date_time', 'customer_id'].includes(field)) {
+        const fieldName = field.replace('_', ' ');
+        success(`Updated ${fieldName} successfully`);
       }
       
       // Refresh timeline to show the new activity
@@ -605,24 +722,74 @@ const saveField = async (field) => {
     }
   } catch (error) {
     console.error(`Error saving ${field}:`, error);
+    error(`Failed to update ${field.replace('_', ' ')}: ${error.response?.data?.message || 'Please try again'}`);
+    
+    // Provide more specific guidance for certain fields
+    if (field === 'customer_id' && error.response?.status === 404) {
+      warning('The selected customer could not be found. Please choose a valid customer.');
+    }
   }
 };
 
 // Function to update grand total
 const updateGrandTotal = async () => {
   try {
+    // Calculate financial metrics for logging
+    const laborCost = (parseFloat(form.value.hours || 0) * parseFloat(form.value.hourly_rate || 0));
+    const travelCost = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
+    const calculatedTotal = laborCost + travelCost;
+    
+    // Make API request to update total
     const response = await axios.post(`/work-orders/${props.workOrder.id}/update-total`);
+    
     if (response.data.success) {
       props.workOrder.grand_total = response.data.grand_total;
+      
+      // Log the breakdown for debugging
+      console.log('Grand total updated:', {
+        laborCost: laborCost.toFixed(2),
+        hours: form.value.hours,
+        hourlyRate: form.value.hourly_rate,
+        travelCost: travelCost.toFixed(2),
+        grandTotal: response.data.grand_total || calculatedTotal.toFixed(2)
+      });
     }
   } catch (error) {
     console.error('Error updating grand total:', error);
+    error('Failed to update total cost. Please try again.');
+    
+    // If error is related to validation, provide more specific guidance
+    if (error.response?.data?.errors) {
+      const validationErrors = error.response.data.errors;
+      if (validationErrors.hourly_rate) {
+        warning('Please enter a valid hourly rate');
+      }
+      if (validationErrors.hours) {
+        warning('Please enter valid hours');
+      }
+      if (validationErrors.travel_cost) {
+        warning('Please enter a valid travel cost');
+      }
+    }
   }
 };
 
-// Function to close modal
+// Modal toggle functionality
+const showMessengerModal = ref(true); // Messenger modal is visible by default
+const showTimelineModal = ref(true); // Timeline modal is visible by default
+
+// Function to close the modal
 const closeModal = () => {
   emit('close');
+};
+
+// Toggle functions for both modals
+const toggleMessengerModal = () => {
+  showMessengerModal.value = !showMessengerModal.value;
+};
+
+const toggleTimelineModal = () => {
+  showTimelineModal.value = !showTimelineModal.value;
 };
 
 // Define VALID_STATUSES
@@ -633,35 +800,6 @@ const VALID_STATUSES = [
   'Complete',
   'Cancelled'
 ];
-
-// File type helpers
-const isImageFile = (attachment) => {
-  if (!attachment) return false;
-  const fileName = getFileName(attachment).toLowerCase();
-  return fileName.endsWith('.jpg') || 
-         fileName.endsWith('.jpeg') || 
-         fileName.endsWith('.png') || 
-         fileName.endsWith('.gif') ||
-         fileName.endsWith('.heic');
-};
-
-const isPdfFile = (attachment) => {
-  if (!attachment) return false;
-  const fileName = getFileName(attachment).toLowerCase();
-  return fileName.endsWith('.pdf');
-};
-
-// Add function to get file name
-const getFileName = (attachment) => {
-  if (!attachment) return '';
-  
-  if (typeof attachment === 'string') {
-    const parts = attachment.split('/');
-    return parts[parts.length - 1];
-  }
-  
-  return attachment.file_name || attachment.name || '';
-};
 
 // Add missing properties referenced in the template
 const hasPdfAttachment = computed(() => {
@@ -680,21 +818,63 @@ const mostRecentPdfAttachment = computed(() => {
   return pdfFiles.length > 0 ? pdfFiles[0] : null;
 });
 
+// Computed: is any field being edited?
+const isAnyFieldBeingEdited = computed(() => {
+  return Object.values(editingField.value).some(Boolean);
+});
+
+// Computed: get signature button tooltip
+const getSignatureButtonTitle = computed(() => {
+  if (!hasPdfAttachment.value) return 'No PDF attachment available for signature.';
+  if (props.workOrder.status === 'Scheduled') return 'Signature collection is disabled while status is Scheduled.';
+  return 'Collect a signature on a PDF document.';
+});
+
+// Computed: total amount for the work order
+const totalAmount = computed(() => {
+  const hours = parseFloat(form.value.hours) || 0;
+  const hourlyRate = parseFloat(form.value.hourly_rate) || 0;
+  const travelCost = form.value.has_travel ? (parseFloat(form.value.travel_cost) || 0) : 0;
+  return hours * hourlyRate + travelCost;
+});
+
 // Get all attachments
 const getAllAttachments = () => {
-  return props.workOrder?.attachments || [];
+  const attachments = props.workOrder?.attachments || [];
+  // Debug attachments to console to see their structure
+  console.log('Attachments:', attachments);
+  return attachments;
 };
 
 // Preview attachment handling
 const previewAttachment = ref(null);
 const fileInput = ref(null);
+const previewMode = ref(null); // 'pdf', 'image', etc.
     
 const handlePreviewAttachment = (attachment) => {
   previewAttachment.value = attachment;
+  
+  // Set preview mode based on file type
+  if (isPdfFile(attachment)) {
+    previewMode.value = 'pdf';
+  } else if (isImageFile(attachment)) {
+    previewMode.value = 'image';
+  } else {
+    previewMode.value = 'generic';
+  }
+  
+  // Log preview for debugging
+  console.log('Preview attachment:', {
+    attachment,
+    mode: previewMode.value,
+    url: attachment.url || attachment,
+    fileName: getFileName(attachment)
+  });
 };
     
 const closePreview = () => {
   previewAttachment.value = null;
+  previewMode.value = null;
 };
 
 // Add upload-related properties and functions
@@ -728,364 +908,140 @@ const handleImageUpload = (event) => {
 };
 
 // Attachment management
-const deleteAttachment = (attachment) => {
-  if (confirm('Are you sure you want to delete this attachment?')) {
-    console.log('Deleting attachment', attachment);
-    // This would normally make an API call to delete the attachment
+const deleteAttachment = async (attachment) => {
+  try {
+    if (confirm('Are you sure you want to delete this attachment?')) {
+      console.log('Deleting attachment', attachment);
+      
+      // Show a notification that deletion is in progress
+      info('Deleting attachment...');
+      
+      // In a real implementation, make an API call to delete the attachment
+      // For example:
+      // await axios.delete(`/api/attachments/${attachment.id}`);
+      
+      // Show success notification after successful deletion
+      success('Attachment deleted successfully');
+      
+      // Remove from the local array (in real implementation, you would refresh the data)
+      if (props.workOrder.attachments) {
+        const index = props.workOrder.attachments.findIndex(a => a.id === attachment.id);
+        if (index !== -1) {
+          props.workOrder.attachments.splice(index, 1);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error deleting attachment:', err);
+    error(`Failed to delete attachment: ${err.message}`);
   }
 };
 
 const handleDocumentUpload = (documentData) => {
   console.log('Document uploaded', documentData);
-  // This would normally handle the uploaded document
-};
-
-// Add missing functions referenced in the template
-const updateStatus = () => {
-  startEditing('status');
-};
-
-const deleteWorkOrder = () => {
-  if (confirm('Are you sure you want to delete this work order?')) {
-    console.log('Deleting work order', props.workOrder.id);
-    // This would normally make an API call to delete the work order
+  
+  if (!documentData || !documentData.success) {
+    // Handle upload failure
+    error('Failed to process the document. Please try again.');
+    return;
   }
-};
-
-const duplicateWorkOrder = (event) => {
-  if (props.workOrder.status !== 'Part Needed') return;
-      
-  console.log('Duplicating work order', props.workOrder.id);
-  // This would normally create a copy of the work order
-};
-
-const getSignature = () => {
-  // Don't proceed if no PDF attachment or status is Scheduled
-  if (!hasPdfAttachment.value || props.workOrder.status === 'Scheduled') return;
-      
-  console.log('Getting signature for', getFileName(mostRecentPdfAttachment.value));
-  // This would normally open a signature dialog
-};
-
-// User-related functions for Messenger component
-const getUserName = (userId) => {
-  if (!userId) return 'Unknown User';
-      
-  // Check if users prop is available and find matching user
-  const user = props.users?.find(user => user.id === userId || user.name === userId);
-  return user ? user.name : userId;
-};
-
-const getUserAvatar = (userId) => {
-  if (!userId) return null;
-      
-  // Check if users prop is available and find matching user
-  const user = props.users?.find(user => user.id === userId || user.name === userId);
-  return user?.profile_photo_url || null;
-};
-
-// Computed property for signature button title
-const getSignatureButtonTitle = computed(() => {
-  if (props.workOrder.status === 'Scheduled') {
-    return 'Cannot collect signatures for work orders in Scheduled status';
-  } else if (!hasPdfAttachment.value) {
-    return 'A PDF document must be attached to get signatures';
-  } else {
-    return `Click to sign ${getFileName(mostRecentPdfAttachment.value)}`;
-  }
-});
-
-// Computed property for total amount
-const totalAmount = computed(() => {
-  // Ensure we're working with numbers by using parseFloat
-  const hourlyRate = parseFloat(form.value.hourly_rate || 0);
-  const hours = parseFloat(form.value.hours || 0);
-  const laborTotal = hourlyRate * hours;
   
-  // Only include travel cost if has_travel is true
-  const travelCost = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
+  // Create a toast notification
+  success('Document signed and uploaded successfully!');
   
-  // Add the values as numbers and round to 2 decimal places
-  return parseFloat((laborTotal + travelCost).toFixed(2));
-});
-
-// Format numbers to USD currency
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(value);
-};
-
-// Logic for handling special field cases has been moved to saveField function
-
-// Add getStatusClasses function with more comprehensive status handling
-const getStatusClasses = (status) => {
-  if (!status) return 'bg-gray-800 text-gray-300 ring-gray-700 px-2 py-1 rounded-md';
-  
-  const statusLower = status.toLowerCase();
-  
-  // Status classes mapping with more specific matches first
-  const statusMapping = {
-    'complete': 'bg-green-800 text-green-100 ring-green-700',
-    'completed': 'bg-green-800 text-green-100 ring-green-700',
-    'in progress': 'bg-yellow-800 text-yellow-100 ring-yellow-700',
-    'progress': 'bg-yellow-800 text-yellow-100 ring-yellow-700',
-    'scheduled': 'bg-blue-800 text-blue-100 ring-blue-700',
-    'rescheduled': 'bg-blue-700 text-blue-100 ring-blue-600',
-    'pending': 'bg-orange-800 text-orange-100 ring-orange-700',
-    'on hold': 'bg-orange-700 text-orange-100 ring-orange-600',
-    'cancel': 'bg-red-800 text-red-100 ring-red-700',
-    'cancelled': 'bg-red-800 text-red-100 ring-red-700',
-    'part': 'bg-purple-800 text-purple-100 ring-purple-700',
-    'part needed': 'bg-purple-800 text-purple-100 ring-purple-700',
-    'return': 'bg-indigo-800 text-indigo-100 ring-indigo-700',
-  };
-  
-  // Find the first matching status key
-  for (const [key, classes] of Object.entries(statusMapping)) {
-    if (statusLower.includes(key)) {
-      return `${classes} px-2 py-1 rounded-md`;
+  // Update work order attachments if the response includes the path
+  if (documentData.path) {
+    // Refresh the work order data to show the new attachment
+    // In a real implementation, this would make an API call to refresh the work order
+    // or append the new attachment to the existing list
+    if (!props.workOrder.attachments) {
+      props.workOrder.attachments = [];
     }
-  }
-  
-  // Default styling for unknown statuses
-  return 'bg-gray-800 text-gray-300 ring-gray-700 px-2 py-1 rounded-md';
-};
-
-// Archive work order function 
-const archiveWorkOrder = () => {
-  // Only allow archiving if status is Complete
-  if (props.workOrder.status !== 'Complete') {
-    console.log('Cannot archive work order unless it is Complete');
-    return;
-  }
-  
-  // In a real implementation, this would make an API call to archive the work order
-  console.log('Archiving work order', props.workOrder.id);
-  
-  // Confirm with user
-  if (confirm('Are you sure you want to archive this completed work order?')) {
-    // You would typically make an API call here
-    axios.put(`/api/work-orders/${props.workOrder.id}/archive`)
-      .then(response => {
-        console.log('Work order archived successfully');
-        closeModal();
-        // Optionally emit an event to refresh the parent component
-        emit('archived', props.workOrder.id);
-      })
-      .catch(error => {
-        console.error('Error archiving work order:', error);
-      });
-  }
-};
-
-// Toast notification system
-const toast = ref({
-  show: false,
-  message: '',
-  type: 'success', // 'success', 'error', 'warning', 'info'
-  timeout: null
-});
-
-// Show toast notification
-const showToast = (message, type = 'success', duration = 3000) => {
-  // Clear any existing timeout
-  if (toast.value.timeout) {
-    clearTimeout(toast.value.timeout);
-  }
-  
-  // Set toast properties
-  toast.value.show = true;
-  toast.value.message = message;
-  toast.value.type = type;
-  
-  // Auto hide the toast after duration
-  toast.value.timeout = setTimeout(() => {
-    toast.value.show = false;
-  }, duration);
-};
-
-// Hide toast notification
-const hideToast = () => {
-  toast.value.show = false;
-  if (toast.value.timeout) {
-    clearTimeout(toast.value.timeout);
-  }
-};
-
-// Track whether there are unsaved changes
-const hasChanges = computed(() => {
-  // Compare original work order with current form values
-  return (
-    form.value.title !== props.workOrder.title ||
-    form.value.description !== props.workOrder.description ||
-    form.value.address !== props.workOrder.address ||
-    form.value.hours !== props.workOrder.hours ||
-    form.value.hourly_rate !== props.workOrder.hourly_rate ||
-    form.value.travel_cost !== props.workOrder.travel_cost ||
-    form.value.has_travel !== props.workOrder.has_travel ||
-    form.value.status !== props.workOrder.status
-  );
-});
-
-// Check if any field is currently being edited
-const isAnyFieldBeingEdited = computed(() => {
-  return Object.values(editingField.value).some(value => value === true);
-});
-
-// Save all changes at once
-const saveAllChanges = async () => {
-  if (!hasChanges.value) {
-    showToast('No changes to save', 'info');
-    return;
-  }
-  
-  try {
-    // Prepare data to send
-    const updatedData = {
-      title: form.value.title,
-      description: form.value.description,
-      address: form.value.address,
-      hours: form.value.hours,
-      hourly_rate: form.value.hourly_rate,
-      travel_cost: form.value.travel_cost,
-      has_travel: form.value.has_travel,
-      status: form.value.status,
-      '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-    };
     
-    // Make the API call to update all fields at once
-    const response = await axios.post(`/work-orders/${props.workOrder.id}/update-all`, updatedData);
-    
-    if (response.data.success) {
-      // Update the local workOrder object with the returned data
-      if (response.data.workOrder) {
-        Object.assign(props.workOrder, response.data.workOrder);
+    // Add the new signed document to attachments
+    props.workOrder.attachments.push({
+      id: `temp-${Date.now()}`, // Temporary ID until the server assigns a real one
+      file_name: documentData.fileName || 'signed-document.pdf',
+      url: documentData.path,
+      file_type: 'application/pdf',
+      signed: true,
+      signature: documentData.signature || {
+        timestamp: new Date().toISOString()
       }
-      
-      // Exit edit mode for all fields
-      Object.keys(editingField.value).forEach(key => {
-        editingField.value[key] = false;
-      });
-      
-      // Update timeline
-      await refreshTimeline();
-      
-      // Show success notification
-      showToast('Work order updated successfully', 'success');
-    }
-  } catch (error) {
-    console.error('Error saving all changes:', error);
-    showToast('Failed to save changes: ' + (error.response?.data?.message || 'Unknown error'), 'error');
-  }
-};
-
-// Function to refresh the timeline
-const refreshTimeline = async () => {
-  try {
-    // Get the current activities from the API
-    const response = await axios.get(`/work-orders/${props.workOrder.id}/activities`);
-    
-    // Emit a custom event that the Timeline component can listen for
-    const timelineRefreshEvent = new CustomEvent('timeline-refresh', { 
-      detail: { activities: response.data.activities } 
     });
-    document.dispatchEvent(timelineRefreshEvent);
-    
-    return true;
-  } catch (error) {
-    console.error('Error refreshing timeline:', error);
-    return false;
   }
-};
-
-// Define the dateSelectionType ref
-const dateSelectionType = ref('single');
-const selectedDates = ref([new Date().toISOString().slice(0, 16)]);
-    
-// Define functions for multiple date selection
-const addNewDate = () => {
-  // Add a new date with the current time, formatted for datetime-local input
-  const now = new Date();
-  // Format as YYYY-MM-DDThh:mm
-  const formattedDate = now.toISOString().slice(0, 16);
-  selectedDates.value.push(formattedDate);
-};
-
-const removeDate = (index) => {
-  // Only remove if we have more than one date
-  if (selectedDates.value.length > 1) {
-    selectedDates.value.splice(index, 1);
-  } else {
-    // If this is the last date, just reset it to current time
-    selectedDates.value[0] = new Date().toISOString().slice(0, 16);
-  }
-};
-
-// Define formatDate and formatMultipleDates functions
-const formatDate = (date) => {
-  if (!date) return 'No date set';
   
+  // Close the preview after a short delay
+  setTimeout(() => {
+    closePreview();
+  }, 1500);
+};
+
+// Setup toast notification system
+// Toast notification types:
+// - success: Green background, used for successful operations
+// - error: Red background, used for operation failures
+// - warning: Yellow background, used for important notices that require attention
+// - info: Blue background, used for general information and progress updates
+const { toasts, success: toastSuccess, error: toastError, warning: toastWarning, info: toastInfo } = useToast();
+
+const success = (message) => {
+  toastSuccess(message);
+};
+const error = (message) => {
+  toastError(message);
+};
+const warning = (message) => {
+  toastWarning(message);
+};
+const info = (message) => {
+  toastInfo(message);
+};
+
+// Utility: get user name by userId
+function getUserName(userId) {
+  const user = props.users.find(u => u.id === userId);
+  return user ? user.name : 'Unknown User';
+}
+
+// Utility: get user avatar by userId
+function getUserAvatar(userId) {
+  const user = props.users.find(u => u.id === userId);
+  return user && user.avatar ? user.avatar : null;
+}
+
+// Utility to format date strings for display
+const formatDate = (date) => {
+  if (!date) return 'Invalid date';
   try {
     const parsedDate = new Date(date);
-    if (isNaN(parsedDate)) return 'Invalid date';
-    
-    // Format date: Monday, June 9, 2025 at 3:30 PM
-    const options = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    };
-    
-    return parsedDate.toLocaleString('en-US', options);
+    if (isNaN(parsedDate)) {
+      throw new Error('Invalid date');
+    }
+    return format(parsedDate, 'MMMM dd, yyyy hh:mm a');
   } catch (error) {
-    console.error('Error formatting date:', error);
+    console.error('Invalid date:', date);
     return 'Invalid date';
   }
 };
 
-const formatMultipleDates = (dates) => {
-  if (!dates || !dates.length) return 'No dates set';
-  
-  // If only one date, use formatDate
-  if (dates.length === 1) {
-    return formatDate(dates[0]);
+// Enhanced getStatusClasses function to match the color scheme in Show.vue
+const getStatusClasses = (status) => {
+  if (!status) return 'bg-gray-800 text-gray-300 ring-gray-700';
+  const statusLower = status.toLowerCase();
+  if (statusLower.includes('complete')) {
+    return 'bg-green-800 text-green-100 ring-green-700';
+  } else if (statusLower.includes('scheduled')) {
+    return 'bg-blue-800 text-blue-100 ring-blue-700';
+  } else if (statusLower.includes('progress')) {
+    return 'bg-yellow-800 text-yellow-100 ring-yellow-700';
+  } else if (statusLower.includes('cancel')) {
+    return 'bg-red-800 text-red-100 ring-red-700';
+  } else if (statusLower.includes('part') || statusLower.includes('return')) {
+    return 'bg-purple-800 text-purple-100 ring-purple-700';
   }
-  
-  // If we have a small number of dates, list them individually
-  if (dates.length <= 3) {
-    return dates.map(date => formatDate(date)).join('\n');
-  }
-  
-  // Otherwise, show the number and date range
-  try {
-    const parsedDates = dates.map(d => new Date(d));
-    const validDates = parsedDates.filter(d => !isNaN(d));
-    
-    if (validDates.length === 0) return 'No valid dates';
-    
-    // Find the earliest and latest dates
-    const earliest = new Date(Math.min(...validDates));
-    const latest = new Date(Math.max(...validDates));
-    
-    // Format as: "5 dates from Jun 9 to Jun 15, 2025"
-    const dateOptions = { month: 'short', day: 'numeric' };
-    const yearOptions = { year: 'numeric' };
-    
-    return `${validDates.length} dates from ${earliest.toLocaleDateString('en-US', dateOptions)} to ${latest.toLocaleDateString('en-US', dateOptions)}, ${latest.toLocaleDateString('en-US', yearOptions)}`;
-  } catch (error) {
-    console.error('Error formatting multiple dates:', error);
-    return `${dates.length} dates scheduled`;
-  }
+  return 'bg-gray-800 text-gray-300 ring-gray-700';
 };
-
-// All variables and functions declared in the script setup are automatically exposed to the template
-// No need for an explicit return statement
 </script>
 
 <style scoped>
@@ -1118,6 +1074,16 @@ const formatMultipleDates = (dates) => {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.pdf-preview-container {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pdf-preview-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
 .glossy-header {
   flex-shrink: 0;
   border-top-left-radius: 0.5rem;
@@ -1130,5 +1096,28 @@ const formatMultipleDates = (dates) => {
   border-bottom-right-radius: 0.5rem;
   border-bottom-left-radius: 0.5rem;
   background: linear-gradient(0deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+}
+
+/* Signed PDF indicator styles */
+.pdf-signed-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(34, 197, 94, 0.9);
+  color: white;
+  border-radius: 9999px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.pdf-signature-timestamp {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 </style>

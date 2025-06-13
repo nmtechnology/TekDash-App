@@ -148,7 +148,7 @@ export default {
 .pdf-icon svg {
   width: 80px;
   height: 60px;
-  fill: #6fff00e9;
+  fill: #9dff00e9;
 }
 
 .filename {
