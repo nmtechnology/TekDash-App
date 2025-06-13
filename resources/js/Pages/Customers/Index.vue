@@ -1,59 +1,64 @@
 <template>
     <AppLayout title="Customers">
         <template #header>
-            <h2 class="font-semibold text-xl text-lime-400 leading-tight">
+            <h2 class="text-xl font-semibold leading-tight text-lime-400">
                 Customers
             </h2>
         </template>
 
+        <!-- Dashboard at the top -->
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 mt-4">
+            <Dashboard />
+        </div>
+
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-xl border border-gray-700 rounded-xl p-6">
+            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="overflow-hidden bg-gray-900/50 shadow-xl backdrop-blur-xl sm:rounded-lg">
                     <!-- Search and Add Customer Section -->
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="w-1/3">
+                    <div class="p-6 flex justify-between items-center border-b border-gray-700">
+                        <div class="relative">
                             <input
-                                type="text"
                                 v-model="search"
-                                @input="performSearch"
+                                type="text"
                                 placeholder="Search customers..."
-                                class="w-full px-4 py-2 border border-gray-700 bg-gray-900 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                                class="pl-10 pr-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-lime-500"
+                                @input="performSearch"
                             />
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
                         </div>
                         <AddCustomerButton @customer-added="reloadCustomers" />
                     </div>
 
-                    <!-- DaisyUI Customers Table -->
-                    <div class="overflow-x-auto rounded-lg">
-                        <table class="table table-zebra">
-                            <!-- head -->
-                            <thead class="text-lime-400 bg-gray-900">
+                    <!-- Customers Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-700">
+                            <thead>
                                 <tr>
-                                    <th class="bg-transparent">ID</th>
-                                    <th class="bg-transparent">Business Name</th>
-                                    <th class="bg-transparent">Contact Person</th>
-                                    <th class="bg-transparent">Email</th>
-                                    <th class="bg-transparent">Net Terms</th>
-                                    <th class="bg-transparent text-right">Actions</th>
+                                    <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Business Name</th>
+                                    <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Contact Person</th>
+                                    <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Net Terms</th>
+                                    <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr v-for="customer in customers.data" 
-                                    :key="customer.id" 
-                                    @click="showCustomerProfile(customer)"
-                                    class="bg-gray-800 hover:bg-gray-700 transition-colors text-white border-b border-gray-700 cursor-pointer">
-                                    <th class="font-medium">{{ customer.id }}</th>
-                                    <td>{{ customer.business_name }}</td>
-                                    <td>{{ customer.poc_name }}</td>
-                                    <td>{{ customer.poc_email }}</td>
-                                    <td>{{ customer.net_terms }}</td>
-                                    <td class="text-right">
-                                        <span class="text-xs text-gray-400">Click to view</span>
+                            <tbody class="divide-y divide-gray-700">
+                                <tr v-for="customer in customers.data" :key="customer.id" class="hover:bg-gray-800/30 cursor-pointer">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-white">{{ customer.id }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-white">{{ customer.business_name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-white">{{ customer.poc_name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-white">{{ customer.poc_email }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-white">{{ customer.net_terms }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <span class="text-xs text-lime-400 hover:underline" @click.stop="showCustomerProfile(customer)">View Details</span>
                                     </td>
                                 </tr>
-                                <!-- Row for when there's no data -->
                                 <tr v-if="customers.data.length === 0">
-                                    <td colspan="6" class="text-center py-4">No customers found</td>
+                                    <td colspan="6" class="text-center py-4 text-gray-400">No customers found</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -449,6 +454,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue'
 import DangerButton from '@/Components/DangerButton.vue'
 import AddCustomerButton from '@/Components/AddCustomerButton.vue'
 import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue'
+import Dashboard from '@/Pages/Dashboard.vue';
 import customerStore from '@/Stores/customerStore';
 
 export default defineComponent({

@@ -426,8 +426,83 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
 
 <template>
   <AppLayout>
-    <template #header>
-      <div class="fixed mt-14 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 shadow">
+    <div class="py-12">
+      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 mt-40">
+        <div class="overflow-hidden bg-gray-900/50 shadow-xl backdrop-blur-xl sm:rounded-lg">
+          <!-- Search and Add New section -->
+          <div class="p-6 flex justify-between items-center border-b border-gray-700">
+            <div class="relative">
+              <input v-model="searchQuery" type="text" placeholder="Search work orders..."
+                class="pl-10 pr-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-lime-500" />
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <Stats />
+
+          <!-- Work Orders Table -->
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700">
+              <thead>
+                <tr>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Title</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Customer
+                  </th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Technician
+                  </th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Date</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-700">
+                <tr v-for="workOrder in paginatedWorkOrders" :key="workOrder.id"
+                  class="hover:bg-gray-800/30 cursor-pointer" @click="openWorkOrder(workOrder)">
+                  <td class="px-6 py-4 whitespace-nowrap text-white">{{ workOrder.title }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      :class="['px-2 inline-flex text-xs leading-5 font-semibold rounded-full', getStatusColor(workOrder.status)]">
+                      {{ workOrder.status }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-white">{{ workOrder.customer_id }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-white">{{ getUserName(workOrder.user_id) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-white">{{ formatDate(workOrder.date_time ||
+                    workOrder.created_at) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <span class="text-xs text-lime-400 hover:underline" @click.stop="openWorkOrder(workOrder)">View
+                      Details</span>
+                  </td>
+                </tr>
+                <tr v-if="paginatedWorkOrders.length === 0">
+                  <td colspan="6" class="text-center py-4 text-gray-400">No work orders found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="mt-4">
+            <button @click="prevPage" :disabled="currentPage === 1"
+              class="px-4 py-2 mr-2 rounded bg-gray-800 text-lime-400 disabled:opacity-50">Previous</button>
+            <span class="text-white">Page {{ currentPage }} of {{ totalPages }}</span>
+            <button @click="nextPage" :disabled="currentPage === totalPages"
+              class="px-4 py-2 ml-2 rounded bg-gray-800 text-lime-400 disabled:opacity-50">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add the WorkOrder modal component -->
+    <WorkOrder v-if="showWorkOrderModal" :workOrder="selectedWorkOrder" @close="closeWorkOrderModal" />
+
+    <div class="fixed mt-14 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 glass-header">
       <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
           <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">
@@ -437,12 +512,12 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
           <div class="flex space-x-4">
             <TeamDropdown :teams="props.teams" />
             <AddWorkOrder />
-            <button 
-              @click="openArchivedModal"
-              class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            <button @click="openArchivedModal"
+              class="text-purple-400 btn hover:bg-purple-400 hover:text-gray-900 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
               View Archive
             </button>
@@ -450,160 +525,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
         </div>
       </div>
     </div>
-    </template>
-    <!-- Error state -->
-    <div v-if="setupError" class="fixed top-0 left-0 right-0 z-50 bg-red-500 text-white p-4">
-      <div class="flex justify-between items-center">
-        <div>
-          <strong>Error:</strong> {{ setupError.message }}
-        </div>
-        <button 
-          @click="() => window.location.reload()" 
-          class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
-        >
-          Retry
-        </button>
-      </div>
-    </div>
 
-    <!-- Loading state -->
-    <div v-else-if="!workOrders?.length" class="flex justify-center items-center min-h-screen">
-      <div class="text-white text-xl">
-        Loading work orders...
-      </div>
-    </div>
-
-    <!-- Main content -->
-    <template v-else>
-      <div class="bg-gray-900/55 min-h-screen opacity-70 py-10 flex justify-center">
-        <div class="w-full px-4">
-          <div class="mt-40 flow-root">
-            <div class="overflow-x-auto">
-              <div class="inline-block min-w-full py-2 align-middle px-2">
-                <div class="overflow-hidden border-b border-accent shadow sm:rounded-lg glass-container">
-                  <div class="sm:mt-0">
-                    <Stats 
-                      :stats="[
-                        { name: 'Total', value: filteredData[0].stat.toString(), change: '', changeType: 'neutral' },
-                        { name: 'Invoiced', value: filteredData[1].stat.toString(), change: '', changeType: 'neutral' },
-                        { name: 'Archived', value: filteredData[2].stat.toString(), change: '', changeType: 'neutral' },
-                        { name: 'Scheduled', value: filteredData[3].stat.toString(), change: '', changeType: 'neutral' },
-                        { name: 'In Progress', value: filteredData[4].stat.toString(), change: '', changeType: 'neutral' },
-                        { name: 'Part Needed', value: filteredData[5].stat.toString(), change: '', changeType: 'neutral' },
-                        { name: 'Complete', value: filteredData[6].stat.toString(), change: '', changeType: 'neutral' },
-                        { name: 'Cancelled', value: filteredData[7].stat.toString(), change: '', changeType: 'neutral' }
-                      ]"
-                      :collapsable="true"
-                      title="Work Order Statistics"
-                      @filterStats="handleFilterStats"
-                    />
-                  </div>
-                  <div class="min-w-full">
-                    <div class="px-4 py-3 flex items-center justify-between glass-header">
-                      <div class="flex items-center space-x-4">
-                        <!-- Search Input -->
-                        <input
-                          v-model="searchQuery"
-                          type="text"
-                          placeholder="Search work orders..."
-                          class="px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-lime-500"
-                        />
-                        
-                        <!-- Status Filter Dropdown -->
-                        <select
-                          v-model="selectedStatus"
-                          class="px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-lime-500"
-                        >
-                          <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                            {{ option.label }}
-                          </option>
-                        </select>
-
-                        <!-- Clear Filters Button -->
-                        <button
-                          v-if="selectedStatus || searchQuery"
-                          @click="clearFilters"
-                          class="px-3 py-2 text-red-400 hover:text-red-300 focus:outline-none"
-                        >
-                          Clear Filters
-                        </button>
-                      </div>
-
-                      <!-- Results Counter -->
-                      <div class="text-white">
-                        {{ filteredWorkOrders.length }} work order(s) found
-                      </div>
-                    </div>
-                    <table class="w-full divide-y divide-accent/10">
-                      <thead class="glass-header">
-                        <tr>
-                          <!-- Removed Actions column -->
-                          <th scope="col" class="sticky top-0 z-10 w-[25%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Title</th>
-                          <th scope="col" class="sticky top-0 z-10 w-[15%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Status</th>
-                          <th scope="col" class="sticky top-0 z-10 w-[20%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Scheduled Time</th>
-                          <th scope="col" class="sticky top-0 z-10 w-[15%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">Customer</th>
-                          <th scope="col" class="sticky top-0 z-10 w-[10%] px-4 py-3.5 text-left text-xl font-semibold text-lime-400">User</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-accent/10 bg-transparent">
-                        <tr v-for="workOrder in paginatedWorkOrders" :key="workOrder.id" @click="openWorkOrder(workOrder)" class="cursor-pointer hover:bg-gray-700">
-                          <td class="py-4 px-4 text-sm">
-                            <div class="font-medium text-white" :title="workOrder.title">{{ workOrder.title }}</div>
-                            <div v-if="isPartOfMultiDayWorkOrder(workOrder)" class="text-xs text-gray-500">
-                              Part of a multi-day work order
-                            </div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="flex flex-col">
-                              <div class="text-white mb-1">{{ workOrder.status }}</div>
-                              <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                <div class="h-2.5 rounded-full" 
-                                     :class="getStatusColor(workOrder.status)"
-                                     :style="{ width: getStatusProgress(workOrder.status) + '%' }">
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="text-white">{{ formatDate(workOrder.date_time) }}</div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="text-white" :title="workOrder.customer?.business_name || 'No Customer'">
-                              {{ workOrder.customer?.business_name || 'No Customer' }}
-                            </div>
-                          </td>
-                          <td class="px-4 py-4 text-sm text-accent">
-                            <div class="text-white" :title="getUserName(workOrder.user_id)">{{ getUserName(workOrder.user_id) }}</div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="mt-4 flex justify-between fixed bottom-0 left-0 right-0 bg-gray-900 p-4">
-            <button @click="prevPage" :disabled="currentPage === 1" class="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">Previous</button>
-            <span class="text-white">Page {{ currentPage }} of {{ totalPages }}</span>
-            <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50">Next</button>
-          </div>
-          <WorkOrder
-            v-if="selectedWorkOrder"
-            :workOrder="selectedWorkOrder"
-            :showModal="showModal"
-            :users="users"
-            @close="closeModal"
-          />
-          <!-- Remove or modify the ArchivedWorkOrderModal component usage -->
-          <ArchivedWorkOrders 
-            :is-open="showArchived"
-            @close="closeArchivedModal"
-            @view-work-order="viewArchivedWorkOrder"
-          />
-        </div>
-      </div>
-    </template>
   </AppLayout>
 </template>
 

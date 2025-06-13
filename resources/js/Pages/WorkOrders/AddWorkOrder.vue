@@ -1384,9 +1384,22 @@ const loadCustomers = async () => {
   console.log('AddWorkOrder: loadCustomers started');
   isLoadingCustomers.value = true;
   loadError.value = false;
-  
+
   try {
-    // Direct API call approach with explicit JSON header
+    // Try using the customer store first
+    try {
+      const storeCustomers = await customerStore.loadCustomers();
+      if (Array.isArray(storeCustomers)) {
+        customers.value = storeCustomers;
+        customersArray.value = storeCustomers;
+        loadError.value = false;
+        return storeCustomers;
+      }
+    } catch (storeError) {
+      console.error('AddWorkOrder: Failed to load customers from store:', storeError);
+    }
+
+    // Direct API call as fallback
     const response = await axios.get('/api/customers', {
       headers: {
         'Accept': 'application/json',
@@ -1394,49 +1407,44 @@ const loadCustomers = async () => {
         'X-Requested-With': 'XMLHttpRequest'
       }
     });
-    
-    // Better response handling
-    console.log('AddWorkOrder: Customer response type:', typeof response.data);
-    
-    // Make sure we have a valid array response
-    if (response.data && Array.isArray(response.data)) {
-      console.log('AddWorkOrder: Customers loaded from direct API call:', response.data.length);
-      customers.value = response.data;
-      customersArray.value = response.data;
-      return response.data;
-    } 
-    // If not an array but a valid JSON object that has some data property
-    else if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
-      console.log('AddWorkOrder: Customers found in data property:', response.data.data.length);
-      customers.value = response.data.data;
-      customersArray.value = response.data.data;
-      return response.data.data;
-    } 
-    // If we got a string, try to parse it as JSON
-    else if (typeof response.data === 'string') {
-      console.log('AddWorkOrder: Got string response, attempting to parse as JSON');
+
+    // Handle string/HTML response
+    if (typeof response.data === 'string') {
+      if (response.data.trim().startsWith('<!DOCTYPE html') || response.data.trim().startsWith('<html')) {
+        throw new Error('Server returned HTML instead of JSON.');
+      }
       try {
-        const parsedData = JSON.parse(response.data);
-        if (Array.isArray(parsedData)) {
-          console.log('AddWorkOrder: Successfully parsed string to array:', parsedData.length);
-          customers.value = parsedData;
-          customersArray.value = parsedData;
-          return parsedData;
-        } else if (parsedData && typeof parsedData === 'object' && Array.isArray(parsedData.data)) {
-          console.log('AddWorkOrder: Successfully parsed string to object with data array:', parsedData.data.length);
-          customers.value = parsedData.data;
-          customersArray.value = parsedData.data;
-          return parsedData.data;
+        const parsed = JSON.parse(response.data);
+        if (Array.isArray(parsed)) {
+          customers.value = parsed;
+          customersArray.value = parsed;
+          loadError.value = false;
+          return parsed;
+        } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
+          customers.value = parsed.data;
+          customersArray.value = parsed.data;
+          loadError.value = false;
+          return parsed.data;
         } else {
           throw new Error('Parsed string but result is not a valid array format');
         }
       } catch (parseError) {
-        console.error('AddWorkOrder: Failed to parse string as JSON:', parseError);
         throw new Error('Response is a string that could not be parsed as JSON');
       }
     }
-    // Not a valid format
-    else {
+
+    // Handle valid array/object response
+    if (response.data && Array.isArray(response.data)) {
+      customers.value = response.data;
+      customersArray.value = response.data;
+      loadError.value = false;
+      return response.data;
+    } else if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+      customers.value = response.data.data;
+      customersArray.value = response.data.data;
+      loadError.value = false;
+      return response.data.data;
+    } else {
       throw new Error('Invalid response format: Expected array but got ' + typeof response.data);
     }
   } catch (error) {
@@ -1444,7 +1452,7 @@ const loadCustomers = async () => {
     customers.value = [];
     customersArray.value = [];
     loadError.value = true;
-    
+
     // If customer ID is set from props, create a minimal customer array with just that customer
     if (props.customerId && props.customerName) {
       const singleCustomer = {
@@ -1454,7 +1462,7 @@ const loadCustomers = async () => {
       customersArray.value = [singleCustomer];
       console.log('AddWorkOrder: Using single customer from props:', singleCustomer);
     }
-    
+
     // Try alternative endpoint as fallback
     try {
       console.log('AddWorkOrder: Trying fallback endpoint for customers');
@@ -1465,24 +1473,48 @@ const loadCustomers = async () => {
           'X-Requested-With': 'XMLHttpRequest'
         }
       });
-      
+
+      if (typeof fallbackResponse.data === 'string') {
+        if (fallbackResponse.data.trim().startsWith('<!DOCTYPE html') || fallbackResponse.data.trim().startsWith('<html')) {
+          throw new Error('Fallback endpoint returned HTML instead of JSON.');
+        }
+        try {
+          const parsed = JSON.parse(fallbackResponse.data);
+          if (Array.isArray(parsed)) {
+            customers.value = parsed;
+            customersArray.value = parsed;
+            loadError.value = false;
+            return parsed;
+          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
+            customers.value = parsed.data;
+            customersArray.value = parsed.data;
+            loadError.value = false;
+            return parsed.data;
+          } else {
+            throw new Error('Parsed fallback string but result is not a valid array format');
+          }
+        } catch (parseError) {
+          throw new Error('Fallback response is a string that could not be parsed as JSON');
+        }
+      }
+
       if (fallbackResponse.data && Array.isArray(fallbackResponse.data)) {
-        console.log('AddWorkOrder: Customers loaded from fallback endpoint:', fallbackResponse.data.length);
         customers.value = fallbackResponse.data;
         customersArray.value = fallbackResponse.data;
         loadError.value = false;
         return fallbackResponse.data;
       } else if (fallbackResponse.data && typeof fallbackResponse.data === 'object' && Array.isArray(fallbackResponse.data.data)) {
-        console.log('AddWorkOrder: Customers found in fallback data property:', fallbackResponse.data.data.length);
         customers.value = fallbackResponse.data.data;
         customersArray.value = fallbackResponse.data.data;
         loadError.value = false;
         return fallbackResponse.data.data;
+      } else {
+        throw new Error('Fallback endpoint did not return a valid customer array');
       }
     } catch (fallbackError) {
       console.error('AddWorkOrder: Fallback endpoint also failed:', fallbackError);
     }
-    
+
     return [];
   } finally {
     isLoadingCustomers.value = false;
@@ -1758,7 +1790,7 @@ progress::-moz-progress-bar {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,  255, 255, 0.2);
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   transition: all 0.2s ease;

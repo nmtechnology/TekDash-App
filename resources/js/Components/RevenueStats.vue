@@ -452,9 +452,47 @@ async function fetchRevenueData() {
   }
 }
 
+// QuickBooks OAuth2: Exchange code for tokens
+async function exchangeQuickBooksToken(authCode, realmId) {
+  try {
+    // POST to your backend endpoint that handles the token exchange securely
+    const response = await axios.post('/api/quickbooks/exchange-token', {
+      code: authCode,
+      realmId: realmId
+    });
+    alert('QuickBooks tokens received!');
+    // Optionally, handle/store tokens as needed
+    return response.data;
+  } catch (error) {
+    // Try to extract error message and intuit_tid from response
+    let msg = 'Failed to exchange QuickBooks token.';
+    if (error.response && error.response.data) {
+      const data = error.response.data;
+      if (data.message) {
+        msg += '\n' + data.message;
+      }
+      if (data.intuit_tid) {
+        msg += `\nIntuit TID: ${data.intuit_tid}`;
+      }
+    } else if (error.message) {
+      msg += '\n' + error.message;
+    }
+    alert(msg);
+    return null;
+  }
+}
+
+// Detect QuickBooks OAuth2 code in URL and exchange automatically
 onMounted(() => {
   fetchRevenueData();
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const realmId = urlParams.get('realmId');
+  if (code && realmId) {
+    exchangeQuickBooksToken(code, realmId);
+  }
 });
+
 
 // Format currency
 function formatCurrency(value) {
@@ -511,6 +549,13 @@ function connectToQuickBooks() {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 015.656 0l4 4a4 4 0 11-5.656 5.656l-1.102-1.101" />
           </svg>
           Connect QuickBooks
+        </button>
+        <button
+          @click="() => exchangeQuickBooksToken('XAB11749794225Ry3ulvPM9Wuw4dPrbDJoJQAuyCf1UOjJorur', '4620816365039049610')"
+          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition"
+          title="Exchange Test Token"
+        >
+          Exchange Test Token
         </button>
         <button
           @click="fetchRevenueData" 
