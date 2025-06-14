@@ -1,6 +1,6 @@
 <template>
-  <div class="pdf-thumbnail-wrapper" @click="handleClick">
-    <div class="pdf-thumbnail">
+  <div class="pdf-thumbnail-wrapper">
+    <div class="pdf-thumbnail" @click="handleClick">
       <canvas 
         ref="canvas" 
         class="thumbnail-canvas"
@@ -12,6 +12,11 @@
         </svg>
       </div>
       <div class="filename">{{ truncatedFilename }}</div>
+      <button class="delete-button" @click.stop="handleDelete">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M3 6h18M9 6v12m3-12v12m3-12v12m3-12v12M3 6h18M3 6l3 15h12l3-15M9 6h6"/>
+        </svg>
+      </button>
     </div>
   </div>
 </template>
@@ -78,6 +83,10 @@ export default {
       emit('click', { url: props.pdfUrl, filename: props.filename });
     };
 
+    const handleDelete = () => {
+      emit('delete', props.pdfUrl);
+    };
+
     onMounted(() => {
       generateThumbnail();
     });
@@ -86,7 +95,8 @@ export default {
       canvas,
       thumbnailGenerated,
       truncatedFilename,
-      handleClick
+      handleClick,
+      handleDelete
     };
   }
 }
@@ -160,6 +170,31 @@ export default {
   background: #272727;
   width: 100%;
   border-top: 1px solid #e2e8f0;
+}
+
+.delete-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.delete-button {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.delete-button svg {
+  width: 30px;
+  height: 30px;
+  fill: #ff4d4f;
 }
 
 @media (max-width: 600px) {

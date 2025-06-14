@@ -4,12 +4,12 @@
     <ToastContainer />
 
     <!-- Background overlay -->
-    <div @click="emit('close')" class="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+    <div @click="emit('close')" class="fixed inset-0 bg-black bg-opacity-50 z-[60]"></div>
 
     <!-- Work Order Modal (center position, slightly narrower) -->
-    <div class="fixed inset-0 flex items-start justify-center z-50 pointer-events-none">
+    <div class="fixed inset-0 flex items-start justify-center z-[70] pointer-events-none">
       <div
-        class="relative z-50 w-full max-w-3xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
+        class="relative z-[80] w-full max-w-3xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
         <!-- Header section -->
         <div class="glossy-header p-4 border-b border-gray-700">
           <div class="flex items-center justify-between">
@@ -30,7 +30,17 @@
                   ref="titleInput" @keyup.enter="saveField('title')" placeholder="Enter work order title" autofocus />
               </div>
             </div>
-            <div class="flex space-x-2">
+            <div class="flex space-x-2 items-center">
+              <button v-if="isAnyFieldBeingEdited" @click="saveAllChanges"
+                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-amber-400 font-bold hover:bg-amber-400 hover:text-black z-50 relative mr-2"
+                :class="{ 'animate-pulse': hasChanges }">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                Save All Changes
+              </button>
               <button @click="toggleTimelineModal"
                 class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 font-bold hover:bg-lime-400 hover:text-black z-50 relative"
                 title="Toggle Timeline">
@@ -85,6 +95,44 @@
           <!-- Work Order Details -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div class="space-y-4">
+              <!-- Scheduled Date (Calendar Picker) -->
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Scheduled Date</label>
+                <div v-if="!editingField.date_time">
+                  <Button variant="outline" class="w-full justify-start text-left font-normal" @click="startEditing('date_time')">
+                    <CalendarIcon class="mr-2 h-5 w-5 text-indigo-400" />
+                    <span v-if="calendarValue">
+                      {{ calendarDateFormatter.format(calendarValue.toDate(getLocalTimeZone())) }}
+                    </span>
+                    <span v-else class="text-gray-400">Pick a date</span>
+                  </Button>
+                </div>
+                <div v-else>
+                  <Popover open>
+                    <PopoverTrigger as-child>
+                      <Button variant="outline" class="w-full justify-start text-left font-normal">
+                        <CalendarIcon class="mr-2 h-5 w-5 text-indigo-400" />
+                        <span v-if="calendarValue">
+                          {{ calendarDateFormatter.format(calendarValue.toDate(getLocalTimeZone())) }}
+                        </span>
+                        <span v-else class="text-gray-400">Pick a date</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-auto p-0">
+                      <RangeCalendar
+                        v-model="calendarValue"
+                        :number-of-months="2"
+                        :initial-focus="true"
+                        @update:start-value="handleCalendarSelect"
+                      />
+                      <div class="flex justify-end mt-2">
+                        <Button size="sm" variant="ghost" @click="editingField.date_time = false">Cancel</Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
               <!-- Description -->
               <div>
                 <label class="block text-sm font-medium text-gray-300">Description</label>
@@ -107,6 +155,19 @@
                 <div v-else class="mt-1">
                   <input type="text" v-model="form.address" @blur="saveField('address')"
                     class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                </div>
+                <!-- Mapbox Static Map Preview -->
+                <div v-if="mapboxImageUrl" class="mt-2">
+                  <a :href="mapboxMapsLink" target="_blank" rel="noopener" title="Open in Map App">
+                    <img
+                      :src="mapboxImageUrl"
+                      alt="Map snapshot"
+                      class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
+                      style="width: 100%; max-width: 600px; min-height: 120px; background: #222;"
+                    />
+                  </a>
+                  <div v-if="mapboxLoading" class="text-xs text-gray-400 mt-1">Loading map...</div>
+                  <div v-if="mapboxError" class="text-xs text-red-400 mt-1">{{ mapboxError }}</div>
                 </div>
               </div>
             </div>
@@ -232,19 +293,6 @@
 
           <!-- Footer buttons -->
           <div class="sm:flex sm:justify-between">
-            <!-- Save All button (left side) - only shown when in edit mode -->
-            <button v-if="isAnyFieldBeingEdited" @click="saveAllChanges"
-              class="glossy-btn btn w-full mb-2 sm:mb-0 inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-amber-400 font-bold hover:bg-amber-400 hover:text-black sm:w-auto sm:text-xs"
-              :class="{ 'animate-pulse': hasChanges }">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
-              Save All Changes
-            </button>
-            <div v-else class="hidden sm:block"></div>
-
             <!-- Right side buttons container -->
             <div class="sm:flex sm:flex-row-reverse">
               <!-- Archive Work Order button -->
@@ -361,9 +409,9 @@
           </div>
 
           <!-- Preview Modal -->
-          <div v-if="previewAttachment" class="fixed inset-0 z-50 flex items-center justify-center">
-            <div @click="closePreview" class="absolute inset-0 bg-black bg-opacity-75"></div>
-            <div class="relative z-10 max-w-4xl w-full bg-gray-900 rounded-lg overflow-hidden">
+          <div v-if="previewAttachment" class="fixed inset-0 z-[90] flex items-center justify-center">
+            <div @click="closePreview" class="absolute inset-0 bg-black bg-opacity-75 z-[91]"></div>
+            <div class="relative z-[92] max-w-4xl w-full bg-gray-900 rounded-lg overflow-hidden">
               <!-- Only show header for images, since PdfViewer has its own header -->
               <div v-if="previewMode !== 'pdf'" class="p-4 border-b border-gray-800 flex justify-between items-center">
                 <h3 class="text-lg font-medium text-gray-200">{{ getFileName(previewAttachment) }}</h3>
@@ -411,7 +459,7 @@
       </div>
 
       <!-- Timeline Modal (positioned on the left side) -->
-      <div v-if="showTimelineModal" class="fixed inset-0 flex items-start justify-start z-50 pointer-events-none">
+      <div v-if="showTimelineModal" class="fixed inset-0 flex items-start justify-start z-[70] pointer-events-none">
         <div class="flex w-full mt-60 pointer-events-none">
           <!-- Timeline modal container -->
           <div class="w-[535px] flex-shrink-0 pointer-events-auto ml-8">
@@ -445,7 +493,7 @@
       </div>
 
       <!-- Messenger Modal (positioned on the right side) -->
-      <div v-if="showMessengerModal" class="fixed top-0 right-0 z-50 pointer-events-none">
+      <div v-if="showMessengerModal" class="fixed top-0 right-0 z-[70] pointer-events-none">
         <div class="mt-60 mr-8 pointer-events-none">
           <!-- Messenger modal container -->
           <div class="w-[535px] pointer-events-auto">
@@ -494,6 +542,11 @@ import { Badge } from '@/Components/ui/badge';
 import { useToast } from '@/Composables/useToast';
 import axios from 'axios';
 import format from 'date-fns/format';
+import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalized/date';
+import { CalendarIcon } from 'lucide-vue-next';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { RangeCalendar } from '@/components/ui/range-calendar';
 
 // Format currency utility (since @/Utils/formatCurrency does not exist)
 function formatCurrency(value) {
@@ -583,22 +636,8 @@ const startEditing = (field) => {
 const saveField = async (field) => {
   // Handle special field cases before saving
   if (field === 'date_time') {
-    // Handle different date selection types
-    if (dateSelectionType.value === 'single') {
-      // For single date, just use the date_time value
-      // No need to modify form.value
-    } else if (dateSelectionType.value === 'range') {
-      // For date range, we need both start and end dates
-      if (!form.value.end_date) {
-        // If no end date, default to start date + 1 hour
-        const startDate = new Date(form.value.date_time);
-        startDate.setHours(startDate.getHours() + 1);
-        form.value.end_date = startDate.toISOString().slice(0, 16);
-      }
-    } else if (dateSelectionType.value === 'multiple') {
-      // For multiple dates, use the selectedDates array
-      form.value.visit_dates = [...selectedDates.value]; // Make a copy
-    }
+    // Only save the date_time field, no dateSelectionType logic needed
+    // (If you add range/multiple in the future, add logic here)
   } else if (field === 'images') {
     // For images, we need to use FormData to handle file uploads
     try {
@@ -867,6 +906,19 @@ const uploadError = ref(null);
 const previewAttachment = ref(null);
 const previewMode = ref('image'); // 'image', 'pdf', or 'file'
 
+// Function to handle previewing attachments
+function handlePreviewAttachment(attachment) {
+  previewAttachment.value = attachment;
+  // Determine preview mode
+  if (isPdfFile(attachment)) {
+    previewMode.value = 'pdf';
+  } else if (isImageFile(attachment)) {
+    previewMode.value = 'image';
+  } else {
+    previewMode.value = 'file';
+  }
+}
+
 // --- Signature button title ---
 const getSignatureButtonTitle = computed(() => {
   if (!hasPdfAttachment.value) return 'No PDF attachments available for signature.';
@@ -937,6 +989,95 @@ const totalAmount = computed(() => {
 // Method: getAllAttachments for template usage
 function getAllAttachments() {
   return props.workOrder?.attachments || [];
+}
+
+// --- Google Maps Static Image and Link ---
+const googleMapsApiKey = 'YOUR_GOOGLE_MAPS_STATIC_API_KEY'; // TODO: Replace with your real API key
+const mapAddress = computed(() => encodeURIComponent(form.value.address || ''));
+const mapImageUrl = computed(() => {
+  if (!form.value.address) return '';
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${mapAddress.value}&zoom=16&size=600x200&maptype=roadmap&markers=color:red%7C${mapAddress.value}&key=${googleMapsApiKey}`;
+});
+const googleMapsLink = computed(() => {
+  if (!form.value.address) return '#';
+  return `https://www.google.com/maps/search/?api=1&query=${mapAddress.value}`;
+});
+
+// --- Mapbox Static Image and Link ---
+const mapboxAccessToken = 'pk.eyJ1Ijoibm10ZWNoIiwiYSI6ImNtYndzNG0yZTB2MTQycm9yMmxrZTJiOXYifQ.teJIWClLiWUJvvacQC3EFQ'; // TODO: Replace with your real Mapbox public token
+const mapboxCoords = ref({ lat: null, lon: null });
+const mapboxLoading = ref(false);
+const mapboxError = ref(null);
+
+// Geocode the address to get lat/lon from Mapbox
+async function geocodeAddress(address) {
+  if (!address) {
+    mapboxCoords.value = { lat: null, lon: null };
+    return;
+  }
+  mapboxLoading.value = true;
+  mapboxError.value = null;
+  try {
+    const resp = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxAccessToken}`
+    );
+    const data = await resp.json();
+    if (data.features && data.features.length > 0) {
+      const [lon, lat] = data.features[0].center;
+      mapboxCoords.value = { lat, lon };
+    } else {
+      mapboxCoords.value = { lat: null, lon: null };
+      mapboxError.value = 'No location found.';
+    }
+  } catch (e) {
+    mapboxCoords.value = { lat: null, lon: null };
+    mapboxError.value = 'Error fetching map location.';
+  } finally {
+    mapboxLoading.value = false;
+  }
+}
+
+// Watch for address changes to geocode
+watch(() => form.value.address, (newAddress) => {
+  geocodeAddress(newAddress);
+}, { immediate: true });
+
+const mapboxImageUrl = computed(() => {
+  const { lat, lon } = mapboxCoords.value;
+  if (!lat || !lon) return '';
+  // Mapbox static image with a red pin
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${lon},${lat})/${lon},${lat},16/600x200?access_token=${mapboxAccessToken}`;
+});
+const mapboxMapsLink = computed(() => {
+  const { lat, lon } = mapboxCoords.value;
+  if (!lat || !lon) return '#';
+  // Mapbox web link
+  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`;
+});
+
+// Calendar date formatter for displaying scheduled date/time
+const calendarDateFormatter = new DateFormatter('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+const calendarValue = ref(form.value.date_time ? new CalendarDate(
+  new Date(form.value.date_time).getFullYear(),
+  new Date(form.value.date_time).getMonth() + 1,
+  new Date(form.value.date_time).getDate()
+) : null);
+
+watch(() => form.value.date_time, (newVal) => {
+  if (newVal) {
+    const d = new Date(newVal);
+    calendarValue.value = new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  }
+});
+
+function handleCalendarSelect(date) {
+  if (!date) return;
+  // Set to start of day, but keep time if present
+  const prev = form.value.date_time ? new Date(form.value.date_time) : new Date();
+  const newDate = new Date(date.year, date.month - 1, date.day, prev.getHours(), prev.getMinutes());
+  form.value.date_time = newDate.toISOString();
+  saveField('date_time');
+  editingField.value.date_time = false;
 }
 </script>
 
