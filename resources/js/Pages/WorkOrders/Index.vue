@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onErrorCaptured } from 'vue';
+import { ref, computed, onErrorCaptured, nextTick } from 'vue';
 import format from 'date-fns/format';
 import { usePage, router } from '@inertiajs/vue3';
 import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
@@ -177,7 +177,13 @@ const showWorkOrder = (workOrder) => {
 
 // Handle closing the work order modal
 const closeWorkOrderModal = () => {
+  console.log('Closing modal');
   showWorkOrderModal.value = false;
+  selectedWorkOrder.value = null;
+  console.log('Modal state after closing:', {
+    showModal: showWorkOrderModal.value,
+    selectedWorkOrder: selectedWorkOrder.value
+  });
 };
 
 // Handle invoice created event from WorkOrder component
@@ -327,9 +333,39 @@ const formatDateTime = (dateTime) => {
   return new Date(dateTime).toLocaleString();
 };
 
-const openWorkOrder = (workOrder) => {
-  selectedWorkOrder.value = workOrder;
-  showWorkOrderModal.value = true;
+const openWorkOrder = async (workOrder) => {
+  try {
+    console.log('Opening work order:', workOrder.id);
+    // Get full work order details
+    const response = await axios.get(`/work-orders/${workOrder.id}/details`);
+    console.log('Work order details response:', response.data);
+
+    // Ensure the data is valid before setting it
+    if (!response.data) {
+      throw new Error('No data received from server');
+    }
+
+    // Set the modal state
+    showWorkOrderModal.value = true;
+    selectedWorkOrder.value = response.data;
+    
+    // Debug logs
+    console.log('Modal state after setting:', {
+      showModal: showWorkOrderModal.value,
+      selectedWorkOrder: selectedWorkOrder.value,
+      workOrderId: selectedWorkOrder.value?.id,
+      title: selectedWorkOrder.value?.title
+    });
+
+    // Force an update if needed
+    nextTick(() => {
+      console.log('After nextTick - Modal visible:', showWorkOrderModal.value);
+    });
+
+  } catch (error) {
+    console.error('Error loading work order details:', error);
+    alert('Unable to load work order details. Please try again.');
+  }
 };
 
 const statusOptions = [
@@ -447,11 +483,14 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
             <table class="min-w-full divide-y divide-gray-700">
               <thead>
                 <tr>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Title</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Title
+                  </th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Status
+                  </th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Customer
                   </th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Technician
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">
+                    Technician
                   </th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Date</th>
 
@@ -459,13 +498,8 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
               </thead>
               <tbody class="divide-y divide-gray-700">
                 <tr v-for="workOrder in paginatedWorkOrders" :key="workOrder.id"
-                  class="hover:bg-gray-800/30 cursor-pointer group"
-                  @click="openWorkOrder(workOrder)"
-                  tabindex="0"
-                  @keydown.enter="openWorkOrder(workOrder)"
-                  aria-label="Open work order details"
-                  role="button"
-                >
+                  class="hover:bg-gray-800/30 cursor-pointer group" @click="openWorkOrder(workOrder)" tabindex="0"
+                  @keydown.enter="openWorkOrder(workOrder)" aria-label="Open work order details" role="button">
                   <td class="px-6 py-4 whitespace-nowrap text-white group-hover:underline">{{ workOrder.title }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span
@@ -478,7 +512,9 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
                   <td class="px-6 py-4 whitespace-nowrap text-white">{{ formatDate(workOrder.date_time ||
                     workOrder.created_at) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <span class="text-xs text-lime-400 hover:underline cursor-pointer" @click.stop="openWorkOrder(workOrder)" tabindex="0" role="button" aria-label="View details">View Details</span>
+                    <span class="text-xs text-lime-400 hover:underline cursor-pointer"
+                      @click.stop="openWorkOrder(workOrder)" tabindex="0" role="button" aria-label="View details">View
+                      Details</span>
                   </td>
                 </tr>
                 <tr v-if="paginatedWorkOrders.length === 0">
@@ -501,9 +537,11 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
     </div>
 
     <!-- Add the WorkOrder modal component -->
-    <WorkOrder v-if="showWorkOrderModal" :workOrder="selectedWorkOrder" @close="closeWorkOrderModal" />
+    <WorkOrder v-if="showWorkOrderModal && selectedWorkOrder" :workOrder="selectedWorkOrder" :showModal="showWorkOrderModal" :users="users"
+      @close="closeWorkOrderModal" />
 
-    <div class="fixed mt-14 top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 glass-header">
+    <div
+      class="fixed mt-[80px] top-0 left-0 right-0 z-10 backdrop-blur-md bg-white/50 dark:bg-gray-800/60 glass-header">
       <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
           <h2 class="font-semibold text-xl text-gray-800 dark:text-lime-400 leading-tight">

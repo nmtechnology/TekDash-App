@@ -225,29 +225,43 @@ public function show($id)
 public function getDetails($id)
 {
     try {
-        // Try to find the work order
-        $workOrder = WorkOrder::find($id);
+        \Log::info('Getting details for work order: ' . $id);
+        
+        // Try to find the work order with its relationships
+        $workOrder = WorkOrder::with([
+            'user:id,name,email',
+            'customer:id,business_name,contact_name,email',
+            'technician:id,name,email',
+            'notes.user:id,name',
+            'attachments'
+        ])->find($id);
         
         // If not found, return a 404 with a clear message
         if (!$workOrder) {
+            \Log::warning('Work order not found: ' . $id);
             return response()->json([
                 'error' => 'Work order not found',
                 'message' => "No work order exists with ID {$id}"
             ], 404);
         }
         
-        // Load relationships safely
-        $workOrder->load(['user:id,name,email', 'customer', 'technician']);
-        
         // Format dates if needed
         if ($workOrder->date_time) {
             $workOrder->formatted_date = \Carbon\Carbon::parse($workOrder->date_time)->format('Y-m-d\TH:i');
         }
         
+        \Log::info('Successfully retrieved work order details', ['id' => $id]);
         return response()->json($workOrder);
     } catch (\Exception $e) {
-        \Log::error('Error retrieving work order: ' . $e->getMessage());
-        return response()->json(['error' => $e->getMessage()], 500);
+        \Log::error('Error retrieving work order', [
+            'id' => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json([
+            'error' => 'Failed to retrieve work order details',
+            'message' => $e->getMessage()
+        ], 500);
     }
 }
 

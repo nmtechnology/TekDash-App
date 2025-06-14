@@ -88,6 +88,16 @@ class WorkOrder extends Model
         return $this->status === $status;
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function technician()
+    {
+        return $this->belongsTo(User::class, 'technician_id');
+    }
+
     public function notes()
     {
         return $this->hasMany(Note::class);
@@ -105,11 +115,6 @@ class WorkOrder extends Model
         return $this->notes()->with('user')->get();
     }
     
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function activities()
     {
         return $this->hasMany(WorkOrderActivity::class);

@@ -884,6 +884,42 @@ function getUserAvatar(userId) {
   return user ? user.avatar_url || user.profile_photo_url || '' : '';
 }
 
+// Helper: isPdfFile
+function isPdfFile(attachment) {
+  if (!attachment) return false;
+  const name = attachment.file_name || attachment.name || attachment.url || '';
+  return (
+    (attachment.file_type && attachment.file_type.includes('pdf')) ||
+    name.toLowerCase().endsWith('.pdf')
+  );
+}
+
+// Helper: Get filename from attachment
+function getFileName(attachment) {
+  if (!attachment) return 'Unknown file';
+  if (typeof attachment === 'string') {
+    // If attachment is a URL string, extract the filename
+    return attachment.split('/').pop() || 'Unknown file';
+  }
+  // Return filename from various possible attachment object structures
+  return attachment.file_name || attachment.name || attachment.url?.split('/').pop() || 'Unknown file';
+}
+
+// Helper: isImageFile for attachment type checking
+function isImageFile(attachment) {
+  if (!attachment) return false;
+  
+  // Check if attachment has file_type property
+  if (attachment.file_type) {
+    return attachment.file_type.startsWith('image/');
+  }
+  
+  // Check file name extension as fallback
+  const name = attachment.file_name || attachment.name || attachment.url || '';
+  const ext = name.toLowerCase().split('.').pop();
+  return ['jpg', 'jpeg', 'png', 'gif', 'heic'].includes(ext);
+}
+
 // Add missing hasPdfAttachment computed property
 const hasPdfAttachment = computed(() => {
   const attachments = props.workOrder?.attachments || [];
@@ -901,16 +937,6 @@ const totalAmount = computed(() => {
 // Method: getAllAttachments for template usage
 function getAllAttachments() {
   return props.workOrder?.attachments || [];
-}
-
-// Helper: isPdfFile
-function isPdfFile(attachment) {
-  if (!attachment) return false;
-  const name = attachment.file_name || attachment.name || attachment.url || '';
-  return (
-    (attachment.file_type && attachment.file_type.includes('pdf')) ||
-    name.toLowerCase().endsWith('.pdf')
-  );
 }
 </script>
 

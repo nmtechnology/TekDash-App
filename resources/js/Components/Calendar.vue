@@ -358,7 +358,7 @@ async function fetchEvents() {
     // Debug: log the processed calendar data
     console.log('Processed calendar data:', calendarData);
     
-    const events = data.flatMap(workOrder => {
+    const events = calendarData.flatMap(workOrder => {
       // Debug: log each work order's date fields to check format
       console.log(`Work Order #${workOrder.id}:`, {
         title: workOrder.title,

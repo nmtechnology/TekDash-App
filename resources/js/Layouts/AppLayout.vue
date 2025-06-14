@@ -142,7 +142,7 @@ function logout() {
 <template>
   <div>
     <Head :title="title" />
-    <!-- <Banner /> -->
+    <Banner />
     <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95 flex">
       <!-- Sidebar Toggle Button (always visible, fixed at top left) -->
       <button
@@ -209,13 +209,10 @@ function logout() {
       <!-- Main content area -->
       <div class="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 transition-all duration-300">
         <!-- Top navbar UNDER sidebar, lower z-index -->
-        <nav class="navbar fixed-navbar bg-base-100 shadow-sm top-0 left-0 right-0 z-30 md:left-64">
+        <nav class="navbar fixed-navbar bg-base-100 shadow-sm top-0 left-0 right-0 z-30 glass-header transition-all duration-300"
+             :class="{ 'scrolled': isScrolled }">
           <div class="navbar-start">
-            <!-- <button class="md:hidden btn btn-ghost btn-circle" @click="sidebarOpen = true">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-              </svg>
-            </button> -->
+
           </div>
           <div class="navbar-center">
             <span class="btn-ghost text-xl md:hidden flex items-center gap-2">
@@ -266,6 +263,14 @@ function logout() {
 </template>
 
 <style scoped>
+
+.glass-header {
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .search-container {
     width: 200px;
     max-width: 100%;
