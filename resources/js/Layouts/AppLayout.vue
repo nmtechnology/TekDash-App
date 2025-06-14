@@ -28,6 +28,7 @@ const selectedWorkOrder = ref(null);
 const showWorkOrderModal = ref(false);
 const showingNavigationDropdown = ref(false);
 const isScrolled = ref(false);
+const sidebarOpen = ref(false);
 
 // Add scroll event listener to detect scrolling for navbar effects
 onMounted(() => {
@@ -139,82 +140,129 @@ function logout() {
 </script>
 
 <template>
-    <div>
-        <Head :title="title" />
-
-        <Banner />
-
-        <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95">
-            <nav class="navbar fixed-navbar bg-base-100 shadow-sm top-0 left-0 right-0 z-50">
-                <div class="navbar-start">
-                    <div class="dropdown">
-                        <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-                            </svg>
-                        </div>
-                        <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-                            <li><a href="/dashboard">Dashboard</a></li>
-                            <li><a href="/work-orders">Work Orders</a></li>
-                            <li><a href="/customers">Customers</a></li>
-                            <li><a href="/technicians">Technicians</a></li>
-                            <li><a href="/gallery">Gallery</a></li>
-                            <li><a>About</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="navbar-center">
-                    <a class="btn-ghost text-xl">TekDash</a>
-                </div>
-                <div class="navbar-end">
-                    <div class="w-24 md:w-auto">
-                        <Search placeholder="Search Work Orders..." @search="handleSearch" />
-                    </div>
-                    <NotificationsDropdown />
-                    <div class="dropdown dropdown-end">
-                        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-                            <div class="w-10 rounded-full">
-                                <img :src="$page.props.auth.user.profile_photo_url" :alt="$page.props.auth.user.name" />
-                            </div>
-                        </div>
-                        <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-                            <li>
-                                <a href="#">Profile</a>
-                            </li>
-                            <li>
-                                <a href="#">Settings</a>
-                            </li>
-                            <li>
-                                <form method="POST" @submit.prevent="logout">
-                                    <button type="submit">Logout</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </nav>
-
-            <!-- Toast Container -->
-            <!-- <ToastContainer /> -->
-
-            <!-- Background Element -->
-            <div class="fixed inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-                <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[46.125rem] -translate-x-1/2 rotate-[45deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 20.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)" />
-            </div>
-
-            <!-- Page Heading -->
-            <header v-if="$slots.header" class="glossy-header shadow pt-16">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main class="content-container pt-16">
-                <slot />
-            </main>
+  <div>
+    <Head :title="title" />
+    <!-- <Banner /> -->
+    <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95 flex">
+      <!-- Sidebar Toggle Button (always visible, fixed at top left) -->
+      <button
+        class="fixed top-4 left-4 z-50 md:hidden bg-gray-900/80 border border-gray-800 rounded-full p-2 shadow-lg hover:bg-gray-800 transition"
+        @click="sidebarOpen = !sidebarOpen"
+        aria-label="Toggle sidebar"
+      >
+        <svg v-if="!sidebarOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <!-- Sidebar -->
+      <aside :class="['shadcn-sidebar', sidebarOpen ? 'left-0' : '-left-64', 'fixed top-0 z-50 h-full w-64 transition-all duration-300 bg-gray-900/80 border-r border-gray-800 backdrop-blur-lg']">
+        <div class="flex flex-col h-full">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+            <span class="flex items-center gap-2 text-xl font-bold text-lime-400">
+              <ApplicationMark class="h-7 w-7" />
+              TekDash
+            </span>
+            <button class="md:hidden text-gray-400 hover:text-lime-400" @click="sidebarOpen = false">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <nav class="flex-1 px-4 py-6 space-y-2">
+            <Link href="/dashboard" class="shadcn-nav-link shadcn-nav-link-dashboard">
+              <svg class="inline-block mr-2 h-5 w-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0v6m0 0H7m6 0h6" /></svg>
+              Dashboard
+            </Link>
+            <Link href="/work-orders" class="shadcn-nav-link shadcn-nav-link-workorders">
+              <svg class="inline-block mr-2 h-5 w-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 0h6m-6 0a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2m-6 0v2a2 2 0 002 2h2a2 2 0 002-2v-2" /></svg>
+              Work Orders
+            </Link>
+            <Link href="/customers" class="shadcn-nav-link shadcn-nav-link-customers">
+              <svg class="inline-block mr-2 h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
+              Customers
+            </Link>
+            <Link href="/technicians" class="shadcn-nav-link shadcn-nav-link-technicians">
+              <svg class="inline-block mr-2 h-5 w-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+              Technicians
+            </Link>
+            <Link href="/gallery" class="shadcn-nav-link shadcn-nav-link-gallery">
+              <svg class="inline-block mr-2 h-5 w-5 text-pink-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4-4a3 3 0 014 0l4 4M4 16V8a2 2 0 012-2h12a2 2 0 012 2v8M4 16h16" /></svg>
+              Gallery
+            </Link>
+            <Link href="#" class="shadcn-nav-link shadcn-nav-link-about">
+              <svg class="inline-block mr-2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+              About
+            </Link>
+          </nav>
+          <div class="px-4 py-4 border-t border-gray-800">
+            <form method="POST" @submit.prevent="logout">
+              <button type="submit" class="w-full text-left shadcn-nav-link">Logout</button>
+            </form>
+          </div>
         </div>
+      </aside>
+      <!-- Sidebar overlay for mobile -->
+      <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-black/40 md:hidden" @click="sidebarOpen = false"></div>
+      <!-- Main content area -->
+      <div class="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 transition-all duration-300">
+        <!-- Top navbar UNDER sidebar, lower z-index -->
+        <nav class="navbar fixed-navbar bg-base-100 shadow-sm top-0 left-0 right-0 z-30 md:left-64">
+          <div class="navbar-start">
+            <!-- <button class="md:hidden btn btn-ghost btn-circle" @click="sidebarOpen = true">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+            </button> -->
+          </div>
+          <div class="navbar-center">
+            <span class="btn-ghost text-xl md:hidden flex items-center gap-2">
+              <ApplicationMark class="h-6 w-6" />
+              TekDash
+            </span>
+          </div>
+          <div class="navbar-end">
+            <div class="w-40 md:w-auto">
+              <Search placeholder="Search Work Orders..." @search="handleSearch" />
+            </div>
+            <NotificationsDropdown />
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+                <div class="w-10 rounded-full">
+                  <img :src="$page.props.auth.user.profile_photo_url" :alt="$page.props.auth.user.name" />
+                </div>
+              </div>
+              <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+                <li><Link href="#">Profile</Link></li>
+                <li><Link href="#">Settings</Link></li>
+                <li>
+                  <form method="POST" @submit.prevent="logout">
+                    <button type="submit">Logout</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+        <!-- Background Element -->
+        <div class="fixed inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
+          <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[46.125rem] -translate-x-1/2 rotate-[45deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 20.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)" />
+        </div>
+        <!-- Page Heading -->
+        <header v-if="$slots.header" class="glossy-header shadow pt-16">
+          <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <slot name="header" />
+          </div>
+        </header>
+        <!-- Page Content -->
+        <main class="content-container pt-16">
+          <slot />
+        </main>
+      </div>
     </div>
+  </div>
 </template>
 
 <style scoped>
@@ -252,7 +300,7 @@ function logout() {
   right: 0;
   background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.85) 100%);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  z-index: 50;
+  z-index: 30;
   transition: all 0.3s ease;
 }
 
@@ -520,5 +568,43 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
+}
+
+.shadcn-sidebar {
+  transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.shadcn-nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+  color: #a3e635;
+}
+.shadcn-nav-link-dashboard { color: #60a5fa; }
+.shadcn-nav-link-workorders { color: #a78bfa; }
+.shadcn-nav-link-customers { color: #22d3ee; }
+.shadcn-nav-link-technicians { color: #fb923c; }
+.shadcn-nav-link-gallery { color: #f472b6; }
+.shadcn-nav-link-about { color: #a3a3a3; }
+.shadcn-nav-link:hover, .shadcn-nav-link.active {
+  background: rgba(163, 230, 53, 0.08);
+  color: #bef264;
+}
+@media (min-width: 768px) {
+  .shadcn-sidebar {
+    left: 0 !important;
+    position: fixed;
+  }
+}
+@media (max-width: 767px) {
+  .shadcn-sidebar {
+    z-index: 50;
+  }
+  .flex-1 {
+    margin-left: 0 !important;
+  }
 }
 </style>

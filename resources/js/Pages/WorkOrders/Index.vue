@@ -77,7 +77,7 @@ const searchQuery = ref('');
 const showArchivedModal = ref(false); // Add this inside setup
 
 const selectedWorkOrder = ref(null);
-const showModal = ref(false);
+const showWorkOrderModal = ref(false);
 
 const openModal = (workOrder) => {
   selectedWorkOrder.value = workOrder;
@@ -162,9 +162,6 @@ const selectedStatFilter = ref(null);
 function handleFilterStats(statName) {
   selectedStatFilter.value = statName === 'Total' ? null : statName.toLowerCase();
 }
-
-// Regular work order modal state
-const showWorkOrderModal = ref(false);
 
 // Archived work order modal state
 const showArchivedWorkOrderModal = ref(false);
@@ -332,7 +329,7 @@ const formatDateTime = (dateTime) => {
 
 const openWorkOrder = (workOrder) => {
   selectedWorkOrder.value = workOrder;
-  showModal.value = true;
+  showWorkOrderModal.value = true;
 };
 
 const statusOptions = [
@@ -443,28 +440,33 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
             </div>
           </div>
 
-          <Stats />
+          <Stats :stats="filteredData" />
 
           <!-- Work Orders Table -->
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-700">
               <thead>
                 <tr>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Title</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Status</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Customer
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Title</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Customer
                   </th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Technician
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Technician
                   </th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Date</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-lime-400 uppercase tracking-wider">Actions
-                  </th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Date</th>
+
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-700">
                 <tr v-for="workOrder in paginatedWorkOrders" :key="workOrder.id"
-                  class="hover:bg-gray-800/30 cursor-pointer" @click="openWorkOrder(workOrder)">
-                  <td class="px-6 py-4 whitespace-nowrap text-white">{{ workOrder.title }}</td>
+                  class="hover:bg-gray-800/30 cursor-pointer group"
+                  @click="openWorkOrder(workOrder)"
+                  tabindex="0"
+                  @keydown.enter="openWorkOrder(workOrder)"
+                  aria-label="Open work order details"
+                  role="button"
+                >
+                  <td class="px-6 py-4 whitespace-nowrap text-white group-hover:underline">{{ workOrder.title }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span
                       :class="['px-2 inline-flex text-xs leading-5 font-semibold rounded-full', getStatusColor(workOrder.status)]">
@@ -476,8 +478,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
                   <td class="px-6 py-4 whitespace-nowrap text-white">{{ formatDate(workOrder.date_time ||
                     workOrder.created_at) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <span class="text-xs text-lime-400 hover:underline" @click.stop="openWorkOrder(workOrder)">View
-                      Details</span>
+                    <span class="text-xs text-lime-400 hover:underline cursor-pointer" @click.stop="openWorkOrder(workOrder)" tabindex="0" role="button" aria-label="View details">View Details</span>
                   </td>
                 </tr>
                 <tr v-if="paginatedWorkOrders.length === 0">
