@@ -9,7 +9,7 @@ use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $customers = Customer::where('is_active', true)
             ->orderBy('business_name')
@@ -36,6 +36,11 @@ class CustomerController extends Controller
             }
             return $customer;
         });
+
+        // Return JSON for API requests, Inertia for web
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json($customers);
+        }
 
         return Inertia::render('Customers/Index', [
             'customers' => $customers

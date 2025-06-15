@@ -4,6 +4,7 @@
             <h2 class="text-xl font-semibold leading-tight text-lime-400">
                 Customers
             </h2>
+            <AddCustomerButton @customer-added="reloadCustomers" />
         </template>
 
         <!-- Dashboard at the top -->
@@ -30,7 +31,7 @@
                                 </svg>
                             </div>
                         </div>
-                        <AddCustomerButton @customer-added="reloadCustomers" />
+
                     </div>
 
                     <!-- Customers Table -->

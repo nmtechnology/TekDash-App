@@ -11,14 +11,14 @@
     </button>
 
     <!-- Portal target to render modal at root level -->
-    <div v-if="showModal" class="fixed inset-0 z-[9999] flex items-start justify-center pt-24">
+    <div v-if="showModal" class="fixed inset-0 z-[9] flex items-start justify-center pt-24">
       <!-- Backdrop with higher opacity for better contrast -->
       <div class="fixed inset-0 bg-black bg-opacity-75 transition-opacity" @click="showModal = false"></div>
       
       <!-- Modal content -->
       <div class="relative z-[10000] w-full max-w-3xl mx-4">
         <div class="glossy-card rounded-lg shadow-xl transform transition-all flex flex-col max-h-[80vh]">
-          <div class="glossy-header px-6 pt-5 pb-4">
+          <div class="glossy-header px-6 pt-5 pb-4 z-[10000]">
             <div class="flex justify-between items-center">
               <h3 class="text-purple-400 text-2xl leading-6 font-medium" id="modal-title">
                 Add New Customer
@@ -36,6 +36,14 @@
           </div>
 
           <div class="flex-grow overflow-y-auto px-6 py-4">
+            <!-- Error message area -->
+            <div v-if="errorMessage" class="mb-4 bg-red-900 border border-red-500 text-red-100 px-4 py-3 rounded relative" role="alert">
+              <strong class="font-bold">Error: </strong>
+              <span class="block sm:inline">{{ errorMessage }}</span>
+              <button @click="errorMessage = ''" class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 5.652a1 1 0 10-1.414-1.414L10 7.172 7.066 4.238a1 1 0 10-1.414 1.414L8.586 8.586l-2.934 2.934a1 1 0 101.414 1.414L10 10.828l2.934 2.934a1 1 0 001.414-1.414l-2.934-2.934 2.934-2.934z"/></svg>
+              </button>
+            </div>
             <form @submit.prevent="addCustomer">
               <div class="mb-4">
                 <label for="business_name" class="block text-sm font-medium text-purple-400">Business Name</label>
@@ -202,6 +210,7 @@ const form = ref({
   pay_rate: '120.00',
   attachable_files: null,
 });
+const errorMessage = ref('');
 
 const toast = useToast();
 
@@ -243,6 +252,12 @@ async function addCustomer() {
     };
     emit('customer-added', response.data);
   } catch (error) {
+    // Log the full error response for debugging
+    if (error.response) {
+      console.log('AddCustomer API error:', error.response.data);
+    } else {
+      console.log('AddCustomer API error:', error);
+    }
     if (error.response) {
       if (error.response.status === 401) {
         toast.error('Please log in to add a customer');
@@ -252,7 +267,9 @@ async function addCustomer() {
         await initializeSanctum();
       } else if (error.response.status === 422 && error.response.data.errors) {
         const messages = Object.values(error.response.data.errors).flat();
-        toast.error(messages.join('\n'));
+        errorMessage.value = messages.join('\n');
+      } else if (error.response.status === 409) {
+        errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
       } else {
         toast.error(error.response.data.message || 'Failed to add customer');
       }

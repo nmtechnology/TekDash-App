@@ -88,7 +88,7 @@
               </div>
             </div>
             <div class="text-gray-300 text-sm">
-              {{ formatDate(props.workOrder.date_time) }}
+              Created: {{ formatDate(props.workOrder.created_at) }}
             </div>
           </div>
 
@@ -991,17 +991,7 @@ function getAllAttachments() {
   return props.workOrder?.attachments || [];
 }
 
-// --- Google Maps Static Image and Link ---
-const googleMapsApiKey = 'YOUR_GOOGLE_MAPS_STATIC_API_KEY'; // TODO: Replace with your real API key
-const mapAddress = computed(() => encodeURIComponent(form.value.address || ''));
-const mapImageUrl = computed(() => {
-  if (!form.value.address) return '';
-  return `https://maps.googleapis.com/maps/api/staticmap?center=${mapAddress.value}&zoom=16&size=600x200&maptype=roadmap&markers=color:red%7C${mapAddress.value}&key=${googleMapsApiKey}`;
-});
-const googleMapsLink = computed(() => {
-  if (!form.value.address) return '#';
-  return `https://www.google.com/maps/search/?api=1&query=${mapAddress.value}`;
-});
+
 
 // --- Mapbox Static Image and Link ---
 const mapboxAccessToken = 'pk.eyJ1Ijoibm10ZWNoIiwiYSI6ImNtYndzNG0yZTB2MTQycm9yMmxrZTJiOXYifQ.teJIWClLiWUJvvacQC3EFQ'; // TODO: Replace with your real Mapbox public token

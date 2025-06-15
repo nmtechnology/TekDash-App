@@ -146,7 +146,7 @@ function logout() {
     <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95 flex">
       <!-- Sidebar Toggle Button (always visible, fixed at top left) -->
       <button
-        class="fixed top-4 left-4 z-50 md:hidden bg-gray-900/80 border border-gray-800 rounded-full p-2 shadow-lg hover:bg-gray-800 transition"
+        class="fixed top-4 left-4 z-50 bg-gray-900/80 border border-gray-800 rounded-full p-2 shadow-lg hover:bg-gray-800 transition"
         @click="sidebarOpen = !sidebarOpen"
         aria-label="Toggle sidebar"
       >
@@ -202,6 +202,23 @@ function logout() {
               <button type="submit" class="w-full text-left shadcn-nav-link">Logout</button>
             </form>
           </div>
+          <!-- Sidebar toggle button for large screens -->
+          <div class="hidden md:flex justify-center items-center py-3 border-t border-gray-800">
+            <button
+              class="px-4 py-2 rounded bg-gray-800 text-lime-400 hover:bg-gray-700 transition"
+              @click="sidebarOpen = !sidebarOpen"
+              aria-label="Toggle sidebar visibility"
+              type="button"
+            >
+              <svg v-if="sidebarOpen" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span>{{ sidebarOpen ? 'Hide Sidebar' : 'Show Sidebar' }}</span>
+            </button>
+          </div>
         </div>
       </aside>
       <!-- Sidebar overlay for mobile -->
@@ -221,7 +238,7 @@ function logout() {
             </span>
           </div>
           <div class="navbar-end">
-            <div class="w-40 md:w-auto">
+            <div class="w-80 max-w-lg md:w-96 md:max-w-xl lg:w-[420px] xl:w-[500px] search-container">
               <Search placeholder="Search Work Orders..." @search="handleSearch" />
             </div>
             <NotificationsDropdown />
@@ -600,7 +617,7 @@ body {
 }
 @media (min-width: 768px) {
   .shadcn-sidebar {
-    left: 0 !important;
+    /* Removed left: 0 !important; to allow sidebarOpen to control visibility on all screens */
     position: fixed;
   }
 }

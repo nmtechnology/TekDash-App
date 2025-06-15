@@ -1,25 +1,28 @@
 <template>
   <div>
-    <button @click="handleShowModal" class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
+    <button @click="handleShowModal"
+      class="btn flex items-center gap-2 px-2 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       Add Work Order
     </button>
 
-    <div v-show="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70" @click="handleHideModal">
-      <div class="glossy-card rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[85vh] flex flex-col" @click.stop>
-        <div class="glossy-header px-6 pt-5 pb-4">
-          <div class="flex justify-between items-center">
-            <h3 class="text-lime-400 text-2xl leading-6 font-medium" id="modal-title">
+    <div v-show="showModal" class="fixed inset-0 mt-4 z-50 flex items-center justify-center bg-black bg-opacity-70"
+      @click="handleHideModal">
+      <div
+        class="glossy-card flex-auto rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[95vh] flex flex-col"
+        @click.stop>
+        <div class="glossy-header px-4 pt-3 pb-2">
+          <div class="flex justify-between items-center min-h-0">
+            <h3 class="text-lime-400 text-xl leading-5 font-medium" id="modal-title">
               Add Work Order
             </h3>
-            <button 
-              @click="handleHideModal" 
-              class="btn btn-circle btn-outline ml-4 text-gray-900 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
-              aria-label="Close modal"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button @click="handleHideModal"
+              class="btn btn-circle btn-outline ml-2 text-gray-900 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
+              aria-label="Close modal">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -27,83 +30,129 @@
         </div>
 
         <!-- Steps component -->
-        <ul class="steps px-6 mb-4">
-          <li v-for="step in totalSteps" :key="step" 
-              class="step" 
-              :class="{'step-info': step <= currentStep, 'step-error': step > currentStep}"
-              :data-content="step === currentStep ? '✓' : ''">
+        <ul class="steps px-6 mb-2">
+          <li v-for="step in totalSteps" :key="step" class="step"
+            :class="{'step-info': step <= currentStep, 'step-error': step > currentStep}"
+            :data-content="step === currentStep ? '✓' : ''">
             Step {{ step }}
           </li>
         </ul>
 
         <form @submit.prevent="submitForm" class="flex flex-col flex-grow">
           <div class="overflow-y-auto px-6 py-5 bg-gray-900 bg-opacity-90 flex-grow">
-            <!-- Step 1: Customer Selection -->
+           
+           
+            <!-- Step 1: Customer & Technician Selection -->
             <div v-show="currentStep === 1">
               <div class="glossy-section mb-4">
-                <label for="customer_id" class="text-green-400 block text-sm font-medium">Customer</label>
-                <p class="text-sm text-white">Choose a customer from the dropdown menu below.</p>
+                <label for="customer_id" class="text-green-400 block text-3xl font-extrabold">Select Customer</label>
+                <p class="text-md text-white font-semibold">Choose a customer from the dropdown menu below.</p>
                 <div v-if="isLoadingCustomers" class="text-center py-3">
-                  <div class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full"></div>
+                  <div
+                    class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full">
+                  </div>
                   <span class="ml-2 text-lime-400">Loading customers...</span>
                 </div>
-                <select v-else v-model="form.customer_id" id="customer_id" name="customer_id" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
-                  <option value="" disabled>Select a customer</option>
-                  <option v-for="customer in customersArray" :key="customer.id" :value="customer.id">{{ customer.business_name }}</option>
-                </select>
-                <div v-if="(customersArray.length === 0 || loadError) && !isLoadingCustomers" class="mt-2 text-red-400 text-sm">
-                  {{ loadError ? 'Error loading customers. Please try again.' : 'No customers found. Please add customers first.' }}
+                <div v-else-if="customersArray.length === 0 || loadError"
+                  class="mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
+                  <div class="flex items-center">
+                    <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg> -->
+                    <!-- <span class="text-red-400">{{ loadError ? 'Error loading customers. Please try again.' : 'No customers found. Please add customers first.' }}</span> -->
+                  </div>
+                  <button @click="loadCustomers"
+                    class="mt-2 px-3 py-1 bg-red-500/30 hover:bg-red-500/50 text-white rounded-md text-sm flex items-center"
+                    type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Retry Loading Customers
+                  </button>
                 </div>
+                <select v-else v-model="form.customer_id" id="customer_id" name="customer_id"
+                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                  required @change="logSelectedCustomer">
+                  <option value="" disabled>Select a customer ({{ customersArray.length }} available)</option>
+                  <option v-for="customer in customersArray" :key="customer.id" :value="customer.id">
+                    {{ customer.business_name || customer.name || `Customer #${customer.id}` }}
+                  </option>
+                </select>
+
               </div>
-              <!-- Selection Summary -->
+
+              <!-- Technician Selection (moved from step 10) -->
+              <div class="glossy-section mb-4">
+                <label for="technician_id" class="text-green-400 block text-3xl font-extrabold">Assign Technician</label>
+                <p class="text-md text-white font-semibold">Select a technician for this work order.</p>
+                <div v-if="isLoadingTechnicians" class="text-center py-3">
+                  <div
+                    class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full">
+                  </div>
+                  <span class="ml-2 text-lime-400">Loading technicians...</span>
+                </div>
+                <div v-else-if="technicians.length === 0"
+                  class="mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
+                  <div class="flex items-center">
+                    <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg> -->
+                    <!-- <span class="text-red-400">No technicians found. Please check back later.</span> -->
+                  </div>
+                </div>
+                <select v-else v-model="form.technician_id" id="technician_id" name="technician_id"
+                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                  required>
+                  <option value="" disabled>Select a technician ({{ technicians.length }} available)</option>
+                  <option v-for="technician in technicians" :key="technician.id" :value="technician.id">
+                    {{ technician.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Selection Summary for Step 1 -->
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                 <div class="text-center">
                   <div class="text-sm text-gray-400">Selected Customer:</div>
-                    <div class="text-lime-400 font-bold text-lg">
-                    {{ getSelectedCustomerName() || 'None selected' }}
-                    </div>
+                  <div class="text-lime-400 font-bold text-4xl">
+                    {{ customersArray.find(c => c.id == form.customer_id)?.business_name || customersArray.find(c => c.id == form.customer_id)?.name || 'None selected' }}
+                  </div>
+                  <div class="text-sm text-gray-400 mt-2">Assigned Technician:</div>
+                  <div class="text-lime-400 font-bold text-4xl">
+                    {{ technicians.find(t => t.id == form.technician_id)?.name || 'None selected' }}
+                  </div>
                 </div>
-              </div>
-
-              <!-- Technician Selection -->
-              <div class="glossy-section mt-4 mb-4">
-                <label for="technician_id" class="text-green-400 block text-sm font-medium">Assign Technician</label>
-                <p class="text-sm text-white">Optionally assign a technician to this work order.</p>
-                <select 
-                  v-model="form.technician_id" 
-                  id="technician_id" 
-                  name="technician_id" 
-                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm"
-                >
-                  <option value="">Select a technician (optional)</option>
-                  <option v-for="tech in technicians" :key="tech.id" :value="tech.id">{{ tech.name }}</option>
-                </select>
               </div>
             </div>
 
             <!-- Step 2: Work Order Title -->
             <div v-show="currentStep === 2">
               <div class="glossy-section mb-4">
-                <h3 class="text-lime-400 text-lg font-medium mb-2">Title</h3>
+                <h3 class="text-lime-400 text-2xl font-medium mb-2">Create A Title</h3>
                 <!-- Work order title fields -->
-                <p class="text-sm text-white">This section will generate a title for TekDash to find it in our system. Work order #'s cannot be used twice and the work order should have been duplicated if this is a return trip instead of creating a new work order. Location name is not an address, it is the name of the business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to look for a WalMart when driving. </p>
-                
+                <p class="text-lg text-white">This section will generate a title for TekDash to find it in our system.
+                  Work order #'s cannot be used twice and the work order should have been duplicated if this is a return
+                  trip instead of creating a new work order. Location name is not an address, it is the name of the
+                  business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to look
+                  for a WalMart when driving. </p>
+
                 <div class="flex flex-col md:flex-row md:gap-4">
-                  
+
                   <div class="mb-4 p-2 w-full">
-                    <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
+                    <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order
+                      Number</label>
                     <div class="relative">
-                      <input 
-                        placeholder="WO123456-01" 
-                        type="text" 
-                        v-model="workOrderNumber" 
-                        @blur="checkExistingWorkOrder" 
-                        id="workOrderNumber" 
-                        name="workOrderNumber"
-                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
+                      <input placeholder="WO123456-01" type="text" v-model="workOrderNumber"
+                        @blur="checkExistingWorkOrder" id="workOrderNumber" name="workOrderNumber"
+                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
                         :class="{'border-red-500': duplicateWorkOrderFound}"
-                        required
-                      >
+                        required>
                       <div v-if="checkingWorkOrder" class="absolute right-3 top-2">
                         <span class="text-yellow-400 text-xs">Checking...</span>
                       </div>
@@ -112,10 +161,12 @@
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="mb-4 p-2 w-full">
                     <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
-                    <select v-model="workType" id="workType" name="workType" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                    <select v-model="workType" id="workType" name="workType"
+                      class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                      required>
                       <option value="" disabled>Select work type</option>
                       <option value="CCTV">CCTV</option>
                       <option value="ALARM">ALARM</option>
@@ -133,9 +184,11 @@
                     </select>
                   </div>
                 </div>
-                  <div class="mb-4 p-2 w-full mr-1">
+                <div class="mb-4 p-2 w-full mr-1">
                   <label for="location" class="block text-sm font-medium text-green-400">Location/Business name</label>
-                  <select v-model="location" id="location" name="location" class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required>
+                  <select v-model="location" id="location" name="location"
+                    class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                    required>
                     <option value="" disabled>Select business name</option>
                     <option value="Chili's">Chili's</option>
                     <option value="Brinks">Brinks</option>
@@ -151,7 +204,7 @@
                     <option value="WellsFargo">WellsFargo</option>
                     <option value="NewSite">NewSite</option>
                   </select>
-                  </div>
+                </div>
                 <!-- Preview of combined title -->
                 <div>
                   <label class="block text-sm font-medium text-green-400">Generated Title</label>
@@ -164,20 +217,26 @@
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                 <div class="text-center">
                   <div class="text-sm text-gray-400">Generated Title:</div>
-                  <div class="text-lime-400 font-bold text-lg">{{ formattedTitle || 'No title generated' }}</div>
+                  <div class="text-lime-400 font-bold text-4xl">{{ formattedTitle || 'No title generated' }}</div>
                 </div>
               </div>
             </div>
-            
+
             <!-- Step 3: Description -->
             <div v-show="currentStep === 3" class="glossy-section mb-4">
-              <label for="description" class="block text-sm font-medium text-green-400">Service Description</label><p class="text-sm text-white">Enter the details of what was requested on the work order sent by the customer, here's a hint, you can copy and paste the description from the work orders into here which saves you time.</p>
-              <textarea v-model="form.description" id="description" name="description" placeholder="What is the Field Technician doing onsite?" class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" required></textarea>
+              <label for="description" class="block text-2xl font-medium text-green-400">Enter A Service Description</label>
+              <p class="text-lg text-white">Enter the details of what was requested on the work order sent by the
+                customer, here's a hint, you can copy and paste the description from the work orders into here which
+                saves you time.</p>
+              <textarea v-model="form.description" id="description" name="description"
+                placeholder="What is the Field Technician doing onsite?"
+                class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                required></textarea>
               <!-- Selection Summary -->
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                 <div class="text-center">
-                  <div class="text-sm text-gray-400">Entered Description:</div>
-                  <div class="text-lime-400 font-bold text-base whitespace-pre-line">{{ form.description || 'No description entered' }}</div>
+                  <div class="text-lg text-gray-400">Entered Description:</div>
+                  <div class="text-lime-400 text-lg font-bold text-base whitespace-pre-line">{{ descriptionSummary }}</div>
                 </div>
               </div>
             </div>
@@ -185,218 +244,200 @@
             <!-- Step 4: Date/Time -->
             <div v-show="currentStep === 4" class="glossy-section mb-4">
               <label class="block text-sm font-medium text-green-400">Date and Time Selection</label>
-              <p class="text-sm text-white mb-3">Select the date and time for this work order using our enhanced date picker.</p>
+              <p class="text-sm text-white mb-3">Select the date and time for this work order using our enhanced date
+                picker.</p>
               <div class="bg-lime-600/20 border border-lime-600/30 rounded-md p-3 mb-4">
                 <div class="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-500 mr-2" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span>
                 </div>
               </div>
-              
-              <!-- Enhanced Date Picker -->
-              <div class="mt-2">
-                <!-- Date Display and Popover Button -->
-                <Popover class="relative">
-                  <PopoverButton 
-                    class="glossy-content flex justify-between items-center w-full p-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lime-400 transition-all duration-200"
-                  >
-                    <div class="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>{{ selectedDateFormatted || 'Select a date' }}</span>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </PopoverButton>
 
-                  <PopoverPanel class="absolute z-10 w-full bg-gray-800 border border-gray-700 mt-1 rounded-lg shadow-lg p-2">
-                    <!-- Calendar UI -->
-                    <div class="p-2">
-                      <!-- Month Navigation -->
-                      <div class="flex justify-between items-center mb-4">
-                        <button 
-                          @click="prevMonth" 
-                          class="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white"
-                          type="button"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                          </svg>
-                        </button>
-                        <div class="text-lime-400 font-semibold">{{ currentMonthName }}</div>
-                        <button 
-                          @click="nextMonth" 
-                          class="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white"
-                          type="button"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
+              <!-- Enhanced Date Picker (shadcn style, large and modern) -->
+              <div class="mt-2 flex flex-col items-center">
+                <div class="w-full max-w-md">
+                  <Popover class="relative w-full">
+                    <PopoverButton
+                      class="glossy-content flex justify-between items-center w-full p-4 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lime-400 text-lg font-bold transition-all duration-200">
+                      <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{{ selectedDateFormatted || 'Select a date' }}</span>
                       </div>
-                      
-                      <!-- Days of Week Header -->
-                      <div class="grid grid-cols-7 mb-1">
-                        <div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-center text-xs text-gray-400 py-1">
-                          {{ day }}
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </PopoverButton>
+                    <PopoverPanel
+                      class="absolute z-10 w-full bg-gray-800 border-2 border-lime-400 mt-2 rounded-lg shadow-2xl p-4">
+                      <!-- Calendar UI -->
+                      <div class="p-2">
+                        <!-- Month Navigation -->
+                        <div class="flex justify-between items-center mb-6">
+                          <button @click="prevMonth"
+                            class="p-2 rounded-full hover:bg-gray-700 text-lime-400 hover:text-white text-lg" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                          <div class="text-lime-400 font-extrabold text-xl">{{ currentMonthName }}</div>
+                          <button @click="nextMonth"
+                            class="p-2 rounded-full hover:bg-gray-700 text-lime-400 hover:text-white text-lg" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
                         </div>
-                      </div>
-                      
-                      <!-- Calendar Grid -->
-                      <div class="grid grid-cols-7 gap-1">
-                        <div 
-                          v-for="(day, index) in calendarDays" 
-                          :key="index" 
-                          class="aspect-square relative"
-                        >
-                          <button
-                            v-if="day"
-                            @click="selectDate(day)"
-                            type="button"
-                            :class="[
-                              'w-full h-full flex items-center justify-center rounded-md text-sm transition-colors duration-200 calendar-day-button',
-                              isSameDate(day, selectedDate) 
-                                ? 'calendar-day-selected' 
-                                : checkIsToday(day) 
-                                  ? 'calendar-day-today' 
-                                  : 'hover:bg-gray-700 text-white'
-                            ]"
-                          >
-                            {{ day.getDate() }}
+                        <!-- Days of Week Header -->
+                        <div class="grid grid-cols-7 mb-2">
+                          <div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day"
+                            class="text-center text-base text-gray-400 py-2 font-bold">
+                            {{ day }}
+                          </div>
+                        </div>
+                        <!-- Calendar Grid -->
+                        <div class="grid grid-cols-7 gap-2">
+                          <div v-for="(day, index) in calendarDays" :key="index" class="aspect-square relative">
+                            <button v-if="day" @click="selectDate(day)" type="button" :class="[
+                                'w-full h-full flex items-center justify-center rounded-lg text-lg font-bold transition-colors duration-200 calendar-day-button',
+                                isSameDate(day, selectedDate) 
+                                  ? 'calendar-day-selected border-2 border-lime-400 bg-lime-900/40 text-lime-300' 
+                                  : checkIsToday(day) 
+                                    ? 'calendar-day-today border border-lime-400 bg-lime-800/30 text-white' 
+                                    : 'hover:bg-gray-700 text-white border border-gray-700'
+                              ]">
+                              {{ day.getDate() }}
+                            </button>
+                          </div>
+                        </div>
+                        <!-- Quick Select Buttons -->
+                        <div class="mt-6 grid grid-cols-3 gap-3">
+                          <button @click="quickSelectDate('today')" type="button"
+                            class="glossy-content p-3 rounded-md text-base text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200 font-bold">
+                            Today
+                          </button>
+                          <button @click="quickSelectDate('tomorrow')" type="button"
+                            class="glossy-content p-3 rounded-md text-base text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200 font-bold">
+                            Tomorrow
+                          </button>
+                          <button @click="quickSelectDate('nextWeek')" type="button"
+                            class="glossy-content p-3 rounded-md text-base text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200 font-bold">
+                            Next Week
                           </button>
                         </div>
                       </div>
-                      
-                      <!-- Quick Select Buttons -->
-                      <div class="mt-4 grid grid-cols-3 gap-2">
-                        <button 
-                          @click="quickSelectDate('today')" 
-                          type="button"
-                          class="glossy-content p-2 rounded-md text-xs text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200"
-                        >
-                          Today
-                        </button>
-                        <button 
-                          @click="quickSelectDate('tomorrow')" 
-                          type="button"
-                          class="glossy-content p-2 rounded-md text-xs text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200"
-                        >
-                          Tomorrow
-                        </button>
-                        <button 
-                          @click="quickSelectDate('nextWeek')" 
-                          type="button"
-                          class="glossy-content p-2 rounded-md text-xs text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200"
-                        >
-                          Next Week
-                        </button>
-                      </div>
-                    </div>
-                  </PopoverPanel>
-                </Popover>
-
+                    </PopoverPanel>
+                  </Popover>
+                </div>
                 <!-- Time Selector -->
-                <div class="mt-6">
-                  <label class="block text-sm font-medium text-green-400 mb-2">Time</label>
-                  <div class="flex items-center gap-2">
+                <div class="mt-8 w-full max-w-md">
+                  <label class="block text-lg font-medium text-green-400 mb-2">Select Time</label>
+                  <div class="flex items-center gap-4 justify-center">
                     <select 
-                      v-model="selectedTime.hour" 
-                      class="glossy-content text-lime-400 p-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                      v-model="selectedTime.hour"
+                      class="bg-gray-800 text-lime-400 p-3 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lg font-bold"
                     >
                       <option v-for="hour in 12" :key="hour" :value="hour">{{ hour < 10 ? '0' + hour : hour }}</option>
                     </select>
-                    <span class="text-white font-bold">:</span>
+                    <span class="text-white font-bold text-2xl">:</span>
                     <select 
-                      v-model="selectedTime.minute" 
-                      class="glossy-content text-lime-400 p-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                      v-model="selectedTime.minute"
+                      class="bg-gray-800 text-lime-400 p-3 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lg font-bold"
                     >
                       <option v-for="minute in ['00', '15', '30', '45']" :key="minute" :value="minute">{{ minute }}</option>
                     </select>
                     <select 
-                      v-model="selectedTime.period" 
-                      class="glossy-content text-lime-400 p-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                      v-model="selectedTime.period"
+                      class="bg-gray-800 text-lime-400 p-3 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lg font-bold"
                     >
                       <option value="AM">AM</option>
                       <option value="PM">PM</option>
                     </select>
                   </div>
                 </div>
-
-                <!-- Selected Date/Time Preview -->
-                <div class="mt-6 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                  <div class="text-center">
-                    <div class="text-sm text-gray-400">Selected Date & Time:</div>
-                    <div class="text-xl text-lime-400 font-semibold mt-1">{{ formattedDateTime }}</div>
-                  </div>
+              </div>
+              <!-- Selected Date/Time Preview -->
+              <div class="mt-8 p-6 rounded-lg bg-gray-800/50 border-2 border-lime-400">
+                <div class="text-center">
+                  <div class="text-lg text-gray-400">Selected Date & Time:</div>
+                  <div class="text-3xl text-lime-400 font-extrabold mt-2">{{ formattedDateTime }}</div>
                 </div>
               </div>
             </div>
 
             <!-- Step 5: Address -->
-            <div v-show="currentStep === 5" class="glossy-section mb-4">
-              <label for="address" class="block text-sm font-medium text-green-400">Work Site Address</label><p class="text-sm text-white">Enter the address for the site where the technician needs to be ON TIME!</p>
-              <input 
-                type="text" 
-                v-model="form.address" 
-                id="address" 
-                name="address"
-                placeholder="Enter complete work site address" 
-                class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-sm" 
-                required
-              >
-              <!-- Selection Summary -->
-              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                <div class="text-center">
-                  <div class="text-sm text-gray-400">Entered Address:</div>
-                  <div class="text-lime-400 font-bold text-base whitespace-pre-line">{{ form.address || 'No address entered' }}</div>
+            <div v-show="currentStep === 5">
+              <div class="glossy-section mb-4">
+                <label for="address" class="block text-2xl font-extrabold text-green-400 mb-2">Enter The Location</label>
+                <p class="text-xl text-white font-semibold mb-2">Enter the address for the work order location.</p>
+                <input v-model="form.address" id="address" name="address" type="text"
+                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white text-2xl sm:text-2xl font-bold p-4"
+                  required />
+                <!-- Mapbox Static Map Preview -->
+                <div v-if="form.address && mapboxImageUrl" class="mt-4">
+                  <a :href="mapboxMapsLink" target="_blank" rel="noopener" title="Open in Map App">
+                    <img :src="mapboxImageUrl" alt="Map snapshot"
+                      class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
+                      style="width: 100%; max-width: 600px; min-height: 120px; background: #222;" />
+                  </a>
+                  <div v-if="mapboxLoading" class="text-lg text-gray-400 mt-1">Loading map...</div>
+                  <div v-if="mapboxError" class="text-lg text-red-400 mt-1">{{ mapboxError }}</div>
+                </div>
+                <!-- Address Summary for Review -->
+                <div v-if="form.address" class="mt-6 p-6 rounded-lg bg-gray-900/80 border-2 border-lime-400">
+                  <div class="text-2xl font-extrabold text-lime-400 mb-2">Address Review</div>
+                  <div class="text-2xl text-white font-bold tracking-wide">{{ form.address }}</div>
+                  <div class="text-lg text-gray-300 mt-2">Please review the address above and ensure it is correct
+                    before proceeding.</div>
                 </div>
               </div>
+              <!-- Employee Summary for Step 5 -->
+              <!-- <div class="mt-6 p-6 rounded-lg bg-gray-800/70 border-2 border-lime-400">
+                <div class="text-2xl font-extrabold text-lime-400 mb-2">Summary for Employees</div>
+                <div class="text-xl text-white font-semibold">
+                  Enter the full address where the work will be performed. Double-check for typos. The map preview below
+                  will help confirm the location is correct.
+                </div>
+              </div> -->
             </div>
 
             <!-- Step 6: Hours -->
             <div v-show="currentStep === 6" class="glossy-section mb-4">
               <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label>
-              <p class="text-sm text-white mb-4">Enter the amount of hours approved by the customer, if we need more time onsite then we will call at that time to request the estimated hours to complete the WO. This is usually about 2-4 hours for our first trip.</p>
-              
+              <p class="text-2xl text-white mb-4">Enter the amount of hours approved by the customer, if we need more
+                time onsite then we will call at that time to request the estimated hours to complete the WO. This is
+                usually about 2-4 hours for our first trip.</p>
+
               <!-- Quick selection tiles -->
               <div class="grid grid-cols-4 gap-4 mb-6">
-                <button 
-                  v-for="hours in [4, 8, 12, 16]" 
-                  :key="hours"
-                  type="button"
-                  @click="form.hours = hours"
-                  :class="{
+                <button v-for="hours in [4, 8, 12, 16]" :key="hours" type="button" @click="form.hours = hours" :class="{
                     'bg-lime-600': form.hours === hours,
                     'hover:bg-lime-700': form.hours === hours,
                     'bg-gray-800 hover:bg-gray-700': form.hours !== hours
                   }"
-                  class="glossy-content p-4 rounded-lg text-lime-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50"
-                >
+                  class="glossy-content p-4 rounded-lg text-lime-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50">
                   {{ hours }}h
                 </button>
               </div>
 
               <!-- Slider -->
               <div class="mt-6">
-                <div class="flex justify-between text-lime-400 text-sm mb-2">
+                <div class="flex justify-between text-lime-400 text-2xl mb-2">
                   <span>2h</span>
                   <span>16h</span>
                 </div>
-                <input 
-                  type="range" 
-                  v-model="form.hours" 
-                  id="hours" 
-                  name="hours"
-                  min="2"
-                  max="16"
-                  step="2"
-                  class="slider w-full"
-                  required
-                >
+                <input type="range" v-model="form.hours" id="hours" name="hours" min="2" max="16" step="2"
+                  class="slider w-full" required>
                 <div class="flex justify-between text-xs text-gray-400 mt-1">
                   <template v-for="value in [2, 4, 6, 8, 10, 12, 14, 16]" :key="value">
                     <span class="relative" style="left: -4px">|</span>
@@ -409,26 +450,22 @@
                 <span class="text-lime-400 text-lg font-medium">{{ form.hours }} hours</span>
               </div>
             </div>
-            
+
             <!-- Step 7: Rate & Travel -->
             <div v-show="currentStep === 7" class="glossy-section mb-4">
               <label for="hourlyRate" class="block text-sm font-medium text-green-400">Hourly Rate</label>
-              <p class="text-sm text-white mb-4">Select the hourly rate. The total price will be calculated based on the approved hours.</p>
-              
+              <p class="text-sm text-white mb-4">Select the hourly rate. The total price will be calculated based on the
+                approved hours.</p>
+
               <!-- Quick selection tiles -->
               <div class="grid grid-cols-4 gap-4 mb-6">
-                <button 
-                  v-for="rate in [95, 120, 130, 180]" 
-                  :key="rate"
-                  type="button"
-                  @click="form.hourlyRate = rate"
+                <button v-for="rate in [95, 120, 130, 180]" :key="rate" type="button" @click="form.hourlyRate = rate"
                   :class="{
                     'bg-purple-600': form.hourlyRate === rate,
                     'hover:bg-purple-700': form.hourlyRate === rate,
                     'bg-gray-800 hover:bg-gray-700': form.hourlyRate !== rate
                   }"
-                  class="glossy-content p-4 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-                >
+                  class="glossy-content p-4 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
                   ${{ rate }}/hr
                 </button>
               </div>
@@ -439,17 +476,8 @@
                   <span>$55/hr</span>
                   <span>$200/hr</span>
                 </div>
-                <input 
-                  type="range" 
-                  v-model="form.hourlyRate" 
-                  id="hourlyRate" 
-                  name="hourlyRate"
-                  min="55"
-                  max="200"
-                  step="5"
-                  class="slider-purple w-full"
-                  required
-                >
+                <input type="range" v-model="form.hourlyRate" id="hourlyRate" name="hourlyRate" min="55" max="200"
+                  step="5" class="slider-purple w-full" required>
                 <div class="flex justify-between text-xs text-gray-400 mt-1 overflow-x-auto">
                   <template v-for="value in rateValues" :key="value">
                     <span class="relative text-center whitespace-nowrap" style="min-width: 20px">|</span>
@@ -460,34 +488,24 @@
               <!-- Travel expense section -->
               <div class="mt-8 p-4 rounded-lg bg-gray-800/30 border border-gray-700">
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    v-model="form.includeTravel" 
-                    class="checkbox checkbox-success"
-                    id="includeTravel"
-                    name="includeTravel"
-                  />
+                  <input type="checkbox" v-model="form.includeTravel" class="checkbox checkbox-success"
+                    id="includeTravel" name="includeTravel" />
                   <span class="text-white">Include Travel Expense</span>
                 </label>
-                
+
                 <!-- Travel expense configuration (shows when checkbox is checked) -->
                 <div v-if="form.includeTravel" class="mt-4">
                   <!-- Mileage rate quick selection tiles -->
                   <div class="mb-4">
                     <label class="block text-sm font-medium text-purple-400 mb-2">Rate per Mile</label>
                     <div class="grid grid-cols-5 gap-2">
-                      <button 
-                        v-for="rate in [1.00, 0.75, 0.65, 0.50, 0.45]" 
-                        :key="rate"
-                        type="button"
-                        @click="form.mileageRate = rate"
-                        :class="{
+                      <button v-for="rate in [1.00, 0.75, 0.65, 0.50, 0.45]" :key="rate" type="button"
+                        @click="form.mileageRate = rate" :class="{
                           'bg-purple-600': form.mileageRate === rate,
                           'hover:bg-purple-700': form.mileageRate === rate,
                           'bg-gray-800 hover:bg-gray-700': form.mileageRate !== rate
                         }"
-                        class="glossy-content p-2 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-sm"
-                      >
+                        class="glossy-content p-2 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-sm">
                         ${{ rate.toFixed(2) }}
                       </button>
                     </div>
@@ -500,16 +518,8 @@
                       <span>45 miles</span>
                       <span>400 miles</span>
                     </div>
-                    <input 
-                      type="range" 
-                      v-model="form.travelMiles" 
-                      min="45"
-                      max="400"
-                      step="5"
-                      class="slider-purple w-full"
-                      id="travelMiles"
-                      name="travelMiles"
-                    />
+                    <input type="range" v-model="form.travelMiles" min="45" max="400" step="5"
+                      class="slider-purple w-full" id="travelMiles" name="travelMiles" />
                     <div class="flex justify-between text-xs text-gray-400 mt-1">
                       <template v-for="value in [45, 100, 150, 200, 250, 300, 350, 400]" :key="value">
                         <span class="relative" style="left: -4px">|</span>
@@ -539,8 +549,8 @@
                 <div class="text-white text-sm">
                   <div class="flex flex-col items-center gap-1">
                     <div>
-                      <span class="text-purple-400">${{ form.hourlyRate }}</span> × 
-                      <span class="text-lime-400">{{ form.hours }} hours</span> = 
+                      <span class="text-purple-400">${{ form.hourlyRate }}</span> ×
+                      <span class="text-lime-400">{{ form.hours }} hours</span> =
                       <span class="text-purple-400">${{ laborCost }}</span>
                     </div>
                     <div v-if="form.includeTravel">
@@ -558,7 +568,7 @@
               <!-- Selection Summary -->
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                 <div class="text-center">
-                  <div class="text-sm text-gray-400">Selected Options:</div>
+                  <div class="text-2xl text-gray-400">Selected Options:</div>
                   <div class="text-lime-400 font-bold text-base">
                     <div>Labor: ${{ laborCost }}</div>
                     <div v-if="form.includeTravel">Travel: ${{ travelCost }}</div>
@@ -567,16 +577,13 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Step 8: Status -->
             <div v-show="currentStep === 8" class="glossy-section mb-4">
               <label class="block text-sm font-medium text-green-400 mb-4">Status</label>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <button 
-                  v-for="status in ['Scheduled', 'In Progress', 'Part Needed', 'Complete', 'Cancelled']" 
-                  :key="status"
-                  type="button"
-                  @click="form.status = status"
+                <button v-for="status in ['Scheduled', 'In Progress', 'Part Needed', 'Complete', 'Cancelled']"
+                  :key="status" type="button" @click="form.status = status"
                   class="status-badge flex items-center justify-center gap-2 p-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                   :class="{
                     'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': status === 'Scheduled' && form.status === status,
@@ -586,87 +593,72 @@
                     'bg-red-600 hover:bg-red-700 focus:ring-red-500': status === 'Cancelled' && form.status === status,
                     'bg-gray-800 hover:bg-gray-700': form.status !== status,
                     'glossy-content': true
-                  }"
-                >
+                  }">
                   <span class="text-white font-medium">{{ status }}</span>
-                  <svg 
-                    v-if="form.status === status" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    class="h-5 w-5 text-white" 
-                    viewBox="0 0 20 20" 
-                    fill="currentColor"
-                  >
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  <svg v-if="form.status === status" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white"
+                    viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd" />
                   </svg>
                 </button>
               </div>
               <!-- Selection Summary -->
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                 <div class="text-center">
-                  <div class="text-sm text-gray-400">Selected Status:</div>
+                  <div class="text-2xl text-gray-400">Selected Status:</div>
                   <div class="text-lime-400 font-bold text-lg">{{ form.status || 'No status selected' }}</div>
                 </div>
               </div>
             </div>
-            
+
             <!-- Step 9: Attachments -->
             <div v-show="currentStep === 9" class="glossy-section mb-4">
               <label class="block text-sm font-medium text-green-400 mb-2">Attachments</label>
-              <p class="text-sm text-white mb-4">Upload any relevant files or documents for this work order.</p>
-              
+              <p class="text-2xl text-white mb-4">Upload any relevant files or documents for this work order.</p>
+
               <div class="form-control">
-                <label class="label cursor-pointer flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-lime-400 transition-colors duration-200">
-                  <input 
-                    type="file" 
-                    @change="handleFileUpload" 
-                    id="file_attachments" 
-                    name="file_attachments"
+                <label
+                  class="label cursor-pointer flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-lime-400 transition-colors duration-200">
+                  <input type="file" @change="handleFileUpload" id="file_attachments" name="file_attachments"
                     class="file-input file-input-bordered file-input-success w-full max-w-lg bg-gray-800/50 text-lime-400"
-                    multiple
-                  />
+                    multiple />
                 </label>
-                
+
                 <!-- File list preview -->
                 <div v-if="form.file_attachments && form.file_attachments.length > 0" class="mt-4">
                   <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div v-for="(file, index) in form.file_attachments" 
-                         :key="index" 
-                         class="relative group">
-                      <div class="aspect-square rounded-lg overflow-hidden bg-gray-800/50">
+                    <div v-for="(file, index) in form.file_attachments" :key="index" class="relative group">
+                      <div class="aspect-square rounded-lg overflow-hidden bg-gray-800/50 w-24 h-24 mx-auto flex items-center justify-center">
                         <!-- PDF Preview -->
-                        <PdfThumbnail
-                          v-if="file.type === 'application/pdf'"
-                          :pdf-url="getFileObjectURL(file)"
-                          :filename="file.name"
-                          class="w-full h-full object-cover"
-                        />
+                        <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)"
+                          :filename="file.name" class="w-full h-full object-cover" />
                         <!-- Image Preview -->
-                        <img
-                          v-else-if="file.type.startsWith('image/')"
-                          :src="getFileObjectURL(file)"
-                          :alt="file.name"
-                          class="w-full h-full object-cover"
-                        />
+                        <img v-else-if="file.type.startsWith('image/')" :src="getFileObjectURL(file)" :alt="file.name"
+                          class="w-full h-full object-cover" />
                         <!-- Default File Icon -->
                         <div v-else class="w-full h-full flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                           </svg>
                         </div>
                       </div>
-                      
                       <!-- File Info Overlay -->
-                      <div class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
-                        <div class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm truncate">
+                      <div
+                        class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
+                        <div
+                          class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs truncate">
                           {{ file.name }}
                         </div>
-                        <button 
-                          @click="removeFile(index)"
+                        <button @click="removeFile(index)"
                           class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end"
-                          type="button"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          type="button">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 12 12"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
@@ -674,7 +666,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <div v-if="form.errors.file_attachments" class="text-red-500 text-xs mt-2">
                 {{ form.errors.file_attachments }}
               </div>
@@ -686,53 +678,48 @@
             </div>
 
             <input type="hidden" v-model="form.user_id" name="user_id" />
-            <progress v-if="form.progress" :value="form.progress.percentage" min="0" max="100" class="w-full rounded-md">
+            <progress v-if="form.progress" :value="form.progress.percentage" min="0" max="100"
+              class="w-full rounded-md">
               {{ form.progress.percentage }}%
             </progress>
           </div>
         </form>
-        
+
         <!-- Fixed footer with navigation buttons -->
-        <div class="glossy-footer px-6 py-4 border-t border-gray-700 mt-auto">
-          <div class="flex justify-between items-center">
-            <button 
-              v-if="currentStep > 1" 
-              type="button" 
-              @click="prevStep" 
-              class="btn glass-button flex items-center space-x-1 px-5 py-2 bg-gray-700/50 text-white hover:bg-gray-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="glossy-footer px-4 py-2 border-t border-gray-700 mt-auto sticky bottom-0 bg-gray-900/95 z-20 min-h-0">
+          <div class="flex justify-between items-center min-h-0">
+            <button v-if="currentStep > 1" type="button" @click="prevStep"
+              class="btn glass-button flex items-center space-x-1 px-5 py-2 bg-gray-700/50 text-white hover:bg-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
               <span>Back</span>
             </button>
             <div v-else></div>
-            
+
             <div>
-              <button 
-                v-if="currentStep < totalSteps" 
-                type="button" 
-                @click="nextStep" 
-                class="btn glass-button flex items-center space-x-1 px-6 py-2 bg-blue-600/60 text-white hover:bg-blue-700"
-              >
+              <button v-if="currentStep < totalSteps" type="button" @click="nextStep"
+                class="btn glass-button flex items-center space-x-1 px-6 py-2 bg-blue-600/60 text-white hover:bg-blue-700">
                 <span>Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
-              <button 
-                v-if="currentStep === totalSteps" 
-                type="button" 
-                @click="submitForm" 
+              <button v-if="currentStep === totalSteps" type="button" @click="submitForm"
                 :disabled="!validateCurrentStep() || form.processing || duplicateWorkOrderFound"
-                class="btn glass-button flex items-center space-x-2 px-6 py-2 bg-lime-600/60 text-white hover:bg-lime-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+                class="btn glass-button flex items-center space-x-2 px-6 py-2 bg-lime-600/60 text-white hover:bg-lime-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span>Submit</span>
-                <svg v-if="form.processing" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg v-if="form.processing" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+                  fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
                 </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
               </button>
@@ -803,7 +790,8 @@ const form = useForm({
   end_date: '',
   visit_dates: [],
   price: '120.00',
-  hourlyRate: 120,
+  hourlyRate: 120, // used for UI
+  hourly_rate: 120, // add this for backend compatibility
   status: 'Scheduled',
   file_attachments: [],
   notes: '',
@@ -870,6 +858,10 @@ const formattedDateTime = computed(() => {
   return format(dateWithTime, 'MMMM d, yyyy h:mm a');
 });
 
+const descriptionSummary = computed(() => {
+  return form.description && form.description.trim() !== '' ? form.description : 'No description entered';
+});
+
 // Methods
 const handleShowModal = () => {
   console.log('AddWorkOrder: handleShowModal called');
@@ -907,6 +899,7 @@ const resetForm = () => {
   form.visit_dates = [];
   form.price = '120.00';
   form.hourlyRate = 120;
+  form.hourly_rate = 120;
   form.status = 'Scheduled';
   form.file_attachments = [];
   form.notes = '';
@@ -1058,7 +1051,7 @@ const submitForm = () => {
       if (form.technician_id) {
         formData.append('technician_id', form.technician_id);
       }
-      
+      formData.append('hourly_rate', form.hourlyRate);
       // Add optional fields if they exist
       if (form.end_date) {
         formData.append('end_date', form.end_date);
@@ -1367,9 +1360,6 @@ watch(showModal, (newValue) => {
   }
 });
 
-// Import the customer store
-import customerStore from '@/Stores/customerStore';
-
 // Helper function to get selected customer name
 const getSelectedCustomerName = () => {
   if (!form.customer_id || !customersArray.value || !Array.isArray(customersArray.value)) {
@@ -1386,20 +1376,7 @@ const loadCustomers = async () => {
   loadError.value = false;
 
   try {
-    // Try using the customer store first
-    try {
-      const storeCustomers = await customerStore.loadCustomers();
-      if (Array.isArray(storeCustomers)) {
-        customers.value = storeCustomers;
-        customersArray.value = storeCustomers;
-        loadError.value = false;
-        return storeCustomers;
-      }
-    } catch (storeError) {
-      console.error('AddWorkOrder: Failed to load customers from store:', storeError);
-    }
-
-    // Direct API call as fallback
+    // Direct API call to backend only
     const response = await axios.get('/api/customers', {
       headers: {
         'Accept': 'application/json',
@@ -1408,7 +1385,6 @@ const loadCustomers = async () => {
       }
     });
 
-    // Handle string/HTML response
     if (typeof response.data === 'string') {
       if (response.data.trim().startsWith('<!DOCTYPE html') || response.data.trim().startsWith('<html')) {
         throw new Error('Server returned HTML instead of JSON.');
@@ -1433,7 +1409,6 @@ const loadCustomers = async () => {
       }
     }
 
-    // Handle valid array/object response
     if (response.data && Array.isArray(response.data)) {
       customers.value = response.data;
       customersArray.value = response.data;
@@ -1452,7 +1427,6 @@ const loadCustomers = async () => {
     customers.value = [];
     customersArray.value = [];
     loadError.value = true;
-
     // If customer ID is set from props, create a minimal customer array with just that customer
     if (props.customerId && props.customerName) {
       const singleCustomer = {
@@ -1462,59 +1436,6 @@ const loadCustomers = async () => {
       customersArray.value = [singleCustomer];
       console.log('AddWorkOrder: Using single customer from props:', singleCustomer);
     }
-
-    // Try alternative endpoint as fallback
-    try {
-      console.log('AddWorkOrder: Trying fallback endpoint for customers');
-      const fallbackResponse = await axios.get('/customers', {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      });
-
-      if (typeof fallbackResponse.data === 'string') {
-        if (fallbackResponse.data.trim().startsWith('<!DOCTYPE html') || fallbackResponse.data.trim().startsWith('<html')) {
-          throw new Error('Fallback endpoint returned HTML instead of JSON.');
-        }
-        try {
-          const parsed = JSON.parse(fallbackResponse.data);
-          if (Array.isArray(parsed)) {
-            customers.value = parsed;
-            customersArray.value = parsed;
-            loadError.value = false;
-            return parsed;
-          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
-            customers.value = parsed.data;
-            customersArray.value = parsed.data;
-            loadError.value = false;
-            return parsed.data;
-          } else {
-            throw new Error('Parsed fallback string but result is not a valid array format');
-          }
-        } catch (parseError) {
-          throw new Error('Fallback response is a string that could not be parsed as JSON');
-        }
-      }
-
-      if (fallbackResponse.data && Array.isArray(fallbackResponse.data)) {
-        customers.value = fallbackResponse.data;
-        customersArray.value = fallbackResponse.data;
-        loadError.value = false;
-        return fallbackResponse.data;
-      } else if (fallbackResponse.data && typeof fallbackResponse.data === 'object' && Array.isArray(fallbackResponse.data.data)) {
-        customers.value = fallbackResponse.data.data;
-        customersArray.value = fallbackResponse.data.data;
-        loadError.value = false;
-        return fallbackResponse.data.data;
-      } else {
-        throw new Error('Fallback endpoint did not return a valid customer array');
-      }
-    } catch (fallbackError) {
-      console.error('AddWorkOrder: Fallback endpoint also failed:', fallbackError);
-    }
-
     return [];
   } finally {
     isLoadingCustomers.value = false;
@@ -1534,6 +1455,129 @@ const loadTechnicians = async () => {
     return [];
   }
 };
+
+// --- Mapbox Location Preview Logic ---
+
+const mapboxAccessToken = 'pk.eyJ1Ijoibm10ZWNoIiwiYSI6ImNtYndzNG0yZTB2MTQycm9yMmxrZTJiOXYifQ.teJIWClLiWUJvvacQC3EFQ'; // Replace with your real token
+const mapboxCoords = ref({ lat: null, lon: null });
+const mapboxImageUrl = computed(() => {
+  const { lat, lon } = mapboxCoords.value;
+  if (!lat || !lon) return '';
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${lon},${lat})/${lon},${lat},16/600x200?access_token=${mapboxAccessToken}`;
+});
+const mapboxMapsLink = computed(() => {
+  const { lat, lon } = mapboxCoords.value;
+  if (!lat || !lon) return '#';
+  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`;
+});
+const mapboxLoading = ref(false);
+const mapboxError = ref(null);
+async function geocodeAddress(address) {
+  if (!address) {
+    mapboxCoords.value = { lat: null, lon: null };
+    return;
+  }
+  mapboxLoading.value = true;
+  mapboxError.value = null;
+  try {
+    const resp = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxAccessToken}`
+    );
+    const data = await resp.json();
+    if (data.features && data.features.length > 0) {
+      const [lon, lat] = data.features[0].center;
+      mapboxCoords.value = { lat, lon };
+    } else {
+      mapboxCoords.value = { lat: null, lon: null };
+      mapboxError.value = 'No location found.';
+    }
+  } catch (e) {
+    mapboxCoords.value = { lat: null, lon: null };
+    mapboxError.value = 'Error fetching map location.';
+  } finally {
+    mapboxLoading.value = false;
+  }
+}
+watch(() => form.address, (newAddress) => {
+  geocodeAddress(newAddress);
+}, { immediate: true });
+
+const getSelectedTechnicianName = () => {
+  if (!form.technician_id) return '';
+  const tech = technicians.value.find(t => String(t.id) === String(form.technician_id));
+  return tech ? tech.name : '';
+};
+
+// Keep hourly_rate in sync with hourlyRate
+watch(() => form.hourlyRate, (val) => {
+  form.hourly_rate = val;
+});
+
+// Fetch customer hourly rate on initial mount if customer is pre-selected
+onMounted(() => {
+  console.log('Component mounted');
+  
+  // Set initial form.date_time based on selected date and time
+  const initialDate = new Date();
+  
+  // Convert hour to 24-hour format if needed
+  let hour = parseInt(selectedTime.value.hour);
+  if (selectedTime.value.period === 'PM' && hour < 12) {
+    hour += 12;
+  } else if (selectedTime.value.period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  initialDate.setHours(hour);
+  initialDate.setMinutes(parseInt(selectedTime.value.minute));
+  
+  form.date_time = format(initialDate, "yyyy-MM-dd'T'HH:mm:ss");
+  
+  // Apply props if provided
+  if (props.customerName) {
+    location.value = props.customerName;
+  }
+  
+  if (props.customerId) {
+    form.customer_id = props.customerId;
+  }
+  
+  // Initialize calendar on next tick to ensure DOM is ready
+  nextTick(() => {
+    try {
+      generateCalendar();
+    } catch (error) {
+      console.error('Calendar generation error:', error);
+    }
+  });
+  
+  // If a customer is pre-selected, fetch their hourly rate immediately
+  if (form.customer_id) {
+    fetchCustomerHourlyRate(form.customer_id);
+  }
+});
+
+// Fetch customer hourly rate
+const fetchCustomerHourlyRate = async (customerId) => {
+  if (!customerId) return;
+  try {
+    const response = await axios.get(`/customers/${customerId}`);
+    const payRate = response.data?.pay_rate;
+    if (payRate !== undefined && payRate !== null) {
+      form.hourlyRate = payRate;
+      form.hourly_rate = payRate;
+    }
+  } catch (error) {
+    // Optionally handle error (e.g., show notification)
+    form.hourlyRate = '';
+    form.hourly_rate = '';
+  }
+};
+
+// Watch for customer_id changes
+watch(() => form.customer_id, (newVal) => {
+  fetchCustomerHourlyRate(newVal);
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -1560,7 +1604,7 @@ const loadTechnicians = async () => {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh;
+  height: 85vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1580,7 +1624,7 @@ const loadTechnicians = async () => {
 }
 
 .shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:  0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .mb-4 {
@@ -1599,7 +1643,7 @@ const loadTechnicians = async () => {
   display: block;
 }
 
-.text-sm {
+.text {
   font-size: 0.875rem;
 }
 
@@ -1664,7 +1708,7 @@ const loadTechnicians = async () => {
   display: flex;
   flex-direction: column;
   background: rgba(15, 23, 42, 0.85);
-  max-width: 90vw;
+   max-width: 90vw;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -1703,7 +1747,7 @@ const loadTechnicians = async () => {
   scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
   scrollbar-width: thin;
   padding: 0.75rem;
-  max-height: 65vh; /* Allow more space in the modal */
+  max-height: 85vh; /* Allow more space in the modal */
   scroll-behavior: smooth;
 }
 
@@ -1752,7 +1796,7 @@ progress::-moz-progress-bar {
   
   .glossy-card {
     height: auto;
-    max-height: 90vh;
+    max-height: 95vh;
     width: 95%;
   }
   

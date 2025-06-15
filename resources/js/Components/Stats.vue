@@ -46,14 +46,10 @@
     <div v-if="isCollapsed && collapsable" class="glass-card p-3 rounded-lg">
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-4">
-          <div>
-            <span class="text-gray-400 text-xs">{{ stats[0]?.name || 'Stats' }}</span>
-            <p class="text-purple-400 text-lg font-bold">{{ stats[0]?.value || '0' }}</p>
-          </div>
-          <div v-if="stats.length > 1">
-            <span class="text-gray-400 text-xs">{{ stats[1]?.name || 'Stats' }}</span>
-            <p class="text-lg font-bold" :class="stats[1]?.changeType === 'negative' ? 'text-red-500' : 'text-green-500'">
-              {{ stats[1]?.value || '0' }}
+          <div v-for="stat in combinedStats" :key="stat.name">
+            <span class="text-gray-400 text-xs">{{ stat.name || 'Stats' }}</span>
+            <p class="text-lg font-bold" :class="stat.changeType === 'negative' ? 'text-red-500' : stat.changeType === 'positive' ? 'text-green-500' : 'text-purple-400'">
+              {{ stat.value || '0' }}
             </p>
           </div>
         </div>
@@ -103,7 +99,6 @@ const props = defineProps({
   },
   stats: {
     type: Array,
-    required: true,
     default: () => [
       { name: 'Total', value: '0', change: '', changeType: 'neutral' },
       { name: 'In Progress', value: '0', change: '', changeType: 'neutral' },

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onErrorCaptured, nextTick } from 'vue';
+import { ref, computed, onErrorCaptured } from 'vue';
 import format from 'date-fns/format';
 import { usePage, router } from '@inertiajs/vue3';
 import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
@@ -177,13 +177,8 @@ const showWorkOrder = (workOrder) => {
 
 // Handle closing the work order modal
 const closeWorkOrderModal = () => {
-  console.log('Closing modal');
   showWorkOrderModal.value = false;
-  selectedWorkOrder.value = null;
-  console.log('Modal state after closing:', {
-    showModal: showWorkOrderModal.value,
-    selectedWorkOrder: selectedWorkOrder.value
-  });
+  selectedWorkOrder.value = null; // Clear the selected work order
 };
 
 // Handle invoice created event from WorkOrder component
@@ -339,29 +334,9 @@ const openWorkOrder = async (workOrder) => {
     // Get full work order details
     const response = await axios.get(`/work-orders/${workOrder.id}/details`);
     console.log('Work order details response:', response.data);
-
-    // Ensure the data is valid before setting it
-    if (!response.data) {
-      throw new Error('No data received from server');
-    }
-
-    // Set the modal state
-    showWorkOrderModal.value = true;
     selectedWorkOrder.value = response.data;
-    
-    // Debug logs
-    console.log('Modal state after setting:', {
-      showModal: showWorkOrderModal.value,
-      selectedWorkOrder: selectedWorkOrder.value,
-      workOrderId: selectedWorkOrder.value?.id,
-      title: selectedWorkOrder.value?.title
-    });
-
-    // Force an update if needed
-    nextTick(() => {
-      console.log('After nextTick - Modal visible:', showWorkOrderModal.value);
-    });
-
+    showWorkOrderModal.value = true;
+    console.log('Modal state:', { selectedWorkOrder: selectedWorkOrder.value, showWorkOrderModal: showWorkOrderModal.value });
   } catch (error) {
     console.error('Error loading work order details:', error);
     alert('Unable to load work order details. Please try again.');
@@ -537,7 +512,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
     </div>
 
     <!-- Add the WorkOrder modal component -->
-    <WorkOrder v-if="showWorkOrderModal && selectedWorkOrder" :workOrder="selectedWorkOrder" :showModal="showWorkOrderModal" :users="users"
+    <WorkOrder v-if="selectedWorkOrder" :workOrder="selectedWorkOrder" :showModal="showWorkOrderModal" :users="users"
       @close="closeWorkOrderModal" />
 
     <div
