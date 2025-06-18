@@ -10,6 +10,7 @@ import CurrentTime from '@/Components/CurrentTime.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
 import ArchivedWorkOrders from './ArchivedWorkOrders.vue';
 import Stats from '@/Components/Stats.vue';
+import { useToast } from '@/Composables/useToast';
 
 // Define props from Inertia
 const props = defineProps({
@@ -56,6 +57,13 @@ try {
 const getUserName = (userId) => {
   // Look up the user in the users array by matching IDs (as strings)
   return users.value.find(u => String(u.id) === String(userId))?.name || '';
+};
+
+// Add this function to get the user's first name by userId
+const getUserFirstName = (userId) => {
+  const user = users.value.find(u => String(u.id) === String(userId));
+  if (!user || !user.name) return '';
+  return user.name.split(' ')[0];
 };
 
 // Error boundary
@@ -118,11 +126,11 @@ function deleteWorkOrder(id) {
     .then(response => {
       // Remove from the UI
       workOrders.value = workOrders.value.filter(wo => wo.id !== id);
-      alert('Work order deleted successfully');
+      // toastSuccess('Work order deleted successfully');
     })
     .catch(error => {
       console.error('Error deleting work order:', error);
-      alert('Failed to delete work order: ' + (error.response?.data?.error || 'Unknown error'));
+      // toastError('Failed to delete work order: ' + (error.response?.data?.error || 'Unknown error'));
     });
   }
 }
@@ -196,7 +204,7 @@ const handleInvoiceCreated = async (data) => {
     showArchivedWorkOrderModal.value = true;
   } catch (error) {
     console.error('Failed to load archived work order:', error);
-    alert('Invoice created successfully, but work order details could not be loaded.');
+    // toastSuccess('Invoice created successfully, but work order details could not be loaded.');
   }
 };
 
@@ -260,43 +268,59 @@ const filteredData = computed(() => {
   return [
     {
       name: 'Total',
-      stat: data.length || 0,
-      status: 'total'
+      value: data.length || 0,
+      status: 'total',
+      change: '',
+      changeType: 'neutral'
     },
     {
       name: 'Invoiced',
-      stat: data.filter(wo => wo?.status?.toLowerCase() === 'invoiced').length || 0,
-      status: 'invoiced'
+      value: data.filter(wo => wo?.status?.toLowerCase() === 'invoiced').length || 0,
+      status: 'invoiced',
+      change: '',
+      changeType: 'neutral'
     },
     {
       name: 'Archived',
-      stat: data.filter(wo => wo?.status?.toLowerCase() === 'archived').length || 0, // Just count archived status
-      status: 'archived'
+      value: data.filter(wo => wo?.status?.toLowerCase() === 'archived').length || 0,
+      status: 'archived',
+      change: '',
+      changeType: 'neutral'
     },
     {
       name: 'Scheduled',
-      stat: data.filter(wo => wo?.status?.toLowerCase() === 'scheduled').length || 0,
-      status: 'scheduled'
+      value: data.filter(wo => wo?.status?.toLowerCase() === 'scheduled').length || 0,
+      status: 'scheduled',
+      change: '',
+      changeType: 'neutral'
     },
     {
       name: 'In Progress',
-      stat: data.filter(wo => wo?.status?.toLowerCase() === 'in progress').length || 0,
-      status: 'in_progress'
+      value: data.filter(wo => wo?.status?.toLowerCase() === 'in progress').length || 0,
+      status: 'in_progress',
+      change: '',
+      changeType: 'neutral'
     },
     {
       name: 'Part Needed',
-      stat: data.filter(wo => wo?.status?.toLowerCase() === 'part needed').length || 0,
-      status: 'part_needed'
+      value: data.filter(wo => wo?.status?.toLowerCase() === 'part needed').length || 0,
+      status: 'part_needed',
+      change: '',
+      changeType: 'neutral'
     },
     {
       name: 'Complete',
-      stat: data.filter(wo => wo?.status?.toLowerCase() === 'complete').length || 0,
-      status: 'complete'
+      value: data.filter(wo => wo?.status?.toLowerCase() === 'complete').length || 0,
+      status: 'complete',
+      change: '',
+      changeType: 'neutral'
     },
     {
       name: 'Cancelled',
-      stat: data.filter(wo => wo?.status?.toLowerCase() === 'cancelled').length || 0,
-      status: 'cancelled'
+      value: data.filter(wo => wo?.status?.toLowerCase() === 'cancelled').length || 0,
+      status: 'cancelled',
+      change: '',
+      changeType: 'neutral'
     }
   ];
 });
@@ -339,7 +363,7 @@ const openWorkOrder = async (workOrder) => {
     console.log('Modal state:', { selectedWorkOrder: selectedWorkOrder.value, showWorkOrderModal: showWorkOrderModal.value });
   } catch (error) {
     console.error('Error loading work order details:', error);
-    alert('Unable to load work order details. Please try again.');
+    // toastError('Unable to load work order details. Please try again.');
   }
 };
 
@@ -430,6 +454,15 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
   return Object.values(filteredGroupedWorkOrders.value)
     .find(group => group.length > 1 && group.some(wo => wo.id === workOrder.id));
 };
+
+// Add a ref for the toast system (if not already present)
+const { success: toastSuccess, error: toastError } = useToast();
+
+// Call this function after a work order is created successfully
+function showWorkOrderCreatedToast(workOrder) {
+  const firstName = getUserFirstName(workOrder.user_id);
+  toastSuccess(`Work order created successfully! Welcome, ${firstName ? firstName : 'User'}!`);
+}
 </script>
 
 <template>
@@ -462,10 +495,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
                   </th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Status
                   </th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Customer
-                  </th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">
-                    Technician
+                  <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Progress
                   </th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-purple-400 uppercase tracking-wider">Date</th>
 
@@ -482,8 +512,14 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
                       {{ workOrder.status }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-white">{{ workOrder.customer_id }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-white">{{ getUserName(workOrder.user_id) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="w-32 bg-gray-700 rounded-full h-3 overflow-hidden">
+                      <div :style="{ width: getStatusProgress(workOrder.status) + '%' }"
+                        class="h-3 rounded-full transition-all duration-300"
+                        :class="getStatusColor(workOrder.status)"></div>
+                    </div>
+                    <span class="text-xs text-gray-300 ml-2">{{ getStatusProgress(workOrder.status) }}%</span>
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-white">{{ formatDate(workOrder.date_time ||
                     workOrder.created_at) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
@@ -493,7 +529,7 @@ const isPartOfMultiDayWorkOrder = (workOrder) => {
                   </td>
                 </tr>
                 <tr v-if="paginatedWorkOrders.length === 0">
-                  <td colspan="6" class="text-center py-4 text-gray-400">No work orders found</td>
+                  <td colspan="5" class="text-center py-4 text-gray-400">No work orders found</td>
                 </tr>
               </tbody>
             </table>

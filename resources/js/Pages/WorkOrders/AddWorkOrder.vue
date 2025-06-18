@@ -5,7 +5,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
-      Add Work Order
+      Work Order
     </button>
 
     <div v-show="showModal" class="fixed inset-0 mt-4 z-50 flex items-center justify-center bg-black bg-opacity-70"
@@ -236,7 +236,7 @@
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                 <div class="text-center">
                   <div class="text-lg text-gray-400">Entered Description:</div>
-                  <div class="text-lime-400 text-lg font-bold text-base whitespace-pre-line">{{ descriptionSummary }}</div>
+                  <div class="text-lime-400 text-lg font-bold whitespace-pre-line">{{ descriptionSummary }}</div>
                 </div>
               </div>
             </div>
@@ -739,6 +739,7 @@ import PdfThumbnail from '@/Components/PdfThumbnail.vue';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { format, parseISO, isToday, isValid, addDays, setHours, setMinutes } from 'date-fns';
 import axios from 'axios';
+import { useToast } from '@/Composables/useToast';
 
 // Props
 const props = defineProps({
@@ -755,6 +756,7 @@ const props = defineProps({
 // Data
 const isLoading = ref(false);
 const isLoadingCustomers = ref(false);
+const isLoadingTechnicians = ref(false);  // Added missing ref
 const customers = ref([]);
 const customersArray = ref([]);
 const loadError = ref(false);
@@ -1012,6 +1014,8 @@ const checkExistingWorkOrder = () => {
   duplicateWorkOrderFound.value = false;
 };
 
+const { success: toastSuccess, error: toastError } = useToast();
+
 const submitForm = () => {
   if (currentStep.value === totalSteps && validateCurrentStep()) {
     try {
@@ -1081,6 +1085,11 @@ const submitForm = () => {
           console.log('Success response:', response);
           showModal.value = false;
           isSubmitting.value = false;
+          // Show personalized toast
+          const page = usePage();
+          const userName = page.props.value?.auth?.user?.name || '';
+          const firstName = userName.split(' ')[0] || 'User';
+          toastSuccess(`Work order created successfully! Welcome, ${firstName}!`);
           resetForm();
         },
         onError: (errors) => {
@@ -1124,7 +1133,8 @@ const submitForm = () => {
             }
           }
           
-          alert(errorMessage.trim());
+          // Replace alert(errorMessage.trim());
+          toastError(errorMessage.trim());
           isSubmitting.value = false;
         },
         onFinish: () => {
@@ -1138,8 +1148,8 @@ const submitForm = () => {
       console.log('Page props available:', page?.props?.value ? 'Yes' : 'No');
       console.log('Auth props available:', page?.props?.value?.auth ? 'Yes' : 'No');
       
-      // Show more helpful error message
-      alert('An unexpected error occurred. Please try again. ' + error.message);
+      // Replace alert('An unexpected error occurred. Please try again. ' + error.message);
+      toastError('An unexpected error occurred. Please try again. ' + error.message);
       isSubmitting.value = false;
     }
   } else {
@@ -1444,6 +1454,7 @@ const loadCustomers = async () => {
 
 const loadTechnicians = async () => {
   console.log('AddWorkOrder: loadTechnicians started');
+  isLoadingTechnicians.value = true;
   try {
     const response = await axios.get('/api/technicians/active');
     console.log('AddWorkOrder: Technicians loaded:', response.data.length);
@@ -1453,6 +1464,8 @@ const loadTechnicians = async () => {
     console.error('AddWorkOrder: Failed to load technicians:', error);
     technicians.value = [];
     return [];
+  } finally {
+    isLoadingTechnicians.value = false;
   }
 };
 

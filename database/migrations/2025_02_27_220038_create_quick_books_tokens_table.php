@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('quick_books_tokens', function (Blueprint $table) {
             $table->id();
+            $table->text('access_token');
+            $table->text('refresh_token');
+            $table->string('realm_id');
+            $table->timestamp('expires_at');
             $table->timestamps();
         });
     }

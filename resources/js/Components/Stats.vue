@@ -1,41 +1,44 @@
 <template>
   <div class="glass-container p-4 rounded-xl mb-4">
-    
+
     <div class="flex justify-between items-center mb-4">
       <div class="flex items-center gap-2">
-        <button
-          v-if="collapsable"
-          @click="toggleCollapse"
+        <button v-if="collapsable" @click="toggleCollapse"
           class="glass-button flex items-center justify-center w-6 h-6 rounded-full transition"
-          :title="isCollapsed ? 'Expand' : 'Collapse'"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isCollapsed }" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+          :title="isCollapsed ? 'Expand' : 'Collapse'">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform"
+            :class="{ 'rotate-180': isCollapsed }" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+              clip-rule="evenodd" />
           </svg>
         </button>
         <h2 class="text-xl font-semibold text-gray-800 dark:text-purple-300" v-if="title">{{ title }}</h2>
       </div>
-      
+
       <div v-if="refreshFunction" class="flex gap-2">
-        <button
-          @click="refreshData"
-          :disabled="isLoading"
-          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition"
-        >
-          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <button @click="refreshData" :disabled="isLoading"
+          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition">
+          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span v-if="isLoading" class="animate-spin h-3 w-3 border-2 border-white border-t-purple-400 rounded-full"></span>
+          <span v-if="isLoading"
+            class="animate-spin h-3 w-3 border-2 border-white border-t-purple-400 rounded-full"></span>
           {{ isLoading ? 'Loading...' : 'Refresh' }}
         </button>
       </div>
     </div>
 
     <!-- Error message -->
-    <div v-if="errorMessage" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded dark:bg-red-900/20 dark:text-red-300">
+    <div v-if="errorMessage"
+      class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded dark:bg-red-900/20 dark:text-red-300">
       <div class="flex items-center">
         <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd"></path>
         </svg>
         <p>{{ errorMessage }}</p>
       </div>
@@ -46,49 +49,50 @@
     <div v-if="isCollapsed && collapsable" class="glass-card p-3 rounded-lg">
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-4">
-          <div v-for="stat in combinedStats" :key="stat.name">
-            <span class="text-gray-400 text-xs">{{ stat.name || 'Stats' }}</span>
-            <p class="text-lg font-bold" :class="stat.changeType === 'negative' ? 'text-red-500' : stat.changeType === 'positive' ? 'text-green-500' : 'text-purple-400'">
-              {{ stat.value || '0' }}
+          <div>
+            <span class="text-gray-400 text-xs">{{ stats[0]?.name || 'Stats' }}</span>
+            <p class="text-purple-400 text-lg font-bold">{{ stats[0]?.value || '0' }}</p>
+          </div>
+          <div v-if="stats.length > 1">
+            <span class="text-gray-400 text-xs">{{ stats[1]?.name || 'Stats' }}</span>
+            <p class="text-lg font-bold"
+              :class="stats[1]?.changeType === 'negative' ? 'text-red-500' : 'text-green-500'">
+              {{ stats[1]?.value || '0' }}
             </p>
           </div>
         </div>
         <p class="text-gray-400 text-xs">Click to expand for full details</p>
       </div>
     </div>
-    
+
     <!-- Content section with transition -->
-    <transition
-      name="collapse"
-      @enter="el => el.style.height = el.scrollHeight + 'px'"
-      @leave="el => el.style.height = '0'"
-    >
+    <transition name="collapse" @enter="el => el.style.height = el.scrollHeight + 'px'"
+      @leave="el => el.style.height = '0'">
       <div v-if="!isCollapsed || !collapsable" class="content-wrapper">
         <!-- Loading indicator -->
         <div v-if="isLoading" class="flex justify-center items-center py-10">
           <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-400"></div>
         </div>
-        
+
         <dl v-else class="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div 
-            v-for="stat in combinedStats" 
-            :key="stat.name" 
+          <div v-for="stat in combinedStats" :key="stat.name"
             class="glass-card flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 px-6 py-8 rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer"
-            :title="stat.tooltip"
-            @click="$emit('filterStats', stat.name)"
-          >
+            :title="stat.tooltip" @click="$emit('filterStats', stat.name)">
             <dt class="text-sm font-medium text-gray-600 dark:text-purple-300 flex items-center">
               {{ stat.name }}
             </dt>
-            <dd :class="[stat.changeType === 'negative' ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-500 dark:text-emerald-400', 'text-xs font-medium']">{{ stat.change }}</dd>
-            <dd class="w-full flex-none text-3xl font-medium tracking-tight text-gray-900 dark:text-white">{{ stat.value }}</dd>
+            <dd
+              :class="[stat.changeType === 'negative' ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-500 dark:text-emerald-400', 'text-xs font-medium']">
+              {{ stat.change }}</dd>
+            <dd class="w-full flex-none text-3xl font-medium tracking-tight text-gray-900 dark:text-white">{{ stat.value
+              }}</dd>
           </div>
         </dl>
       </div>
     </transition>
   </div>
 </template>
-    
+
 <script setup>
 import { ref, computed } from 'vue';
 
@@ -130,7 +134,7 @@ function toggleCollapse() {
 // Function to handle refresh if provided
 async function refreshData() {
   if (!props.refreshFunction) return;
-  
+
   try {
     isLoading.value = true;
     errorMessage.value = '';
@@ -139,8 +143,8 @@ async function refreshData() {
     console.error('Error refreshing stats:', error);
     // Handle authentication errors specifically
     if (error.response?.status === 401 || error.response?.status === 403) {
-      errorMessage.value = error.response?.data?.message || 
-                         'Authentication error. Please check your credentials or try logging in again.';
+      errorMessage.value = error.response?.data?.message ||
+        'Authentication error. Please check your credentials or try logging in again.';
     } else if (error.message?.includes('redirect_uri')) {
       errorMessage.value = 'Invalid redirect URI. Please check your application configuration.';
     } else {
@@ -154,10 +158,22 @@ async function refreshData() {
 // Computed property that combines revenue with archived orders value
 const combinedStats = computed(() => {
   try {
-    // Filter out Invoiced and Archived stats
-    return props.stats.filter(stat => 
+    let filtered = props.stats.filter(stat => 
       !['Invoiced', 'Archived'].includes(stat.name)
     );
+
+    // If no stats are passed, or if any are empty/invalid, use defaults
+    if (!filtered.length || filtered.some(stat => !stat.name || stat.value === undefined)) {
+      filtered = [
+        { name: 'Total', value: '0', change: '', changeType: 'neutral' },
+        { name: 'In Progress', value: '0', change: '', changeType: 'neutral' },
+        { name: 'Part Needed', value: '0', change: '', changeType: 'neutral' },
+        { name: 'Complete', value: '0', change: '', changeType: 'neutral' },
+        { name: 'Cancelled', value: '0', change: '', changeType: 'neutral' }
+      ];
+    }
+
+    return filtered;
   } catch (error) {
     console.error("Error with stats:", error);
     return props.stats;
@@ -196,7 +212,8 @@ const combinedStats = computed(() => {
 }
 
 .glass-button:hover {
-  background: rgba(139, 92, 246, 0.3); /* Purple-like color with transparency */
+  background: rgba(139, 92, 246, 0.3);
+  /* Purple-like color with transparency */
   border-color: rgba(139, 92, 246, 0.5);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
@@ -209,22 +226,22 @@ const combinedStats = computed(() => {
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
   }
-  
+
   .glass-card {
     background: rgba(30, 30, 30, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
   }
-  
+
   .glass-card:hover {
     background: rgba(40, 40, 40, 0.4);
   }
-  
+
   .glass-button {
     background: rgba(30, 30, 30, 0.4);
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .glass-button:hover {
     background: rgba(139, 92, 246, 0.25);
     border-color: rgba(139, 92, 246, 0.4);

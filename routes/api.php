@@ -221,3 +221,6 @@ Route::get('/technicians/active', [App\Http\Controllers\TechnicianController::cl
 
 // Add the API route for creating a technician
 Route::post('/technicians', [App\Http\Controllers\TechnicianController::class, 'store'])->name('api.technicians.store');
+
+// Add route for getting work order activities
+Route::get('/work-orders/{id}/activities', [WorkOrderController::class, 'getActivities']);

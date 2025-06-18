@@ -1027,7 +1027,55 @@ async function geocodeAddress(address) {
   }
 }
 
-// Watch for address changes to geocode
+// --- Headquarters address for travel calculation ---
+const HEADQUARTERS_ADDRESS = "625 Horseshoe Trl SE, Albuquerque, New Mexico, 87123"; // <-- Set your real HQ address here
+
+// Geocode an address to lat/lon
+async function geocodeAddressToCoords(address) {
+  const resp = await fetch(
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxAccessToken}`
+  );
+  const data = await resp.json();
+  if (data.features && data.features.length > 0) {
+    const [lon, lat] = data.features[0].center;
+    return { lat, lon };
+  }
+  throw new Error('Address not found');
+}
+
+// Get driving distance in miles using Mapbox Directions API
+async function getTravelDistanceMiles(originAddress, destinationAddress) {
+  try {
+    const origin = await geocodeAddressToCoords(originAddress);
+    const destination = await geocodeAddressToCoords(destinationAddress);
+    const directionsResp = await fetch(
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin.lon},${origin.lat};${destination.lon},${destination.lat}?access_token=${mapboxAccessToken}`
+    );
+    const directionsData = await directionsResp.json();
+    if (directionsData.routes && directionsData.routes.length > 0) {
+      const route = directionsData.routes[0];
+      return route.distance / 1609.34; // meters to miles
+    }
+  } catch (e) {
+    // Optionally handle error
+  }
+  return 0;
+}
+
+// Watch for address changes and auto-calculate travel if needed
+watch(() => form.value.address, async (newAddress) => {
+  if (!newAddress) return;
+  // Only run if address is not empty
+  const miles = await getTravelDistanceMiles(HEADQUARTERS_ADDRESS, newAddress);
+  if (miles > 25) {
+    form.value.has_travel = true;
+    form.value.travel_cost = parseFloat(miles.toFixed(2)); // or set travelMiles if you use that field
+  } else {
+    form.value.has_travel = false;
+    form.value.travel_cost = 0;
+  }
+}, { immediate: false });
+
 watch(() => form.value.address, (newAddress) => {
   geocodeAddress(newAddress);
 }, { immediate: true });
