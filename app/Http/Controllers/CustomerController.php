@@ -61,44 +61,29 @@ class CustomerController extends Controller
                 'request_keys' => array_keys($request->all())
             ]);
             
-            // Set default values for fields if not present
-            $businessName = $request->input('business_name') ?? '';
-            $address = $request->input('address') ?? '';
-            $pocName = $request->input('poc_name') ?? '';
-            $pocEmail = $request->input('poc_email') ?? '';
-            $fax = $request->input('fax') ?? '';
-            $netTerms = $request->input('net_terms') ?? 'Net 30';
-            $payRate = $request->input('pay_rate') ?? 120.00;
+            // Validate the request
+            $validator = \Validator::make($request->all(), [
+                'business_name' => 'required|string|max:255',
+                'address' => 'required|string|max:255',
+                'poc_name' => 'required|string|max:255',
+                'poc_email' => 'required|email|max:255',
+                'fax' => 'nullable|string|max:20',
+                'net_terms' => 'required|in:Net 7,Net 15,Net 30,Net 60',
+                'pay_rate' => 'required|numeric|min:0',
+                'attachable_files.*' => 'nullable|file|max:10240', // 10MB max file size
+            ]);
             
-            // Simplify validation to focus on required fields
-            $validated = [
-                'business_name' => $businessName,
-                'address' => $address,
-                'poc_name' => $pocName,
-                'poc_email' => $pocEmail,
-                'fax' => $fax,
-                'net_terms' => $netTerms,
-                'pay_rate' => $payRate,
-                'attachable_files' => [],
-                'is_active' => true
-            ];
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
             
-            // Manual validation with informative errors
-            if (empty($validated['business_name'])) {
-                throw new \Exception('Business name is required');
-            }
-            if (empty($validated['address'])) {
-                throw new \Exception('Address is required');
-            }
-            if (empty($validated['poc_name'])) {
-                throw new \Exception('POC name is required');
-            }
-            if (empty($validated['poc_email'])) {
-                throw new \Exception('POC email is required');
-            }
-            if (!filter_var($validated['poc_email'], FILTER_VALIDATE_EMAIL)) {
-                throw new \Exception('POC email must be a valid email address');
-            }
+            // Set data from validated input
+            $validated = $validator->validated();
+            $validated['is_active'] = true;
+            $validated['attachable_files'] = [];
             
             // Make sure business name is unique
             if (Customer::where('business_name', $validated['business_name'])->exists()) {
@@ -262,6 +247,17 @@ class CustomerController extends Controller
         return Inertia::render('Customers/WorkOrders', [
             'customer' => $customer,
             'workOrders' => $workOrders
+        ]);
+    }
+
+    // Check if a business name already exists
+    public function checkBusinessNameExists(Request $request)
+    {
+        $businessName = $request->input('business_name');
+        $exists = Customer::where('business_name', $businessName)->exists();
+        
+        return response()->json([
+            'exists' => $exists
         ]);
     }
 }

@@ -8,18 +8,18 @@
       Work Order
     </button>
 
-    <div v-show="showModal" class="fixed inset-0 mt-4 z-50 flex items-center justify-center bg-black bg-opacity-70"
+    <div v-show="showModal" class="fixed inset-0 mt-1 z-[100] flex items-center justify-center bg-black bg-opacity-70"
       @click="handleHideModal">
       <div
-        class="glossy-card flex-auto rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[95vh] flex flex-col"
+        class="glossy-card flex-auto rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[85vh] flex flex-col"
         @click.stop>
-        <div class="glossy-header px-4 pt-3 pb-2">
+        <div class="glossy-header px-3 pt-1 pb-0">
           <div class="flex justify-between items-center min-h-0">
-            <h3 class="text-lime-400 text-xl leading-5 font-medium" id="modal-title">
-              Add Work Order
+            <h3 class="text-lime-400 text-3xl leading-5 font-medium" id="modal-title">
+              Create New Work Order
             </h3>
             <button @click="handleHideModal"
-              class="btn btn-circle btn-outline ml-2 text-gray-900 hover:text-lime-400 transition-colors duration-200 focus:outline-none"
+              class="btn ml-2 text-red-400 hover:text-red-400 transition-colors duration-200 focus:outline-none"
               aria-label="Close modal">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -30,39 +30,81 @@
         </div>
 
         <!-- Steps component -->
-        <ul class="steps px-6 mb-2">
-          <li v-for="step in totalSteps" :key="step" class="step"
-            :class="{'step-info': step <= currentStep, 'step-error': step > currentStep}"
-            :data-content="step === currentStep ? '✓' : ''">
-            Step {{ step }}
-          </li>
-        </ul>
+        <div class="flex justify-center w-full px-2 py-1">
+          <ul class="steps steps-horizontal w-full">
+            <li v-for="step in totalSteps" :key="step" 
+          class="step transition-all duration-300 relative"
+          :class="{
+            'step-lime-400 text-lime-400 font-bold': step === currentStep,
+            'step-success text-green-400': step < currentStep,
+            'text-gray-500': step > currentStep
+          }">
+              <!-- Step Icons (Checkmark for completed, Circle for current, Small circle for future) -->
+              <span v-if="step < currentStep" class="flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </span>
+              <span v-else-if="step === currentStep" class="flex items-center justify-center animate-pulse">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-lime-400" viewBox="0 0 20 20" fill="currentColor">
+                  <circle cx="10" cy="10" r="6" />
+                </svg>
+              </span>
+              <span v-else class="flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                  <circle cx="10" cy="10" r="4" />
+                </svg>
+              </span>
+              
+              <!-- Step Title - shown for all steps -->
+              <div class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-2xs font-semibold" 
+                   :class="{ 'text-lime-400 animate-pulse': step === currentStep, 'text-green-400': step < currentStep, 'text-gray-500': step > currentStep }"
+                   style="width: max-content; z-index: 10;">
+                {{ 
+                  step === 1 ? 'Customer & Tech' :
+                  step === 2 ? 'Work Order Title' :
+                  step === 3 ? 'Service Description' :
+                  step === 4 ? 'Date & Time' :
+                  step === 5 ? 'Location Address' :
+                  step === 6 ? 'Approved Hours' :
+                  step === 7 ? 'Rate & Expenses' :
+                  step === 8 ? 'Work Order Status' :
+                  step === 9 ? 'Attachments' : ''
+                }}
+              </div>
+            </li>
+          </ul>
+        </div>
+
+<h6 class="text-white justify-center flex text-4xl mt-1 mb-0">
+          <span class="font-bold">Step {{ currentStep }}</span></h6>
 
         <form @submit.prevent="submitForm" class="flex flex-col flex-grow">
-          <div class="overflow-y-auto px-6 py-5 bg-gray-900 bg-opacity-90 flex-grow">
+          <div class="overflow-y-auto px-3 py-1 bg-gray-900 bg-opacity-90 flex-grow">
            
            
             <!-- Step 1: Customer & Technician Selection -->
             <div v-show="currentStep === 1">
-              <div class="glossy-section mb-4">
-                <label for="customer_id" class="text-green-400 block text-3xl font-extrabold">Select Customer</label>
-                <p class="text-md text-white font-semibold">Choose a customer from the dropdown menu below.</p>
+              <div class="glossy-section mb-2"> 
+                <label for="customer_id" class="text-green-400 block text-2xl font-extrabold">Customer</label>
+                <p class="text-xl text-white font-semibold">Choose a customer from the dropdown menu below.</p>
                 <div v-if="isLoadingCustomers" class="text-center py-3">
                   <div
                     class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full">
                   </div>
-                  <span class="ml-2 text-lime-400">Loading customers...</span>
+                  <span class="ml-2 text-white">Loading customers...</span>
                 </div>
                 <div v-else-if="customersArray.length === 0 || loadError"
                   class="mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
                   <div class="flex items-center">
-                    <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg> -->
-                    <!-- <span class="text-red-400">{{ loadError ? 'Error loading customers. Please try again.' : 'No customers found. Please add customers first.' }}</span> -->
+                    </svg>
+                    <span class="text-red-400">{{ loadError ? 'Error loading customers. Please try again.' : 'No active customers found. Please add customers first.' }}</span>
                   </div>
+                  <p class="text-xs text-gray-400 mt-1">Only active customers are displayed. Inactive customers won't appear in this list.</p>
                   <button @click="loadCustomers"
                     class="mt-2 px-3 py-1 bg-red-500/30 hover:bg-red-500/50 text-white rounded-md text-sm flex items-center"
                     type="button">
@@ -77,11 +119,12 @@
                 <select v-else v-model="form.customer_id" id="customer_id" name="customer_id"
                   class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
                   required @change="logSelectedCustomer">
-                  <option value="" disabled>Select a customer ({{ customersArray.length }} available)</option>
+                  <option value="" disabled>Select a customer ({{ customersArray.length }} active customers available)</option>
                   <option v-for="customer in customersArray" :key="customer.id" :value="customer.id">
                     {{ customer.business_name || customer.name || `Customer #${customer.id}` }}
                   </option>
                 </select>
+                <div class="text-xs text-gray-400 mt-1">Note: Only active customers are displayed. Contact an administrator if a customer is missing.</div>
 
               </div>
 
@@ -133,12 +176,12 @@
 
             <!-- Step 2: Work Order Title -->
             <div v-show="currentStep === 2">
-              <div class="glossy-section mb-4">
+              <div class="glossy-section">
                 <h3 class="text-lime-400 text-2xl font-medium mb-2">Create A Title</h3>
                 <!-- Work order title fields -->
-                <p class="text-lg text-white">This section will generate a title for TekDash to find it in our system.
+                <p class="text-2xl text-white">This section will generate a title for TekDash to enable it to be searched in our system.
                   Work order #'s cannot be used twice and the work order should have been duplicated if this is a return
-                  trip instead of creating a new work order. Location name is not an address, it is the name of the
+                  trip instead of creating a new work order. Location name is not the address, itpis the name of the
                   business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to look
                   for a WalMart when driving. </p>
 
@@ -149,12 +192,17 @@
                       Number</label>
                     <div class="relative">
                       <input placeholder="WO123456-01" type="text" v-model="workOrderNumber"
-                        @blur="checkExistingWorkOrder" id="workOrderNumber" name="workOrderNumber"
+                        @blur="checkExistingWorkOrder" @input="debouncedCheckExistingWorkOrder" id="workOrderNumber" name="workOrderNumber"
                         class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
                         :class="{'border-red-500': duplicateWorkOrderFound}"
                         required>
                       <div v-if="checkingWorkOrder" class="absolute right-3 top-2">
                         <span class="text-yellow-400 text-xs">Checking...</span>
+                      </div>
+                      <div v-else-if="workOrderVerified && workOrderNumber.trim() !== ''" class="absolute right-3 top-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
                       </div>
                       <div v-if="duplicateWorkOrderFound" class="text-red-500 text-xs mt-1">
                         Work order with this number already exists.
@@ -162,7 +210,7 @@
                     </div>
                   </div>
 
-                  <div class="mb-4 p-2 w-full">
+                  <div class="p-2 w-full">
                     <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
                     <select v-model="workType" id="workType" name="workType"
                       class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
@@ -184,7 +232,7 @@
                     </select>
                   </div>
                 </div>
-                <div class="mb-4 p-2 w-full mr-1">
+                <div class="p-2 w-full mr-1">
                   <label for="location" class="block text-sm font-medium text-green-400">Location/Business name</label>
                   <select v-model="location" id="location" name="location"
                     class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
@@ -206,12 +254,7 @@
                   </select>
                 </div>
                 <!-- Preview of combined title -->
-                <div>
-                  <label class="block text-sm font-medium text-green-400">Generated Title</label>
-                  <div class="text-lime-400 mt-1 px-3 py-2 rounded-md glossy-content">
-                    {{ formattedTitle }}
-                  </div>
-                </div>
+
               </div>
               <!-- Selection Summary -->
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
@@ -223,14 +266,14 @@
             </div>
 
             <!-- Step 3: Description -->
-            <div v-show="currentStep === 3" class="glossy-section mb-4">
+            <div v-show="currentStep === 3" class="glossy-section mb-2">
               <label for="description" class="block text-2xl font-medium text-green-400">Enter A Service Description</label>
               <p class="text-lg text-white">Enter the details of what was requested on the work order sent by the
                 customer, here's a hint, you can copy and paste the description from the work orders into here which
                 saves you time.</p>
               <textarea v-model="form.description" id="description" name="description"
                 placeholder="What is the Field Technician doing onsite?"
-                class="glossy-content text-lime-400 inline-block mt-1 p-2 mr-3 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                class="glossy-content text-lime-400 mt-1 p-4 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg w-full min-h-[250px] font-medium"
                 required></textarea>
               <!-- Selection Summary -->
               <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
@@ -242,7 +285,7 @@
             </div>
 
             <!-- Step 4: Date/Time -->
-            <div v-show="currentStep === 4" class="glossy-section mb-4">
+            <div v-show="currentStep === 4" class="glossy-section mb-2">
               <label class="block text-sm font-medium text-green-400">Date and Time Selection</label>
               <p class="text-sm text-white mb-3">Select the date and time for this work order using our enhanced date
                 picker.</p>
@@ -412,7 +455,7 @@
             </div>
 
             <!-- Step 6: Hours -->
-            <div v-show="currentStep === 6" class="glossy-section mb-4">
+            <div v-show="currentStep === 6" class="glossy-section mb-2">
               <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label>
               <p class="text-2xl text-white mb-4">Enter the amount of hours approved by the customer, if we need more
                 time onsite then we will call at that time to request the estimated hours to complete the WO. This is
@@ -452,41 +495,89 @@
             </div>
 
             <!-- Step 7: Rate & Travel -->
-            <div v-show="currentStep === 7" class="glossy-section mb-4">
+            <div v-show="currentStep === 7" class="glossy-section mb-2">
               <label for="hourlyRate" class="block text-sm font-medium text-green-400">Hourly Rate</label>
-              <p class="text-sm text-white mb-4">Select the hourly rate. The total price will be calculated based on the
+              <p class="text-xl text-white mb-2">Select the hourly rate. The total price will be calculated based on the
                 approved hours.</p>
 
               <!-- Quick selection tiles -->
-              <div class="grid grid-cols-4 gap-4 mb-6">
+              <div class="grid grid-cols-4 gap-4">
                 <button v-for="rate in [95, 120, 130, 180]" :key="rate" type="button" @click="form.hourlyRate = rate"
                   :class="{
-                    'bg-purple-600': form.hourlyRate === rate,
-                    'hover:bg-purple-700': form.hourlyRate === rate,
-                    'bg-gray-800 hover:bg-gray-700': form.hourlyRate !== rate
+                    'bg-purple-600': form.hourlyRate === rate && (rate < 80 || (rate > 120 && rate < 160)),
+                    'bg-green-600': form.hourlyRate === rate && rate >= 80 && rate <= 120,
+                    'bg-amber-600': form.hourlyRate === rate && rate >= 160 && rate <= 200,
+                    'hover:bg-purple-700': form.hourlyRate === rate && (rate < 80 || (rate > 120 && rate < 160)),
+                    'hover:bg-green-700': form.hourlyRate === rate && rate >= 80 && rate <= 120,
+                    'hover:bg-amber-700': form.hourlyRate === rate && rate >= 160 && rate <= 200,
+                    'bg-gray-800 hover:bg-gray-700': form.hourlyRate !== rate && (rate < 80 || (rate > 120 && rate < 160)),
+                    'bg-gray-800 hover:bg-green-700 border border-green-500/50': form.hourlyRate !== rate && rate >= 80 && rate <= 120,
+                    'bg-gray-800 hover:bg-amber-700 border border-amber-500/50': form.hourlyRate !== rate && rate >= 160 && rate <= 200
                   }"
-                  class="glossy-content p-4 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
-                  ${{ rate }}/hr
+                  class="relative glossy-content p-2.5 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                  <span :class="{ 
+                    'text-green-400': rate >= 80 && rate <= 120,
+                    'text-amber-500': rate >= 160 && rate <= 200
+                  }">
+                    ${{ rate }}/hr
+                  </span>
+                  <!-- Standard rate badge -->
+                  <span v-if="rate >= 80 && rate <= 120" class="absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/4">
+                    <div class="px-1 py-0.5 bg-green-500 text-white text-2xs rounded-full whitespace-nowrap" style="font-size: 0.6rem;">
+                      Std
+                    </div>
+                  </span>
+                  <!-- Emergency rate badge -->
+                  <span v-if="rate >= 160 && rate <= 200" class="absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/4">
+                    <div class="px-1 py-0.5 bg-amber-500 text-white text-2xs rounded-full whitespace-nowrap" style="font-size: 0.6rem;">
+                      Emg
+                    </div>
+                  </span>
                 </button>
               </div>
 
               <!-- Slider with purple theme -->
-              <div class="mt-6">
-                <div class="flex justify-between text-purple-400 text-sm mb-2">
+              <div class="mt-1">
+                <div class="flex justify-between text-purple-400 text-xs mb-0.5">
                   <span>$55/hr</span>
                   <span>$200/hr</span>
                 </div>
-                <input type="range" v-model="form.hourlyRate" id="hourlyRate" name="hourlyRate" min="55" max="200"
-                  step="5" class="slider-purple w-full" required>
-                <div class="flex justify-between text-xs text-gray-400 mt-1 overflow-x-auto">
+                <div class="relative">
+                  <!-- Highlight for recommended range -->
+                  <div class="absolute bg-green-400/20 border border-green-400/30 rounded-md z-0" 
+                       style="bottom: 0; left: 17%; width: 28%; height: 12px;"></div>
+                  <!-- Highlight for emergency range -->
+                  <div class="absolute bg-amber-500/20 border border-amber-500/30 rounded-md z-0" 
+                       style="bottom: 0; left: 72%; width: 28%; height: 12px;"></div>
+                  <input type="range" v-model="form.hourlyRate" id="hourlyRate" name="hourlyRate" min="55" max="200"
+                    step="5" class="slider-purple w-full relative z-10" required>
+                </div>
+                <div class="flex justify-between text-xs text-purple-400/70 mt-0.5 overflow-x-auto">
                   <template v-for="value in rateValues" :key="value">
-                    <span class="relative text-center whitespace-nowrap" style="min-width: 20px">|</span>
+                    <span 
+                      class="relative text-center whitespace-nowrap" 
+                      :class="{ 
+                        'font-bold text-green-400': value >= 80 && value <= 120,
+                        'font-bold text-amber-500': value >= 160 && value <= 200
+                      }"
+                      style="min-width: 20px; font-size: 0.65rem;">|</span>
                   </template>
+                </div>
+                <!-- Rate range legend -->
+                <div class="flex justify-between mt-1">
+                  <div class="flex items-center gap-1">
+                    <span class="inline-block w-2 h-2 bg-green-400/70 rounded-sm border border-green-400"></span>
+                    <span class="text-xs text-green-400 font-medium" style="font-size: 0.7rem;">Standard: $80-$120/hr</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class="inline-block w-2 h-2 bg-amber-500/70 rounded-sm border border-amber-500"></span>
+                    <span class="text-xs text-amber-500 font-medium" style="font-size: 0.7rem;">Emergency: $160-$200/hr</span>
+                  </div>
                 </div>
               </div>
 
               <!-- Travel expense section -->
-              <div class="mt-8 p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+              <div class="mt-4 p-3 rounded-lg bg-gray-800/30 border border-gray-700">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" v-model="form.includeTravel" class="checkbox checkbox-success"
                     id="includeTravel" name="includeTravel" />
@@ -496,8 +587,8 @@
                 <!-- Travel expense configuration (shows when checkbox is checked) -->
                 <div v-if="form.includeTravel" class="mt-4">
                   <!-- Mileage rate quick selection tiles -->
-                  <div class="mb-4">
-                    <label class="block text-sm font-medium text-purple-400 mb-2">Rate per Mile</label>
+                  <div class="mb-2">
+                    <label class="block text-xs font-medium text-purple-400 mb-1">Rate per Mile</label>
                     <div class="grid grid-cols-5 gap-2">
                       <button v-for="rate in [1.00, 0.75, 0.65, 0.50, 0.45]" :key="rate" type="button"
                         @click="form.mileageRate = rate" :class="{
@@ -505,30 +596,30 @@
                           'hover:bg-purple-700': form.mileageRate === rate,
                           'bg-gray-800 hover:bg-gray-700': form.mileageRate !== rate
                         }"
-                        class="glossy-content p-2 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-sm">
+                        class="glossy-content p-1.5 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-xs">
                         ${{ rate.toFixed(2) }}
                       </button>
                     </div>
                   </div>
 
                   <!-- Travel distance slider -->
-                  <div class="mt-6">
-                    <label class="block text-sm font-medium text-purple-400 mb-2">Distance (One Way)</label>
-                    <div class="flex justify-between text-purple-400 text-sm mb-2">
+                  <div class="mt-3">
+                    <label class="block text-xs font-medium text-purple-400 mb-1">Distance (One Way)</label>
+                    <div class="flex justify-between text-purple-400 text-xs mb-1">
                       <span>45 miles</span>
                       <span>400 miles</span>
                     </div>
                     <input type="range" v-model="form.travelMiles" min="45" max="400" step="5"
                       class="slider-purple w-full" id="travelMiles" name="travelMiles" />
-                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <div class="flex justify-between text-xs text-gray-400 mt-0.5">
                       <template v-for="value in [45, 100, 150, 200, 250, 300, 350, 400]" :key="value">
-                        <span class="relative" style="left: -4px">|</span>
+                        <span class="relative" style="left: -4px; font-size: 0.65rem;">|</span>
                       </template>
                     </div>
                   </div>
 
                   <!-- Travel cost calculation -->
-                  <div class="text-center mt-4 p-3 rounded-lg bg-gray-800/50">
+                  <div class="text-center mt-2 p-2 rounded-lg bg-gray-800/50">
                     <div class="flex flex-col gap-1 text-sm">
                       <div>
                         <span class="text-gray-400">{{ form.travelMiles }} miles × </span>
@@ -579,7 +670,7 @@
             </div>
 
             <!-- Step 8: Status -->
-            <div v-show="currentStep === 8" class="glossy-section mb-4">
+            <div v-show="currentStep === 8" class="glossy-section mb-2">
               <label class="block text-sm font-medium text-green-400 mb-4">Status</label>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <button v-for="status in ['Scheduled', 'In Progress', 'Part Needed', 'Complete', 'Cancelled']"
@@ -613,7 +704,7 @@
             </div>
 
             <!-- Step 9: Attachments -->
-            <div v-show="currentStep === 9" class="glossy-section mb-4">
+            <div v-show="currentStep === 9" class="glossy-section mb-2">
               <label class="block text-sm font-medium text-green-400 mb-2">Attachments</label>
               <p class="text-2xl text-white mb-4">Upload any relevant files or documents for this work order.</p>
 
@@ -686,10 +777,10 @@
         </form>
 
         <!-- Fixed footer with navigation buttons -->
-        <div class="glossy-footer px-4 py-2 border-t border-gray-700 mt-auto sticky bottom-0 bg-gray-900/95 z-20 min-h-0">
+        <div class="glossy-footer px-3 py-1 border-t border-gray-700 mt-auto sticky bottom-0 bg-gray-900/95 z-20 min-h-0">
           <div class="flex justify-between items-center min-h-0">
             <button v-if="currentStep > 1" type="button" @click="prevStep"
-              class="btn glass-button flex items-center space-x-1 px-5 py-2 bg-gray-700/50 text-white hover:bg-gray-700">
+              class="btn glass-button flex items-center space-x-1 px-4 py-1 bg-gray-700/50 text-white hover:bg-gray-700">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -700,7 +791,7 @@
 
             <div>
               <button v-if="currentStep < totalSteps" type="button" @click="nextStep"
-                class="btn glass-button flex items-center space-x-1 px-6 py-2 bg-blue-600/60 text-white hover:bg-blue-700">
+                class="btn glass-button flex items-center space-x-1 px-5 py-1 bg-blue-600/60 text-white hover:bg-blue-700">
                 <span>Next</span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -771,6 +862,7 @@ const selectedDates = ref([{ date: new Date().toISOString().slice(0, 16) }]);
 const isSubmitting = ref(false);
 const checkingWorkOrder = ref(false);
 const duplicateWorkOrderFound = ref(false);
+const workOrderVerified = ref(false);
 const debounceTimer = ref(null);
 const selectedDate = ref(new Date());
 const currentMonth = ref(new Date());
@@ -918,6 +1010,8 @@ const resetForm = () => {
   workOrderNumber.value = '';
   location.value = '';
   duplicateWorkOrderFound.value = false;
+  workOrderVerified.value = false;
+  checkingWorkOrder.value = false;
   selectedTime.value = {
     hour: 12,
     minute: '00',
@@ -1008,11 +1102,47 @@ const removeFile = (index) => {
   form.file_attachments = form.file_attachments.filter((_, i) => i !== index);
 };
 
-const checkExistingWorkOrder = () => {
-  // Implement validation for duplicate work orders if needed
-  // For now, just a placeholder to prevent errors
-  duplicateWorkOrderFound.value = false;
+// Debounce function to limit API calls
+const debounce = (fn, delay) => {
+  let timeoutId;
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+  };
 };
+
+const checkExistingWorkOrder = () => {
+  // Don't check if there's no work order number
+  if (!workOrderNumber.value || workOrderNumber.value.trim() === '') {
+    duplicateWorkOrderFound.value = false;
+    workOrderVerified.value = false;
+    return;
+  }
+  
+  checkingWorkOrder.value = true;
+  workOrderVerified.value = false;
+  
+  // Call the API to check for duplicate work order
+  axios.get('/api/check-work-order-exists', {
+    params: { workOrderNumber: workOrderNumber.value }
+  })
+    .then(response => {
+      duplicateWorkOrderFound.value = response.data.exists;
+      // Set verified to true only if we have a response and it's not a duplicate
+      workOrderVerified.value = !response.data.exists && workOrderNumber.value.trim() !== '';
+    })
+    .catch(error => {
+      console.error('Error checking work order:', error);
+      duplicateWorkOrderFound.value = false;
+      workOrderVerified.value = false;
+    })
+    .finally(() => {
+      checkingWorkOrder.value = false;
+    });
+};
+
+// Create debounced version for input events
+const debouncedCheckExistingWorkOrder = debounce(checkExistingWorkOrder, 500);
 
 const { success: toastSuccess, error: toastError } = useToast();
 
@@ -1049,7 +1179,18 @@ const submitForm = () => {
       formData.append('date_time', form.date_time);
       formData.append('address', form.address);
       formData.append('hours', parseFloat(form.hours));
-      formData.append('price', parseFloat(totalPrice.value));
+      formData.append('hourly_rate', parseFloat(form.hourlyRate));
+      formData.append('grand_total', parseFloat(totalPrice.value));
+      
+      // Add travel-related fields
+      if (form.includeTravel) {
+        formData.append('has_travel', true);
+        formData.append('travel_cost', parseFloat(travelCost.value));
+      } else {
+        formData.append('has_travel', false);
+        formData.append('travel_cost', 0);
+      }
+      
       formData.append('status', form.status);
       formData.append('user_id', form.user_id);
       if (form.technician_id) {
@@ -1110,7 +1251,13 @@ const submitForm = () => {
           } else {
             // Create a formatted error message from all validation errors
             for (const [field, messages] of Object.entries(errors)) {
-              errorMessage += `${field}: ${messages.join(', ')}\n`;
+              // Check if messages is an array before calling join
+              if (Array.isArray(messages)) {
+                errorMessage += `${field}: ${messages.join(', ')}\n`;
+              } else {
+                // If not an array, convert to string directly
+                errorMessage += `${field}: ${messages}\n`;
+              }
             }
           }
           
@@ -1304,6 +1451,20 @@ onMounted(() => {
 });
 
 // Watchers
+// Reset verification status when work order number changes
+watch(() => workOrderNumber.value, (newValue) => {
+  if (newValue.trim() !== '') {
+    // Only reset verified status if it was verified before and user is modifying it again
+    if (workOrderVerified.value) {
+      workOrderVerified.value = false;
+    }
+  } else {
+    // Reset both flags when field is emptied
+    workOrderVerified.value = false;
+    duplicateWorkOrderFound.value = false;
+  }
+});
+
 watch(currentStep, async (newStep) => {
   // Scroll to top of form when step changes
   await nextTick(() => {
@@ -1379,6 +1540,18 @@ const getSelectedCustomerName = () => {
   return selectedCustomer ? selectedCustomer.business_name : null;
 };
 
+// Helper function to log selected customer details
+const logSelectedCustomer = () => {
+  if (form.customer_id) {
+    const selectedCustomer = customersArray.value.find(c => c.id == form.customer_id);
+    console.log('Selected customer:', selectedCustomer ? {
+      id: selectedCustomer.id,
+      business_name: selectedCustomer.business_name,
+      pay_rate: selectedCustomer.pay_rate
+    } : 'Not found in customersArray');
+  }
+};
+
 // Methods for API calls
 const loadCustomers = async () => {
   console.log('AddWorkOrder: loadCustomers started');
@@ -1394,6 +1567,17 @@ const loadCustomers = async () => {
         'X-Requested-With': 'XMLHttpRequest'
       }
     });
+    
+    // Enhanced debugging - log response details
+    console.log('AddWorkOrder: API response received', {
+      status: response.status,
+      statusText: response.statusText,
+      dataType: typeof response.data,
+      isArray: Array.isArray(response.data),
+      isPaginated: response.data && typeof response.data === 'object' && Array.isArray(response.data.data),
+      recordCount: Array.isArray(response.data) ? response.data.length : 
+                  (response.data && Array.isArray(response.data.data) ? response.data.data.length : 0)
+    });
 
     if (typeof response.data === 'string') {
       if (response.data.trim().startsWith('<!DOCTYPE html') || response.data.trim().startsWith('<html')) {
@@ -1405,11 +1589,13 @@ const loadCustomers = async () => {
           customers.value = parsed;
           customersArray.value = parsed;
           loadError.value = false;
+          console.log(`AddWorkOrder: Loaded ${parsed.length} customers from parsed string data`);
           return parsed;
         } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
           customers.value = parsed.data;
           customersArray.value = parsed.data;
           loadError.value = false;
+          console.log(`AddWorkOrder: Loaded ${parsed.data.length} customers from parsed object.data`);
           return parsed.data;
         } else {
           throw new Error('Parsed string but result is not a valid array format');
@@ -1423,17 +1609,37 @@ const loadCustomers = async () => {
       customers.value = response.data;
       customersArray.value = response.data;
       loadError.value = false;
+      console.log(`AddWorkOrder: Loaded ${response.data.length} customers as array`);
+      // Debug log first few items to help with diagnostics
+      if (response.data.length > 0) {
+        console.log('AddWorkOrder: First customer sample:', response.data[0]);
+      }
       return response.data;
     } else if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
       customers.value = response.data.data;
       customersArray.value = response.data.data;
       loadError.value = false;
+      console.log(`AddWorkOrder: Loaded ${response.data.data.length} customers from object.data`);
+      // Debug log first few items to help with diagnostics
+      if (response.data.data.length > 0) {
+        console.log('AddWorkOrder: First customer sample:', response.data.data[0]);
+      }
       return response.data.data;
     } else {
       throw new Error('Invalid response format: Expected array but got ' + typeof response.data);
     }
   } catch (error) {
     console.error('AddWorkOrder: Failed to load customers:', error);
+    if (error.response) {
+      // Log detailed API error information
+      console.error('AddWorkOrder: API error details:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    }
+    
     customers.value = [];
     customersArray.value = [];
     loadError.value = true;
@@ -1448,6 +1654,7 @@ const loadCustomers = async () => {
     }
     return [];
   } finally {
+    console.log(`AddWorkOrder: Customer loading complete. ${customersArray.value.length} customers available.`);
     isLoadingCustomers.value = false;
   }
 };
@@ -1665,7 +1872,7 @@ watch(() => form.customer_id, (newVal) => {
 }
 
 .text-gray-700 {
-  color: #4a5568;
+  color: #000000;
 }
 
 .mt-1 {
@@ -1787,7 +1994,7 @@ progress {
 }
 
 progress::-webkit-progress-bar {
-  background-color: rgba(31, 41, 55, 0.6);
+  background-color: rgba(18, 237, 84, 0.6);
   border-radius: 4px;
 }
 
@@ -1802,7 +2009,7 @@ progress::-moz-progress-bar {
 }
 
 /* Responsive form fields */
-@media (max-width: 768px) {
+@media (max-width: 1124px) {
   .glossy-section .flex {
     flex-direction: column;
   }
@@ -1927,14 +2134,31 @@ progress::-moz-progress-bar {
   height: 6px;
 }
 
+/* Text size utility class */
+.text-2xs {
+  font-size: 0.65rem;
+  line-height: 0.9rem;
+}
+
 /* Purple slider styles */
 .slider-purple {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
-  background: linear-gradient(90deg, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.3));
+  background: linear-gradient(90deg, 
+    rgba(147, 51, 234, 0.2),
+    rgba(147, 51, 234, 0.2) 17%,  /* Start of standard range (80/hr) */
+    rgba(74, 222, 128, 0.4) 17%,  /* Green highlight for standard range */
+    rgba(74, 222, 128, 0.4) 45%,  /* End of standard range (120/hr) */
+    rgba(147, 51, 234, 0.2) 45%,
+    rgba(147, 51, 234, 0.2) 72%,  /* Start of emergency range (160/hr) */
+    rgba(245, 158, 11, 0.4) 72%,  /* Amber highlight for emergency range */
+    rgba(245, 158, 11, 0.4) 100%, /* End of emergency range (200/hr) */
+    rgba(147, 51, 234, 0.3));
   border-radius: 3px;
   outline: none;
+  z-index: 10;
+  position: relative;
 }
 
 .slider-purple::-webkit-slider-thumb {
@@ -2074,6 +2298,62 @@ progress::-moz-progress-bar {
 
 /* Add additional space for content */
 .glossy-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Enhanced step component styling */
+.steps-horizontal {
+  margin-top: 0.75rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.steps .step:before {
+  background-color: rgba(75, 85, 99, 0.4);
+  border-color: rgba(75, 85, 99, 0.6);
+  z-index: 1;
+}
+
+.steps .step:after,
+.steps .step > .step-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.05);
+  z-index: 5;
+}
+
+.steps .step.step-success:before {
+  background-color: #84cc16;
+  border-color: #65a30d;
+}
+
+.steps .step.step-lime-400:after,
+.steps .step.step-lime-400 > .step-icon {
+  background-color: #84cc16;
+  border-color: #65a30d;
+  color: #111827;
+  box-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
+}
+
+.steps .step.step-success:after,
+.steps .step.step-success > .step-icon {
+  background-color: #4ade80;
+  border-color: #22c55e;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Step title styles for better visibility */
+.steps .step .absolute {
+  background-color: rgba(17, 24, 39, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 </style>

@@ -1,8 +1,6 @@
 <template>
+  <!-- Removed ToastContainer from here; it should only be rendered at the app root (AppLayout.vue) -->
   <div v-if="props.showModal">
-    <!-- Toast Container for notifications -->
-    <ToastContainer />
-
     <!-- Background overlay -->
     <div @click="emit('close')" class="fixed inset-0 bg-black bg-opacity-50 z-[60]"></div>
 
@@ -76,7 +74,8 @@
           <div class="mb-4 flex flex-wrap justify-between items-center">
             <div>
               <template v-if="!editingField.status">
-                <Badge :variant="statusBadgeVariant.variant" :class="statusBadgeVariant.class + ' cursor-pointer ring-1 ring-inset mr-2'" @click="updateStatus">
+                <Badge :variant="statusBadgeVariant.variant"
+                  :class="statusBadgeVariant.class + ' cursor-pointer ring-1 ring-inset mr-2'" @click="updateStatus">
                   {{ props.workOrder.status }}
                 </Badge>
               </template>
@@ -99,7 +98,8 @@
               <div>
                 <label class="block text-sm font-medium text-gray-300 mb-1">Scheduled Date</label>
                 <div v-if="!editingField.date_time">
-                  <Button variant="outline" class="w-full justify-start text-left font-normal" @click="startEditing('date_time')">
+                  <Button variant="outline" class="w-full justify-start text-left font-normal"
+                    @click="startEditing('date_time')">
                     <CalendarIcon class="mr-2 h-5 w-5 text-indigo-400" />
                     <span v-if="calendarValue">
                       {{ calendarDateFormatter.format(calendarValue.toDate(getLocalTimeZone())) }}
@@ -119,12 +119,8 @@
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent class="w-auto p-0">
-                      <RangeCalendar
-                        v-model="calendarValue"
-                        :number-of-months="2"
-                        :initial-focus="true"
-                        @update:start-value="handleCalendarSelect"
-                      />
+                      <RangeCalendar v-model="calendarValue" :number-of-months="2" :initial-focus="true"
+                        @update:start-value="handleCalendarSelect" />
                       <div class="flex justify-end mt-2">
                         <Button size="sm" variant="ghost" @click="editingField.date_time = false">Cancel</Button>
                       </div>
@@ -159,12 +155,9 @@
                 <!-- Mapbox Static Map Preview -->
                 <div v-if="mapboxImageUrl" class="mt-2">
                   <a :href="mapboxMapsLink" target="_blank" rel="noopener" title="Open in Map App">
-                    <img
-                      :src="mapboxImageUrl"
-                      alt="Map snapshot"
+                    <img :src="mapboxImageUrl" alt="Map snapshot"
                       class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
-                      style="width: 100%; max-width: 600px; min-height: 120px; background: #222;"
-                    />
+                      style="width: 100%; max-width: 600px; min-height: 120px; background: #222;" />
                   </a>
                   <div v-if="mapboxLoading" class="text-xs text-gray-400 mt-1">Loading map...</div>
                   <div v-if="mapboxError" class="text-xs text-red-400 mt-1">{{ mapboxError }}</div>
@@ -287,7 +280,7 @@
               <span class="text-xs text-gray-300">{{ uploadProgress }}%</span>
             </div>
             <div class="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
-              <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{width: uploadProgress + '%'}"></div>
+              <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{ width: uploadProgress + '%' }"></div>
             </div>
           </div>
 
@@ -299,8 +292,8 @@
               <button @click="archiveWorkOrder" :disabled="props.workOrder.status !== 'Complete'"
                 class="glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-green-400 hover:text-gray-900 hover:bg-green-400 font-bold sm:ml-2 sm:w-auto sm:text-xs"
                 :class="{
-                'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-green-400': props.workOrder.status !== 'Complete'
-              }">
+                  'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-green-400': props.workOrder.status !== 'Complete'
+                }">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -310,11 +303,11 @@
               </button>
 
               <!-- Duplicate button -->
-              <button @click="duplicateWorkOrder($event)" :disabled="props.workOrder.status !== 'Part Needed'" :class="[
+              <button @click="duplicateWorkOrder($event)" :disabled="['Complete', 'Archived'].includes(props.workOrder.status)" :class="[
                 'glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-purple-400 font-bold hover:bg-purple-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs',
-                { 'opacity-50 cursor-not-allowed': props.workOrder.status !== 'Part Needed' }
+                { 'opacity-50 cursor-not-allowed': ['Complete', 'Archived'].includes(props.workOrder.status) }
               ]"
-                :title="props.workOrder.status !== 'Part Needed' ? 'Duplication is only available for work orders with Part Needed status' : 'Create a duplicate work order'">
+                :title="['Complete', 'Archived'].includes(props.workOrder.status) ? 'Cannot duplicate completed or archived work orders' : 'Create a duplicate work order'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -374,7 +367,7 @@
                 <!-- Upload progress indicator -->
                 <div v-if="isUploading"
                   class="mt-2 relative w-full h-1 bg-gray-700 rounded-full overflow-hidden sm:ml-2">
-                  <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{width: uploadProgress + '%'}"></div>
+                  <div class="absolute left-0 top-0 h-full bg-lime-400" :style="{ width: uploadProgress + '%' }"></div>
                 </div>
 
                 <!-- Upload error message -->
@@ -536,7 +529,6 @@ import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import Messenger from '@/Components/Messenger.vue';
 import PdfViewer from '@/Components/PdfViewer.vue';
 import PdfThumbnail from '@/Components/PdfThumbnail.vue';
-import ToastContainer from '@/Components/ToastContainer.vue';
 import Timeline from '@/Components/Timeline.vue';
 import { Badge } from '@/Components/ui/badge';
 import { useToast } from '@/Composables/useToast';
@@ -544,9 +536,9 @@ import axios from 'axios';
 import format from 'date-fns/format';
 import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { RangeCalendar } from '@/components/ui/range-calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover';
+import { Button } from '@/Components/ui/button';
+import { RangeCalendar } from '@/Components/ui/range-calendar';
 
 // Format currency utility (since @/Utils/formatCurrency does not exist)
 function formatCurrency(value) {
@@ -621,7 +613,7 @@ const startEditing = (field) => {
     editingField.value[key] = false;
   });
   editingField.value[field] = true;
-  
+
   // If editing title, wait for the DOM to update then focus the input
   if (field === 'title') {
     nextTick(() => {
@@ -644,19 +636,19 @@ const saveField = async (field) => {
       isUploading.value = true;
       uploadProgress.value = 0;
       uploadError.value = null;
-      
+
       const formData = new FormData();
-      
+
       // Append each file to the FormData object
       if (form.value.images && form.value.images.length > 0) {
         form.value.images.forEach((file, index) => {
           formData.append(`attachments[]`, file); // Laravel convention for file arrays
         });
       }
-      
+
       // We need to add the work order ID to identify the relationship
       formData.append('work_order_id', props.workOrder.id);
-      
+
       // Make the API call to upload files
       const response = await axios.post(
         `/work-orders/${props.workOrder.id}/attachments`,
@@ -673,84 +665,84 @@ const saveField = async (field) => {
           }
         }
       );
-      
+
       // Handle successful upload
       if (response.data.success || response.status === 200) {
         editingField.value.images = false;
-        
+
         // Update the work order with new attachments
         if (response.data.attachments) {
           props.workOrder.attachments = response.data.attachments;
         } else if (response.data.workOrder && response.data.workOrder.attachments) {
           props.workOrder.attachments = response.data.workOrder.attachments;
         }
-        
+
         // Clear the file input for subsequent uploads
         if (fileInput.value) {
           fileInput.value.value = '';
         }
-        
+
         isUploading.value = false;
         uploadProgress.value = 100;
-        
+
         // Show success toast notification
         showSuccess(`${form.value.images.length} file(s) uploaded successfully`);
         uploadError.value = null;
-        
+
         // Recognize and highlight PDFs for signature opportunities
-        const pdfFiles = form.value.images.filter(file => 
+        const pdfFiles = form.value.images.filter(file =>
           file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
         );
-        
+
         if (pdfFiles.length > 0 && props.workOrder.status !== 'Scheduled') {
           showInfo(`${pdfFiles.length} PDF document(s) ready for signatures`);
         }
       }
-      
+
       return; // Skip the regular field update since we've handled the upload
     } catch (error) {
       console.error('Error uploading images:', error);
       const errorMessage = error.response?.data?.message || 'Failed to upload files. Please try again.';
       uploadError.value = errorMessage;
       isUploading.value = false;
-      
+
       // Show error toast notification
       showError(errorMessage);
-      
+
       // If the error is related to file size, provide a more helpful message
       if (error.response?.status === 413 || error.message?.includes('payload')) {
         showWarning('The file(s) may be too large. Try uploading smaller files or one at a time.');
       }
-      
+
       return; // Skip the rest of the function
     }
   }
-  
+
   try {
     // Show info toast notification for critical fields
     if (['status', 'hourly_rate', 'hours', 'title', 'date_time', 'customer_id'].includes(field)) {
       showInfo(`Updating ${field.replace('_', ' ')}...`);
     }
-    
+
     // For regular fields (not images), use the updateField endpoint
     const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
       [field]: form.value[field],
       '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     });
-    
+
     if (response.data.success) {
       // Update was successful
       editingField.value[field] = false;
-      
+
       // Update the local workOrder object with the returned data if available
       if (response.data.workOrder) {
         Object.assign(props.workOrder, response.data.workOrder);
       }
-      
+
       // If we're updating hours or rates, recalculate grand total
       if (['hours', 'hourly_rate', 'travel_cost', 'has_travel'].includes(field)) {
         await updateGrandTotal();
-        
+
         // Show success toast for financial updates
         showSuccess(`Updated financial details - New total: ${formatCurrency(grandTotal.value)}`);
       }
@@ -759,14 +751,14 @@ const saveField = async (field) => {
         const fieldName = field.replace('_', ' ');
         showSuccess(`Updated ${fieldName} successfully`);
       }
-      
+
       // Refresh timeline to show the new activity
       await refreshTimeline();
     }
   } catch (error) {
     console.error(`Error saving ${field}:`, error);
     showError(`Failed to update ${field.replace('_', ' ')}: ${error.response?.data?.message || 'Please try again'}`);
-    
+
     // Provide more specific guidance for certain fields
     if (field === 'customer_id' && error.response?.status === 404) {
       showWarning('The selected customer could not be found. Please choose a valid customer.');
@@ -781,13 +773,13 @@ const updateGrandTotal = async () => {
     const laborCost = (parseFloat(form.value.hours || 0) * parseFloat(form.value.hourly_rate || 0));
     const travelCost = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
     const calculatedTotal = laborCost + travelCost;
-    
+
     // Make API request to update total
     const response = await axios.post(`/work-orders/${props.workOrder.id}/update-total`);
-    
+
     if (response.data.success) {
       props.workOrder.grand_total = response.data.grand_total;
-      
+
       // Log the breakdown for debugging
       console.log('Grand total updated:', {
         laborCost: laborCost.toFixed(2),
@@ -800,7 +792,7 @@ const updateGrandTotal = async () => {
   } catch (error) {
     console.error('Error updating grand total:', error);
     showError('Failed to update total cost. Please try again.');
-    
+
     // If error is related to validation, provide more specific guidance
     if (error.response?.data?.errors) {
       const validationErrors = error.response.data.errors;
@@ -960,12 +952,12 @@ function getFileName(attachment) {
 // Helper: isImageFile for attachment type checking
 function isImageFile(attachment) {
   if (!attachment) return false;
-  
+
   // Check if attachment has file_type property
   if (attachment.file_type) {
     return attachment.file_type.startsWith('image/');
   }
-  
+
   // Check file name extension as fallback
   const name = attachment.file_name || attachment.name || attachment.url || '';
   const ext = name.toLowerCase().split('.').pop();
@@ -1117,11 +1109,103 @@ function handleCalendarSelect(date) {
   saveField('date_time');
   editingField.value.date_time = false;
 }
+
+// Methods
+const deleteWorkOrder = async () => {
+  try {
+    // Show confirmation dialog
+    if (!window.confirm('Are you sure you want to delete this work order? This action cannot be undone.')) {
+      return;
+    }
+
+    // Send delete request to correct API endpoint
+    const response = await axios.delete(`/api/work-orders/${props.workOrder.id}`, {
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    console.log('Delete response:', response);
+
+    if (response.status === 200 || response.data?.success) {
+      showSuccess('Work order deleted successfully');
+      // Wait 1 second before closing and reloading so toast is visible
+      setTimeout(() => {
+        emit('close');
+        window.location.reload();
+      }, 1000);
+    } else {
+      showError(response.data?.message || 'Failed to delete work order. Please try again.');
+    }
+  } catch (error) {
+    console.error('Error deleting work order:', error);
+    if (error.response?.status === 403) {
+      showError('Permission denied. You may not have the required permissions to delete work orders.');
+    } else if (error.response?.data?.message) {
+      showError(error.response.data.message);
+    } else {
+      showError('Failed to delete work order. Please try again.');
+    }
+  }
+};
+
+const duplicateWorkOrder = async (event) => {
+  try {
+    event.preventDefault();
+    
+    // Prompt user for new date
+    const newDate = window.prompt('Please enter a new date for the duplicated work order (MM/DD/YYYY):', 
+      new Date().toLocaleDateString('en-US'));
+    
+    if (!newDate) {
+      // User cancelled the prompt
+      return;
+    }
+
+    // Validate the date format
+    const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+    if (!dateRegex.test(newDate)) {
+      showError('Please enter a valid date in MM/DD/YYYY format');
+      return;
+    }
+
+    // Convert the date to ISO format for the API
+    const [month, day, year] = newDate.split('/');
+    const isoDate = new Date(year, month - 1, day).toISOString();
+
+    // Send the duplicate request with the new date
+    const response = await axios.post(`/work-orders/${props.workOrder.id}/duplicate`, {
+      date_time: isoDate  // Send the new date to the backend
+    }, {
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.data.message) {
+      showSuccess('Work order duplicated successfully with scheduled date: ' + newDate);
+      emit('workOrderDuplicated', response.data);
+      emit('close');
+    }
+  } catch (error) {
+    console.error('Error duplicating work order:', error);
+    if (error.response?.status === 403) {
+      showError('Permission denied. You may not have the required permissions to duplicate work orders.');
+    } else {
+      showError(error.response?.data?.message || 'Failed to duplicate work order. Please try again.');
+    }
+  }
+};
 </script>
 
 <style scoped>
 .timeline-container {
-  max-height: vh; /* Reduced to match the modal height */
+  max-height: vh;
+  /* Reduced to match the modal height */
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);

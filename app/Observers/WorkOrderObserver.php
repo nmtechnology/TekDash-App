@@ -62,14 +62,26 @@ class WorkOrderObserver
 
     public function deleted(WorkOrder $workOrder)
     {
-        WorkOrderActivity::create([
-            'work_order_id' => $workOrder->id,
-            'user_id' => auth()->id(),
-            'field_name' => 'work_order',
-            'old_value' => 'Active',
-            'new_value' => 'Deleted',
-            'action_type' => 'delete',
-            'description' => 'Work order deleted',
-        ]);
+        // The activity log for deletion is now handled directly in the controller
+        // to avoid foreign key constraint violations
+        // We leave this method for compatibility but it shouldn't be called
+        try {
+            // Only try to create an activity if the work order still exists in database
+            if (WorkOrder::find($workOrder->id)) {
+                WorkOrderActivity::create([
+                    'work_order_id' => $workOrder->id,
+                    'user_id' => auth()->id(),
+                    'field_name' => 'work_order',
+                    'old_value' => 'Active',
+                    'new_value' => 'Deleted',
+                    'action_type' => 'delete',
+                    'description' => 'Work order deleted',
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Silently fail if we can't create the activity record
+            // This prevents errors during normal deletion
+            \Log::error('Failed to create deletion activity: ' . $e->getMessage());
+        }
     }
 }

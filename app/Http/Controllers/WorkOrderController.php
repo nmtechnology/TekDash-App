@@ -35,7 +35,11 @@ class WorkOrderController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'date_time' => 'required|date',
-            'price' => 'required|numeric',
+            'hourly_rate' => 'required|numeric',
+            'hours' => 'required|numeric',
+            'grand_total' => 'required|numeric',
+            'travel_cost' => 'nullable|numeric',
+            'has_travel' => 'nullable|boolean',
             'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -54,7 +58,11 @@ class WorkOrderController extends Controller
         $workOrder->title = $validatedData['title'] . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT);
         $workOrder->description = $validatedData['description'];
         $workOrder->date_time = $validatedData['date_time'];
-        $workOrder->price = $validatedData['price'];
+        $workOrder->hourly_rate = $validatedData['hourly_rate'];
+        $workOrder->hours = $validatedData['hours'];
+        $workOrder->grand_total = $validatedData['grand_total'];
+        $workOrder->travel_cost = $validatedData['travel_cost'] ?? 0;
+        $workOrder->has_travel = $validatedData['has_travel'] ?? false;
         $workOrder->status = $validatedData['status'];
 
         if ($request->hasFile('file_attachments')) {
@@ -146,7 +154,11 @@ public function getDetails($id)
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'date_time' => 'required|date',
-            'price' => 'required|numeric',
+            'hourly_rate' => 'required|numeric',
+            'hours' => 'required|numeric',
+            'grand_total' => 'required|numeric',
+            'travel_cost' => 'nullable|numeric',
+            'has_travel' => 'nullable|boolean',
             'status' => 'required|string|in:Scheduled,In Progress,Part/Return,Complete,Cancelled',
             'file_attachments.*' => 'nullable|file|mimes:pdf,jpg|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -158,7 +170,11 @@ public function getDetails($id)
         $workOrder->title = $validatedData['title'];
         $workOrder->description = $validatedData['description'];
         $workOrder->date_time = $validatedData['date_time'];
-        $workOrder->price = $validatedData['price'];
+        $workOrder->hourly_rate = $validatedData['hourly_rate'];
+        $workOrder->hours = $validatedData['hours'];
+        $workOrder->grand_total = $validatedData['grand_total'];
+        $workOrder->travel_cost = $validatedData['travel_cost'] ?? 0;
+        $workOrder->has_travel = $validatedData['has_travel'] ?? false;
         $workOrder->status = $validatedData['status'];
 
         if ($request->hasFile('file_attachments')) {
@@ -382,7 +398,7 @@ public function updateField(Request $request, $id)
     $value = $request->input($field);
     
     // Validate field name to prevent mass assignment vulnerabilities
-    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'price'];
+    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'hourly_rate', 'hours', 'travel_cost', 'has_travel', 'grand_total'];
     
     if (!in_array($field, $allowedFields)) {
         return response()->json([
@@ -456,4 +472,66 @@ public function getActivities($id)
         ], 500);
     }
 }
+
+    // API endpoint for deleting a work order
+    public function deleteWorkOrder($id)
+    {
+        try {
+            $workOrder = WorkOrder::findOrFail($id);
+            
+            // Create the activity log before deleting the work order
+            \DB::beginTransaction();
+            try {
+                // Manually create the deletion activity log
+                \App\Models\WorkOrderActivity::create([
+                    'work_order_id' => $workOrder->id,
+                    'user_id' => auth()->id(),
+                    'field_name' => 'work_order',
+                    'old_value' => 'Active',
+                    'new_value' => 'Deleted',
+                    'action_type' => 'delete',
+                    'description' => 'Work order deleted',
+                ]);
+                
+                // Temporarily disable the observer
+                \App\Models\WorkOrder::withoutEvents(function () use ($workOrder) {
+                    $workOrder->delete();
+                });
+                
+                \DB::commit();
+            } catch (\Exception $innerException) {
+                \DB::rollBack();
+                throw $innerException;
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Work order deleted successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Check if a work order with the given number already exists.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function checkWorkOrderExists(Request $request)
+    {
+        $request->validate([
+            'workOrderNumber' => 'required|string'
+        ]);
+        
+        $workOrderNumber = $request->workOrderNumber;
+        
+        // The work order number is typically part of the title field
+        // Format is usually: "{workType} / {workOrderNumber} / {location}"
+        $exists = WorkOrder::where('title', 'like', "%/{$workOrderNumber}/%")
+            ->orWhere('title', 'like', "%{$workOrderNumber}%")
+            ->exists();
+            
+        return response()->json([
+            'exists' => $exists
+        ]);
+    }
 }

@@ -39,6 +39,7 @@ Route::get('/user', function (Request $request) {
 
 // Customer routes (public for testing, remove in production)
 Route::get('/customers', [CustomerController::class, 'index'])->name('api.customers.index');
+Route::get('/customers/check-name', [CustomerController::class, 'checkBusinessNameExists'])->name('api.customers.check-name');
 Route::post('/customers', [CustomerController::class, 'store'])->name('api.customers.store');
 Route::get('/customers/search', [CustomerController::class, 'search'])->name('api.customers.search');
 Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('api.customers.show');
@@ -64,8 +65,8 @@ Route::post('/work-orders/{workOrder}/update-images', [WorkOrderController::clas
 Route::post('/work-orders/{workOrder}/duplicate', [WorkOrderController::class, 'duplicate']);
 
 // Notes and attachments
-Route::get('/work-orders/{id}/notes', [WorkOrderController::class, 'getNotes']);
-Route::post('/work-orders/{id}/notes', [WorkOrderController::class, 'addNote']);
+Route::get('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'index'])->name('work-order.notes.index');
+Route::post('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'store'])->name('work-order.notes.store');
 Route::post('/work-orders/{id}/images', [WorkOrderController::class, 'addImage']);
 Route::delete('/work-orders/{id}/images/{imageId}', [WorkOrderController::class, 'deleteImage']);
 Route::get('/work-orders/{id}/file-attachments', [WorkOrderController::class, 'getFileAttachments']);

@@ -141,6 +141,7 @@ function logout() {
 
 <template>
   <div>
+    <ToastContainer class="fixed top-0 left-0 w-full z-[99999] pointer-events-none" />
     <Head :title="title" />
     <Banner />
     <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95 flex">

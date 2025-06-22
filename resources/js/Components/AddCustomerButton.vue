@@ -46,14 +46,22 @@
             </div>
             <form @submit.prevent="addCustomer">
               <div class="mb-4">
-                <label for="business_name" class="block text-sm font-medium text-purple-400">Business Name</label>
+                <label for="business_name" class="block text-sm font-medium text-purple-400">
+                  Business Name
+                  <span v-if="isCheckingBusinessName" class="ml-2 text-xs text-gray-400">(checking...)</span>
+                </label>
                 <input
                   v-model="form.business_name"
+                  @input="handleBusinessNameChange"
                   type="text"
                   id="business_name"
                   class="glossy-content mt-1 block w-full rounded-lg border border-gray-700 bg-gray-800/50 text-white shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500/50"
+                  :class="{'border-red-500 focus:border-red-500 focus:ring-red-500/50': businessNameExists}"
                   required
                 />
+                <p v-if="businessNameExists" class="mt-1 text-xs text-red-500">
+                  This business name already exists. Please use a different name.
+                </p>
               </div>
 
               <div class="mb-4">
@@ -211,21 +219,56 @@ const form = ref({
   attachable_files: null,
 });
 const errorMessage = ref('');
+const isCheckingBusinessName = ref(false);
+const businessNameExists = ref(false);
+const checkNameTimeout = ref(null);
 
 const toast = useToast();
 
 async function addCustomer() {
   try {
+    // Clear previous error message
+    errorMessage.value = '';
+    
+    // Client-side validation
+    if (!form.value.business_name?.trim()) {
+      errorMessage.value = 'Business name is required';
+      return;
+    }
+    
+    // Check if business name already exists
+    if (businessNameExists.value) {
+      errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
+      return;
+    }
+    
+    if (!form.value.address?.trim()) {
+      errorMessage.value = 'Address is required';
+      return;
+    }
+    if (!form.value.poc_name?.trim()) {
+      errorMessage.value = 'POC name is required';
+      return;
+    }
+    if (!form.value.poc_email?.trim()) {
+      errorMessage.value = 'POC email is required';
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.poc_email?.trim())) {
+      errorMessage.value = 'Please enter a valid email address';
+      return;
+    }
+    
     await initializeSanctum();
     const formData = new FormData();
     // Explicitly append all required fields, trimming whitespace
-    formData.append('business_name', form.value.business_name?.trim() || '');
-    formData.append('address', form.value.address?.trim() || '');
-    formData.append('poc_name', form.value.poc_name?.trim() || '');
-    formData.append('poc_email', form.value.poc_email?.trim() || '');
+    formData.append('business_name', form.value.business_name?.trim());
+    formData.append('address', form.value.address?.trim());
+    formData.append('poc_name', form.value.poc_name?.trim());
+    formData.append('poc_email', form.value.poc_email?.trim());
     formData.append('fax', form.value.fax?.trim() || '');
-    formData.append('net_terms', form.value.net_terms?.trim() || '');
-    formData.append('pay_rate', form.value.pay_rate?.toString() || '');
+    formData.append('net_terms', form.value.net_terms);
+    formData.append('pay_rate', form.value.pay_rate?.toString() || '120.00');
     // Add files if they exist
     if (form.value.attachable_files) {
       Array.from(form.value.attachable_files).forEach((file, index) => {
@@ -266,21 +309,85 @@ async function addCustomer() {
         // Try to reinitialize Sanctum
         await initializeSanctum();
       } else if (error.response.status === 422 && error.response.data.errors) {
+        // Handle validation errors from the server
         const messages = Object.values(error.response.data.errors).flat();
         errorMessage.value = messages.join('\n');
-      } else if (error.response.status === 409) {
+        
+        // Log more details about the validation error
+        console.error('Validation errors:', error.response.data.errors);
+        
+        // Special handling for business name already exists
+        if (error.response.data.errors.business_name && 
+            error.response.data.errors.business_name.some(msg => msg.includes('already exists'))) {
+          errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
+        }
+      } else if (error.response.status === 409 || (error.response.data && error.response.data.message && error.response.data.message.includes('already exists'))) {
         errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
       } else {
-        toast.error(error.response.data.message || 'Failed to add customer');
+        const errorMsg = error.response.data?.message || 'Failed to add customer';
+        errorMessage.value = errorMsg;
+        toast.error(errorMsg);
       }
     } else {
-      toast.error('An error occurred while adding the customer. Please try again.');
+      const genericError = 'An error occurred while adding the customer. Please try again.';
+      errorMessage.value = genericError;
+      toast.error(genericError);
     }
+  }
+}
+
+// Check if business name already exists
+async function checkBusinessNameExists(name) {
+  if (!name || name.trim() === '') return;
+  
+  isCheckingBusinessName.value = true;
+  try {
+    const response = await axios.get('/api/customers/check-name', {
+      params: { business_name: name.trim() }
+    });
+    
+    businessNameExists.value = response.data.exists;
+    
+    if (businessNameExists.value) {
+      errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
+    } else {
+      if (errorMessage.value === 'A customer with this business name already exists. Please use a different name.') {
+        errorMessage.value = '';
+      }
+    }
+  } catch (error) {
+    console.error('Error checking business name:', error);
+  } finally {
+    isCheckingBusinessName.value = false;
   }
 }
 
 function handleFileChange(event) {
   form.value.attachable_files = Array.from(event.target.files);
+}
+
+// Handler for business name input changes with debounce
+function handleBusinessNameChange(e) {
+  const name = e.target.value;
+  
+  // Reset any existing timeout
+  if (checkNameTimeout.value) {
+    clearTimeout(checkNameTimeout.value);
+  }
+  
+  // If business name field is cleared, reset the check
+  if (!name || name.trim() === '') {
+    businessNameExists.value = false;
+    if (errorMessage.value === 'A customer with this business name already exists. Please use a different name.') {
+      errorMessage.value = '';
+    }
+    return;
+  }
+  
+  // Set a new timeout to prevent too many API calls
+  checkNameTimeout.value = setTimeout(() => {
+    checkBusinessNameExists(name);
+  }, 500); // Wait 500ms after user stops typing
 }
 </script>
 
