@@ -1,838 +1,1011 @@
 <template>
   <div>
     <button @click="handleShowModal"
-      class="btn flex items-center gap-2 px-2 py-2 font-bold text-sm text-blue-400 transition-all duration-300">
+      class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm bg-lime-500 hover:bg-lime-600 text-black transition-all duration-300 shadow-md hover:shadow-lg">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       Work Order
     </button>
 
-    <div v-show="showModal" class="fixed inset-0 mt-1 z-[100] flex items-center justify-center bg-black bg-opacity-70"
-      @click="handleHideModal">
-      <div
-        class="glossy-card flex-auto rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-3xl lg:max-w-5xl w-full h-[85vh] flex flex-col"
-        @click.stop>
-        <div class="glossy-header px-3 pt-1 pb-0">
-          <div class="flex justify-between items-center min-h-0">
-            <h3 class="text-lime-400 text-3xl leading-5 font-medium" id="modal-title">
-              Create New Work Order
-            </h3>
-            <button @click="handleHideModal"
-              class="btn ml-2 text-red-400 hover:text-red-400 transition-colors duration-200 focus:outline-none"
-              aria-label="Close modal">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
+    <!-- Modal -->
+    <Transition enter-active-class="ease-out duration-300" enter-from-class="opacity-0" enter-to-class="opacity-100"
+      leave-active-class="ease-in duration-200" leave-from-class="opacity-100" leave-to-class="opacity-0">
+      <div v-show="showModal"
+        class="fixed inset-0 z-[1000] overflow-y-auto flex items-end md:items-center justify-center">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-70 transition-opacity" @click="handleHideModal"></div>
 
-        <!-- Steps component -->
-        <div class="flex justify-center w-full px-2 py-1">
-          <ul class="steps steps-horizontal w-full">
-            <li v-for="step in totalSteps" :key="step" 
-          class="step transition-all duration-300 relative"
-          :class="{
-            'step-lime-400 text-lime-400 font-bold': step === currentStep,
-            'step-success text-green-400': step < currentStep,
-            'text-gray-500': step > currentStep
-          }">
-              <!-- Step Icons (Checkmark for completed, Circle for current, Small circle for future) -->
-              <span v-if="step < currentStep" class="flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-              </span>
-              <span v-else-if="step === currentStep" class="flex items-center justify-center animate-pulse">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-lime-400" viewBox="0 0 20 20" fill="currentColor">
-                  <circle cx="10" cy="10" r="6" />
-                </svg>
-              </span>
-              <span v-else class="flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                  <circle cx="10" cy="10" r="4" />
-                </svg>
-              </span>
-              
-              <!-- Step Title - shown for all steps -->
-              <div class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-2xs font-semibold" 
-                   :class="{ 'text-lime-400 animate-pulse': step === currentStep, 'text-green-400': step < currentStep, 'text-gray-500': step > currentStep }"
-                   style="width: max-content; z-index: 10;">
-                {{ 
-                  step === 1 ? 'Customer & Tech' :
-                  step === 2 ? 'Work Order Title' :
-                  step === 3 ? 'Service Description' :
-                  step === 4 ? 'Date & Time' :
-                  step === 5 ? 'Location Address' :
-                  step === 6 ? 'Approved Hours' :
-                  step === 7 ? 'Rate & Expenses' :
-                  step === 8 ? 'Work Order Status' :
-                  step === 9 ? 'Attachments' : ''
-                }}
-              </div>
-            </li>
-          </ul>
-        </div>
-
-<h6 class="text-white justify-center flex text-4xl mt-1 mb-0">
-          <span class="font-bold">Step {{ currentStep }}</span></h6>
-
-        <form @submit.prevent="submitForm" class="flex flex-col flex-grow">
-          <div class="overflow-y-auto px-3 py-1 bg-gray-900 bg-opacity-90 flex-grow">
-           
-           
-            <!-- Step 1: Customer & Technician Selection -->
-            <div v-show="currentStep === 1">
-              <div class="glossy-section mb-2"> 
-                <label for="customer_id" class="text-green-400 block text-2xl font-extrabold">Customer</label>
-                <p class="text-xl text-white font-semibold">Choose a customer from the dropdown menu below.</p>
-                <div v-if="isLoadingCustomers" class="text-center py-3">
-                  <div
-                    class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full">
-                  </div>
-                  <span class="ml-2 text-white">Loading customers...</span>
-                </div>
-                <div v-else-if="customersArray.length === 0 || loadError"
-                  class="mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
-                  <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
-                      viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span class="text-red-400">{{ loadError ? 'Error loading customers. Please try again.' : 'No active customers found. Please add customers first.' }}</span>
-                  </div>
-                  <p class="text-xs text-gray-400 mt-1">Only active customers are displayed. Inactive customers won't appear in this list.</p>
-                  <button @click="loadCustomers"
-                    class="mt-2 px-3 py-1 bg-red-500/30 hover:bg-red-500/50 text-white rounded-md text-sm flex items-center"
-                    type="button">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Retry Loading Customers
-                  </button>
-                </div>
-                <select v-else v-model="form.customer_id" id="customer_id" name="customer_id"
-                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                  required @change="logSelectedCustomer">
-                  <option value="" disabled>Select a customer ({{ customersArray.length }} active customers available)</option>
-                  <option v-for="customer in customersArray" :key="customer.id" :value="customer.id">
-                    {{ customer.business_name || customer.name || `Customer #${customer.id}` }}
-                  </option>
-                </select>
-                <div class="text-xs text-gray-400 mt-1">Note: Only active customers are displayed. Contact an administrator if a customer is missing.</div>
-
-              </div>
-
-              <!-- Technician Selection (moved from step 10) -->
-              <div class="glossy-section mb-4">
-                <label for="technician_id" class="text-green-400 block text-3xl font-extrabold">Assign Technician</label>
-                <p class="text-md text-white font-semibold">Select a technician for this work order.</p>
-                <div v-if="isLoadingTechnicians" class="text-center py-3">
-                  <div
-                    class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full">
-                  </div>
-                  <span class="ml-2 text-lime-400">Loading technicians...</span>
-                </div>
-                <div v-else-if="technicians.length === 0"
-                  class="mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
-                  <div class="flex items-center">
-                    <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
-                      viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg> -->
-                    <!-- <span class="text-red-400">No technicians found. Please check back later.</span> -->
-                  </div>
-                </div>
-                <select v-else v-model="form.technician_id" id="technician_id" name="technician_id"
-                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                  required>
-                  <option value="" disabled>Select a technician ({{ technicians.length }} available)</option>
-                  <option v-for="technician in technicians" :key="technician.id" :value="technician.id">
-                    {{ technician.name }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- Selection Summary for Step 1 -->
-              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                <div class="text-center">
-                  <div class="text-sm text-gray-400">Selected Customer:</div>
-                  <div class="text-lime-400 font-bold text-4xl">
-                    {{ customersArray.find(c => c.id == form.customer_id)?.business_name || customersArray.find(c => c.id == form.customer_id)?.name || 'None selected' }}
-                  </div>
-                  <div class="text-sm text-gray-400 mt-2">Assigned Technician:</div>
-                  <div class="text-lime-400 font-bold text-4xl">
-                    {{ technicians.find(t => t.id == form.technician_id)?.name || 'None selected' }}
-                  </div>
-                </div>
+        <!-- Modal container -->
+        <div class="flex min-h-screen items-center justify-center p-4">
+          <div
+            class="glossy-card flex-auto rounded-lg overflow-hidden shadow-xl transform transition-all md:max-w-[2000px] lg:max-w-[2000px] w-full h-[85vh] flex flex-col mx-auto"
+            @click.stop>
+            <div class="glossy-header px-3 pt-1 pb-0">
+              <div class="flex justify-between items-center min-h-0">
+                <h3 class="text-lime-400 text-3xl leading-5 font-medium" id="modal-title">
+                  Create New Work Order
+                </h3>
+                <button @click="handleHideModal"
+                  class="btn ml-2 text-red-400 hover:text-red-400 transition-colors duration-200 focus:outline-none"
+                  aria-label="Close modal">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             </div>
 
-            <!-- Step 2: Work Order Title -->
-            <div v-show="currentStep === 2">
-              <div class="glossy-section">
-                <h3 class="text-lime-400 text-2xl font-medium mb-2">Create A Title</h3>
-                <!-- Work order title fields -->
-                <p class="text-2xl text-white">This section will generate a title for TekDash to enable it to be searched in our system.
-                  Work order #'s cannot be used twice and the work order should have been duplicated if this is a return
-                  trip instead of creating a new work order. Location name is not the address, itpis the name of the
-                  business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to look
-                  for a WalMart when driving. </p>
+            <!-- Steps component -->
+            <div class="flex justify-center w-full px-2 py-1">
+              <ul class="steps steps-horizontal w-full">
+                <li v-for="step in totalSteps" :key="step" class="step transition-all duration-300 relative" :class="{
+                  'step-lime-400 text-lime-400 font-bold': step === currentStep,
+                  'step-success text-green-400': step < currentStep,
+                  'text-gray-500': step > currentStep,
+                  'after:!bg-green-400': step < currentStep && step < totalSteps,
+                  'before:!bg-green-400': step <= currentStep && step > 1
+                }">
+                  <!-- Step Icons (Checkmark for completed, Circle for current, Small circle for future) -->
+                  <span v-if="step < currentStep" class="flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <path fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </span>
+                  <span v-else-if="step === currentStep" class="flex items-center justify-center animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-lime-400" viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <circle cx="10" cy="10" r="6" />
+                    </svg>
+                  </span>
+                  <span v-else class="flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <circle cx="10" cy="10" r="4" />
+                    </svg>
+                  </span>
 
-                <div class="flex flex-col md:flex-row md:gap-4">
+                  <!-- Step Title - shown for all steps -->
+                  <div class="text-xs">
+                    {{
+                    step === 1 ? 'Customer & Tech' :
+                    step === 2 ? 'Work Order Title' :
+                    step === 3 ? 'Service Description' :
+                    step === 4 ? 'Date & Time' :
+                    step === 5 ? 'Location Address' :
+                    step === 6 ? 'Approved Hours' :
+                    step === 7 ? 'Rate & Expenses' :
+                    step === 8 ? 'Work Order Status' :
+                    step === 9 ? 'Attachments' :
+                    step === 10 ? 'Summary & Review' : ''
+                    }}
+                  </div>
+                </li>
+              </ul>
+            </div>
 
-                  <div class="mb-4 p-2 w-full">
-                    <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order
-                      Number</label>
-                    <div class="relative">
-                      <input placeholder="WO123456-01" type="text" v-model="workOrderNumber"
-                        @blur="checkExistingWorkOrder" @input="debouncedCheckExistingWorkOrder" id="workOrderNumber" name="workOrderNumber"
-                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                        :class="{'border-red-500': duplicateWorkOrderFound}"
-                        required>
-                      <div v-if="checkingWorkOrder" class="absolute right-3 top-2">
-                        <span class="text-yellow-400 text-xs">Checking...</span>
+            <form @submit.prevent="submitForm" class="flex flex-col flex-grow">
+              <div class="overflow-y-auto px-3 py-1 bg-gray-900 bg-opacity-90 flex-grow"
+                style="max-height: calc(85vh - 140px); overflow-y: auto; padding-bottom: 90px;">
+
+
+                <!-- Step 1: Customer & Technician Selection -->
+                <div v-show="currentStep === 1">
+                  <div class="glossy-section mb-2">
+                    <label for="customer_id" class="text-green-400 block text-3xl font-extrabold">Customer</label>
+                    <p class="text-md text-white font-semibold">Select a customer for this work order.</p>
+                    <select v-model="form.customer_id" id="customer_id" name="customer_id"
+                      class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                      required @change="logSelectedCustomer">
+                      <option value="" disabled>Select a customer ({{ safeCustomersArray.length }} active customers
+                        available)</option>
+                      <option v-for="customer in safeCustomersArray" :key="customer.id" :value="customer.id">
+                        {{ customer.business_name || customer.name || `Customer #${customer.id}` }}
+                      </option>
+                    </select>
+                    <div class="text-xs text-gray-400 mt-1">Note: Only active customers are displayed. Contact an
+                      administrator if a customer is missing.</div>
+                  </div>
+                  <!-- Technician Selection -->
+                  <div class="glossy-section mb-4">
+                    <label for="technician_id" class="text-green-400 block text-3xl font-extrabold">Assign
+                      Technician</label>
+                    <p class="text-md text-white font-semibold">Select a technician for this work order.</p>
+                    <div v-if="isLoadingTechnicians" class="text-center py-3">
+                      <div
+                        class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full">
                       </div>
-                      <div v-else-if="workOrderVerified && workOrderNumber.trim() !== ''" class="absolute right-3 top-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                      </div>
-                      <div v-if="duplicateWorkOrderFound" class="text-red-500 text-xs mt-1">
-                        Work order with this number already exists.
+                      <span class="ml-2 text-lime-400">Loading technicians...</span>
+                    </div>
+                    <div v-else-if="safeTechniciansArray.length === 0"
+                      class="mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
+                      <div class="flex items-center">
+                        <span class="text-red-400">No technicians found. Please check back later.</span>
                       </div>
                     </div>
-                  </div>
-
-                  <div class="p-2 w-full">
-                    <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
-                    <select v-model="workType" id="workType" name="workType"
+                    <select v-else v-model="form.technician_id" id="technician_id" name="technician_id"
                       class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
                       required>
-                      <option value="" disabled>Select work type</option>
-                      <option value="CCTV">CCTV</option>
-                      <option value="ALARM">ALARM</option>
-                      <option value="CABLING">CABLING</option>
-                      <option value="POS">POS</option>
-                      <option value="INTERCOM">INTERCOM</option>
-                      <option value="FIRE">FIRE</option>
-                      <option value="ACCESS-CONTROL">ACCESS-CONTROL</option>
-                      <option value="TS">TS</option>
-                      <option value="ESTIMATE">ESTIMATE</option>
-                      <option value="WALK-THRU">WALK-THRU</option>
-                      <option value="MEETING">MEETING</option>
-                      <option value="APPT">APPT</option>
-                      <option value="PERSONAL-LEAVE">PERSONAL-LEAVE</option>
+                      <option value="" disabled>Select a technician ({{ safeTechniciansArray.length }} available)
+                      </option>
+                      <option v-for="technician in safeTechniciansArray" :key="technician.id" :value="technician.id">
+                        {{ technician.first_name && technician.last_name ? (technician.first_name + ' ' +
+                        technician.last_name + (technician.employee_id ? ' (' + technician.employee_id + ')' : '')) :
+                        (technician.name || 'Technician #' + technician.id) }}
+                      </option>
                     </select>
                   </div>
-                </div>
-                <div class="p-2 w-full mr-1">
-                  <label for="location" class="block text-sm font-medium text-green-400">Location/Business name</label>
-                  <select v-model="location" id="location" name="location"
-                    class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                    required>
-                    <option value="" disabled>Select business name</option>
-                    <option value="Chili's">Chili's</option>
-                    <option value="Brinks">Brinks</option>
-                    <option value="Chase">Chase</option>
-                    <option value="Dillard's">Dillard's</option>
-                    <option value="DutchBros">DutchBros</option>
-                    <option value="RaisingCaines">RaisingCaines</option>
-                    <option value="ChaseATM">ChaseATM</option>
-                    <option value="WalMart">WalMart</option>
-                    <option value="Target">Target</option>
-                    <option value="Whataburger">Whataburger</option>
-                    <option value="MisterCarwash">MisterCarwash</option>
-                    <option value="WellsFargo">WellsFargo</option>
-                    <option value="NewSite">NewSite</option>
-                  </select>
-                </div>
-                <!-- Preview of combined title -->
-
-              </div>
-              <!-- Selection Summary -->
-              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                <div class="text-center">
-                  <div class="text-sm text-gray-400">Generated Title:</div>
-                  <div class="text-lime-400 font-bold text-4xl">{{ formattedTitle || 'No title generated' }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Step 3: Description -->
-            <div v-show="currentStep === 3" class="glossy-section mb-2">
-              <label for="description" class="block text-2xl font-medium text-green-400">Enter A Service Description</label>
-              <p class="text-lg text-white">Enter the details of what was requested on the work order sent by the
-                customer, here's a hint, you can copy and paste the description from the work orders into here which
-                saves you time.</p>
-              <textarea v-model="form.description" id="description" name="description"
-                placeholder="What is the Field Technician doing onsite?"
-                class="glossy-content text-lime-400 mt-1 p-4 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg w-full min-h-[250px] font-medium"
-                required></textarea>
-              <!-- Selection Summary -->
-              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                <div class="text-center">
-                  <div class="text-lg text-gray-400">Entered Description:</div>
-                  <div class="text-lime-400 text-lg font-bold whitespace-pre-line">{{ descriptionSummary }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Step 4: Date/Time -->
-            <div v-show="currentStep === 4" class="glossy-section mb-2">
-              <label class="block text-sm font-medium text-green-400">Date and Time Selection</label>
-              <p class="text-sm text-white mb-3">Select the date and time for this work order using our enhanced date
-                picker.</p>
-              <div class="bg-lime-600/20 border border-lime-600/30 rounded-md p-3 mb-4">
-                <div class="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-500 mr-2" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span>
-                </div>
-              </div>
-
-              <!-- Enhanced Date Picker (shadcn style, large and modern) -->
-              <div class="mt-2 flex flex-col items-center">
-                <div class="w-full max-w-md">
-                  <Popover class="relative w-full">
-                    <PopoverButton
-                      class="glossy-content flex justify-between items-center w-full p-4 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lime-400 text-lg font-bold transition-all duration-200">
-                      <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>{{ selectedDateFormatted || 'Select a date' }}</span>
+                  <!-- Selection Summary for Step 1 -->
+                  <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                    <div class="text-center">
+                      <div class="text-sm text-gray-400">Selected Customer:</div>
+                      <div class="text-lime-400 font-bold text-4xl">
+                        {{safeCustomersArray.find(c => c.id == form.customer_id)?.business_name ||
+                        safeCustomersArray.find(c => c.id == form.customer_id)?.name || 'None selected' }}
                       </div>
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      <div class="text-sm text-gray-400 mt-2">Assigned Technician:</div>
+                      <div class="text-lime-400 font-bold text-2xl">
+                        {{safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name &&
+                        safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name ?
+                        (safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name + ' ' +
+                        safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name +
+                        (safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id ? ' (' +
+                        safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id + ')' : '')) :
+                        (safeTechniciansArray.find(t => t.id == form.technician_id)?.name || 'None selected') }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 2: Work Order Title -->
+                <div v-show="currentStep === 2">
+                  <div class="glossy-section">
+                    <h3 class="text-lime-400 text-2xl font-medium mb-2">Create A Title</h3>
+                    <p class="text-2xl text-white">This section will generate a title for TekDash to enable it to be
+                      searched in our system.
+                      Work order #'s cannot be used twice and the work order should have been duplicated if this is a
+                      return
+                      trip instead of creating a new work order. Location name is not the address, itpis the name of the
+                      business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to
+                      look
+                      for a WalMart when driving. </p>
+                    <div class="flex flex-col md:flex-row md:gap-4">
+                      <div class="mb-4 p-2 w-full">
+                        <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order
+                          Number</label>
+                        <div class="relative">
+                          <input v-model="workOrderNumber" @input="debouncedCheckExistingWorkOrder" id="workOrderNumber"
+                            name="workOrderNumber" type="text"
+                            class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                            required autocomplete="off" placeholder="Enter unique work order number" />
+                          <span v-if="checkingWorkOrder"
+                            class="absolute right-2 top-2 text-xs text-gray-400">Checking...</span>
+                          <span v-else-if="duplicateWorkOrderFound"
+                            class="absolute right-2 top-2 text-xs text-red-400">Duplicate!</span>
+                          <span v-else-if="workOrderVerified && workOrderNumber"
+                            class="absolute right-2 top-2 text-xs text-green-400">Available</span>
+                        </div>
+                        <div v-if="duplicateWorkOrderFound" class="text-xs text-red-400 mt-1">This work order number is
+                          already in use. Please enter a unique number.</div>
+                      </div>
+                      <div class="p-2 w-full">
+                        <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
+                        <select v-model="workType" id="workType" name="workType"
+                          class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                          required>
+                          <option value="" disabled>Select work type</option>
+                          <option value="TS">TS (Troubleshooting)</option>
+                          <option value="PM">PM (Preventive Maintenance)</option>
+                          <option value="INSTALL">INSTALL</option>
+                          <option value="ESTIMATE">ESTIMATE</option>
+                          <option value="WALK-THRU">WALK-THRU</option>
+                          <option value="MEETING">MEETING</option>
+                          <option value="APPT">APPT (Appointment)</option>
+                          <option value="SERVICE">SERVICE</option>
+                          <option value="REPAIR">REPAIR</option>
+                          <option value="UPGRADE">UPGRADE</option>
+                          <option value="PERSONAL-LEAVE">PERSONAL-LEAVE</option>
+                          <option value="TRAINING">TRAINING</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="p-2 w-full mr-1">
+                      <label for="location" class="block text-sm font-medium text-green-400">Location/Business
+                        name</label>
+                      <select v-model="location" id="location" name="location"
+                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                        required>
+                        <option value="" disabled>Select business name</option>
+                        <option value="Chili's">Chili's</option>
+                        <option value="Brinks">Brinks</option>
+                        <option value="Chase">Chase</option>
+                        <option value="Dillard's">Dillard's</option>
+                        <option value="DutchBros">DutchBros</option>
+                        <option value="RaisingCaines">RaisingCaines</option>
+                        <option value="ChaseATM">ChaseATM</option>
+                        <option value="WalMart">WalMart</option>
+                        <option value="Target">Target</option>
+                        <option value="Whataburger">Whataburger</option>
+                        <option value="MisterCarwash">MisterCarwash</option>
+                        <option value="WellsFargo">WellsFargo</option>
+                        <option value="NewSite">NewSite</option>
+                      </select>
+                    </div>
+                    <!-- Preview of combined title -->
+
+                  </div>
+                  <!-- Selection Summary -->
+                  <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                    <div class="text-center">
+                      <div class="text-sm text-gray-400">Generated Title:</div>
+                      <div class="text-lime-400 font-bold text-4xl">{{ formattedTitle || 'No title generated' }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 3: Description -->
+                <div v-show="currentStep === 3" class="glossy-section mb-2">
+                  <label for="description" class="block text-2xl font-medium text-green-400">Enter A Service
+                    Description</label>
+                  <p class="text-lg text-white">Enter the details of what was requested on the work order sent by the
+                    customer, here's a hint, you can copy and paste the description from the work orders into here which
+                    saves you time.</p>
+                  <textarea v-model="form.description" id="description" name="description"
+                    placeholder="What is the Field Technician doing onsite?"
+                    class="glossy-content text-lime-400 mt-1 p-4 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg w-full min-h-[250px] font-medium"
+                    required></textarea>
+                  <!-- Selection Summary -->
+                  <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                    <div class="text-center">
+                      <div class="text-lg text-gray-400">Entered Description:</div>
+                      <div class="text-lime-400 text-lg font-bold whitespace-pre-line">{{ descriptionSummary }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 4: Date/Time -->
+                <div v-show="currentStep === 4" class="glossy-section mb-2">
+                  <label class="block text-sm font-medium text-green-400">Date and Time Selection</label>
+                  <p class="text-sm text-white mb-3">Select the date and time for this work order using our enhanced
+                    date
+                    picker.</p>
+                  <div class="bg-lime-600/20 border border-lime-600/30 rounded-md p-3 mb-4">
+                    <div class="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-500 mr-2" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                    </PopoverButton>
-                    <PopoverPanel
-                      class="absolute z-10 w-full bg-gray-800 border-2 border-lime-400 mt-2 rounded-lg shadow-2xl p-4">
-                      <!-- Calendar UI -->
-                      <div class="p-2">
-                        <!-- Month Navigation -->
-                        <div class="flex justify-between items-center mb-6">
-                          <button @click="prevMonth"
-                            class="p-2 rounded-full hover:bg-gray-700 text-lime-400 hover:text-white text-lg" type="button">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                              stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                          </button>
-                          <div class="text-lime-400 font-extrabold text-xl">{{ currentMonthName }}</div>
-                          <button @click="nextMonth"
-                            class="p-2 rounded-full hover:bg-gray-700 text-lime-400 hover:text-white text-lg" type="button">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                              stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                          </button>
+                      <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span>
+                    </div>
+                  </div>
+                  <div class="mt-2 flex flex-col items-center gap-2">
+                    <div class="flex gap-2 mb-2">
+                      <button type="button" class="glass-button px-3 py-1"
+                        @click="quickSelectDate('today')">Today</button>
+                      <button type="button" class="glass-button px-3 py-1"
+                        @click="quickSelectDate('tomorrow')">Tomorrow</button>
+                      <button type="button" class="glass-button px-3 py-1" @click="quickSelectDate('nextWeek')">Next
+                        Week</button>
+                    </div>
+                    <div class="w-full max-w-md relative">
+                      <Flatpickr v-model="form.date_time"
+                        :config="{ enableTime: true, dateFormat: 'Y-m-d H:i', minDate: 'today' }"
+                        class="w-full glossy-content text-lg p-3 rounded-lg border border-lime-400 focus:ring-lime-400"
+                        placeholder="Select date and time" />
+                    </div>
+                  </div>
+                  <!-- Selected Date/Time Preview -->
+                  <div class="mt-8 p-6 rounded-lg bg-gray-800/50 border-2 border-lime-400">
+                    <div class="text-center">
+                      <div class="text-lg text-gray-400">Selected Date & Time:</div>
+                      <div class="text-3xl text-lime-400 font-extrabold mt-2">{{ formattedDateTime }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 5: Address -->
+                <div v-show="currentStep === 5" class="pb-2">
+                  <div class="glossy-section mb-4">
+                    <label for="address" class="block text-2xl font-extrabold text-green-400 mb-2">Enter The
+                      Location</label>
+                    <p class="text-xl text-white font-semibold mb-2">Enter the address for the work order location.</p>
+                    <div class="relative">
+                      <input v-model="form.address" id="address" name="address" type="text"
+                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white text-2xl sm:text-2xl font-bold p-4"
+                        @blur="geocodeAddress(form.address)"
+                        placeholder="Enter complete address (street, city, state, zip)" required />
+
+                      <!-- Search icon or processing indicator -->
+                      <div class="absolute top-1/2 right-4 transform -translate-y-1/2">
+                        <div v-if="mapboxLoading"
+                          class="animate-spin w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full"></div>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <!-- Mapbox Static Map Preview -->
+                    <div v-if="form.address" class="mt-4">
+                      <!-- Show loading indicator while geocoding -->
+                      <div v-if="mapboxLoading"
+                        class="flex items-center justify-center p-4 bg-gray-800 rounded-lg border border-gray-700 min-h-[200px]">
+                        <div
+                          class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full mr-2">
                         </div>
-                        <!-- Days of Week Header -->
-                        <div class="grid grid-cols-7 mb-2">
-                          <div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day"
-                            class="text-center text-base text-gray-400 py-2 font-bold">
-                            {{ day }}
-                          </div>
-                        </div>
-                        <!-- Calendar Grid -->
-                        <div class="grid grid-cols-7 gap-2">
-                          <div v-for="(day, index) in calendarDays" :key="index" class="aspect-square relative">
-                            <button v-if="day" @click="selectDate(day)" type="button" :class="[
-                                'w-full h-full flex items-center justify-center rounded-lg text-lg font-bold transition-colors duration-200 calendar-day-button',
-                                isSameDate(day, selectedDate) 
-                                  ? 'calendar-day-selected border-2 border-lime-400 bg-lime-900/40 text-lime-300' 
-                                  : checkIsToday(day) 
-                                    ? 'calendar-day-today border border-lime-400 bg-lime-800/30 text-white' 
-                                    : 'hover:bg-gray-700 text-white border border-gray-700'
-                              ]">
-                              {{ day.getDate() }}
-                            </button>
-                          </div>
-                        </div>
-                        <!-- Quick Select Buttons -->
-                        <div class="mt-6 grid grid-cols-3 gap-3">
-                          <button @click="quickSelectDate('today')" type="button"
-                            class="glossy-content p-3 rounded-md text-base text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200 font-bold">
-                            Today
-                          </button>
-                          <button @click="quickSelectDate('tomorrow')" type="button"
-                            class="glossy-content p-3 rounded-md text-base text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200 font-bold">
-                            Tomorrow
-                          </button>
-                          <button @click="quickSelectDate('nextWeek')" type="button"
-                            class="glossy-content p-3 rounded-md text-base text-lime-400 hover:bg-lime-600 hover:text-white transition-colors duration-200 font-bold">
-                            Next Week
-                          </button>
+                        <span class="text-lime-400">Loading map preview...</span>
+                      </div>
+
+                      <!-- Show error if geocoding failed -->
+                      <div v-else-if="mapboxError" class="p-4 bg-red-900/30 border border-red-500 rounded-lg">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span class="text-red-400">{{ mapboxError }}</span>
                         </div>
                       </div>
-                    </PopoverPanel>
-                  </Popover>
-                </div>
-                <!-- Time Selector -->
-                <div class="mt-8 w-full max-w-md">
-                  <label class="block text-lg font-medium text-green-400 mb-2">Select Time</label>
-                  <div class="flex items-center gap-4 justify-center">
-                    <select 
-                      v-model="selectedTime.hour"
-                      class="bg-gray-800 text-lime-400 p-3 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lg font-bold"
-                    >
-                      <option v-for="hour in 12" :key="hour" :value="hour">{{ hour < 10 ? '0' + hour : hour }}</option>
-                    </select>
-                    <span class="text-white font-bold text-2xl">:</span>
-                    <select 
-                      v-model="selectedTime.minute"
-                      class="bg-gray-800 text-lime-400 p-3 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lg font-bold"
-                    >
-                      <option v-for="minute in ['00', '15', '30', '45']" :key="minute" :value="minute">{{ minute }}</option>
-                    </select>
-                    <select 
-                      v-model="selectedTime.period"
-                      class="bg-gray-800 text-lime-400 p-3 rounded-lg border-2 border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-500 text-lg font-bold"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
+
+                      <!-- Show map image if available -->
+                      <a v-else-if="mapboxImageUrl" :href="mapboxMapsLink" target="_blank" rel="noopener"
+                        title="Open in Map App">
+                        <img :src="mapboxImageUrl" alt="Map snapshot"
+                          class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
+                          style="width: 100%; max-height: 300px; min-height: 180px; object-fit: cover; background: #222;" />
+                        <div class="text-xs text-gray-400 mt-1">Click map to open location in browser</div>
+                      </a>
+                    </div>
+                    <!-- Address Summary for Review -->
+                    <div v-if="form.address" class="mt-6 p-6 rounded-lg bg-gray-900/80 border-2 border-lime-400">
+                      <div class="text-2xl font-extrabold text-lime-400 mb-2">Address Review</div>
+                      <div class="text-2xl text-white font-bold tracking-wide">{{ form.address }}</div>
+                      <div class="text-lg text-gray-300 mt-2">Please review the address above and ensure it is correct
+                        before proceeding.</div>
+                    </div>
                   </div>
+                  <!-- Employee Summary for Step 5 -->
+                  <!-- <div class="mt-6 p-6 rounded-lg bg-gray-800/70 border-2 border-lime-400">
+                  <div class="text-2xl font-extrabold text-lime-400 mb-2">Summary for Employees</div>
+                  <div class="text-xl text-white font-semibold">
+                    Enter the full address where the work will be performed. Double-check for typos. The map preview below
+                    will help confirm the location is correct.
+                  </div>
+                </div> -->
                 </div>
-              </div>
-              <!-- Selected Date/Time Preview -->
-              <div class="mt-8 p-6 rounded-lg bg-gray-800/50 border-2 border-lime-400">
-                <div class="text-center">
-                  <div class="text-lg text-gray-400">Selected Date & Time:</div>
-                  <div class="text-3xl text-lime-400 font-extrabold mt-2">{{ formattedDateTime }}</div>
-                </div>
-              </div>
-            </div>
 
-            <!-- Step 5: Address -->
-            <div v-show="currentStep === 5">
-              <div class="glossy-section mb-4">
-                <label for="address" class="block text-2xl font-extrabold text-green-400 mb-2">Enter The Location</label>
-                <p class="text-xl text-white font-semibold mb-2">Enter the address for the work order location.</p>
-                <input v-model="form.address" id="address" name="address" type="text"
-                  class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white text-2xl sm:text-2xl font-bold p-4"
-                  required />
-                <!-- Mapbox Static Map Preview -->
-                <div v-if="form.address && mapboxImageUrl" class="mt-4">
-                  <a :href="mapboxMapsLink" target="_blank" rel="noopener" title="Open in Map App">
-                    <img :src="mapboxImageUrl" alt="Map snapshot"
-                      class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
-                      style="width: 100%; max-width: 600px; min-height: 120px; background: #222;" />
-                  </a>
-                  <div v-if="mapboxLoading" class="text-lg text-gray-400 mt-1">Loading map...</div>
-                  <div v-if="mapboxError" class="text-lg text-red-400 mt-1">{{ mapboxError }}</div>
-                </div>
-                <!-- Address Summary for Review -->
-                <div v-if="form.address" class="mt-6 p-6 rounded-lg bg-gray-900/80 border-2 border-lime-400">
-                  <div class="text-2xl font-extrabold text-lime-400 mb-2">Address Review</div>
-                  <div class="text-2xl text-white font-bold tracking-wide">{{ form.address }}</div>
-                  <div class="text-lg text-gray-300 mt-2">Please review the address above and ensure it is correct
-                    before proceeding.</div>
-                </div>
-              </div>
-              <!-- Employee Summary for Step 5 -->
-              <!-- <div class="mt-6 p-6 rounded-lg bg-gray-800/70 border-2 border-lime-400">
-                <div class="text-2xl font-extrabold text-lime-400 mb-2">Summary for Employees</div>
-                <div class="text-xl text-white font-semibold">
-                  Enter the full address where the work will be performed. Double-check for typos. The map preview below
-                  will help confirm the location is correct.
-                </div>
-              </div> -->
-            </div>
+                <!-- Step 6: Hours -->
+                <div v-show="currentStep === 6" class="glossy-section mb-2">
+                  <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label>
+                  <p class="text-2xl text-white mb-4">Enter the amount of hours approved by the customer, if we need
+                    more
+                    time onsite then we will call at that time to request the estimated hours to complete the WO. This
+                    is
+                    usually about 2-4 hours for our first trip.</p>
 
-            <!-- Step 6: Hours -->
-            <div v-show="currentStep === 6" class="glossy-section mb-2">
-              <label for="hours" class="block text-sm font-medium text-green-400">Approved Hours</label>
-              <p class="text-2xl text-white mb-4">Enter the amount of hours approved by the customer, if we need more
-                time onsite then we will call at that time to request the estimated hours to complete the WO. This is
-                usually about 2-4 hours for our first trip.</p>
-
-              <!-- Quick selection tiles -->
-              <div class="grid grid-cols-4 gap-4 mb-6">
-                <button v-for="hours in [4, 8, 12, 16]" :key="hours" type="button" @click="form.hours = hours" :class="{
-                    'bg-lime-600': form.hours === hours,
-                    'hover:bg-lime-700': form.hours === hours,
-                    'bg-gray-800 hover:bg-gray-700': form.hours !== hours
-                  }"
-                  class="glossy-content p-4 rounded-lg text-lime-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50">
-                  {{ hours }}h
-                </button>
-              </div>
-
-              <!-- Slider -->
-              <div class="mt-6">
-                <div class="flex justify-between text-lime-400 text-2xl mb-2">
-                  <span>2h</span>
-                  <span>16h</span>
-                </div>
-                <input type="range" v-model="form.hours" id="hours" name="hours" min="2" max="16" step="2"
-                  class="slider w-full" required>
-                <div class="flex justify-between text-xs text-gray-400 mt-1">
-                  <template v-for="value in [2, 4, 6, 8, 10, 12, 14, 16]" :key="value">
-                    <span class="relative" style="left: -4px">|</span>
-                  </template>
-                </div>
-              </div>
-
-              <!-- Current value display -->
-              <div class="text-center mt-4">
-                <span class="text-lime-400 text-lg font-medium">{{ form.hours }} hours</span>
-              </div>
-            </div>
-
-            <!-- Step 7: Rate & Travel -->
-            <div v-show="currentStep === 7" class="glossy-section mb-2">
-              <label for="hourlyRate" class="block text-sm font-medium text-green-400">Hourly Rate</label>
-              <p class="text-xl text-white mb-2">Select the hourly rate. The total price will be calculated based on the
-                approved hours.</p>
-
-              <!-- Quick selection tiles -->
-              <div class="grid grid-cols-4 gap-4">
-                <button v-for="rate in [95, 120, 130, 180]" :key="rate" type="button" @click="form.hourlyRate = rate"
-                  :class="{
-                    'bg-purple-600': form.hourlyRate === rate && (rate < 80 || (rate > 120 && rate < 160)),
-                    'bg-green-600': form.hourlyRate === rate && rate >= 80 && rate <= 120,
-                    'bg-amber-600': form.hourlyRate === rate && rate >= 160 && rate <= 200,
-                    'hover:bg-purple-700': form.hourlyRate === rate && (rate < 80 || (rate > 120 && rate < 160)),
-                    'hover:bg-green-700': form.hourlyRate === rate && rate >= 80 && rate <= 120,
-                    'hover:bg-amber-700': form.hourlyRate === rate && rate >= 160 && rate <= 200,
-                    'bg-gray-800 hover:bg-gray-700': form.hourlyRate !== rate && (rate < 80 || (rate > 120 && rate < 160)),
-                    'bg-gray-800 hover:bg-green-700 border border-green-500/50': form.hourlyRate !== rate && rate >= 80 && rate <= 120,
-                    'bg-gray-800 hover:bg-amber-700 border border-amber-500/50': form.hourlyRate !== rate && rate >= 160 && rate <= 200
-                  }"
-                  class="relative glossy-content p-2.5 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
-                  <span :class="{ 
-                    'text-green-400': rate >= 80 && rate <= 120,
-                    'text-amber-500': rate >= 160 && rate <= 200
-                  }">
-                    ${{ rate }}/hr
-                  </span>
-                  <!-- Standard rate badge -->
-                  <span v-if="rate >= 80 && rate <= 120" class="absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/4">
-                    <div class="px-1 py-0.5 bg-green-500 text-white text-2xs rounded-full whitespace-nowrap" style="font-size: 0.6rem;">
-                      Std
-                    </div>
-                  </span>
-                  <!-- Emergency rate badge -->
-                  <span v-if="rate >= 160 && rate <= 200" class="absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/4">
-                    <div class="px-1 py-0.5 bg-amber-500 text-white text-2xs rounded-full whitespace-nowrap" style="font-size: 0.6rem;">
-                      Emg
-                    </div>
-                  </span>
-                </button>
-              </div>
-
-              <!-- Slider with purple theme -->
-              <div class="mt-1">
-                <div class="flex justify-between text-purple-400 text-xs mb-0.5">
-                  <span>$55/hr</span>
-                  <span>$200/hr</span>
-                </div>
-                <div class="relative">
-                  <!-- Highlight for recommended range -->
-                  <div class="absolute bg-green-400/20 border border-green-400/30 rounded-md z-0" 
-                       style="bottom: 0; left: 17%; width: 28%; height: 12px;"></div>
-                  <!-- Highlight for emergency range -->
-                  <div class="absolute bg-amber-500/20 border border-amber-500/30 rounded-md z-0" 
-                       style="bottom: 0; left: 72%; width: 28%; height: 12px;"></div>
-                  <input type="range" v-model="form.hourlyRate" id="hourlyRate" name="hourlyRate" min="55" max="200"
-                    step="5" class="slider-purple w-full relative z-10" required>
-                </div>
-                <div class="flex justify-between text-xs text-purple-400/70 mt-0.5 overflow-x-auto">
-                  <template v-for="value in rateValues" :key="value">
-                    <span 
-                      class="relative text-center whitespace-nowrap" 
-                      :class="{ 
-                        'font-bold text-green-400': value >= 80 && value <= 120,
-                        'font-bold text-amber-500': value >= 160 && value <= 200
+                  <!-- Quick selection tiles -->
+                  <div class="grid grid-cols-4 gap-4 mb-6">
+                    <button v-for="hours in [4, 8, 12, 16]" :key="hours" type="button" @click="form.hours = hours"
+                      :class="{
+                        'bg-lime-600': form.hours === hours,
+                        'hover:bg-lime-700': form.hours === hours,
+                        'bg-gray-800 hover:bg-gray-700': form.hours !== hours
                       }"
-                      style="min-width: 20px; font-size: 0.65rem;">|</span>
-                  </template>
-                </div>
-                <!-- Rate range legend -->
-                <div class="flex justify-between mt-1">
-                  <div class="flex items-center gap-1">
-                    <span class="inline-block w-2 h-2 bg-green-400/70 rounded-sm border border-green-400"></span>
-                    <span class="text-xs text-green-400 font-medium" style="font-size: 0.7rem;">Standard: $80-$120/hr</span>
+                      class="glossy-content p-4 rounded-lg text-lime-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50">
+                      {{ hours }}h
+                    </button>
                   </div>
-                  <div class="flex items-center gap-1">
-                    <span class="inline-block w-2 h-2 bg-amber-500/70 rounded-sm border border-amber-500"></span>
-                    <span class="text-xs text-amber-500 font-medium" style="font-size: 0.7rem;">Emergency: $160-$200/hr</span>
-                  </div>
-                </div>
-              </div>
 
-              <!-- Travel expense section -->
-              <div class="mt-4 p-3 rounded-lg bg-gray-800/30 border border-gray-700">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" v-model="form.includeTravel" class="checkbox checkbox-success"
-                    id="includeTravel" name="includeTravel" />
-                  <span class="text-white">Include Travel Expense</span>
-                </label>
-
-                <!-- Travel expense configuration (shows when checkbox is checked) -->
-                <div v-if="form.includeTravel" class="mt-4">
-                  <!-- Mileage rate quick selection tiles -->
-                  <div class="mb-2">
-                    <label class="block text-xs font-medium text-purple-400 mb-1">Rate per Mile</label>
-                    <div class="grid grid-cols-5 gap-2">
-                      <button v-for="rate in [1.00, 0.75, 0.65, 0.50, 0.45]" :key="rate" type="button"
-                        @click="form.mileageRate = rate" :class="{
-                          'bg-purple-600': form.mileageRate === rate,
-                          'hover:bg-purple-700': form.mileageRate === rate,
-                          'bg-gray-800 hover:bg-gray-700': form.mileageRate !== rate
-                        }"
-                        class="glossy-content p-1.5 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-xs">
-                        ${{ rate.toFixed(2) }}
-                      </button>
+                  <!-- Slider -->
+                  <div class="mt-6">
+                    <div class="flex justify-between text-lime-400 text-2xl mb-2">
+                      <span>2h</span>
+                      <span>16h</span>
                     </div>
-                  </div>
-
-                  <!-- Travel distance slider -->
-                  <div class="mt-3">
-                    <label class="block text-xs font-medium text-purple-400 mb-1">Distance (One Way)</label>
-                    <div class="flex justify-between text-purple-400 text-xs mb-1">
-                      <span>45 miles</span>
-                      <span>400 miles</span>
-                    </div>
-                    <input type="range" v-model="form.travelMiles" min="45" max="400" step="5"
-                      class="slider-purple w-full" id="travelMiles" name="travelMiles" />
-                    <div class="flex justify-between text-xs text-gray-400 mt-0.5">
-                      <template v-for="value in [45, 100, 150, 200, 250, 300, 350, 400]" :key="value">
-                        <span class="relative" style="left: -4px; font-size: 0.65rem;">|</span>
+                    <input type="range" v-model="form.hours" id="hours" name="hours" min="2" max="16" step="2"
+                      class="slider w-full" required>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                      <template v-for="value in [2, 4, 6, 8, 10, 12, 14, 16]" :key="value">
+                        <span class="relative" style="left: -4px">|</span>
                       </template>
                     </div>
                   </div>
 
-                  <!-- Travel cost calculation -->
-                  <div class="text-center mt-2 p-2 rounded-lg bg-gray-800/50">
-                    <div class="flex flex-col gap-1 text-sm">
-                      <div>
-                        <span class="text-gray-400">{{ form.travelMiles }} miles × </span>
-                        <span class="text-purple-400">${{ form.mileageRate.toFixed(2) }}/mile</span>
-                        <span class="text-gray-400"> × 2 (round-trip)</span>
+                  <!-- Current value display -->
+                  <div class="text-center mt-4">
+                    <span class="text-lime-400 text-lg font-medium">{{ form.hours }} hours</span>
+                  </div>
+                </div>
+
+                <!-- Step 7: Rate & Travel -->
+                <div v-show="currentStep === 7" class="glossy-section mb-2 pb-2">
+                  <label for="hourlyRate" class="block text-sm font-medium text-green-400">Hourly Rate</label>
+                  <p class="text-xl text-white mb-2">Select the hourly rate. The total price will be calculated based on
+                    the
+                    approved hours.</p>
+
+                  <!-- Quick selection tiles -->
+                  <div class="grid grid-cols-4 gap-4">
+                    <button v-for="rate in [95, 120, 130, 180]" :key="rate" type="button"
+                      @click="form.hourlyRate = rate" :class="{
+                        'bg-purple-600': form.hourlyRate === rate && (rate < 80 || (rate > 120 && rate < 160)),
+                        'bg-green-600': form.hourlyRate === rate && rate >= 80 && rate <= 120,
+                        'bg-amber-600': form.hourlyRate === rate && rate >= 160 && rate <= 200,
+                        'hover:bg-purple-700': form.hourlyRate === rate && (rate < 80 || (rate > 120 && rate < 160)),
+                        'hover:bg-green-700': form.hourlyRate === rate && rate >= 80 && rate <= 120,
+                        'hover:bg-amber-700': form.hourlyRate === rate && rate >= 160 && rate <= 200,
+                        'bg-gray-800 hover:bg-gray-700': form.hourlyRate !== rate && (rate < 80 || (rate > 120 && rate < 160)),
+                        'bg-gray-800 hover:bg-green-700 border border-green-500/50': form.hourlyRate !== rate && rate >= 80 && rate <= 120,
+                        'bg-gray-800 hover:bg-amber-700 border border-amber-500/50': form.hourlyRate !== rate && rate >= 160 && rate <= 200
+                      }"
+                      class="relative glossy-content p-2.5 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                      <span :class="{
+                        'text-green-400': rate >= 80 && rate <= 120,
+                        'text-amber-500': rate >= 160 && rate <= 200
+                      }">
+                        ${{ rate }}/hr
+                      </span>
+                      <!-- Standard rate badge -->
+                      <span v-if="rate >= 80 && rate <= 120"
+                        class="absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/4">
+                        <div class="px-1 py-0.5 bg-green-500 text-white text-2xs rounded-full whitespace-nowrap"
+                          style="font-size: 0.6rem;">
+                          Std
+                        </div>
+                      </span>
+                      <!-- Emergency rate badge -->
+                      <span v-if="rate >= 160 && rate <= 200"
+                        class="absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/4">
+                        <div class="px-1 py-0.5 bg-amber-500 text-white text-2xs rounded-full whitespace-nowrap"
+                          style="font-size: 0.6rem;">
+                          Emg
+                        </div>
+                      </span>
+                    </button>
+                  </div>
+
+                  <!-- Slider with purple theme -->
+                  <div class="mt-1">
+                    <div class="flex justify-between text-purple-400 text-xs mb-0.5">
+                      <span>$55/hr</span>
+                      <span>$200/hr</span>
+                    </div>
+                    <div class="relative">
+                      <!-- Highlight for recommended range -->
+                      <div class="absolute bg-green-400/20 border border-green-400/30 rounded-md z-0"
+                        style="bottom: 0; left: 17%; width: 28%; height: 12px;"></div>
+                      <!-- Highlight for emergency range -->
+                      <div class="absolute bg-amber-500/20 border border-amber-500/30 rounded-md z-0"
+                        style="bottom: 0; left: 72%; width: 28%; height: 12px;"></div>
+                      <input type="range" v-model="form.hourlyRate" id="hourlyRate" name="hourlyRate" min="55" max="200"
+                        step="5" class="slider-purple w-full relative z-10" required>
+                    </div>
+                    <div class="flex justify-between text-xs text-purple-400/70 mt-0.5 overflow-x-auto">
+                      <template v-for="value in rateValues" :key="value">
+                        <span class="relative text-center whitespace-nowrap" :class="{
+                          'font-bold text-green-400': value >= 80 && value <= 120,
+                          'font-bold text-amber-500': value >= 160 && value <= 200
+                        }" style="min-width: 20px; font-size: 0.65rem;">|</span>
+                      </template>
+                    </div>
+                    <!-- Rate range legend -->
+                    <div class="flex justify-between mt-1">
+                      <div class="flex items-center gap-1">
+                        <span class="inline-block w-2 h-2 bg-green-400/70 rounded-sm border border-green-400"></span>
+                        <span class="text-xs text-green-400 font-medium" style="font-size: 0.7rem;">Standard:
+                          $80-$120/hr</span>
                       </div>
-                      <div class="text-lg font-medium text-purple-400">
-                        ${{ travelCost }}
+                      <div class="flex items-center gap-1">
+                        <span class="inline-block w-2 h-2 bg-amber-500/70 rounded-sm border border-amber-500"></span>
+                        <span class="text-xs text-amber-500 font-medium" style="font-size: 0.7rem;">Emergency:
+                          $160-$200/hr</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Travel expense section -->
+                  <div class="mt-4 p-3 rounded-lg bg-gray-800/30 border border-gray-700">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" v-model="form.includeTravel" class="checkbox checkbox-success"
+                        id="includeTravel" name="includeTravel" />
+                      <span class="text-white">Include Travel Expense</span>
+                    </label>
+
+                    <!-- Travel expense configuration (shows when checkbox is checked) -->
+                    <div v-if="form.includeTravel" class="mt-4">
+                      <!-- Mileage rate quick selection tiles -->
+                      <div class="mb-2">
+                        <label class="block text-xs font-medium text-purple-400 mb-1">Rate per Mile</label>
+                        <div class="grid grid-cols-5 gap-2">
+                          <button v-for="rate in [1.00, 0.75, 0.65, 0.50, 0.45]" :key="rate" type="button"
+                            @click="form.mileageRate = rate" :class="{
+                              'bg-purple-600': form.mileageRate === rate,
+                              'hover:bg-purple-700': form.mileageRate === rate,
+                              'bg-gray-800 hover:bg-gray-700': form.mileageRate !== rate
+                            }"
+                            class="glossy-content p-1.5 rounded-lg text-purple-400 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-xs">
+                            ${{ rate.toFixed(2) }}
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Travel distance slider -->
+                      <div class="mt-3">
+                        <label class="block text-xs font-medium text-purple-400 mb-1">Distance (One Way)</label>
+                        <div class="flex justify-between text-purple-400 text-xs mb-1">
+                          <span>45 miles</span>
+                          <span>400 miles</span>
+                        </div>
+                        <input type="range" v-model="form.travelMiles" min="45" max="400" step="5"
+                          class="slider-purple w-full" id="travelMiles" name="travelMiles" />
+                        <div class="flex justify-between text-xs text-gray-400 mt-0.5">
+                          <template v-for="value in [45, 100, 150, 200, 250, 300, 350, 400]" :key="value">
+                            <span class="relative" style="left: -4px; font-size: 0.65rem;">|</span>
+                          </template>
+                        </div>
+                      </div>
+
+                      <!-- Travel cost calculation -->
+                      <div class="text-center mt-2 p-2 rounded-lg bg-gray-800/50">
+                        <div class="flex flex-col gap-1 text-sm">
+                          <div>
+                            <span class="text-gray-400">{{ form.travelMiles }} miles × </span>
+                            <span class="text-purple-400">${{ form.mileageRate.toFixed(2) }}/mile</span>
+                            <span class="text-gray-400"> × 2 (round-trip)</span>
+                          </div>
+                          <div class="text-lg font-medium text-purple-400">
+                            ${{ travelCost }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Current rate and total price display -->
+                  <div class="flex flex-col items-center mt-6 space-y-2">
+                    <span class="text-purple-400 text-lg font-medium">${{ form.hourlyRate }}/hr</span>
+                    <div class="text-white text-sm">
+                      <div class="flex flex-col items-center gap-1">
+                        <div>
+                          <span class="text-purple-400">${{ form.hourlyRate }}</span> ×
+                          <span class="text-lime-400">{{ form.hours }} hours</span> =
+                          <span class="text-purple-400">${{ laborCost }}</span>
+                        </div>
+                        <div v-if="form.includeTravel">
+                          <span class="text-gray-400">+</span>
+                          <span class="text-purple-400">${{ travelCost }}</span>
+                          <span class="text-gray-400">travel</span>
+                        </div>
+                        <div class="text-xl font-bold mt-2">
+                          <span class="text-gray-400">Total:</span>
+                          <span class="text-purple-400">${{ totalPrice }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Selection Summary -->
+                  <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                    <div class="text-center">
+                      <div class="text-2xl text-gray-400">Selected Options:</div>
+                      <div class="text-lime-400 font-bold text-base">
+                        <div>Labor: ${{ laborCost }}</div>
+                        <div v-if="form.includeTravel">Travel: ${{ travelCost }}</div>
+                        <div>Total: ${{ totalPrice }}</div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Current rate and total price display -->
-              <div class="flex flex-col items-center mt-6 space-y-2">
-                <span class="text-purple-400 text-lg font-medium">${{ form.hourlyRate }}/hr</span>
-                <div class="text-white text-sm">
-                  <div class="flex flex-col items-center gap-1">
-                    <div>
-                      <span class="text-purple-400">${{ form.hourlyRate }}</span> ×
-                      <span class="text-lime-400">{{ form.hours }} hours</span> =
-                      <span class="text-purple-400">${{ laborCost }}</span>
-                    </div>
-                    <div v-if="form.includeTravel">
-                      <span class="text-gray-400">+</span>
-                      <span class="text-purple-400">${{ travelCost }}</span>
-                      <span class="text-gray-400">travel</span>
-                    </div>
-                    <div class="text-xl font-bold mt-2">
-                      <span class="text-gray-400">Total:</span>
-                      <span class="text-purple-400">${{ totalPrice }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- Selection Summary -->
-              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                <div class="text-center">
-                  <div class="text-2xl text-gray-400">Selected Options:</div>
-                  <div class="text-lime-400 font-bold text-base">
-                    <div>Labor: ${{ laborCost }}</div>
-                    <div v-if="form.includeTravel">Travel: ${{ travelCost }}</div>
-                    <div>Total: ${{ totalPrice }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Step 8: Status -->
-            <div v-show="currentStep === 8" class="glossy-section mb-2">
-              <label class="block text-sm font-medium text-green-400 mb-4">Status</label>
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <button v-for="status in ['Scheduled', 'In Progress', 'Part Needed', 'Complete', 'Cancelled']"
-                  :key="status" type="button" @click="form.status = status"
-                  class="status-badge flex items-center justify-center gap-2 p-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                  :class="{
-                    'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': status === 'Scheduled' && form.status === status,
-                    'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500': status === 'In Progress' && form.status === status,
-                    'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500': status === 'Part Needed' && form.status === status,
-                    'bg-green-600 hover:bg-green-700 focus:ring-green-500': status === 'Complete' && form.status === status,
-                    'bg-red-600 hover:bg-red-700 focus:ring-red-500': status === 'Cancelled' && form.status === status,
-                    'bg-gray-800 hover:bg-gray-700': form.status !== status,
-                    'glossy-content': true
-                  }">
-                  <span class="text-white font-medium">{{ status }}</span>
-                  <svg v-if="form.status === status" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white"
-                    viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-              <!-- Selection Summary -->
-              <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                <div class="text-center">
-                  <div class="text-2xl text-gray-400">Selected Status:</div>
-                  <div class="text-lime-400 font-bold text-lg">{{ form.status || 'No status selected' }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Step 9: Attachments -->
-            <div v-show="currentStep === 9" class="glossy-section mb-2">
-              <label class="block text-sm font-medium text-green-400 mb-2">Attachments</label>
-              <p class="text-2xl text-white mb-4">Upload any relevant files or documents for this work order.</p>
-
-              <div class="form-control">
-                <label
-                  class="label cursor-pointer flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-lime-400 transition-colors duration-200">
-                  <input type="file" @change="handleFileUpload" id="file_attachments" name="file_attachments"
-                    class="file-input file-input-bordered file-input-success w-full max-w-lg bg-gray-800/50 text-lime-400"
-                    multiple />
-                </label>
-
-                <!-- File list preview -->
-                <div v-if="form.file_attachments && form.file_attachments.length > 0" class="mt-4">
+                <!-- Step 8: Status -->
+                <div v-show="currentStep === 8" class="glossy-section mb-2">
+                  <label class="block text-sm font-medium text-green-400 mb-4">Status</label>
                   <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div v-for="(file, index) in form.file_attachments" :key="index" class="relative group">
-                      <div class="aspect-square rounded-lg overflow-hidden bg-gray-800/50 w-24 h-24 mx-auto flex items-center justify-center">
-                        <!-- PDF Preview -->
-                        <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)"
-                          :filename="file.name" class="w-full h-full object-cover" />
-                        <!-- Image Preview -->
-                        <img v-else-if="file.type.startsWith('image/')" :src="getFileObjectURL(file)" :alt="file.name"
-                          class="w-full h-full object-cover" />
-                        <!-- Default File Icon -->
-                        <div v-else class="w-full h-full flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
+                    <button v-for="status in ['Scheduled', 'In Progress', 'Part Needed', 'Complete', 'Cancelled']"
+                      :key="status" type="button" @click="form.status = status"
+                      class="status-badge flex items-center justify-center gap-2 p-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                      :class="{
+                        'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': status === 'Scheduled' && form.status === status,
+                        'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500': status === 'In Progress' && form.status === status,
+                        'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500': status === 'Part Needed' && form.status === status,
+                        'bg-green-600 hover:bg-green-700 focus:ring-green-500': status === 'Complete' && form.status === status,
+                        'bg-red-600 hover:bg-red-700 focus:ring-red-500': status === 'Cancelled' && form.status === status,
+                        'bg-gray-800 hover:bg-gray-700': form.status !== status,
+                        'glossy-content': true
+                      }">
+                      <span class="text-white font-medium">{{ status }}</span>
+                      <svg v-if="form.status === status" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  <!-- Selection Summary -->
+                  <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                    <div class="text-center">
+                      <div class="text-2xl text-gray-400">Selected Status:</div>
+                      <div class="text-lime-400 font-bold text-lg">{{ form.status || 'No status selected' }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 9: Attachments -->
+                <div v-show="currentStep === 9" class="glossy-section mb-2">
+                  <label class="block text-sm font-medium text-green-400 mb-2">Attachments</label>
+                  <p class="text-2xl text-white mb-4">Upload any relevant files or documents for this work order.</p>
+
+                  <div class="form-control">
+                    <label
+                      class="label cursor-pointer flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-lime-400 transition-colors duration-200">
+                      <input type="file" @change="handleFileUpload" id="file_attachments" name="file_attachments"
+                        class="file-input file-input-bordered file-input-success w-full max-w-lg bg-gray-800/50 text-lime-400"
+                        multiple />
+                    </label>
+
+                    <!-- File list preview -->
+                    <div v-if="form.file_attachments && form.file_attachments.length > 0" class="mt-4">
+                      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div v-for="(file, index) in form.file_attachments" :key="index" class="relative group">
+                          <div
+                            class="aspect-square rounded-lg overflow-hidden bg-gray-800/50 w-24 h-24 mx-auto flex items-center justify-center">
+                            <!-- PDF Preview -->
+                            <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)"
+                              :filename="file.name" class="w-full h-full object-cover" />
+                            <!-- Image Preview -->
+                            <img v-else-if="file.type.startsWith('image/')" :src="getFileObjectURL(file)"
+                              :alt="file.name" class="w-full h-full object-cover" />
+                            <!-- Default File Icon -->
+                            <div v-else class="w-full h-full flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                            </div>
+                          </div>
+                          <!-- File Info Overlay -->
+                          <div
+                            class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
+                            <div
+                              class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs truncate">
+                              {{ file.name }}
+                            </div>
+                            <button @click="removeFile(index)"
+                              class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end"
+                              type="button">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 12 12"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="form.errors.file_attachments" class="text-red-500 text-xs mt-2">
+                    {{ form.errors.file_attachments }}
+                  </div>
+                </div>
+
+                <!-- Step 10: Summary & Review -->
+                <div v-show="currentStep === 10" class="glossy-section mb-2 pb-2">
+                  <div class="flex flex-col md:flex-row justify-between items-start mb-4">
+                    <!-- Left side: Title, Status Badge, and Print Button -->
+                    <div class="flex flex-col md:flex-row items-start md:items-center gap-4 flex-wrap">
+                      <h2 class="text-3xl font-extrabold text-green-400">Final Review</h2>
+
+                      <!-- Status Badge (matching Step 8 styling) -->
+                      <div v-if="form.status"
+                        class="status-badge flex items-center justify-center gap-2 p-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                        :class="{
+                          'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500': form.status === 'Scheduled',
+                          'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500': form.status === 'In Progress',
+                          'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500': form.status === 'Part Needed',
+                          'bg-green-600 hover:bg-green-700 focus:ring-green-500': form.status === 'Complete',
+                          'bg-red-600 hover:bg-red-700 focus:ring-red-500': form.status === 'Cancelled',
+                          'glossy-content': true
+                        }">
+                        <span class="text-white font-medium">{{ form.status }}</span>
+                      </div>
+
+                      <!-- Print Button -->
+                      <button @click="printWorkOrder"
+                        class="glossy-content flex items-center gap-2 p-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+                        type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        <span>Print Work Order</span>
+                      </button>
+                    </div>
+
+                    <!-- Right side: QR Code -->
+                    <div class="flex flex-col items-center">
+                      <div class="bg-white p-4 rounded-lg mt-4 md:mt-0">
+                        <QRCode
+                          :value="'TekDash:' + formattedTitle + (form.address ? '|' + form.address : '') + (formattedDateTime ? '|' + formattedDateTime : '')"
+                          :size="150" level="M" render-as="svg" class="mx-auto" />
+                      </div>
+                      <div class="text-xs text-gray-400 mt-1 text-center">
+                        Scan to access work order details
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="text-xl text-white mb-6">Please review all the information for this work order before
+                    submission.</p>
+
+                  <!-- Customer & Technician Info -->
+                  <div class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-lime-400">
+                    <h3 class="text-xl font-bold text-lime-400 mb-2">Customer & Technician</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p class="text-gray-400 text-sm">Customer:</p>
+                        <p class="text-white text-lg font-semibold">
+                          {{safeCustomersArray.find(c => c.id == form.customer_id)?.business_name ||
+                          safeCustomersArray.find(c => c.id == form.customer_id)?.name || 'None selected'}}
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-gray-400 text-sm">Technician:</p>
+                        <p class="text-white text-lg font-semibold">
+                          {{safeTechniciansArray.find(t => t.id == form.technician_id)?.name || 'None selected'}}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Work Order Details -->
+                  <div class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-lime-400">
+                    <h3 class="text-xl font-bold text-lime-400 mb-2">Work Order Details</h3>
+                    <div class="mb-3">
+                      <p class="text-gray-400 text-sm">Title:</p>
+                      <p class="text-white text-lg font-semibold">{{ formattedTitle }}</p>
+                    </div>
+                    <div class="mb-3">
+                      <p class="text-gray-400 text-sm">Description:</p>
+                      <p class="text-white text-lg">{{ form.description || 'No description provided' }}</p>
+                    </div>
+                    <div class="mb-3">
+                      <p class="text-gray-400 text-sm">Status:</p>
+                      <p class="text-white text-lg">{{ form.status || 'No status selected' }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Date, Time & Location -->
+                  <div class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-lime-400">
+                    <h3 class="text-xl font-bold text-lime-400 mb-2">Schedule & Location</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p class="text-gray-400 text-sm">Date & Time:</p>
+                        <p class="text-white text-lg font-semibold">{{ formattedDateTime || 'Not scheduled' }}</p>
+                      </div>
+                      <div>
+                        <p class="text-gray-400 text-sm">Location:</p>
+                        <p class="text-white text-lg font-semibold">{{ form.address || 'No address provided' }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Mapbox Map Preview (added to step 10) -->
+                    <div v-if="form.address" class="mt-4">
+                      <!-- Show loading indicator while geocoding -->
+                      <div v-if="mapboxLoading"
+                        class="flex items-center justify-center p-4 bg-gray-800 rounded-lg border border-gray-700 min-h-[200px]">
+                        <div
+                          class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full mr-2">
+                        </div>
+                        <span class="text-lime-400">Loading map preview...</span>
+                      </div>
+
+                      <!-- Show error if geocoding failed -->
+                      <div v-else-if="mapboxError" class="p-4 bg-red-900/30 border border-red-500 rounded-lg">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                           </svg>
+                          <span class="text-red-400">{{ mapboxError }}</span>
                         </div>
                       </div>
-                      <!-- File Info Overlay -->
-                      <div
-                        class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
-                        <div
-                          class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs truncate">
-                          {{ file.name }}
-                        </div>
-                        <button @click="removeFile(index)"
-                          class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end"
-                          type="button">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 12 12"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+
+                      <!-- Show map image if available -->
+                      <a v-else-if="mapboxImageUrl" :href="mapboxMapsLink" target="_blank" rel="noopener"
+                        title="Open in Map App">
+                        <img :src="mapboxImageUrl" alt="Map snapshot"
+                          class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
+                          style="width: 100%; max-height: 300px; min-height: 180px; object-fit: cover; background: #222;" />
+                        <div class="text-xs text-gray-400 mt-1">Click map to open location in browser</div>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Cost Breakdown -->
+                  <div class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-purple-400">
+                    <h3 class="text-xl font-bold text-purple-400 mb-2">Cost Breakdown</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p class="text-gray-400 text-sm">Approved Hours:</p>
+                        <p class="text-white text-lg font-semibold">{{ form.hours }} hours</p>
                       </div>
+                      <div>
+                        <p class="text-gray-400 text-sm">Hourly Rate:</p>
+                        <p class="text-white text-lg font-semibold">${{ form.hourlyRate }}/hour</p>
+                      </div>
+                    </div>
+
+                    <!-- Labor Cost -->
+                    <div class="p-3 bg-gray-900/50 rounded-lg mb-3">
+                      <div class="flex justify-between">
+                        <p class="text-gray-400">Labor Cost:</p>
+                        <p class="text-white font-bold">${{ laborCost.value || 0 }}</p>
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1">
+                        {{ form.hours }} hours × ${{ form.hourlyRate }}/hour
+                      </div>
+                    </div>
+
+                    <!-- Travel Cost if applicable -->
+                    <div v-if="form.includeTravel" class="p-3 bg-gray-900/50 rounded-lg mb-3">
+                      <div class="flex justify-between">
+                        <p class="text-gray-400">Travel Expenses:</p>
+                        <p class="text-white font-bold">${{ travelCost.value || 0 }}</p>
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1">
+                        {{ form.travelMiles }} miles × ${{ form.mileageRate.toFixed(2) }}/mile × 2 (round-trip)
+                      </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="p-3 bg-purple-900/30 rounded-lg border border-purple-500/30">
+                      <div class="flex justify-between text-lg">
+                        <p class="text-purple-300 font-bold">TOTAL:</p>
+                        <p class="text-purple-300 font-bold">${{ totalPrice }}</p>
+                      </div>
+                      <!-- Hidden input to ensure the grand_total is bound to the form -->
+                      <input type="hidden" v-model="form.grand_total" name="grand_total" class="hidden" />
+                    </div>
+
+                    <!-- Show error if there's an issue with grand_total -->
+                    <div v-if="form.errors.grand_total"
+                      class="mt-2 p-2 bg-red-900/30 border border-red-500 rounded text-red-400 text-sm">
+                      {{ form.errors.grand_total }}
+                    </div>
+                  </div>
+
+                  <!-- Attachments Summary with PDF Thumbnails -->
+                  <div class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-lime-400">
+                    <h3 class="text-xl font-bold text-lime-400 mb-2">Attachments</h3>
+                    <div v-if="form.file_attachments && form.file_attachments.length > 0">
+                      <p class="text-white mb-2">{{ form.file_attachments.length }} file(s) attached:</p>
+
+                      <!-- PDF Thumbnails Grid -->
+                      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-3">
+                        <div v-for="(file, index) in form.file_attachments" :key="index" class="relative group">
+                          <!-- PDF Thumbnail Component -->
+                          <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)"
+                            :filename="file.name" @click="selectedPdf = file; showPdfViewer = true" />
+
+                          <!-- Image Thumbnail -->
+                          <div v-else-if="file.type.startsWith('image/')" class="pdf-thumbnail-wrapper">
+                            <div class="pdf-thumbnail cursor-pointer" @click="selectedPdf = file; showPdfViewer = true">
+                              <img :src="getFileObjectURL(file)" :alt="file.name"
+                                class="object-cover w-full h-24 rounded-md" />
+                              <div class="filename">{{ file.name.length > 20 ? file.name.substring(0, 17) + '...' :
+                                file.name }}</div>
+                              <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none"
+                                  viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Generic File Icon -->
+                          <div v-else class="pdf-thumbnail-wrapper">
+                            <div
+                              class="pdf-thumbnail flex items-center justify-center bg-gray-800 rounded-md border border-gray-700 h-24">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <div class="filename">{{ file.name.length > 20 ? file.name.substring(0, 17) + '...' :
+                                file.name }}</div>
+                              <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none"
+                                  viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p v-else class="text-gray-400">No attachments added</p>
+                  </div>
+
+                  <!-- QR code has been moved to the top of Step 10 -->
+
+                  <!-- Final confirmation message -->
+                  <div class="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mt-6">
+                    <div class="flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400 mr-2 mt-0.5"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clip-rule="evenodd" />
+                      </svg>
+                      <p class="text-green-300">
+                        Please verify that all information is correct before submitting. You can go back to any step to
+                        make changes if
+                        needed.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
+              <!-- Footer Navigation Buttons -->
+              <div
+                class="flex justify-betweens items-center p-4 bg-gray-800 border-t border-gray-800 sticky bottom-0 z-10">
 
-              <div v-if="form.errors.file_attachments" class="text-red-500 text-xs mt-2">
-                {{ form.errors.file_attachments }}
+                <button v-if="currentStep > 1" type="button" @click="prevStep"
+                  class="btn btn-secondary px-6 py-2 rounded-lg text-white bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-opacity-50 transition-all duration-200">
+                  Back
+                </button>
+                <div class="flex-1"></div>
+                <button v-if="currentStep < totalSteps" type="button" @click="nextStep"
+                  class="btn btnprimary px-6 py-2 rounded-lg text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-opacity-50 transition-all duration-200"
+                  :disabled="isLoading || !validateCurrentStep()">
+                  Next
+                </button>
+                <button v-else type="submit"
+                  class="btn btn-primary px-6 py-2 rounded-lg text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-opacity-50 transition-all duration-200"
+                  :disabled="isLoading || !validateCurrentStep()">
+                  Submit
+                </button>
               </div>
-            </div>
-
-            <!-- Add error message for user_id -->
-            <div v-if="form.errors.user_id" class="text-red-500 text-xs mt-1 mb-4">
-              {{ form.errors.user_id }}
-            </div>
-
-            <input type="hidden" v-model="form.user_id" name="user_id" />
-            <progress v-if="form.progress" :value="form.progress.percentage" min="0" max="100"
-              class="w-full rounded-md">
-              {{ form.progress.percentage }}%
-            </progress>
-          </div>
-        </form>
-
-        <!-- Fixed footer with navigation buttons -->
-        <div class="glossy-footer px-3 py-1 border-t border-gray-700 mt-auto sticky bottom-0 bg-gray-900/95 z-20 min-h-0">
-          <div class="flex justify-between items-center min-h-0">
-            <button v-if="currentStep > 1" type="button" @click="prevStep"
-              class="btn glass-button flex items-center space-x-1 px-4 py-1 bg-gray-700/50 text-white hover:bg-gray-700">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Back</span>
-            </button>
-            <div v-else></div>
-
-            <div>
-              <button v-if="currentStep < totalSteps" type="button" @click="nextStep"
-                class="btn glass-button flex items-center space-x-1 px-5 py-1 bg-blue-600/60 text-white hover:bg-blue-700">
-                <span>Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              <button v-if="currentStep === totalSteps" type="button" @click="submitForm"
-                :disabled="!validateCurrentStep() || form.processing || duplicateWorkOrderFound"
-                class="btn glass-button flex items-center space-x-2 px-6 py-2 bg-lime-600/60 text-white hover:bg-lime-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span>Submit</span>
-                <svg v-if="form.processing" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
-                  fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                  </path>
-                </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
+import axios from 'axios';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
 import PdfThumbnail from '@/Components/PdfThumbnail.vue';
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
-import { format, parseISO, isToday, isValid, addDays, setHours, setMinutes } from 'date-fns';
-import axios from 'axios';
-import { useToast } from '@/Composables/useToast';
+import PdfViewer from '@/Components/PdfViewer.vue';
+import QRCode from 'qrcode.vue';
+import { Popover, PopoverTrigger, PopoverContent } from '@/Components/ui/popover';
+import { format, isValid } from 'date-fns';
+import Flatpickr from 'vue-flatpickr-component';
+import 'flatpickr/dist/flatpickr.css';
 
-// Props
+// Define props for the component
 const props = defineProps({
   customerId: {
     type: [String, Number],
@@ -840,41 +1013,73 @@ const props = defineProps({
   },
   customerName: {
     type: String,
-    default: null
+    default: ''
   }
 });
 
-// Data
-const isLoading = ref(false);
-const isLoadingCustomers = ref(false);
-const isLoadingTechnicians = ref(false);  // Added missing ref
+// State management
+const showModal = ref(false);
+
+const handleShowModal = async () => {
+  try {
+    console.log('AddWorkOrder: handleShowModal called');
+    resetForm();
+    // Set modal visibility first
+    showModal.value = true;
+
+    // Initialize calendar days for the date picker
+    await nextTick();
+    //generateCalendarDays();
+
+    // Load customers and technicians concurrently
+    const [customersResult, techniciansResult] = await Promise.all([
+      loadCustomers(),
+      loadTechnicians()
+    ]);
+
+    console.log('AddWorkOrder: All data loaded', {
+      customersCount: customersResult.length,
+      techniciansCount: techniciansResult.length
+    });
+  } catch (err) {
+    console.error('Error loading initial data:', err);
+    // Keep the modal open even if data loading fails
+  }
+};
+
+const handleHideModal = (event = null) => {
+  // If event is present, check if it's a click on the backdrop
+  if (event && event.target !== event.currentTarget) {
+    return;
+  }
+  showModal.value = false;
+  resetForm();
+};
+
+const currentStep = ref(1);
+const totalSteps = 10;
+const isDatePickerOpen = ref(false);
 const customers = ref([]);
 const customersArray = ref([]);
 const loadError = ref(false);
-const showModal = ref(false);
-const currentStep = ref(1);
-const totalSteps = 9;
 const workType = ref('');
 const workOrderNumber = ref('');
 const location = ref('');
-const dateSelectionType = ref('single');
-const selectedDates = ref([{ date: new Date().toISOString().slice(0, 16) }]);
 const isSubmitting = ref(false);
 const checkingWorkOrder = ref(false);
 const duplicateWorkOrderFound = ref(false);
 const workOrderVerified = ref(false);
 const debounceTimer = ref(null);
-const selectedDate = ref(new Date());
-const currentMonth = ref(new Date());
-const calendarDays = ref([]);
 const technicians = ref([]);
+const showPdfViewer = ref(false);
+const selectedPdf = ref(null);
+const qrCodeValue = ref('');
 const rateValues = ref([55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200]);
 
-const selectedTime = ref({
-  hour: 12,
-  minute: '00',
-  period: 'AM'
-});
+// Loading states for UI
+const isLoadingCustomers = ref(false);
+const isLoadingTechnicians = ref(false);
+const isLoading = ref(false);
 
 const form = useForm({
   customer_id: '',
@@ -898,7 +1103,14 @@ const form = useForm({
   travelMiles: 45,
   mileageRate: 1.00,
   technician_id: '',
+  grand_total: '',
 });
+
+// Mapbox loading and error state
+const mapboxLoading = ref(false);
+const mapboxError = ref(null);
+const mapboxImageUrl = ref('');
+const mapboxMapsLink = ref('');
 
 // Computed properties
 const formattedTitle = computed(() => {
@@ -918,72 +1130,53 @@ const travelCost = computed(() => {
 });
 
 const totalPrice = computed(() => {
-  return (parseFloat(laborCost.value) + parseFloat(travelCost.value)).toFixed(2);
+  const total = (parseFloat(laborCost.value) + parseFloat(travelCost.value)).toFixed(2);
+  form.grand_total = total; // Ensure form field is updated
+  return total;
 });
 
 const currentMonthName = computed(() => {
-  return format(currentMonth.value, 'MMMM yyyy');
+  return format(new Date(), 'MMMM yyyy');
 });
 
 const selectedDateFormatted = computed(() => {
-  return isValid(selectedDate.value) ? format(selectedDate.value, 'EEEE, MMMM d, yyyy') : '';
+  return isValid(new Date(form.date_time)) ? format(new Date(form.date_time), 'EEEE, MMMM d, yyyy') : '';
 });
 
 const formattedDateTime = computed(() => {
-  if (!isValid(selectedDate.value)) return 'Please select a date';
-  
-  const hour = parseInt(selectedTime.value.hour);
-  let formattedHour = hour;
-  
-  // Convert to 24-hour format if PM
-  if (selectedTime.value.period === 'PM' && hour !== 12) {
-    formattedHour += 12;
+  if (!form.date_time) return '';
+  try {
+    const date = new Date(form.date_time);
+    if (isValid(date)) {
+      return format(date, 'EEEE, MMMM d, yyyy \'at\' h:mm a');
+    }
+  } catch (e) {
+    console.error('Error formatting date:', e);
   }
-  // Handle 12 AM case
-  if (selectedTime.value.period === 'AM' && hour === 12) {
-    formattedHour = 0;
-  }
-  
-  // Format date with time
-  const dateWithTime = new Date(selectedDate.value);
-  dateWithTime.setHours(formattedHour);
-  dateWithTime.setMinutes(parseInt(selectedTime.value.minute));
-  
-  return format(dateWithTime, 'MMMM d, yyyy h:mm a');
+  return '';
 });
 
 const descriptionSummary = computed(() => {
-  return form.description && form.description.trim() !== '' ? form.description : 'No description entered';
+  if (!form.description) return 'No description entered';
+  return form.description.length > 100 ?
+    form.description.substring(0, 100) + '...' :
+    form.description;
+});
+
+// Safely filtered arrays to avoid null/undefined items
+const safeCustomersArray = computed(() => {
+  return customersArray.value.filter(customer => customer && customer.id);
+});
+
+const safeTechniciansArray = computed(() => {
+  return technicians.value.filter(technician => technician && technician.id);
 });
 
 // Methods
-const handleShowModal = () => {
-  console.log('AddWorkOrder: handleShowModal called');
-  resetForm();
-  showModal.value = true;
-  
-  // Add a slight delay to ensure modal is fully shown before loading data
-  setTimeout(() => {
-    Promise.all([
-      loadCustomers().catch(err => console.error('Error loading customers:', err)),
-      loadTechnicians().catch(err => console.error('Error loading technicians:', err))
-    ]).then(() => {
-      console.log('AddWorkOrder: All data loaded', {
-        customersCount: customers.value.length,
-        techniciansCount: technicians.value.length
-      });
-    });
-  }, 100);
-};
-
-const handleHideModal = () => {
-  showModal.value = false;
-  resetForm();
-};
-
 const resetForm = () => {
   console.log('Resetting form');
   currentStep.value = 1;
+  isDatePickerOpen.value = false;
   // Reset form fields
   form.customer_id = props.customerId || '';
   form.title = '';
@@ -1012,22 +1205,17 @@ const resetForm = () => {
   duplicateWorkOrderFound.value = false;
   workOrderVerified.value = false;
   checkingWorkOrder.value = false;
-  selectedTime.value = {
-    hour: 12,
-    minute: '00',
-    period: 'AM'
-  };
 };
 
 const validateCurrentStep = () => {
-  switch(currentStep.value) {
+  switch (currentStep.value) {
     case 1:
       return !!form.customer_id && String(form.customer_id).trim() !== '';
     case 2:
-      return workType.value && 
-             workOrderNumber.value && 
-             location.value && 
-             !duplicateWorkOrderFound.value;
+      return workType.value &&
+        workOrderNumber.value &&
+        location.value &&
+        !duplicateWorkOrderFound.value;
     case 3:
       return !!form.description && form.description.trim() !== '';
     case 4:
@@ -1042,6 +1230,8 @@ const validateCurrentStep = () => {
       return !!form.status;
     case 9:
       return true; // Files are optional
+    case 10:
+      return !!form.grand_total && parseFloat(form.grand_total) > 0; // Ensure grand_total is set and valid
     default:
       return false;
   }
@@ -1086,589 +1276,366 @@ const prevStep = async () => {
   }
 };
 
-const handleFileUpload = (event) => {
-  const files = event.target.files;
-  if (!files || files.length === 0) return;
-  
-  // Add the files to the form.file_attachments array
-  form.file_attachments = [...form.file_attachments, ...Array.from(files)];
-  
-  // Clear the input to allow selecting the same file again if needed
-  event.target.value = null;
+// Print Work Order function for PDF generation
+const printWorkOrder = () => {
+  try {
+    // Create a printable version that only includes the Step 10 content
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-up windows to print the work order');
+      return;
+    }
+
+    // Get the customer and technician info safely
+    const customerName = () => {
+      try {
+        const customer = safeCustomersArray.value.find(c => c.id == form.customer_id);
+        return customer ? (customer.business_name || customer.name) : 'None selected';
+      } catch (e) {
+        return 'None selected';
+      }
+    };
+
+    const technicianName = () => {
+      try {
+        const tech = safeTechniciansArray.value.find(t => t.id == form.technician_id);
+        return tech ? tech.name : 'None selected';
+      } catch (e) {
+        return 'None selected';
+      }
+    };
+
+    // Safely escape HTML content for description
+    const escapeHtml = (unsafe) => {
+      if (unsafe === undefined || unsafe === null) return '';
+      return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    // Generate the QR code value
+    const qrCodeValue = `TekDash:${formattedTitle.value || ''}${form.address ? '|' + form.address : ''}${formattedDateTime.value ? '|' + formattedDateTime.value : ''}`;
+
+    // Create the print content with styling
+    const printContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${escapeHtml(formattedTitle.value) || 'Work Order'}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4ade80;
+          }
+          .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+          }
+          .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: white;
+          }
+          .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #4ade80;
+          }
+          .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1f2937;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+          }
+          .label {
+            font-size: 14px;
+            color: #6b7280;
+          }
+          .value {
+            font-size: 16px;
+            font-weight: 500;
+          }
+          .total {
+            font-size: 18px;
+            font-weight: bold;
+          }
+          .purple-section {
+            border-left-color: #8b5cf6;
+          }
+          .qr-container {
+            text-align: right;
+          }
+          @media print {
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            .no-print {
+              display: none;
+            }
+            .section {
+              break-inside: avoid;
+            }
+            button {
+              display: none;
+            }
+          }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"><\/script>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="title">Work Order: ${escapeHtml(formattedTitle.value) || 'No Title'}</div>
+            <div style="margin-top: 5px;">
+              <span style="font-weight: bold;">Status:</span> 
+              <span class="status" style="background-color: ${form.status === 'Scheduled' ? '#2563eb' :
+        form.status === 'In Progress' ? '#eab308' :
+          form.status === 'Part Needed' ? '#ea580c' :
+            form.status === 'Complete' ? '#16a34a' :
+              form.status === 'Cancelled' ? '#dc2626' : '#6b7280'
+      };">${escapeHtml(form.status) || 'Not set'}</span>
+            </div>
+          </div>
+          <div class="qr-container">
+            <div id="qrcode-placeholder"></div>
+            <div style="margin-top: 5px; font-size: 12px; text-align: center;">
+              Scan for Work Order details
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer & Technician Section -->
+        <div class="section">
+          <div class="section-title">Customer & Technician</div>
+          <div class="grid">
+            <div>
+              <div class="label">Customer:</div>
+              <div class="value">${escapeHtml(customerName())}</div>
+            </div>
+            <div>
+              <div class="label">Technician:</div>
+              <div class="value">${escapeHtml(technicianName())}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Work Order Details Section -->
+        <div class="section">
+          <div class="section-title">Work Order Details</div>
+          <div>
+            <div class="label">Description:</div>
+            <div class="value" style="white-space: pre-line;">${escapeHtml(form.description) || 'No description provided'}</div>
+          </div>
+        </div>
+
+        <!-- Schedule & Location Section -->
+        <div class="section">
+          <div class="section-title">Schedule & Location</div>
+          <div class="grid">
+            <div>
+              <div class="label">Date & Time:</div>
+              <div class="value">${escapeHtml(formattedDateTime.value) || 'Not scheduled'}</div>
+            </div>
+            <div>
+              <div class="label">Location:</div>
+              <div class="value">${escapeHtml(form.address) || 'No address provided'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cost Breakdown Section -->
+        <div class="section purple-section">
+          <div class="section-title" style="color: #8b5cf6;">Cost Breakdown</div>
+          <div class="grid">
+            <div>
+              <div class="label">Approved Hours:</div>
+              <div class="value">${form.hours || 0} hours</div>
+            </div>
+            <div>
+              <div class="label">Hourly Rate:</div>
+              <div class="value">$${form.hourlyRate || 0}/hour</div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 15px; padding: 10px; background-color: #f3f4f6; border-radius: 4px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #6b7280;">Labor Cost:</span>
+              <span style="font-weight: bold;">$${laborCost.value || 0}</span>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              ${form.hours || 0} hours × $${form.hourlyRate || 0}/hour
+            </div>
+          </div>
+          
+          ${form.includeTravel ? `
+          <div style="margin-top: 10px; padding: 10px; background-color: #f3f4f6; border-radius: 4px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #6b7280;">Travel Expenses:</span>
+              <span style="font-weight: bold;">$${travelCost.value || 0}</span>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              ${form.travelMiles || 0} miles × $${(form.mileageRate || 0).toFixed(2)}/mile × 2 (round-trip)
+            </div>
+          </div>
+          ` : ''}
+          
+          <div style="margin-top: 15px; padding: 10px; background-color: #ede9fe; border-radius: 4px; border: 1px solid #c4b5fd;">
+            <div style="display: flex; justify-content: space-between;">
+              <span class="total" style="color: #8b5cf6;">TOTAL:</span>
+              <span class="total" style="color: #8b5cf6;">$${totalPrice.value || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Print Buttons -->
+        <div class="no-print" style="margin-top: 30px; text-align: center;">
+          <button 
+            onclick="window.print(); return false;" 
+            style="padding: 10px 20px; background-color: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+            Print Work Order
+          </button>
+          <button 
+            onclick="window.close(); return false;" 
+            style="padding: 10px 20px; background-color: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Close
+          </button>
+        </div>
+
+        <script>
+          // Generate QR code
+          window.addEventListener('load', function() {
+            try {
+              if (typeof QRCode !== 'undefined') {
+                QRCode.toCanvas(
+                  document.getElementById('qrcode-placeholder'), 
+                  "${escapeHtml(qrCodeValue)}",
+                  { width: 100, margin: 1 },
+                  function(error) {
+                    if (error) console.error('QR code error:', error);
+                  }
+                );
+              } else {
+                console.error('QRCode library not loaded');
+                document.getElementById('qrcode-placeholder').innerHTML = 
+                  '<div style="padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 12px; color: #6b7280;">QR Code<br>Not Available</div>';
+              }
+            } catch (e) {
+              console.error('Error generating QR code:', e);
+            }
+          });
+        <\/script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+  } catch (error) {
+    console.error('Error in printWorkOrder:', error);
+    alert('There was an error generating the printable work order. Please try again.');
+  }
 };
 
-const removeFile = (index) => {
-  // Remove a file from the attachments array by index
-  form.file_attachments = form.file_attachments.filter((_, i) => i !== index);
-};
-
-// Debounce function to limit API calls
-const debounce = (fn, delay) => {
-  let timeoutId;
-  return function (...args) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn.apply(this, args), delay);
-  };
-};
-
-const checkExistingWorkOrder = () => {
-  // Don't check if there's no work order number
-  if (!workOrderNumber.value || workOrderNumber.value.trim() === '') {
-    duplicateWorkOrderFound.value = false;
-    workOrderVerified.value = false;
+// Work Order number verification logic
+const checkExistingWorkOrder = async () => {
+  const number = workOrderNumber.value.trim();
+  duplicateWorkOrderFound.value = false;
+  workOrderVerified.value = false;
+  if (!number) {
+    checkingWorkOrder.value = false;
     return;
   }
-  
   checkingWorkOrder.value = true;
-  workOrderVerified.value = false;
-  
-  // Call the API to check for duplicate work order
-  axios.get('/api/check-work-order-exists', {
-    params: { workOrderNumber: workOrderNumber.value }
-  })
-    .then(response => {
-      duplicateWorkOrderFound.value = response.data.exists;
-      // Set verified to true only if we have a response and it's not a duplicate
-      workOrderVerified.value = !response.data.exists && workOrderNumber.value.trim() !== '';
-    })
-    .catch(error => {
-      console.error('Error checking work order:', error);
-      duplicateWorkOrderFound.value = false;
-      workOrderVerified.value = false;
-    })
-    .finally(() => {
-      checkingWorkOrder.value = false;
-    });
-};
-
-// Create debounced version for input events
-const debouncedCheckExistingWorkOrder = debounce(checkExistingWorkOrder, 500);
-
-const { success: toastSuccess, error: toastError } = useToast();
-
-const submitForm = () => {
-  if (currentStep.value === totalSteps && validateCurrentStep()) {
-    try {
-      // Set the title from formattedTitle
-      form.title = formattedTitle.value;
-      
-      // Set the user_id from auth if available using usePage() instead of this.$page
-      const page = usePage();
-      // Add proper null checking to avoid undefined errors
-      if (!form.user_id && page.props.value && page.props.value.auth && page.props.value.auth.user) {
-        form.user_id = page.props.value.auth.user.id;
-        form.users_name = page.props.value.auth.user.name;
-      } else {
-        // Fallback to set user_id if not available from auth
-        // This might happen when the component is in a modal or iframe context
-        console.log('Auth user not available, using fallback values');
-        if (!form.user_id) {
-          // You might want to get these values from props or a store if available
-          form.user_id = 1; // Default to admin or system user
-          form.users_name = form.users_name || 'System User';
-        }
-      }
-      
-      // Format the form data
-      const formData = new FormData();
-      
-      // Add all required fields
-      formData.append('customer_id', form.customer_id);
-      formData.append('title', form.title);
-      formData.append('description', form.description);
-      formData.append('date_time', form.date_time);
-      formData.append('address', form.address);
-      formData.append('hours', parseFloat(form.hours));
-      formData.append('hourly_rate', parseFloat(form.hourlyRate));
-      formData.append('grand_total', parseFloat(totalPrice.value));
-      
-      // Add travel-related fields
-      if (form.includeTravel) {
-        formData.append('has_travel', true);
-        formData.append('travel_cost', parseFloat(travelCost.value));
-      } else {
-        formData.append('has_travel', false);
-        formData.append('travel_cost', 0);
-      }
-      
-      formData.append('status', form.status);
-      formData.append('user_id', form.user_id);
-      if (form.technician_id) {
-        formData.append('technician_id', form.technician_id);
-      }
-      formData.append('hourly_rate', form.hourlyRate);
-      // Add optional fields if they exist
-      if (form.end_date) {
-        formData.append('end_date', form.end_date);
-      }
-      
-      // Add file attachments if any
-      if (form.file_attachments.length > 0) {
-        form.file_attachments.forEach((file, index) => {
-          // Fix: use file_attachments instead of attachments to match backend
-          formData.append(`file_attachments[${index}]`, file);
-        });
-      }
-
-      // Log the form data being sent
-      const formDataObj = {};
-      formData.forEach((value, key) => {
-        formDataObj[key] = value;
-      });
-      console.log('Submitting form data:', formDataObj);
-
-      // Submit the form
-      isSubmitting.value = true;
-      form.post('/work-orders', {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: (response) => {
-          console.log('Success response:', response);
-          showModal.value = false;
-          isSubmitting.value = false;
-          // Show personalized toast
-          const page = usePage();
-          const userName = page.props.value?.auth?.user?.name || '';
-          const firstName = userName.split(' ')[0] || 'User';
-          toastSuccess(`Work order created successfully! Welcome, ${firstName}!`);
-          resetForm();
-        },
-        onError: (errors) => {
-          console.error('Form submission errors:', {
-            errors,
-            formData: formDataObj,
-            validationState: validateCurrentStep()
-          });
-          
-          // Show more specific error messages
-          let errorMessage = 'An error occurred while creating the work order.\n\n';
-          if (typeof errors === 'string') {
-            errorMessage += errors;
-          } else if (errors.error) {
-            errorMessage += errors.error;
-          } else if (errors.message) {
-            errorMessage += errors.message;
-          } else {
-            // Create a formatted error message from all validation errors
-            for (const [field, messages] of Object.entries(errors)) {
-              // Check if messages is an array before calling join
-              if (Array.isArray(messages)) {
-                errorMessage += `${field}: ${messages.join(', ')}\n`;
-              } else {
-                // If not an array, convert to string directly
-                errorMessage += `${field}: ${messages}\n`;
-              }
-            }
-          }
-          
-          // Add response status if available
-          if (errors.response && errors.response.status) {
-            errorMessage += `\nResponse status: ${errors.response.status}`;
-            
-            // For 500 errors, add more info
-            if (errors.response.status === 500) {
-              errorMessage += "\n\nThis is a server error. Please check the server logs for more details.";
-              
-              // Try to extract more error information if available
-              if (errors.response.data && errors.response.data.debug) {
-                console.log('Server error debug info:', errors.response.data.debug);
-              }
-              
-              if (errors.response.data && errors.response.data.message) {
-                errorMessage += `\nError message: ${errors.response.data.message}`;
-              }
-            }
-          }
-          
-          // Replace alert(errorMessage.trim());
-          toastError(errorMessage.trim());
-          isSubmitting.value = false;
-        },
-        onFinish: () => {
-          isSubmitting.value = false;
-        }
-      });
-    } catch (error) {
-      console.error('Error in form submission:', error);
-      // Add more detailed debugging information
-      const page = usePage();
-      console.log('Page props available:', page?.props?.value ? 'Yes' : 'No');
-      console.log('Auth props available:', page?.props?.value?.auth ? 'Yes' : 'No');
-      
-      // Replace alert('An unexpected error occurred. Please try again. ' + error.message);
-      toastError('An unexpected error occurred. Please try again. ' + error.message);
-      isSubmitting.value = false;
-    }
-  } else {
-    console.warn('Form validation failed:', validateCurrentStep());
-  }
-};
-
-// Date picker methods
-const generateCalendar = () => {
-  const year = currentMonth.value.getFullYear();
-  const month = currentMonth.value.getMonth();
-  
-  // Get first day of the month
-  const firstDay = new Date(year, month, 1);
-  // Get last day of the month
-  const lastDay = new Date(year, month + 1, 0);
-  
-  // Start from the week that contains the first day
-  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday, 6 = Saturday
-  
-  // Create array with empty slots for days before the first of the month
-  const calendarArray = Array(startingDayOfWeek).fill(null);
-  
-  // Add all days of the month
-  for (let day = 1; day <= lastDay.getDate(); day++) {
-    calendarArray.push(new Date(year, month, day));
-  }
-  
-  calendarDays.value = calendarArray;
-};
-
-const nextMonth = () => {
-  currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1, 1);
-  generateCalendar();
-};
-
-const prevMonth = () => {
-  currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() - 1, 1);
-  generateCalendar();
-};
-
-const selectDate = (date) => {
-  selectedDate.value = date;
-};
-
-const isSameDate = (date1, date2) => {
-  if (!date1 || !date2) return false;
-  return date1.getFullYear() === date2.getFullYear() &&
-         date1.getMonth() === date2.getMonth() &&
-         date1.getDate() === date2.getDate();
-};
-
-// Add this method to fix the isToday error
-const checkIsToday = (date) => {
-  return isToday(date);
-};
-
-const quickSelectDate = (type) => {
-  const today = new Date();
-  switch (type) {
-    case 'today':
-      selectedDate.value = today;
-      break;
-    case 'tomorrow':
-      selectedDate.value = addDays(today, 1);
-      break;
-    case 'nextWeek':
-      selectedDate.value = addDays(today, 7);
-      break;
-  }
-  
-  // Update current month to show the selected date
-  currentMonth.value = new Date(selectedDate.value.getFullYear(), selectedDate.value.getMonth(), 1);
-  generateCalendar();
-};
-
-// Add getFileObjectURL method for file/image preview
-const getFileObjectURL = (file) => {
-  if (!file) return '';
-  if (file.previewUrl) return file.previewUrl;
-  // Create a new object URL and cache it on the file object
   try {
-    const url = URL.createObjectURL(file);
-    file.previewUrl = url;
-    return url;
-  } catch (error) {
-    console.error('Error creating object URL for file:', error);
-    return '';
-  }
-};
-
-const updateFormDateTime = () => {
-  // Skip if no valid selected date
-  if (!isValid(selectedDate.value)) return;
-  
-  // Convert hour to 24-hour format if needed
-  let hour = parseInt(selectedTime.value.hour);
-  if (selectedTime.value.period === 'PM' && hour < 12) {
-    hour += 12;
-  } else if (selectedTime.value.period === 'AM' && hour === 12) {
-    hour = 0;
-  }
-  
-  // Create new date with selected date and time
-  const dateWithTime = new Date(selectedDate.value);
-  dateWithTime.setHours(hour);
-  dateWithTime.setMinutes(parseInt(selectedTime.value.minute) || 0);
-  
-  // Update form.date_time with ISO string format
-  form.date_time = format(dateWithTime, "yyyy-MM-dd'T'HH:mm:ss");
-  
-  // Log to verify the date is being set correctly
-  console.log('Date updated:', form.date_time);
-};
-
-onMounted(() => {
-  console.log('Component mounted');
-  
-  // Set initial form.date_time based on selected date and time
-  const initialDate = new Date();
-  
-  // Convert hour to 24-hour format if needed
-  let hour = parseInt(selectedTime.value.hour);
-  if (selectedTime.value.period === 'PM' && hour < 12) {
-    hour += 12;
-  } else if (selectedTime.value.period === 'AM' && hour === 12) {
-    hour = 0;
-  }
-  
-  initialDate.setHours(hour);
-  initialDate.setMinutes(parseInt(selectedTime.value.minute));
-  
-  form.date_time = format(initialDate, "yyyy-MM-dd'T'HH:mm:ss");
-  
-  // Apply props if provided
-  if (props.customerName) {
-    location.value = props.customerName;
-  }
-  
-  if (props.customerId) {
-    form.customer_id = props.customerId;
-  }
-  
-  // Initialize calendar on next tick to ensure DOM is ready
-  nextTick(() => {
-    try {
-      generateCalendar();
-    } catch (error) {
-      console.error('Calendar generation error:', error);
-    }
-  });
-});
-
-// Watchers
-// Reset verification status when work order number changes
-watch(() => workOrderNumber.value, (newValue) => {
-  if (newValue.trim() !== '') {
-    // Only reset verified status if it was verified before and user is modifying it again
-    if (workOrderVerified.value) {
-      workOrderVerified.value = false;
-    }
-  } else {
-    // Reset both flags when field is emptied
-    workOrderVerified.value = false;
-    duplicateWorkOrderFound.value = false;
-  }
-});
-
-watch(currentStep, async (newStep) => {
-  // Scroll to top of form when step changes
-  await nextTick(() => {
-    const formElement = document.querySelector('.overflow-y-auto');
-    if (formElement) {
-      formElement.scrollTop = 0;
-    }
-  });
-  
-  // Regenerate calendar when entering Step 4
-  if (newStep === 4) {
-    await nextTick(() => {
-      generateCalendar();
+    const response = await axios.get('/api/work-orders/check-number', {
+      params: { number },
     });
-  }
-}, { flush: 'post' });
-
-watch([selectedDate, () => selectedTime.value.hour, () => selectedTime.value.minute, () => selectedTime.value.period], () => {
-  updateFormDateTime();
-});
-
-watch(() => form.customer_id, async (newCustomerId) => {
-  if (newCustomerId) {
-    try {
-      const response = await axios.get(`/customers/${newCustomerId}`);
-      if (response.data && response.data.pay_rate) {
-        // Update the hourly rate with the customer's pay rate
-        form.hourlyRate = parseFloat(response.data.pay_rate);
-      }
-    } catch (error) {
-      console.error('Error fetching customer data:', error);
-      // Keep the default rate if there's an error
-    }
-  }
-});
-
-// Watcher for showModal
-watch(showModal, (newValue) => {
-  console.log('Modal visibility changed:', newValue);
-  
-  if (newValue === true) {
-    try {
-      // If the modal is now open, initialize step 1 data
-      if (props.customerId) {
-        form.customer_id = props.customerId;
-      }
-      if (props.customerName) {
-        location.value = props.customerName;
-      }
-    } catch (error) {
-      console.error('Error in showModal watcher:', error);
-    }
-  } else {
-    // If modal is closed, perform cleanup to avoid memory leaks
-    try {
-      // Reset potentially problematic state
-      calendarDays.value = [];
-      
-      // Other cleanup as needed
-      // ...
-    } catch (error) {
-      console.error('Error during modal cleanup:', error);
-    }
-  }
-});
-
-// Helper function to get selected customer name
-const getSelectedCustomerName = () => {
-  if (!form.customer_id || !customersArray.value || !Array.isArray(customersArray.value)) {
-    return null;
-  }
-  const selectedCustomer = customersArray.value.find(c => c.id === form.customer_id);
-  return selectedCustomer ? selectedCustomer.business_name : null;
-};
-
-// Helper function to log selected customer details
-const logSelectedCustomer = () => {
-  if (form.customer_id) {
-    const selectedCustomer = customersArray.value.find(c => c.id == form.customer_id);
-    console.log('Selected customer:', selectedCustomer ? {
-      id: selectedCustomer.id,
-      business_name: selectedCustomer.business_name,
-      pay_rate: selectedCustomer.pay_rate
-    } : 'Not found in customersArray');
+    duplicateWorkOrderFound.value = !!response.data.exists;
+    workOrderVerified.value = !duplicateWorkOrderFound.value;
+  } catch (error) {
+    duplicateWorkOrderFound.value = false;
+    workOrderVerified.value = false;
+  } finally {
+    checkingWorkOrder.value = false;
   }
 };
 
-// Methods for API calls
+const debouncedCheckExistingWorkOrder = () => {
+  if (debounceTimer.value) clearTimeout(debounceTimer.value);
+  debounceTimer.value = setTimeout(() => {
+    checkExistingWorkOrder();
+  }, 500);
+};
+
+// Load customers function
 const loadCustomers = async () => {
-  console.log('AddWorkOrder: loadCustomers started');
   isLoadingCustomers.value = true;
   loadError.value = false;
-
   try {
-    // Direct API call to backend only
-    const response = await axios.get('/api/customers', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    });
-    
-    // Enhanced debugging - log response details
-    console.log('AddWorkOrder: API response received', {
-      status: response.status,
-      statusText: response.statusText,
-      dataType: typeof response.data,
-      isArray: Array.isArray(response.data),
-      isPaginated: response.data && typeof response.data === 'object' && Array.isArray(response.data.data),
-      recordCount: Array.isArray(response.data) ? response.data.length : 
-                  (response.data && Array.isArray(response.data.data) ? response.data.data.length : 0)
-    });
-
-    if (typeof response.data === 'string') {
-      if (response.data.trim().startsWith('<!DOCTYPE html') || response.data.trim().startsWith('<html')) {
-        throw new Error('Server returned HTML instead of JSON.');
-      }
-      try {
-        const parsed = JSON.parse(response.data);
-        if (Array.isArray(parsed)) {
-          customers.value = parsed;
-          customersArray.value = parsed;
-          loadError.value = false;
-          console.log(`AddWorkOrder: Loaded ${parsed.length} customers from parsed string data`);
-          return parsed;
-        } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
-          customers.value = parsed.data;
-          customersArray.value = parsed.data;
-          loadError.value = false;
-          console.log(`AddWorkOrder: Loaded ${parsed.data.length} customers from parsed object.data`);
-          return parsed.data;
-        } else {
-          throw new Error('Parsed string but result is not a valid array format');
-        }
-      } catch (parseError) {
-        throw new Error('Response is a string that could not be parsed as JSON');
-      }
-    }
-
-    if (response.data && Array.isArray(response.data)) {
-      customers.value = response.data;
-      customersArray.value = response.data;
-      loadError.value = false;
-      console.log(`AddWorkOrder: Loaded ${response.data.length} customers as array`);
-      // Debug log first few items to help with diagnostics
-      if (response.data.length > 0) {
-        console.log('AddWorkOrder: First customer sample:', response.data[0]);
-      }
-      return response.data;
-    } else if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
-      customers.value = response.data.data;
-      customersArray.value = response.data.data;
-      loadError.value = false;
-      console.log(`AddWorkOrder: Loaded ${response.data.data.length} customers from object.data`);
-      // Debug log first few items to help with diagnostics
-      if (response.data.data.length > 0) {
-        console.log('AddWorkOrder: First customer sample:', response.data.data[0]);
-      }
-      return response.data.data;
-    } else {
-      throw new Error('Invalid response format: Expected array but got ' + typeof response.data);
-    }
+    const response = await axios.get('/api/customers');
+    // Support both paginated and non-paginated responses
+    const customerData = Array.isArray(response.data.data)
+      ? response.data.data
+      : (Array.isArray(response.data) ? response.data : []);
+    customers.value = customerData;
+    customersArray.value = customerData;
+    console.log('Customers loaded:', customerData.length);
+    return customerData;
   } catch (error) {
-    console.error('AddWorkOrder: Failed to load customers:', error);
-    if (error.response) {
-      // Log detailed API error information
-      console.error('AddWorkOrder: API error details:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-    }
-    
+    console.error('Error loading customers:', error);
+    loadError.value = true;
     customers.value = [];
     customersArray.value = [];
-    loadError.value = true;
-    // If customer ID is set from props, create a minimal customer array with just that customer
-    if (props.customerId && props.customerName) {
-      const singleCustomer = {
-        id: props.customerId,
-        business_name: props.customerName
-      };
-      customersArray.value = [singleCustomer];
-      console.log('AddWorkOrder: Using single customer from props:', singleCustomer);
-    }
     return [];
   } finally {
-    console.log(`AddWorkOrder: Customer loading complete. ${customersArray.value.length} customers available.`);
     isLoadingCustomers.value = false;
   }
 };
 
+onMounted(() => {
+  loadCustomers();
+  loadTechnicians();
+});
+
+// Load technicians function
 const loadTechnicians = async () => {
-  console.log('AddWorkOrder: loadTechnicians started');
   isLoadingTechnicians.value = true;
   try {
-    const response = await axios.get('/api/technicians/active');
-    console.log('AddWorkOrder: Technicians loaded:', response.data.length);
-    technicians.value = response.data;
-    return response.data;
+    const response = await axios.get('/api/technicians');
+    // Ensure we have valid data
+    const technicianData = Array.isArray(response.data) ? response.data : [];
+    technicians.value = technicianData;
+    console.log('Technicians loaded:', technicianData.length);
+    return technicianData;
   } catch (error) {
-    console.error('AddWorkOrder: Failed to load technicians:', error);
+    console.error('Error loading technicians:', error);
     technicians.value = [];
     return [];
   } finally {
@@ -1676,131 +1643,151 @@ const loadTechnicians = async () => {
   }
 };
 
-// --- Mapbox Location Preview Logic ---
+// Quick date selection
+const quickSelectDate = (type) => {
+  const today = new Date();
+  let targetDate;
 
-const mapboxAccessToken = 'pk.eyJ1Ijoibm10ZWNoIiwiYSI6ImNtYndzNG0yZTB2MTQycm9yMmxrZTJiOXYifQ.teJIWClLiWUJvvacQC3EFQ'; // Replace with your real token
-const mapboxCoords = ref({ lat: null, lon: null });
-const mapboxImageUrl = computed(() => {
-  const { lat, lon } = mapboxCoords.value;
-  if (!lat || !lon) return '';
-  return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${lon},${lat})/${lon},${lat},16/600x200?access_token=${mapboxAccessToken}`;
-});
-const mapboxMapsLink = computed(() => {
-  const { lat, lon } = mapboxCoords.value;
-  if (!lat || !lon) return '#';
-  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`;
-});
-const mapboxLoading = ref(false);
-const mapboxError = ref(null);
-async function geocodeAddress(address) {
-  if (!address) {
-    mapboxCoords.value = { lat: null, lon: null };
-    return;
+  switch (type) {
+    case 'today':
+      targetDate = today;
+      break;
+    case 'tomorrow':
+      targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + 1);
+      break;
+    case 'nextWeek':
+      targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + 7);
+      break;
+    default:
+      targetDate = today;
   }
-  mapboxLoading.value = true;
-  mapboxError.value = null;
-  try {
-    const resp = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxAccessToken}`
-    );
-    const data = await resp.json();
-    if (data.features && data.features.length > 0) {
-      const [lon, lat] = data.features[0].center;
-      mapboxCoords.value = { lat, lon };
-    } else {
-      mapboxCoords.value = { lat: null, lon: null };
-      mapboxError.value = 'No location found.';
-    }
-  } catch (e) {
-    mapboxCoords.value = { lat: null, lon: null };
-    mapboxError.value = 'Error fetching map location.';
-  } finally {
-    mapboxLoading.value = false;
-  }
-}
-watch(() => form.address, (newAddress) => {
-  geocodeAddress(newAddress);
-}, { immediate: true });
 
-const getSelectedTechnicianName = () => {
-  if (!form.technician_id) return '';
-  const tech = technicians.value.find(t => String(t.id) === String(form.technician_id));
-  return tech ? tech.name : '';
+  form.date_time = targetDate.toISOString();
 };
 
-// Keep hourly_rate in sync with hourlyRate
-watch(() => form.hourlyRate, (val) => {
-  form.hourly_rate = val;
-});
-
-// Fetch customer hourly rate on initial mount if customer is pre-selected
-onMounted(() => {
-  console.log('Component mounted');
-  
-  // Set initial form.date_time based on selected date and time
-  const initialDate = new Date();
-  
-  // Convert hour to 24-hour format if needed
-  let hour = parseInt(selectedTime.value.hour);
-  if (selectedTime.value.period === 'PM' && hour < 12) {
-    hour += 12;
-  } else if (selectedTime.value.period === 'AM' && hour === 12) {
-    hour = 0;
-  }
-  
-  initialDate.setHours(hour);
-  initialDate.setMinutes(parseInt(selectedTime.value.minute));
-  
-  form.date_time = format(initialDate, "yyyy-MM-dd'T'HH:mm:ss");
-  
-  // Apply props if provided
-  if (props.customerName) {
-    location.value = props.customerName;
-  }
-  
-  if (props.customerId) {
-    form.customer_id = props.customerId;
-  }
-  
-  // Initialize calendar on next tick to ensure DOM is ready
-  nextTick(() => {
-    try {
-      generateCalendar();
-    } catch (error) {
-      console.error('Calendar generation error:', error);
-    }
-  });
-  
-  // If a customer is pre-selected, fetch their hourly rate immediately
-  if (form.customer_id) {
-    fetchCustomerHourlyRate(form.customer_id);
-  }
-});
-
-// Fetch customer hourly rate
-const fetchCustomerHourlyRate = async (customerId) => {
-  if (!customerId) return;
+// Other utility functions
+const handleDatePickerToggle = (value) => {
   try {
-    const response = await axios.get(`/customers/${customerId}`);
-    const payRate = response.data?.pay_rate;
-    if (payRate !== undefined && payRate !== null) {
-      form.hourlyRate = payRate;
-      form.hourly_rate = payRate;
+    isDatePickerOpen.value = value;
+    if (value) {
+      // Ensure calendar is generated when picker opens
+      //generateCalendarDays();
     }
   } catch (error) {
-    // Optionally handle error (e.g., show notification)
-    form.hourlyRate = '';
-    form.hourly_rate = '';
+    console.error('Error handling date picker toggle:', error);
+    isDatePickerOpen.value = false;
   }
 };
 
-// Watch for customer_id changes
-watch(() => form.customer_id, (newVal) => {
-  fetchCustomerHourlyRate(newVal);
-}, { immediate: true });
+const logSelectedCustomer = () => {
+  const customer = safeCustomersArray.value.find(c => c.id == form.customer_id);
+  console.log('Selected customer:', customer);
+};
+
+const handleFileUpload = (event) => {
+  const files = Array.from(event.target.files);
+  form.file_attachments = files;
+};
+
+const removeFile = (index) => {
+  form.file_attachments.splice(index, 1);
+};
+
+const getFileObjectURL = (file) => {
+  return URL.createObjectURL(file);
+};
+
+const submitForm = async () => {
+  if (!validateCurrentStep()) return;
+
+  isLoading.value = true;
+  try {
+    // Update the title before submitting
+    form.title = formattedTitle.value;
+
+    // Ensure grand_total is set
+    form.grand_total = totalPrice.value;
+
+    // Submit the form
+    await form.post('/work-orders', {
+      onSuccess: () => {
+        console.log('Work order created successfully');
+        handleHideModal();
+      },
+      onError: (errors) => {
+        console.error('Form submission errors:', errors);
+      }
+    });
+  } catch (error) {
+    console.error('Error submitting form:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Mapbox integration (placeholder functions)
+const geocodeAddress = async (address) => {
+  if (!address) return;
+
+  mapboxLoading.value = true;
+  mapboxError.value = null;
+
+  try {
+    // This would typically call a geocoding service
+    console.log('Geocoding address:', address);
+    // For now, just clear the loading state
+    mapboxLoading.value = false;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    mapboxError.value = 'Failed to geocode address';
+    mapboxLoading.value = false;
+  }
+};
 </script>
 
 <style scoped>
+.calendar-day-button {
+  font-size: 1rem;
+  min-height: 40px;
+}
+
+.calendar-day-button:hover {
+  background-color: rgba(55, 65, 81, 0.5);
+  /* bg-gray-700/50 */
+}
+
+.calendar-day-selected {
+  border: 2px solid #a3e635;
+  /* border-lime-400 */
+  background-color: rgba(63, 98, 18, 0.4);
+  /* bg-lime-900/40 */
+  color: #bef264;
+  /* text-lime-300 */
+}
+
+.calendar-day-today {
+  border: 1px solid #a3e635;
+  /* border-lime-400 */
+  background-color: rgba(63, 98, 18, 0.3);
+  /* bg-lime-800/30 */
+  color: #fff;
+}
+
+.date-picker-container {
+  background-color: #1f2937;
+  /* bg-gray-800 */
+  border-radius: 0.75rem;
+  /* rounded-xl */
+  padding: 1.5rem;
+  /* p-6 */
+  border: 2px solid rgba(0, 232, 77, 0.962);
+  /* border-lime-400/50 */
+}
+
+/* Existing styles... */
+
 .btn {
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
@@ -1824,7 +1811,7 @@ watch(() => form.customer_id, (newVal) => {
   top: 0;
   left: 0;
   width: 100%;
-  height: 85vh;
+  height: 95vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1844,7 +1831,7 @@ watch(() => form.customer_id, (newVal) => {
 }
 
 .shadow-lg {
-  box-shadow:  0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .mb-4 {
@@ -1928,7 +1915,8 @@ watch(() => form.customer_id, (newVal) => {
   display: flex;
   flex-direction: column;
   background: rgba(15, 23, 42, 0.85);
-   max-width: 90vw;
+  max-width: 1400px;
+  width: 98vw;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -1938,11 +1926,18 @@ watch(() => form.customer_id, (newVal) => {
 }
 
 .glossy-footer {
-  background: linear-gradient(to right, rgba(20, 30, 48, 0.9), rgba(30, 41, 59, 0.85));
-  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(to right, rgba(20, 30, 48, 0.95), rgba(30, 41, 59, 0.92));
+  box-shadow: 0 -4px 10px -1px rgba(0, 0, 0, 0.2), 0 -2px 6px -1px rgba(0, 0, 0, 0.12);
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-  z-index: 10;
+  z-index: 40;
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 16px;
+  margin-top: auto;
 }
 
 .glossy-section {
@@ -1967,8 +1962,11 @@ watch(() => form.customer_id, (newVal) => {
   scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
   scrollbar-width: thin;
   padding: 0.75rem;
-  max-height: 85vh; /* Allow more space in the modal */
+  max-height: 85vh;
+  /* Allow more space in the modal */
   scroll-behavior: smooth;
+  padding-bottom: 90px;
+  /* Extra padding to account for the footer */
 }
 
 /* Custom scrollbar */
@@ -2013,13 +2011,13 @@ progress::-moz-progress-bar {
   .glossy-section .flex {
     flex-direction: column;
   }
-  
+
   .glossy-card {
     height: auto;
     max-height: 95vh;
     width: 95%;
   }
-  
+
   /* Adjust padding for smaller screens */
   .px-6 {
     padding-left: 1rem;
@@ -2032,7 +2030,8 @@ progress::-moz-progress-bar {
   display: flex;
   flex-direction: column;
   background: rgba(15, 23, 42, 0.85);
-  max-width: 90vw;
+  max-width: 1400px;
+  width: 98vw;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -2042,11 +2041,18 @@ progress::-moz-progress-bar {
 }
 
 .glossy-footer {
-  background: linear-gradient(to right, rgba(20, 30, 48, 0.9), rgba(30, 41, 59, 0.85));
-  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(to right, rgba(20, 30, 48, 0.95), rgba(30, 41, 59, 0.92));
+  box-shadow: 0 -4px 10px -1px rgba(0, 0, 0, 0.2), 0 -2px 6px -1px rgba(0, 0, 0, 0.12);
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-  z-index: 10;
+  z-index: 40;
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 16px;
+  margin-top: auto;
 }
 
 /* Glass button styling */
@@ -2054,7 +2060,7 @@ progress::-moz-progress-bar {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,  255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   transition: all 0.2s ease;
@@ -2068,224 +2074,6 @@ progress::-moz-progress-bar {
   color: rgb(255, 255, 255);
 }
 
-.glass-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6);
-}
-
-.glass-button:active {
-  transform: translateY(0);
-  background: rgba(139, 92, 246, 0.4);
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  /* Dark mode glass button styles are now handled in the enhanced styling section */
-}
-
-/* Style the range slider */
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  background: linear-gradient(90deg, rgba(132, 204, 22, 0.2), rgba(132, 204, 22, 0.3));
-  border-radius: 3px;
-  outline: none;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  background: #84cc16;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.1);
-}
-
-.slider::-webkit-slider-thumb:hover {
-  background: #65a30d;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 6px rgba(132, 204, 22, 0.2);
-}
-
-.slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: #84cc16;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.1);
-  border: none;
-}
-
-.slider::-moz-range-thumb:hover {
-  background: #65a30d;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 6px rgba(132, 204, 22, 0.2);
-}
-
-.slider::-moz-range-track {
-  background: linear-gradient(90deg, rgba(132, 204, 22, 0.2), rgba(132, 204, 22, 0.3));
-  border-radius: 3px;
-  height: 6px;
-}
-
-/* Text size utility class */
-.text-2xs {
-  font-size: 0.65rem;
-  line-height: 0.9rem;
-}
-
-/* Purple slider styles */
-.slider-purple {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  background: linear-gradient(90deg, 
-    rgba(147, 51, 234, 0.2),
-    rgba(147, 51, 234, 0.2) 17%,  /* Start of standard range (80/hr) */
-    rgba(74, 222, 128, 0.4) 17%,  /* Green highlight for standard range */
-    rgba(74, 222, 128, 0.4) 45%,  /* End of standard range (120/hr) */
-    rgba(147, 51, 234, 0.2) 45%,
-    rgba(147, 51, 234, 0.2) 72%,  /* Start of emergency range (160/hr) */
-    rgba(245, 158, 11, 0.4) 72%,  /* Amber highlight for emergency range */
-    rgba(245, 158, 11, 0.4) 100%, /* End of emergency range (200/hr) */
-    rgba(147, 51, 234, 0.3));
-  border-radius: 3px;
-  outline: none;
-  z-index: 10;
-  position: relative;
-}
-
-.slider-purple::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  background: #9333ea;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1);
-}
-
-.slider-purple::-webkit-slider-thumb:hover {
-  background: #7e22ce;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 6px rgba(147, 51, 234, 0.2);
-}
-
-.slider-purple::-moz-range-thumb {
-  width: 18px;
-   height: 18px;
-  background: #9333ea;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow:  0 0 0 4px rgba(147, 51, 234, 0.1);
-  border: none;
-}
-
-.slider-purple::-moz-range-thumb:hover {
-  background: #7e22ce;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 6px rgba(147, 51, 234, 0.2);
-}
-
-.slider-purple::-moz-range-track {
-  background: linear-gradient(90deg, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.3));
-  border-radius: 3px;
-  height: 6px;
-}
-
-/* Add glossy effect to quick selection tiles */
-.glossy-content.p-4 {
-  transition: all 0.3s ease;
-  border: 1px solid rgba(132, 204, 22, 0.1);
-}
-
-.glossy-content.p-4:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border-color: rgba(132, 204, 22, 0.3);
-}
-
-
-.status-badge {
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  border: 1px solid rgba(255, 255, 255,  0.18);
-  transform: translateY(0);
-  transition: all 0.2s ease;
-}
-
-.status-badge:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.5);
-}
-
-.status-badge:active {
-  transform: translateY(0);
-}
-
-/* Loading spinner styles */
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-
-  100% { transform: rotate(360deg); }
-}
-
-/* Enhanced date picker styling */
-.calendar-picker {
-  background: rgba(31, 41, 55, 0.95);
-  border-radius: 0.5rem;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.calendar-day-button {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease;
-}
-
-.calendar-day-button:hover {
-  background-color: rgba(132, 204, 22, 0.2);
-}
-
-.calendar-day-selected {
-  background-color: rgba(132, 204, 22, 0.8) !important;
-  color: white !important;
-  font-weight: 600;
-}
-
-.calendar-day-today {
-  border: 1px solid rgba(132, 204, 22, 0.5);
-  font-weight: 500;
-  background-color: rgba(132, 204, 22, 0.1);
-}
-
-/* Form content scrolling improvements */
-.overflow-y-auto {
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(75, 85, 99, 0.5) rgba(31, 41, 55, 0.6);
-  scroll-behavior: smooth;
-}
-
-/* Footer button focus and active states */
 .glass-button:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6);
@@ -2315,7 +2103,7 @@ progress::-moz-progress-bar {
 }
 
 .steps .step:after,
-.steps .step > .step-icon {
+.steps .step>.step-icon {
   height: 1.5rem;
   width: 1.5rem;
   font-weight: bold;
@@ -2330,7 +2118,7 @@ progress::-moz-progress-bar {
 }
 
 .steps .step.step-lime-400:after,
-.steps .step.step-lime-400 > .step-icon {
+.steps .step.step-lime-400>.step-icon {
   background-color: #84cc16;
   border-color: #65a30d;
   color: #111827;
@@ -2338,7 +2126,7 @@ progress::-moz-progress-bar {
 }
 
 .steps .step.step-success:after,
-.steps .step.step-success > .step-icon {
+.steps .step.step-success>.step-icon {
   background-color: #4ade80;
   border-color: #22c55e;
   color: #111827;
@@ -2355,5 +2143,86 @@ progress::-moz-progress-bar {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* PDF Thumbnail styles */
+.pdf-thumbnail-wrapper {
+  width: 100%;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.pdf-thumbnail {
+  width: 100%;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-color: rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pdf-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-color: rgba(132, 204, 22, 0.5);
+}
+
+.pdf-thumbnail .thumbnail-canvas {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+}
+
+.pdf-thumbnail .pdf-icon {
+  width: 36px;
+  height: 36px;
+  color: #84cc16;
+  margin-bottom: 8px;
+}
+
+.pdf-thumbnail .filename {
+  font-size: 0.75rem;
+  color: white;
+  text-align: center;
+  padding: 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+  background-color: rgba(31, 41, 55, 0.8);
+  border-radius: 4px;
+  position: absolute;
+  bottom: 8px;
+}
+
+/* QR Code styling */
+.qr-code-container {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.qr-code-container:hover {
+  transform: scale(1.02);
+}
+
+/* Status badge in Step 10 */
+.summary-status-badge {
+  padding: 6px 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  font-size: 0.875rem;
 }
 </style>
