@@ -173,31 +173,47 @@
                       business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to
                       look
                       for a WalMart when driving. </p>
-                    <div class="flex flex-col md:flex-row md:gap-4">
-                      <div class="mb-4 p-2 w-full">
-                        <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order
-                          Number</label>
-                        <div class="relative">
-                          <input v-model="workOrderNumber" @input="debouncedCheckExistingWorkOrder" id="workOrderNumber"
-                            name="workOrderNumber" type="text"
-                            class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                            required autocomplete="off" placeholder="Enter unique work order number" />
-                          <span v-if="checkingWorkOrder"
-                            class="absolute right-2 top-2 text-xs text-gray-400">Checking...</span>
-                          <span v-else-if="duplicateWorkOrderFound"
-                            class="absolute right-2 top-2 text-xs text-red-400">Duplicate!</span>
-                          <span v-else-if="workOrderVerified && workOrderNumber"
-                            class="absolute right-2 top-2 text-xs text-green-400">Available</span>
-                        </div>
-                        <div v-if="duplicateWorkOrderFound" class="text-xs text-red-400 mt-1">This work order number is
-                          already in use. Please enter a unique number.</div>
+                      <div class="flex flex-col md:flex-row md:gap-4">
+                    <div class="mb-4 p-2 w-full">
+                      <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
+                      <div class="relative">
+                        <input
+                          v-model="workOrderNumber"
+                          @input="debouncedCheckExistingWorkOrder"
+                          id="workOrderNumber"
+                          name="workOrderNumber"
+                          type="text"
+                          class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg pr-12"
+                          required
+                          autocomplete="off"
+                          placeholder="Enter unique work order number"
+                        />
+                        <span v-if="checkingWorkOrder" class="absolute right-2 top-2 text-xs text-gray-400">Checking...</span>
+                        <span v-else-if="duplicateWorkOrderFound" class="absolute right-2 top-2 text-xs text-red-400">Duplicate!</span>
+                        <!-- Only show 'Available' if checkmark is not shown -->
+                        <span v-else-if="workOrderVerified && workOrderNumber && !duplicateWorkOrderFound" class="absolute right-8 top-2 text-xs text-green-400">Available</span>
+                        <!-- Green checkmark if validated and not duplicate, not checking, and not duplicate -->
+                        <span v-if="workOrderVerified && !duplicateWorkOrderFound && !checkingWorkOrder && workOrderNumber" class="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
                       </div>
+                      <div v-if="duplicateWorkOrderFound" class="text-xs text-red-400 mt-1">This work order number is already in use. Please enter a unique number.</div>
+                    </div>
                       <div class="p-2 w-full">
                         <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
                         <select v-model="workType" id="workType" name="workType"
                           class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
                           required>
                           <option value="" disabled>Select work type</option>
+                          <option value="CCTV">CCTV</option>
+                          <option value="ALARM">ALARM</option>
+                          <option value="CABLING">CABLING</option>
+                          <option value="POS">POS</option>
+                          <option value="INTERCOM">INTERCOM</option>
+                          <option value="FIRE">FIRE</option>
+                          <option value="ACCESS-CONTROL">ACCESS-CONTROL</option>
                           <option value="TS">TS (Troubleshooting)</option>
                           <option value="PM">PM (Preventive Maintenance)</option>
                           <option value="INSTALL">INSTALL</option>
@@ -668,7 +684,7 @@
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                              </svg>
+                            </svg>
                             </div>
                           </div>
                           <!-- File Info Overlay -->
@@ -735,16 +751,13 @@
                     <!-- Right side: QR Code -->
                     <div class="flex flex-col items-center">
                       <div class="bg-white p-4 rounded-lg mt-4 md:mt-0">
-                        <QRCode
-                          :value="'TekDash:' + formattedTitle + (form.address ? '|' + form.address : '') + (formattedDateTime ? '|' + formattedDateTime : '')"
-                          :size="150" level="M" render-as="svg" class="mx-auto" />
+                        <QRCodeVue :value="qrCodeValue" :size="130" level="M" render-as="svg" class="mx-auto" />
                       </div>
                       <div class="text-xs text-gray-400 mt-1 text-center">
                         Scan to access work order details
                       </div>
                     </div>
                   </div>
-
                   <p class="text-xl text-white mb-6">Please review all the information for this work order before
                     submission.</p>
 
@@ -754,16 +767,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p class="text-gray-400 text-sm">Customer:</p>
-                        <p class="text-white text-lg font-semibold">
-                          {{safeCustomersArray.find(c => c.id == form.customer_id)?.business_name ||
-                          safeCustomersArray.find(c => c.id == form.customer_id)?.name || 'None selected'}}
-                        </p>
+                        <p class="text-white text-lg font-semibold">{{ selectedCustomerName }}</p>
                       </div>
                       <div>
                         <p class="text-gray-400 text-sm">Technician:</p>
-                        <p class="text-white text-lg font-semibold">
-                          {{safeTechniciansArray.find(t => t.id == form.technician_id)?.name || 'None selected'}}
-                        </p>
+                        <p class="text-white text-lg font-semibold">{{ selectedTechnicianName }}</p>
                       </div>
                     </div>
                   </div>
@@ -926,7 +934,7 @@
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
+                            </svg>
                               <div class="filename">{{ file.name.length > 20 ? file.name.substring(0, 17) + '...' :
                                 file.name }}</div>
                               <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
@@ -954,7 +962,7 @@
                         <path fill-rule="evenodd"
                           d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                           clip-rule="evenodd" />
-                      </svg>
+                    </svg>
                       <p class="text-green-300">
                         Please verify that all information is correct before submitting. You can go back to any step to
                         make changes if
@@ -999,11 +1007,16 @@ import axios from 'axios';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
 import PdfThumbnail from '@/Components/PdfThumbnail.vue';
 import PdfViewer from '@/Components/PdfViewer.vue';
-import QRCode from 'qrcode.vue';
+import QRCodeVue from 'qrcode.vue'; // For Vue component
+import QRCode from 'qrcode'; // For JavaScript library
 import { Popover, PopoverTrigger, PopoverContent } from '@/Components/ui/popover';
 import { format, isValid } from 'date-fns';
 import Flatpickr from 'vue-flatpickr-component';
 import 'flatpickr/dist/flatpickr.css';
+
+// Set up Axios to include CSRF token
+axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+axios.defaults.withCredentials = true;
 
 // Define props for the component
 const props = defineProps({
@@ -1073,7 +1086,21 @@ const debounceTimer = ref(null);
 const technicians = ref([]);
 const showPdfViewer = ref(false);
 const selectedPdf = ref(null);
-const qrCodeValue = ref('');
+const qrCodeValue = computed(() => {
+  return 'TekDash:' + (formattedTitle.value || '') + (form.address ? '|' + form.address : '') + (formattedDateTime.value ? '|' + formattedDateTime.value : '');
+});
+const selectedTechnicianName = computed(() => {
+  const tech = safeTechniciansArray.value.find(t => t.id == form.technician_id);
+  if (!tech) return 'None selected';
+  if (tech.first_name && tech.last_name) {
+    return tech.first_name + ' ' + tech.last_name + (tech.employee_id ? ' (' + tech.employee_id + ')' : '');
+  }
+  return tech.name || 'Technician #' + tech.id;
+});
+const selectedCustomerName = computed(() => {
+  const customer = safeCustomersArray.value.find(c => c.id == form.customer_id);
+  return customer ? (customer.business_name || customer.name || `Customer #${customer.id}`) : 'None selected';
+});
 const rateValues = ref([55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200]);
 
 // Loading states for UI
@@ -1109,8 +1136,14 @@ const form = useForm({
 // Mapbox loading and error state
 const mapboxLoading = ref(false);
 const mapboxError = ref(null);
-const mapboxImageUrl = ref('');
-const mapboxMapsLink = ref('');
+
+// Mapbox integration
+const mapboxAccessToken = 'pk.eyJ1Ijoibm10ZWNoIiwiYSI6ImNtYndzNG0yZTB2MTQycm9yMmxrZTJiOXYifQ.teJIWClLiWUJvvacQC3EFQ'; // TODO: Replace with your real Mapbox public token
+const mapboxCoords = ref({ lat: null, lon: null });
+
+watch(() => form.address, (newAddress) => {
+  geocodeAddress(newAddress);
+}, { immediate: false });
 
 // Computed properties
 const formattedTitle = computed(() => {
@@ -1133,6 +1166,24 @@ const totalPrice = computed(() => {
   const total = (parseFloat(laborCost.value) + parseFloat(travelCost.value)).toFixed(2);
   form.grand_total = total; // Ensure form field is updated
   return total;
+});
+
+const mapboxImageUrl = computed(() => {
+  if (!mapboxCoords.value.lat || !mapboxCoords.value.lon) return null;
+  
+  const lat = mapboxCoords.value.lat;
+  const lon = mapboxCoords.value.lon;
+  const zoom = 14;
+  const width = 600;
+  const height = 300;
+  const marker = `pin-l-circle+ff4400(${lon},${lat})`;
+  
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${marker}/${lon},${lat},${zoom},0/${width}x${height}@2x?access_token=${mapboxAccessToken}`;
+});
+
+const mapboxMapsLink = computed(() => {
+  if (!mapboxCoords.value.lat || !mapboxCoords.value.lon) return '#';
+  return `https://www.google.com/maps/search/?api=1&query=${mapboxCoords.value.lat},${mapboxCoords.value.lon}`;
 });
 
 const currentMonthName = computed(() => {
@@ -1175,7 +1226,7 @@ const safeTechniciansArray = computed(() => {
 // Methods
 const resetForm = () => {
   console.log('Resetting form');
-  currentStep.value = 1;
+  currentStep.value =  1;
   isDatePickerOpen.value = false;
   // Reset form fields
   form.customer_id = props.customerId || '';
@@ -1221,7 +1272,6 @@ const validateCurrentStep = () => {
     case 4:
       return !!form.date_time;
     case 5:
-      return !!form.address && form.address.trim() !== '';
     case 6:
       return form.hours >= 2 && form.hours <= 16;
     case 7:
@@ -1277,33 +1327,35 @@ const prevStep = async () => {
 };
 
 // Print Work Order function for PDF generation
-const printWorkOrder = () => {
+const printWorkOrder = async () => {
   try {
-    // Create a printable version that only includes the Step 10 content
+    // First, generate QR code as a data URL
+    const qrValue = qrCodeValue.value;
+    let qrImageUrl = '';
+    
+    try {
+      // Generate QR code directly to data URL using the QRCode library
+      qrImageUrl = await QRCode.toDataURL(qrValue, { 
+        width: 180,
+        margin: 1,
+        errorCorrectionLevel: 'M'
+      });
+      console.log('QR code generated successfully:', qrImageUrl.substring(0, 30) + '...');
+    } catch (e) {
+      console.error('Error creating QR code data URL:', e);
+      qrImageUrl = ''; // Empty if failed
+    }
+    
+    // Open print window
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Please allow pop-up windows to print the work order');
       return;
     }
-
-    // Get the customer and technician info safely
-    const customerName = () => {
-      try {
-        const customer = safeCustomersArray.value.find(c => c.id == form.customer_id);
-        return customer ? (customer.business_name || customer.name) : 'None selected';
-      } catch (e) {
-        return 'None selected';
-      }
-    };
-
-    const technicianName = () => {
-      try {
-        const tech = safeTechniciansArray.value.find(t => t.id == form.technician_id);
-        return tech ? tech.name : 'None selected';
-      } catch (e) {
-        return 'None selected';
-      }
-    };
+    
+    // Use computed properties directly
+    const customerName = selectedCustomerName.value;
+    const technicianName = selectedTechnicianName.value;
 
     // Safely escape HTML content for description
     const escapeHtml = (unsafe) => {
@@ -1315,9 +1367,7 @@ const printWorkOrder = () => {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     };
-
-    // Generate the QR code value
-    const qrCodeValue = `TekDash:${formattedTitle.value || ''}${form.address ? '|' + form.address : ''}${formattedDateTime.value ? '|' + formattedDateTime.value : ''}`;
+      
 
     // Create the print content with styling
     const printContent = `
@@ -1386,8 +1436,23 @@ const printWorkOrder = () => {
           .purple-section {
             border-left-color: #8b5cf6;
           }
+          .company-logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4ade80;
+            margin-top: 5px;
+          }
           .qr-container {
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 200px; /* Ensure there's enough space for the QR code */
           }
           @media print {
             body {
@@ -1405,28 +1470,39 @@ const printWorkOrder = () => {
             }
           }
         </style>
-        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"><\/script>
+        <!-- QR code is pre-generated, no script needed -->
       </head>
       <body>
         <div class="header">
-          <div>
-            <div class="title">Work Order: ${escapeHtml(formattedTitle.value) || 'No Title'}</div>
-            <div style="margin-top: 5px;">
-              <span style="font-weight: bold;">Status:</span> 
-              <span class="status" style="background-color: ${form.status === 'Scheduled' ? '#2563eb' :
-        form.status === 'In Progress' ? '#eab308' :
-          form.status === 'Part Needed' ? '#ea580c' :
-            form.status === 'Complete' ? '#16a34a' :
-              form.status === 'Cancelled' ? '#dc2626' : '#6b7280'
-      };">${escapeHtml(form.status) || 'Not set'}</span>
+          <div class="company-logo-container">
+            <!-- Company Logo -->
+            <div style="display: flex; align-items: center;">
+              <div style="width: 45px; height: 45px; border-radius: 8px; background-color: #4ade80; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                <span style="color: white; font-weight: bold; font-size: 22px;">NT</span>
+              </div>
+              <div class="company-name">NM Technology</div>
             </div>
-          </div>
-          <div class="qr-container">
-            <div id="qrcode-placeholder"></div>
-            <div style="margin-top: 5px; font-size: 12px; text-align: center;">
-              Scan for Work Order details
+            <div style="margin-top: 10px;">
+              <div class="title">Work Order: ${escapeHtml(formattedTitle.value) || 'No Title'}</div>
+              <div style="margin-top: 5px;">
+                <span style="font-weight: bold;">Status:</span> 
+                <span class="status" style="background-color: ${form.status === 'Scheduled' ? '#2563eb' :
+          form.status === 'In Progress' ? '#eab308' :
+            form.status === 'Part Needed' ? '#ea580c' :
+              form.status === 'Complete' ? '#16a34a' :
+                form.status === 'Cancelled' ? '#dc2626' : '#6b7280'
+            };">${escapeHtml(form.status) || 'Not set'}</span>
+              </div>
             </div>
-          </div>
+          </div>            <div class="qr-container">
+              ${qrImageUrl ? 
+                `<img src="${qrImageUrl}" width="180" height="180" alt="QR Code" style="display: block; margin-left: auto;">` :
+                `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+              }
+              <div style="margin-top: 5px; font-size: 12px; text-align: center;">
+                Scan for Work Order details
+              </div>
+            </div>
         </div>
 
         <!-- Customer & Technician Section -->
@@ -1435,11 +1511,11 @@ const printWorkOrder = () => {
           <div class="grid">
             <div>
               <div class="label">Customer:</div>
-              <div class="value">${escapeHtml(customerName())}</div>
+              <div class="value">${escapeHtml(customerName)}</div>
             </div>
             <div>
               <div class="label">Technician:</div>
-              <div class="value">${escapeHtml(technicianName())}</div>
+              <div class="value">${escapeHtml(technicianName)}</div>
             </div>
           </div>
         </div>
@@ -1525,30 +1601,6 @@ const printWorkOrder = () => {
             Close
           </button>
         </div>
-
-        <script>
-          // Generate QR code
-          window.addEventListener('load', function() {
-            try {
-              if (typeof QRCode !== 'undefined') {
-                QRCode.toCanvas(
-                  document.getElementById('qrcode-placeholder'), 
-                  "${escapeHtml(qrCodeValue)}",
-                  { width: 100, margin: 1 },
-                  function(error) {
-                    if (error) console.error('QR code error:', error);
-                  }
-                );
-              } else {
-                console.error('QRCode library not loaded');
-                document.getElementById('qrcode-placeholder').innerHTML = 
-                  '<div style="padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 12px; color: #6b7280;">QR Code<br>Not Available</div>';
-              }
-            } catch (e) {
-              console.error('Error generating QR code:', e);
-            }
-          });
-        <\/script>
       </body>
       </html>
     `;
@@ -1560,6 +1612,46 @@ const printWorkOrder = () => {
   } catch (error) {
     console.error('Error in printWorkOrder:', error);
     alert('There was an error generating the printable work order. Please try again.');
+  }
+};
+
+// Geocoding function for address to coordinates
+const geocodeAddress = async (address) => {
+  if (!address || address.trim() === '') {
+    mapboxCoords.value = { lat: null, lon: null };
+    mapboxError.value = null;
+    return;
+  }
+
+  try {
+    mapboxLoading.value = true;
+    mapboxError.value = null;
+    
+    const encodedAddress = encodeURIComponent(address);
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxAccessToken}&limit=1`;
+    
+    // Create a separate axios instance for MapBox API calls
+    const mapboxAxios = axios.create({
+      withCredentials: false // Don't send credentials with MapBox requests to avoid CORS issues
+    });
+    
+    const response = await mapboxAxios.get(url);
+    
+    if (response.data.features && response.data.features.length > 0) {
+      const feature = response.data.features[0];
+      const [lon, lat] = feature.center;
+      
+      mapboxCoords.value = { lat, lon };
+    } else {
+      mapboxError.value = 'Address not found. Please try a more specific address.';
+      mapboxCoords.value = { lat: null, lon: null };
+    }
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    mapboxError.value = 'Error finding address. Please try again.';
+    mapboxCoords.value = { lat: null, lon: null };
+  } finally {
+    mapboxLoading.value = false;
   }
 };
 
@@ -1724,25 +1816,6 @@ const submitForm = async () => {
     console.error('Error submitting form:', error);
   } finally {
     isLoading.value = false;
-  }
-};
-
-// Mapbox integration (placeholder functions)
-const geocodeAddress = async (address) => {
-  if (!address) return;
-
-  mapboxLoading.value = true;
-  mapboxError.value = null;
-
-  try {
-    // This would typically call a geocoding service
-    console.log('Geocoding address:', address);
-    // For now, just clear the loading state
-    mapboxLoading.value = false;
-  } catch (error) {
-    console.error('Geocoding error:', error);
-    mapboxError.value = 'Failed to geocode address';
-    mapboxLoading.value = false;
   }
 };
 </script>
