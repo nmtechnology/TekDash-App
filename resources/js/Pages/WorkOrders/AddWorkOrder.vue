@@ -736,7 +736,7 @@
                       </div>
 
                       <!-- Print Button -->
-                      <button @click="printWorkOrder"
+                      <button @click="showPrintOptionsModal = true"
                         class="glossy-content flex items-center gap-2 p-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
                         type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
@@ -997,6 +997,132 @@
         </div>
       </div>
     </Transition>
+    
+    <!-- Print Options Modal -->
+    <Transition enter-active-class="ease-out duration-300" enter-from-class="opacity-0" enter-to-class="opacity-100"
+      leave-active-class="ease-in duration-200" leave-from-class="opacity-100" leave-to-class="opacity-0">
+      <div v-show="showPrintOptionsModal"
+        class="fixed inset-0 z-[1100] overflow-y-auto flex items-center justify-center">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-70 transition-opacity" @click="showPrintOptionsModal = false"></div>
+
+        <!-- Modal container -->
+        <div class="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-auto p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-lime-400">Work Order Output</h3>
+            <button @click="showPrintOptionsModal = false" class="text-red-400 hover:text-red-500">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <p class="text-gray-300 mb-6">Choose a format and action for your work order:</p>
+          
+          <div class="space-y-4">
+            <!-- Cost Breakdown Option -->
+            <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
+              <div class="p-4 flex items-center">
+                <div class="bg-purple-600 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 010-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="text-left">
+                  <h4 class="text-white font-bold">Cost Breakdown Version</h4>
+                  <p class="text-sm text-gray-400">Includes all cost details and pricing</p>
+                </div>
+              </div>
+              
+              <div class="flex border-t border-gray-800">
+                <button @click="printWorkOrder('cost'); showPrintOptionsModal = false;"
+                  class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>Print</span>
+                </button>
+                <div class="border-r border-gray-800"></div>
+                <button @click="generatePDF('cost'); showPrintOptionsModal = false;"
+                  class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download PDF</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Signature Option -->
+            <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
+              <div class="p-4 flex items-center">
+                <div class="bg-blue-600 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                    <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="text-left">
+                  <h4 class="text-white font-bold">Signature Version</h4>
+                  <p class="text-sm text-gray-400">Includes notes area and signature line</p>
+                </div>
+              </div>
+              
+              <div class="flex border-t border-gray-800">
+                <button @click="printWorkOrder('signature'); showPrintOptionsModal = false;"
+                  class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17  17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>Print</span>
+              </button>
+                <div class="border-r border-gray-800"></div>
+                <button @click="generatePDF('signature'); showPrintOptionsModal = false;"
+                  class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download PDF</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Label Tag Option -->
+            <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
+              <div class="p-4 flex items-center">
+                <div class="bg-green-600 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="text-left">
+                  <h4 class="text-white font-bold">Parts Label</h4>
+                  <p class="text-sm text-gray-400">Compact QR code label for tagging materials</p>
+                </div>
+              </div>
+              
+              <div class="flex border-t border-gray-800">
+                <button @click="printWorkOrder('label'); showPrintOptionsModal = false;"
+                  class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>Print</span>
+                </button>
+                <div class="border-r border-gray-800"></div>
+                <button @click="generatePDF('label'); showPrintOptionsModal = false;"
+                  class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -1009,6 +1135,8 @@ import PdfThumbnail from '@/Components/PdfThumbnail.vue';
 import PdfViewer from '@/Components/PdfViewer.vue';
 import QRCodeVue from 'qrcode.vue'; // For Vue component
 import QRCode from 'qrcode'; // For JavaScript library
+import ApplicationMark from '@/Components/ApplicationMark.vue';
+import html2pdf from 'html2pdf.js';
 import { Popover, PopoverTrigger, PopoverContent } from '@/Components/ui/popover';
 import { format, isValid } from 'date-fns';
 import Flatpickr from 'vue-flatpickr-component';
@@ -1086,6 +1214,7 @@ const debounceTimer = ref(null);
 const technicians = ref([]);
 const showPdfViewer = ref(false);
 const selectedPdf = ref(null);
+const showPrintOptionsModal = ref(false); // New variable for print options modal
 const qrCodeValue = computed(() => {
   return 'TekDash:' + (formattedTitle.value || '') + (form.address ? '|' + form.address : '') + (formattedDateTime.value ? '|' + formattedDateTime.value : '');
 });
@@ -1327,7 +1456,7 @@ const prevStep = async () => {
 };
 
 // Print Work Order function for PDF generation
-const printWorkOrder = async () => {
+const printWorkOrder = async (mode = 'cost') => {
   try {
     // First, generate QR code as a data URL
     const qrValue = qrCodeValue.value;
@@ -1336,7 +1465,6 @@ const printWorkOrder = async () => {
     try {
       // Generate QR code directly to data URL using the QRCode library
       qrImageUrl = await QRCode.toDataURL(qrValue, { 
-        width: 180,
         margin: 1,
         errorCorrectionLevel: 'M'
       });
@@ -1367,7 +1495,6 @@ const printWorkOrder = async () => {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     };
-      
 
     // Create the print content with styling
     const printContent = `
@@ -1376,7 +1503,11 @@ const printWorkOrder = async () => {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${escapeHtml(formattedTitle.value) || 'Work Order'}</title>
+        <title>${escapeHtml(formattedTitle.value) || 'Work Order'} - ${
+          mode === 'cost' ? 'Cost Breakdown' : 
+          mode === 'signature' ? 'Signature Version' : 
+          'Parts Label'
+        }</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -1398,6 +1529,8 @@ const printWorkOrder = async () => {
             color: #1f2937;
           }
           .status {
+            display: inline-block;
+            background-color: #4ade80;
             padding: 5px 10px;
             border-radius: 4px;
             font-weight: bold;
@@ -1409,6 +1542,7 @@ const printWorkOrder = async () => {
             background-color: #f9fafb;
             border-radius: 8px;
             border-left: 4px solid #4ade80;
+            page-break-inside: avoid;
           }
           .section-title {
             font-size: 18px;
@@ -1439,20 +1573,64 @@ const printWorkOrder = async () => {
           .company-logo-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            justify-content: center;
           }
           .company-name {
-            font-size: 22px;
-            font-weight: bold;
-            color: #4ade80;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e3a8a;
             margin-top: 5px;
           }
           .qr-container {
             text-align: right;
+          }
+          .notes-box {
+            min-height: 150px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            padding: 10px;
+          }
+          .signature-line {
+            display: flex;
+            justify-content: space-between;
+          }
+          .signature-field {
+            flex: 1;
+            max-width: 45%;
+            text-align: center;
+          }
+          .signature-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+          }
+          .label-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            min-width: 200px; /* Ensure there's enough space for the QR code */
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+          }
+          .label-qrcode {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            display: block;
+          }
+          .label-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .label-info {
+            font-size: 14px;
+            text-align: center;
+            color: #6b7280;
           }
           @media print {
             body {
@@ -1473,38 +1651,46 @@ const printWorkOrder = async () => {
         <!-- QR code is pre-generated, no script needed -->
       </head>
       <body>
+        ${mode === 'label' ? `
+        <!-- Label Tag Version - Simple QR code and title only -->
+        <div class="label-container">
+          ${qrImageUrl ? 
+            `<img src="${qrImageUrl}" class="label-qrcode" alt="QR Code">` :
+            `<div style="width: 200px; height: 200px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+          }
+          <div class="label-title">${escapeHtml(formattedTitle.value) || 'Work Order'}</div>
+          <div class="label-info">NM Technology</div>
+          <div class="label-info">${escapeHtml(form.status) || 'Not set'}</div>
+          <div class="label-info">${escapeHtml(formattedDateTime.value) ? 'Date: ' + escapeHtml(formattedDateTime.value) : ''}</div>
+        </div>
+        ` : `
+        <!-- Standard header for full work order versions -->
         <div class="header">
           <div class="company-logo-container">
             <!-- Company Logo -->
             <div style="display: flex; align-items: center;">
-              <div style="width: 45px; height: 45px; border-radius: 8px; background-color: #4ade80; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
-                <span style="color: white; font-weight: bold; font-size: 22px;">NT</span>
-              </div>
-              <div class="company-name">NM Technology</div>
+              <img src="https://www.nmtechnology.us/build/assets/nm-logo-rmbg-f8bd446d.webp" alt="NM Technology Logo" style="width: 65px; height: 35px; margin-right: 10px;">
+              <div class="company-name">Technology</div>
             </div>
             <div style="margin-top: 10px;">
               <div class="title">Work Order: ${escapeHtml(formattedTitle.value) || 'No Title'}</div>
-              <div style="margin-top: 5px;">
-                <span style="font-weight: bold;">Status:</span> 
-                <span class="status" style="background-color: ${form.status === 'Scheduled' ? '#2563eb' :
-          form.status === 'In Progress' ? '#eab308' :
-            form.status === 'Part Needed' ? '#ea580c' :
-              form.status === 'Complete' ? '#16a34a' :
-                form.status === 'Cancelled' ? '#dc2626' : '#6b7280'
-            };">${escapeHtml(form.status) || 'Not set'}</span>
-              </div>
+              <div style="font-size: 14px; color: #6b7280;">${escapeHtml(formattedDateTime.value) || 'Not scheduled'}</div>
             </div>
-          </div>            <div class="qr-container">
-              ${qrImageUrl ? 
-                `<img src="${qrImageUrl}" width="180" height="180" alt="QR Code" style="display: block; margin-left: auto;">` :
-                `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
-              }
+          </div>
+          
+          <div class="qr-container">
+            ${qrImageUrl ? 
+              `<img src="${qrImageUrl}" width="150" height="150" alt="QR Code">` : 
+              `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+            }
               <div style="margin-top: 5px; font-size: 12px; text-align: center;">
                 Scan for Work Order details
               </div>
             </div>
         </div>
+        `}
 
+        ${mode !== 'label' ? `
         <!-- Customer & Technician Section -->
         <div class="section">
           <div class="section-title">Customer & Technician</div>
@@ -1543,7 +1729,9 @@ const printWorkOrder = async () => {
             </div>
           </div>
         </div>
+        ` : ''}
 
+        ${mode === 'cost' ? `
         <!-- Cost Breakdown Section -->
         <div class="section purple-section">
           <div class="section-title" style="color: #8b5cf6;">Cost Breakdown</div>
@@ -1567,15 +1755,15 @@ const printWorkOrder = async () => {
               ${form.hours || 0} hours × $${form.hourlyRate || 0}/hour
             </div>
           </div>
-          
+
           ${form.includeTravel ? `
           <div style="margin-top: 10px; padding: 10px; background-color: #f3f4f6; border-radius: 4px;">
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6b7280;">Travel Expenses:</span>
+              <span style="color: #6b7280;">Travel Cost:</span>
               <span style="font-weight: bold;">$${travelCost.value || 0}</span>
             </div>
             <div class="text-xs text-gray-500 mt-1">
-              ${form.travelMiles || 0} miles × $${(form.mileageRate || 0).toFixed(2)}/mile × 2 (round-trip)
+              ${form.travelMiles || 0} miles × $${form.mileageRate || 0}/mile × 2 (round-trip)
             </div>
           </div>
           ` : ''}
@@ -1587,35 +1775,82 @@ const printWorkOrder = async () => {
             </div>
           </div>
         </div>
-
-        <!-- Print Buttons -->
-        <div class="no-print" style="margin-top: 30px; text-align: center;">
-          <button 
-            onclick="window.print(); return false;" 
-            style="padding: 10px 20px; background-color: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
-            Print Work Order
-          </button>
-          <button 
-            onclick="window.close(); return false;" 
-            style="padding: 10px 20px; background-color: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Close
-          </button>
+        ` : mode === 'signature' ? `
+        <!-- Technician Notes & Signature Section -->
+        <div class="section" style="border-left-color: #3b82f6;">
+          <div class="section-title" style="color: #3b82f6;">Technician Notes</div>
+          <div class="notes-box"></div>
+          <p style="font-size: 13px; color: #6b7280; font-style: italic; margin-bottom: 20px;">
+            Use this space to record additional details, parts used, or follow-up actions required.
+          </p>
+          
+          <div class="signature-line">
+            <div class="signature-field">
+              <div class="signature-label">Technician Signature</div>
+            </div>
+            <div class="signature-field">
+              <div class="signature-label">Date: ${new Date().toLocaleDateString()}</div>
+            </div>
+          </div>
+          
+          <div class="signature-line" style="margin-top: 30px;">
+            <div class="signature-field">
+              <div class="signature-label">Customer Signature</div>
+            </div>
+            <div class="signature-field">
+              <div class="signature-label">Date</div>
+            </div>
+          </div>
         </div>
+        ` : ''}
       </body>
       </html>
     `;
 
-    printWindow.document.open();
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
+    // Generate PDF filename based on work order title and current date
+    const filename = `${escapeHtml(formattedTitle.value || 'WorkOrder').replace(/\s+/g, '_')}_${
+      mode === 'cost' ? 'Cost' : 
+      mode === 'signature' ? 'Signature' : 
+      'Label'
+    }_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    // Create a temporary container for html2pdf to work with
+    const element = document.createElement('div');
+    element.innerHTML = printContent;
+    document.body.appendChild(element);
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    
+    try {
+      // Configure html2pdf options
+      const options = {
+        margin: 10,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      // Generate PDF using html2pdf library
+      await html2pdf().set(options).from(element).save();
+      
+      // Clean up the temporary element
+      document.body.removeChild(element);
+    } catch (pdfError) {
+      console.error('Error generating PDF:', pdfError);
+      alert('There was an error generating the PDF. Please try again.');
+      document.body.removeChild(element);
+    }
+    
+    // Hide loading indicator
+    isLoading.value = false;
   } catch (error) {
-    console.error('Error in printWorkOrder:', error);
-    alert('There was an error generating the printable work order. Please try again.');
+    console.error('Error in generatePDF:', error);
+    alert('There was an error generating the PDF. Please try again.');
+    isLoading.value = false;
   }
 };
 
-// Geocoding function for address to coordinates
 const geocodeAddress = async (address) => {
   if (!address || address.trim() === '') {
     mapboxCoords.value = { lat: null, lon: null };

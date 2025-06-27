@@ -45,6 +45,7 @@
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
         "daypilot-pro-vue": "https://npm.daypilot.org/daypilot-pro-vue/trial/2024.4.6180.tar.gz",
+        "html2pdf.js": "^0.10.3",
         "lucide-vue-next": "^0.514.0",
         "pdf-lib": "^1.17.1",
         "pdfjs-dist": "^5.3.31",
