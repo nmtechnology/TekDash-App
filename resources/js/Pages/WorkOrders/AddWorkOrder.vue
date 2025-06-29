@@ -670,37 +670,22 @@
                     <div v-if="form.file_attachments && form.file_attachments.length > 0" class="mt-4">
                       <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div v-for="(file, index) in form.file_attachments" :key="index" class="relative group">
-                          <div
-                            class="aspect-square rounded-lg overflow-hidden bg-gray-800/50 w-24 h-24 mx-auto flex items-center justify-center">
-                            <!-- PDF Preview -->
-                            <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)"
-                              :filename="file.name" class="w-full h-full object-cover" />
-                            <!-- Image Preview -->
-                            <img v-else-if="file.type.startsWith('image/')" :src="getFileObjectURL(file)"
-                              :alt="file.name" class="w-full h-full object-cover" />
-                            <!-- Default File Icon -->
-                            <div v-else class="w-full h-full flex items-center justify-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          <!-- PDF Preview -->
+                          <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)" :filename="file.name" class="w-full h-full object-cover" />
+                          <!-- Image Preview -->
+                          <img v-else-if="file.type && file.type.startsWith('image/')" :src="getFileObjectURL(file)" :alt="file.name" class="w-full h-full object-cover" />
+                          <!-- Default File Icon -->
+                          <div v-else class="w-full h-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            </div>
                           </div>
                           <!-- File Info Overlay -->
-                          <div
-                            class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
-                            <div
-                              class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs truncate">
-                              {{ file.name }}
-                            </div>
-                            <button @click="removeFile(index)"
-                              class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end"
-                              type="button">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 12 12"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M6 18L18 6M6 6l12 12" />
+                          <div class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
+                            <div class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs truncate">{{ file.name }}</div>
+                            <button @click="removeFile(index)" class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end" type="button">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 12 12" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             </button>
                           </div>
@@ -739,8 +724,7 @@
                       <button @click="showPrintOptionsModal = true"
                         class="glossy-content flex items-center gap-2 p-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
                         type="button">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                          stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="http://www.w3.org/2000/svg">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                         <span>Print Work Order</span>
@@ -918,7 +902,7 @@
                                 file.name }}</div>
                               <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none"
-                                  viewBox="0 0 24 24">
+                                  viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
@@ -941,7 +925,6 @@
                                   viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
                               </div>
                             </div>
                           </div>
@@ -1023,7 +1006,7 @@
             <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
               <div class="p-4 flex items-center">
                 <div class="bg-purple-600 p-2 rounded-lg mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 010-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z" clip-rule="evenodd" />
                   </svg>
                 </div>
@@ -1045,7 +1028,7 @@
                 <button @click="generatePDF('cost'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1a9.978 9.978 0 01-1.293-.083M8 12H4a9.978 9.978 0 01-.293-2H8m8-2h4a9.978 9.978 0 01.293 2H16z" />
                   </svg>
                   <span>Download PDF</span>
                 </button>
@@ -1071,7 +1054,7 @@
                 <button @click="printWorkOrder('signature'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
-                    <path d="M17  17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    <path d="M17    17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
                 <span>Print</span>
                 </button>
@@ -1122,8 +1105,7 @@
             </div>
           </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
   </div>
 </template>
 
@@ -1410,6 +1392,69 @@ const loadTechnicians = async () => {
     return [];
   } finally {
     isLoadingTechnicians.value = false;
+  }
+};
+
+// --- SUBMIT FORM METHOD ---
+const submitForm = async () => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+  isLoading.value = true;
+  form.errors = {};
+  try {
+    // Build FormData for file uploads
+    const formData = new FormData();
+    formData.append('customer_id', form.customer_id);
+    formData.append('technician_id', form.technician_id);
+    formData.append('title', formattedTitle.value);
+    formData.append('description', form.description);
+    formData.append('date_time', form.date_time);
+    formData.append('hourly_rate', form.hourlyRate);
+    formData.append('hours', form.hours);
+    formData.append('grand_total', form.grand_total);
+    formData.append('travel_cost', form.includeTravel ? travelCost.value : 0);
+    formData.append('has_travel', form.includeTravel ? 1 : 0);
+    formData.append('status', form.status);
+    formData.append('address', form.address);
+    formData.append('work_order_number', workOrderNumber.value);
+    formData.append('work_type', workType.value);
+    formData.append('location', location.value);
+    // Add file attachments
+    if (form.file_attachments && form.file_attachments.length > 0) {
+      Array.from(form.file_attachments).forEach((file, idx) => {
+        formData.append(`file_attachments[${idx}]`, file);
+      });
+    }
+    // Add any additional fields as needed
+    // POST to backend
+    const response = await axios.post('/work-orders', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
+    if (response.data && (response.data.success || response.status === 200 || response.status === 201)) {
+      // Success: show toast, reset form, close modal
+      if (window.$toast) window.$toast.success('Work order created successfully!');
+      else alert('Work order created successfully!');
+      resetForm();
+      showModal.value = false;
+      // Optionally emit event or reload list
+    } else {
+      // Error: show error
+      if (window.$toast) window.$toast.error('Failed to create work order.');
+      else alert('Failed to create work order.');
+    }
+  } catch (error) {
+    if (error.response && error.response.data && error.response.data.errors) {
+      form.errors = error.response.data.errors;
+    }
+    if (window.$toast) window.$toast.error('Failed to create work order.');
+    else alert('Failed to create work order.');
+  } finally {
+    isSubmitting.value = false;
+    isLoading.value = false;
   }
 };
 
@@ -2140,484 +2185,25 @@ const printWorkOrder = async (mode = 'cost') => {
     alert('There was an error printing the work order. Please try again.');
   }
 };
-</script>
 
-<style scoped>
-.calendar-day-button {
-  font-size: 1rem;
-  min-height: 40px;
-}
+// Remove the old methods block (including quickSelectDate) at the bottom of the file
 
-.calendar-day-button:hover {
-  background-color: rgba(55, 65, 81, 0.5);
-  /* bg-gray-700/50 */
-}
-
-.calendar-day-selected {
-  border: 2px solid #a3e635;
-  /* border-lime-400 */
-  background-color: rgba(63, 98, 18, 0.4);
-  /* bg-lime-900/40 */
-  color: #bef264;
-  /* text-lime-300 */
-}
-
-.calendar-day-today {
-  border: 1px solid #a3e635;
-  /* border-lime-400 */
-  background-color: rgba(63, 98, 18, 0.3);
-  /* bg-lime-800/30 */
-  color: #fff;
-}
-
-.date-picker-container {
-  background-color: #1f2937;
-  /* bg-gray-800 */
-  border-radius: 0.75rem;
-  /* rounded-xl */
-  padding: 1.5rem;
-  /* p-6 */
-  border: 2px solid rgba(0, 232, 77, 0.962);
-  /* border-lime-400/50 */
-}
-
-/* Existing styles... */
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background-color: hsl(262, 69%, 44%);
-  color: white;
-}
-
-.btn-secondary {
-  background-color: #e5e7eb;
-  color: #374151;
-}
-
-.fixed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 95vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.bg-white {
-  background-color: white;
-}
-
-.p-6 {
-  padding: 1.5rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.text-xl {
-  font-size: 1.25rem;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.block {
-  display: block;
-}
-
-.text {
-  font-size: 0.875rem;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-
-.text-gray-700 {
-  color: #000000;
-}
-
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-.w-full {
-  width: 90%;
-}
-
-.border {
-  border-width: 1px;
-}
-
-.border-gray-300 {
-  border-color: #d2d6dc;
-}
-
-.rounded-md {
-  border-radius: 0.375rem;
-}
-
-.shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.focus\:ring-indigo-500:focus {
-  --tw-ring-color: outline-green-400;
-}
-
-.focus\:border-indigo-500:focus {
-  border-color: #6cae00
-}
-
-.sm\:text-sm {
-  font-size: 0.875rem;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-end {
-  justify-content: flex-end;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-/* Glass morphism styles */
-.glossy-card {
-  display: flex;
-  flex-direction: column;
-  background: rgba(15, 23, 42, 0.85);
-  max-width: 1400px;
-  width: 98vw;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.glossy-header {
-  background: linear-gradient(to right, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.85));
-}
-
-.glossy-footer {
-  background: linear-gradient(to right, rgba(20, 30, 48, 0.95), rgba(30, 41, 59, 0.92));
-  box-shadow: 0 -4px 10px -1px rgba(0, 0, 0, 0.2), 0 -2px 6px -1px rgba(0, 0, 0, 0.12);
-  border-bottom-left-radius: 0.5rem;
-  border-bottom-right-radius: 0.5rem;
-  z-index: 40;
-  position: sticky;
-  bottom: 0;
-  border-top: 1px solid rgba(75, 85, 99, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 12px 16px;
-  margin-top: auto;
-}
-
-.glossy-section {
-  background: linear-gradient(145deg, rgba(17, 24, 39, 0.5), rgba(31, 41, 55, 0.3));
-  border-radius: 8px;
-  padding: 10px;
-  position: relative;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.glossy-content {
-  background: linear-gradient(145deg, rgba(31, 41, 55, 0.6), rgba(17, 24, 39, 0.4));
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-/* Scrollable content area */
-.overflow-y-auto {
-  flex-grow: 1;
-  overflow-y: auto;
-  scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
-  scrollbar-width: thin;
-  padding: 0.75rem;
-  max-height: 85vh;
-  /* Allow more space in the modal */
-  scroll-behavior: smooth;
-  padding-bottom: 90px;
-  /* Extra padding to account for the footer */
-}
-
-/* Custom scrollbar */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: rgba(17, 24, 39, 0.3);
-  border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(75, 85, 99, 0.5);
-  border-radius: 3px;
-}
-
-/* Progress bar styling */
-progress {
-  height: 8px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-progress::-webkit-progress-bar {
-  background-color: rgba(18, 237, 84, 0.6);
-  border-radius: 4px;
-}
-
-progress::-webkit-progress-value {
-  background: linear-gradient(90deg, #84cc16, #65a30d);
-  border-radius: 4px;
-}
-
-progress::-moz-progress-bar {
-  background: linear-gradient(90deg, #84cc16, #65a30d);
-  border-radius: 4px;
-}
-
-/* Responsive form fields */
-@media (max-width: 1124px) {
-  .glossy-section .flex {
-    flex-direction: column;
+// Add this in <script setup>
+function quickSelectDate(option) {
+  const now = new Date();
+  let selectedDate;
+  if (option === 'today') {
+    selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0); // 9:00 AM today
+  } else if (option === 'tomorrow') {
+    selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0); // 9:00 AM tomorrow
+  } else if (option === 'nextWeek') {
+    selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 9, 0); // 9:00 AM next week
+  } else {
+    selectedDate = now;
   }
-
-  .glossy-card {
-    height: auto;
-    max-height: 95vh;
-    width: 95%;
-  }
-
-  /* Adjust padding for smaller screens */
-  .px-6 {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
+  // Format as 'Y-m-d H:i' for Flatpickr
+  const pad = n => n.toString().padStart(2, '0');
+  const formatted = `${selectedDate.getFullYear()}-${pad(selectedDate.getMonth() + 1)}-${pad(selectedDate.getDate())} ${pad(selectedDate.getHours())}:${pad(selectedDate.getMinutes())}`;
+  form.date_time = formatted;
 }
-
-/* Enhanced glossy card and footer styles */
-.glossy-card {
-  display: flex;
-  flex-direction: column;
-  background: rgba(15, 23, 42, 0.85);
-  max-width: 1400px;
-  width: 98vw;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.glossy-header {
-  background: linear-gradient(to right, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.85));
-}
-
-.glossy-footer {
-  background: linear-gradient(to right, rgba(20, 30, 48, 0.95), rgba(30, 41, 59, 0.92));
-  box-shadow: 0 -4px 10px -1px rgba(0, 0, 0, 0.2), 0 -2px 6px -1px rgba(0, 0, 0, 0.12);
-  border-bottom-left-radius: 0.5rem;
-  border-bottom-right-radius: 0.5rem;
-  z-index: 40;
-  position: sticky;
-  bottom: 0;
-  border-top: 1px solid rgba(75, 85, 99, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 12px 16px;
-  margin-top: auto;
-}
-
-/* Glass button styling */
-.glass-button {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.glass-button:hover {
-  background: rgba(139, 92, 246, 0.3);
-  border-color: rgba(139, 92, 246, 0.5);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
-  color: rgb(255, 255, 255);
-}
-
-.glass-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6);
-}
-
-.glass-button:active {
-  transform: translateY(0);
-  background: rgba(139, 92, 246, 0.4);
-}
-
-/* Add additional space for content */
-.glossy-section {
-  margin-bottom: 1rem;
-}
-
-/* Enhanced step component styling */
-.steps-horizontal {
-  margin-top: 0.75rem;
-  padding-bottom: 1.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.steps .step:before {
-  background-color: rgba(75, 85, 99, 0.4);
-  border-color: rgba(75, 85, 99, 0.6);
-  z-index: 1;
-}
-
-.steps .step:after,
-.steps .step>.step-icon {
-  height: 1.5rem;
-  width: 1.5rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.05);
-  z-index: 5;
-}
-
-.steps .step.step-success:before {
-  background-color: #84cc16;
-  border-color: #65a30d;
-}
-
-.steps .step.step-lime-400:after,
-.steps .step.step-lime-400>.step-icon {
-  background-color: #84cc16;
-  border-color: #65a30d;
-  color: #111827;
-  box-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
-}
-
-.steps .step.step-success:after,
-.steps .step.step-success>.step-icon {
-  background-color: #4ade80;
-  border-color: #22c55e;
-  color: #111827;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Step title styles for better visibility */
-.steps .step .absolute {
-  background-color: rgba(17, 24, 39, 0.7);
-  padding: 2px 6px;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* PDF Thumbnail styles */
-.pdf-thumbnail-wrapper {
-  width: 100%;
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-.pdf-thumbnail {
-  width: 100%;
-  border-radius: 0.375rem;
-  overflow: hidden;
-  background-color: rgba(31, 41, 55, 0.6);
-  border: 1px solid rgba(75, 85, 99, 0.5);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 150px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.pdf-thumbnail:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  border-color: rgba(132, 204, 22, 0.5);
-}
-
-.pdf-thumbnail .thumbnail-canvas {
-  max-width: 100%;
-  max-height: 120px;
-  object-fit: contain;
-}
-
-.pdf-thumbnail .pdf-icon {
-  width: 36px;
-  height: 36px;
-  color: #84cc16;
-  margin-bottom: 8px;
-}
-
-.pdf-thumbnail .filename {
-  font-size: 0.75rem;
-  color: white;
-  text-align: center;
-  padding: 4px 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90%;
-  background-color: rgba(31, 41, 55, 0.8);
-  border-radius: 4px;
-  position: absolute;
-  bottom: 8px;
-}
-
-/* QR Code styling */
-.qr-code-container {
-  background: white;
-  padding: 12px;
-  border-radius: 8px;
-  display: inline-flex;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s ease;
-}
-
-.qr-code-container:hover {
-  transform: scale(1.02);
-}
-
-/* Status badge in Step 10 */
-.summary-status-badge {
-  padding: 6px 12px;
-  font-weight: 500;
-  border-radius: 6px;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  font-size: 0.875rem;
-}
-</style>
+// ...existing code...
