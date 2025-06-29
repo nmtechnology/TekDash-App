@@ -95,17 +95,13 @@ const getUserAvatar = (userId) => {
       return 'bg-gray-800 text-gray-300 ring-gray-700';
     };
 
-// Replace the qrCodeUrl line with this function
+// Generate a direct URL to the work order when scanned
 const getWorkOrderQRData = () => {
-    const qrData = {
-        id: props.workOrder.id,
-        title: props.workOrder.title,
-        status: props.workOrder.status,
-        date_time: props.workOrder.date_time,
-        price: props.workOrder.price,
-        description: props.workOrder.description
-    };
-    return JSON.stringify(qrData);
+    // Create a direct URL to the work order page
+    const workOrderUrl = window.location.origin + '/work-orders/' + props.workOrder.id;
+    
+    // Return a URL that can be opened directly when scanned
+    return workOrderUrl;
 };
 
 const qrSize = ref(128); // Increased size to accommodate more data

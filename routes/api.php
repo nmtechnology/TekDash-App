@@ -54,6 +54,7 @@ Route::get('/work-orders', function () {
 });
 
 // Work order controller routes
+Route::get('/work-orders/check-number', [WorkOrderController::class, 'checkWorkOrderExists']);
 Route::get('/work-orders/{id}', [WorkOrderController::class, 'getWorkOrder']);
 Route::post('/work-orders', [WorkOrderController::class, 'createWorkOrder']);
 Route::put('/work-orders/{id}', [WorkOrderController::class, 'updateWorkOrder']);
@@ -205,14 +206,6 @@ Route::post('/work-orders/{id}/create-invoice', [WorkOrderController::class, 'cr
 Route::post('/documents/upload', [PdfController::class, 'upload']);
 
 // Customer routes
-
-// Route::middleware('auth:sanctum')->group(function () {
-//     Route::get('/customers', [CustomerController::class, 'index']);
-//     Route::get('/customers/{id}', [CustomerController::class, 'show']);
-//     Route::post('/customers', [CustomerController::class, 'store']);
-//     Route::put('/customers/{id}', [CustomerController::class, 'update']);
-//     Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
-// });
 
 // Add the API route for getting all technicians (for index page)
 Route::get('/technicians', [App\Http\Controllers\TechnicianController::class, 'index'])->name('api.technicians.index');

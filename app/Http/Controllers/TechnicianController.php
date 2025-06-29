@@ -92,19 +92,18 @@ class TechnicianController extends Controller
         return response()->json($technician, 201);
     }
 
-    public function getActiveTechnicians()
+    /**
+     * Get only active technicians
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getActiveTechnicians(Request $request)
     {
         $technicians = Technician::where('is_active', true)
-            ->select('id', 'first_name', 'last_name', 'employee_id')
-            ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get()
-            ->map(function($tech) {
-                return [
-                    'id' => $tech->id,
-                    'name' => $tech->first_name . ' ' . $tech->last_name . ' (' . $tech->employee_id . ')'
-                ];
-            });
+            ->orderBy('first_name')
+            ->get();
 
         return response()->json($technicians);
     }

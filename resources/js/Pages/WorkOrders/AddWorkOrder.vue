@@ -641,7 +641,7 @@
                         <path fill-rule="evenodd"
                           d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                           clip-rule="evenodd" />
-                      </svg>
+                    </svg>
                     </button>
                   </div>
                   <!-- Selection Summary -->
@@ -741,8 +741,7 @@
                         type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                           stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                         <span>Print Work Order</span>
                       </button>
@@ -755,6 +754,9 @@
                       </div>
                       <div class="text-xs text-gray-400 mt-1 text-center">
                         Scan to access work order details
+                      </div>
+                      <div class="text-xs text-lime-400 mt-1 text-center">
+                        QR code will link directly to this work order
                       </div>
                     </div>
                   </div>
@@ -842,7 +844,7 @@
                   </div>
 
                   <!-- Cost Breakdown -->
-                  <div class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-purple-400">
+                  <div v-if="currentStep === 10" class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-purple-400">
                     <h3 class="text-xl font-bold text-purple-400 mb-2">Cost Breakdown</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                       <div>
@@ -917,10 +919,8 @@
                               <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none"
                                   viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
                               </div>
                             </div>
@@ -931,15 +931,14 @@
                             <div
                               class="pdf-thumbnail flex items-center justify-center bg-gray-800 rounded-md border border-gray-700 h-24">
                               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                               <div class="filename">{{ file.name.length > 20 ? file.name.substring(0, 17) + '...' :
                                 file.name }}</div>
                               <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none"
-                                  viewBox="0 0 24 24" stroke="currentColor">
+                                  viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -1037,15 +1036,15 @@
               <div class="flex border-t border-gray-800">
                 <button @click="printWorkOrder('cost'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  <span>Print</span>
+                </svg>
+                <span>Print</span>
                 </button>
                 <div class="border-r border-gray-800"></div>
                 <button @click="generatePDF('cost'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   <span>Download PDF</span>
@@ -1057,7 +1056,7 @@
             <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
               <div class="p-4 flex items-center">
                 <div class="bg-blue-600 p-2 rounded-lg mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
                     <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
                     <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
                   </svg>
@@ -1071,15 +1070,15 @@
               <div class="flex border-t border-gray-800">
                 <button @click="printWorkOrder('signature'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17  17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
+                    <path d="M17  17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
                 <span>Print</span>
-              </button>
+                </button>
                 <div class="border-r border-gray-800"></div>
                 <button @click="generatePDF('signature'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   <span>Download PDF</span>
@@ -1091,10 +1090,12 @@
             <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
               <div class="p-4 flex items-center">
                 <div class="bg-green-600 p-2 rounded-lg mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
-                  </svg>
-                </div>
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
+  </svg>
+</div>
+
+
                 <div class="text-left">
                   <h4 class="text-white font-bold">Parts Label</h4>
                   <p class="text-sm text-gray-400">Compact QR code label for tagging materials</p>
@@ -1104,15 +1105,15 @@
               <div class="flex border-t border-gray-800">
                 <button @click="printWorkOrder('label'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  <span>Print</span>
+                </svg>
+                <span>Print</span>
                 </button>
                 <div class="border-r border-gray-800"></div>
                 <button @click="generatePDF('label'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   <span>Download PDF</span>
@@ -1136,7 +1137,8 @@ import PdfViewer from '@/Components/PdfViewer.vue';
 import QRCodeVue from 'qrcode.vue'; // For Vue component
 import QRCode from 'qrcode'; // For JavaScript library
 import ApplicationMark from '@/Components/ApplicationMark.vue';
-import html2pdf from 'html2pdf.js';
+// Import html2pdf correctly
+import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 import { Popover, PopoverTrigger, PopoverContent } from '@/Components/ui/popover';
 import { format, isValid } from 'date-fns';
 import Flatpickr from 'vue-flatpickr-component';
@@ -1216,7 +1218,14 @@ const showPdfViewer = ref(false);
 const selectedPdf = ref(null);
 const showPrintOptionsModal = ref(false); // New variable for print options modal
 const qrCodeValue = computed(() => {
-  return 'TekDash:' + (formattedTitle.value || '') + (form.address ? '|' + form.address : '') + (formattedDateTime.value ? '|' + formattedDateTime.value : '');
+  // For new work orders, create a QR code that contains a scheme to open the app and includes metadata
+  // This will make the QR code scannable and potentially linkable when scanned
+  return 'tekdash://' + 
+    'workorder?' +
+    'title=' + encodeURIComponent(formattedTitle.value || '') + 
+    (form.address ? '&address=' + encodeURIComponent(form.address) : '') + 
+    (formattedDateTime.value ? '&datetime=' + encodeURIComponent(formattedDateTime.value) : '') +
+    '&app_url=' + encodeURIComponent(window.location.origin + '/work-orders/');
 });
 const selectedTechnicianName = computed(() => {
   const tech = safeTechniciansArray.value.find(t => t.id == form.technician_id);
@@ -1352,6 +1361,58 @@ const safeTechniciansArray = computed(() => {
   return technicians.value.filter(technician => technician && technician.id);
 });
 
+// Function to load customers from API
+const loadCustomers = async () => {
+  console.log('AddWorkOrder: loadCustomers started');
+  isLoadingCustomers.value = true;
+  try {
+    const response = await axios.get('/api/customers', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    // Laravel resource collections return { data: [...] }
+    const customersList = Array.isArray(response.data.data) ? response.data.data : response.data;
+    console.log('AddWorkOrder: Customers loaded:', customersList.length);
+    customers.value = customersList;
+    customersArray.value = customersList;
+    return customersList;
+  } catch (error) {
+    console.error('AddWorkOrder: Failed to load customers:', error);
+    customers.value = [];
+    customersArray.value = [];
+    return [];
+  } finally {
+    isLoadingCustomers.value = false;
+  }
+};
+
+// Function to load active technicians from API
+const loadTechnicians = async () => {
+  console.log('AddWorkOrder: loadTechnicians started');
+  isLoadingTechnicians.value = true;
+  try {
+    const response = await axios.get('/api/technicians/active', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    console.log('AddWorkOrder: Technicians loaded:', response.data.length);
+    technicians.value = response.data;
+    return response.data;
+  } catch (error) {
+    console.error('AddWorkOrder: Failed to load technicians:', error);
+    technicians.value = [];
+    return [];
+  } finally {
+    isLoadingTechnicians.value = false;
+  }
+};
+
 // Methods
 const resetForm = () => {
   console.log('Resetting form');
@@ -1455,391 +1516,194 @@ const prevStep = async () => {
   }
 };
 
-// Print Work Order function for PDF generation
-const printWorkOrder = async (mode = 'cost') => {
+// Geocode the address to get lat/lon from Mapbox
+const geocodeAddress = async (address) => {
+  if (!address || address.trim() === '') {
+    mapboxCoords.value = { lat: null, lon: null };
+    mapboxError.value = null;
+    return;
+  }
+  mapboxLoading.value = true;
+  mapboxError.value = null;
   try {
-    // First, generate QR code as a data URL
-    const qrValue = qrCodeValue.value;
-    let qrImageUrl = '';
-    
-    try {
-      // Generate QR code directly to data URL using the QRCode library
-      qrImageUrl = await QRCode.toDataURL(qrValue, { 
-        margin: 1,
-        errorCorrectionLevel: 'M'
-      });
-      console.log('QR code generated successfully:', qrImageUrl.substring(0, 30) + '...');
-    } catch (e) {
-      console.error('Error creating QR code data URL:', e);
-      qrImageUrl = ''; // Empty if failed
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxAccessToken}&limit=1`;
+    // Ensure withCredentials is false for Mapbox API to avoid CORS issues
+    const response = await axios.get(url, { withCredentials: false });
+    if (response.data.features && response.data.features.length > 0) {
+      const [lon, lat] = response.data.features[0].center;
+      mapboxCoords.value = { lat, lon };
+    } else {
+      mapboxCoords.value = { lat: null, lon: null };
+      mapboxError.value = 'Address not found. Please try a more specific address.';
     }
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    mapboxCoords.value = { lat: null, lon: null };
+    mapboxError.value = 'Error finding address. Please try again.';
+  } finally {
+    mapboxLoading.value = false;
+  }
+};
+
+// Print Work Order function for PDF generation
+// Generate PDF function - separated for better organization
+const generatePDF = async (mode = 'cost') => {
+  try {
+    isLoading.value = true;
+    // Generate formatted content first
+    const { htmlContent, filename } = await generateWorkOrderContent(mode, true);
     
-    // Open print window
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Please allow pop-up windows to print the work order');
-      return;
-    }
-    
-    // Use computed properties directly
-    const customerName = selectedCustomerName.value;
-    const technicianName = selectedTechnicianName.value;
-
-    // Safely escape HTML content for description
-    const escapeHtml = (unsafe) => {
-      if (unsafe === undefined || unsafe === null) return '';
-      return String(unsafe)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    };
-
-    // Create the print content with styling
-    const printContent = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${escapeHtml(formattedTitle.value) || 'Work Order'} - ${
-          mode === 'cost' ? 'Cost Breakdown' : 
-          mode === 'signature' ? 'Signature Version' : 
-          'Parts Label'
-        }</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-          }
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #4ade80;
-          }
-          .title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1f2937;
-          }
-          .status {
-            display: inline-block;
-            background-color: #4ade80;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            color: white;
-          }
-          .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f9fafb;
-            border-radius: 8px;
-            border-left: 4px solid #4ade80;
-            page-break-inside: avoid;
-          }
-          .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #1f2937;
-          }
-          .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-          }
-          .label {
-            font-size: 14px;
-            color: #6b7280;
-          }
-          .value {
-            font-size: 16px;
-            font-weight: 500;
-          }
-          .total {
-            font-size: 18px;
-            font-weight: bold;
-          }
-          .purple-section {
-            border-left-color: #8b5cf6;
-          }
-          .company-logo-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-          }
-          .company-name {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e3a8a;
-            margin-top: 5px;
-          }
-          .qr-container {
-            text-align: right;
-          }
-          .notes-box {
-            min-height: 150px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            padding: 10px;
-          }
-          .signature-line {
-            display: flex;
-            justify-content: space-between;
-          }
-          .signature-field {
-            flex: 1;
-            max-width: 45%;
-            text-align: center;
-          }
-          .signature-label {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 5px;
-          }
-          .label-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-          }
-          .label-qrcode {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 20px;
-            display: block;
-          }
-          .label-title {
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
-          }
-          .label-info {
-            font-size: 14px;
-            text-align: center;
-            color: #6b7280;
-          }
-          @media print {
-            body {
-              print-color-adjust: exact;
-              -webkit-print-color-adjust: exact;
-            }
-            .no-print {
-              display: none;
-            }
-            .section {
-              break-inside: avoid;
-            }
-            button {
-              display: none;
-            }
-          }
-        </style>
-        <!-- QR code is pre-generated, no script needed -->
-      </head>
-      <body>
-        ${mode === 'label' ? `
-        <!-- Label Tag Version - Simple QR code and title only -->
-        <div class="label-container">
-          ${qrImageUrl ? 
-            `<img src="${qrImageUrl}" class="label-qrcode" alt="QR Code">` :
-            `<div style="width: 200px; height: 200px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
-          }
-          <div class="label-title">${escapeHtml(formattedTitle.value) || 'Work Order'}</div>
-          <div class="label-info">NM Technology</div>
-          <div class="label-info">${escapeHtml(form.status) || 'Not set'}</div>
-          <div class="label-info">${escapeHtml(formattedDateTime.value) ? 'Date: ' + escapeHtml(formattedDateTime.value) : ''}</div>
-        </div>
-        ` : `
-        <!-- Standard header for full work order versions -->
-        <div class="header">
-          <div class="company-logo-container">
-            <!-- Company Logo -->
-            <div style="display: flex; align-items: center;">
-              <img src="https://www.nmtechnology.us/build/assets/nm-logo-rmbg-f8bd446d.webp" alt="NM Technology Logo" style="width: 65px; height: 35px; margin-right: 10px;">
-              <div class="company-name">Technology</div>
-            </div>
-            <div style="margin-top: 10px;">
-              <div class="title">Work Order: ${escapeHtml(formattedTitle.value) || 'No Title'}</div>
-              <div style="font-size: 14px; color: #6b7280;">${escapeHtml(formattedDateTime.value) || 'Not scheduled'}</div>
-            </div>
-          </div>
-          
-          <div class="qr-container">
-            ${qrImageUrl ? 
-              `<img src="${qrImageUrl}" width="150" height="150" alt="QR Code">` : 
-              `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
-            }
-              <div style="margin-top: 5px; font-size: 12px; text-align: center;">
-                Scan for Work Order details
-              </div>
-            </div>
-        </div>
-        `}
-
-        ${mode !== 'label' ? `
-        <!-- Customer & Technician Section -->
-        <div class="section">
-          <div class="section-title">Customer & Technician</div>
-          <div class="grid">
-            <div>
-              <div class="label">Customer:</div>
-              <div class="value">${escapeHtml(customerName)}</div>
-            </div>
-            <div>
-              <div class="label">Technician:</div>
-              <div class="value">${escapeHtml(technicianName)}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Work Order Details Section -->
-        <div class="section">
-          <div class="section-title">Work Order Details</div>
-          <div>
-            <div class="label">Description:</div>
-            <div class="value" style="white-space: pre-line;">${escapeHtml(form.description) || 'No description provided'}</div>
-          </div>
-        </div>
-
-        <!-- Schedule & Location Section -->
-        <div class="section">
-          <div class="section-title">Schedule & Location</div>
-          <div class="grid">
-            <div>
-              <div class="label">Date & Time:</div>
-              <div class="value">${escapeHtml(formattedDateTime.value) || 'Not scheduled'}</div>
-            </div>
-            <div>
-              <div class="label">Location:</div>
-              <div class="value">${escapeHtml(form.address) || 'No address provided'}</div>
-            </div>
-          </div>
-        </div>
-        ` : ''}
-
-        ${mode === 'cost' ? `
-        <!-- Cost Breakdown Section -->
-        <div class="section purple-section">
-          <div class="section-title" style="color: #8b5cf6;">Cost Breakdown</div>
-          <div class="grid">
-            <div>
-              <div class="label">Approved Hours:</div>
-              <div class="value">${form.hours || 0} hours</div>
-            </div>
-            <div>
-              <div class="label">Hourly Rate:</div>
-              <div class="value">$${form.hourlyRate || 0}/hour</div>
-            </div>
-          </div>
-          
-          <div style="margin-top: 15px; padding: 10px; background-color: #f3f4f6; border-radius: 4px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6b7280;">Labor Cost:</span>
-              <span style="font-weight: bold;">$${laborCost.value || 0}</span>
-            </div>
-            <div class="text-xs text-gray-500 mt-1">
-              ${form.hours || 0} hours × $${form.hourlyRate || 0}/hour
-            </div>
-          </div>
-
-          ${form.includeTravel ? `
-          <div style="margin-top: 10px; padding: 10px; background-color: #f3f4f6; border-radius: 4px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6b7280;">Travel Cost:</span>
-              <span style="font-weight: bold;">$${travelCost.value || 0}</span>
-            </div>
-            <div class="text-xs text-gray-500 mt-1">
-              ${form.travelMiles || 0} miles × $${form.mileageRate || 0}/mile × 2 (round-trip)
-            </div>
-          </div>
-          ` : ''}
-          
-          <div style="margin-top: 15px; padding: 10px; background-color: #ede9fe; border-radius: 4px; border: 1px solid #c4b5fd;">
-            <div style="display: flex; justify-content: space-between;">
-              <span class="total" style="color: #8b5cf6;">TOTAL:</span>
-              <span class="total" style="color: #8b5cf6;">$${totalPrice.value || 0}</span>
-            </div>
-          </div>
-        </div>
-        ` : mode === 'signature' ? `
-        <!-- Technician Notes & Signature Section -->
-        <div class="section" style="border-left-color: #3b82f6;">
-          <div class="section-title" style="color: #3b82f6;">Technician Notes</div>
-          <div class="notes-box"></div>
-          <p style="font-size: 13px; color: #6b7280; font-style: italic; margin-bottom: 20px;">
-            Use this space to record additional details, parts used, or follow-up actions required.
-          </p>
-          
-          <div class="signature-line">
-            <div class="signature-field">
-              <div class="signature-label">Technician Signature</div>
-            </div>
-            <div class="signature-field">
-              <div class="signature-label">Date: ${new Date().toLocaleDateString()}</div>
-            </div>
-          </div>
-          
-          <div class="signature-line" style="margin-top: 30px;">
-            <div class="signature-field">
-              <div class="signature-label">Customer Signature</div>
-            </div>
-            <div class="signature-field">
-              <div class="signature-label">Date</div>
-            </div>
-          </div>
-        </div>
-        ` : ''}
-      </body>
-      </html>
-    `;
-
-    // Generate PDF filename based on work order title and current date
-    const filename = `${escapeHtml(formattedTitle.value || 'WorkOrder').replace(/\s+/g, '_')}_${
-      mode === 'cost' ? 'Cost' : 
-      mode === 'signature' ? 'Signature' : 
-      'Label'
-    }_${new Date().toISOString().split('T')[0]}.pdf`;
-
     // Create a temporary container for html2pdf to work with
     const element = document.createElement('div');
-    element.innerHTML = printContent;
+    // Use safe content with all modern CSS color functions replaced
+    element.innerHTML = replaceModernCssColors(htmlContent);
+    
+    // Apply some safe inline styles to avoid any modern CSS that might be dynamically added
+    const styleElements = element.querySelectorAll('style');
+    styleElements.forEach(styleEl => {
+      // Process any style tags to replace modern CSS functions
+      styleEl.textContent = replaceModernCssColors(styleEl.textContent);
+    });
+    
+    // Append to document but keep hidden
     document.body.appendChild(element);
     element.style.position = 'absolute';
     element.style.left = '-9999px';
     
+    // Configure html2pdf options with optimized settings
+    const options = {
+      margin: 10,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        letterRendering: true,
+        allowTaint: true,
+        logging: false, // Disable logging
+        removeContainer: true, // Clean up container after render
+        backgroundColor: '#ffffff', // Ensure white background
+        imageTimeout: 15000, // Increase timeout for image loading
+        ignoreElements: (element) => {
+          // Ignore elements that might cause problems
+          return element.tagName === 'SCRIPT' || 
+                 element.classList.contains('ignore-pdf') ||
+                 window.getComputedStyle(element).display === 'none';
+        },
+        onclone: (clonedDoc) => {
+          // Process the cloned document before rendering
+          const styleElements = clonedDoc.querySelectorAll('style');
+          styleElements.forEach(style => {
+            if (style.textContent) {
+              style.textContent = replaceModernCssColors(style.textContent);
+            }
+          });
+          return clonedDoc;
+        }
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait',
+        compress: true, // Compress the PDF
+        hotfixes: ['px_scaling'] // Fix scaling issues
+      }
+    };
+    
+    // Generate and download PDF using html2pdf library with safer approach
     try {
-      // Configure html2pdf options
-      const options = {
-        margin: 10,
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+      // Pre-process the element to handle any potential CSS issues
+      const styleTags = element.querySelectorAll('style');
+      styleTags.forEach(styleTag => {
+        if (styleTag.textContent) {
+          styleTag.textContent = replaceModernCssColors(styleTag.textContent);
+        }
+      });
       
-      // Generate PDF using html2pdf library
-      await html2pdf().set(options).from(element).save();
+      // Process inline styles on all elements
+      const elementsWithStyle = element.querySelectorAll('[style]');
+      elementsWithStyle.forEach(el => {
+        if (el.getAttribute('style')) {
+          el.setAttribute('style', replaceModernCssColors(el.getAttribute('style')));
+        }
+      });
+      
+      // Convert to blob with additional error handling
+      try {
+        const pdfBlob = await html2pdf()
+          .set(options)
+          .from(element)
+          .outputPdf('blob');
+        
+        // Create a download link and trigger it
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(pdfBlob);
+        downloadLink.download = filename;
+        downloadLink.click();
+        
+        // Clean up the URL object to free memory
+        setTimeout(() => {
+          URL.revokeObjectURL(downloadLink.href);
+        }, 100);
+      } catch (innerError) {
+        console.error('PDF generation failed:', innerError);
+        
+        // Try an alternative approach with further simplified content
+        if (innerError.message && (innerError.message.includes('oklch') || 
+            innerError.message.includes('color') || 
+            innerError.message.includes('css'))) {
+            
+          // Try a more aggressive approach to strip all problematic styles
+          const simplifiedElement = element.cloneNode(true);
+          
+          // Remove all style tags completely
+          const styleElements = simplifiedElement.querySelectorAll('style');
+          styleElements.forEach(styleEl => styleEl.remove());
+          
+          // Remove all inline styles
+          const allElements = simplifiedElement.querySelectorAll('*');
+          allElements.forEach(el => el.removeAttribute('style'));
+          
+          // Add basic styling directly
+          const basicStyle = document.createElement('style');
+          basicStyle.textContent = `
+            body { font-family: Arial, sans-serif; color: #000; }
+            .section { margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; }
+            .section-title { font-weight: bold; font-size: 16px; }
+            .label { color: #666; font-size: 12px; }
+            .value { font-weight: bold; }
+          `;
+          simplifiedElement.appendChild(basicStyle);
+          
+          try {
+            // Try one more time with simplified content
+            const pdfBlob = await html2pdf()
+              .set(options)
+              .from(simplifiedElement)
+              .outputPdf('blob');
+            
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(pdfBlob);
+            downloadLink.download = filename;
+            downloadLink.click();
+            
+            setTimeout(() => {
+              URL.revokeObjectURL(downloadLink.href);
+            }, 100);
+          } catch (finalError) {
+            console.error('Final PDF generation attempt failed:', finalError);
+            alert('Unable to generate PDF due to style compatibility issues. Please use the print option instead.');
+          }
+        } else {
+          alert('Unable to generate PDF. Please try the print option instead.');
+        }
+      }
       
       // Clean up the temporary element
       document.body.removeChild(element);
-    } catch (pdfError) {
-      console.error('Error generating PDF:', pdfError);
-      alert('There was an error generating the PDF. Please try again.');
-      document.body.removeChild(element);
+    } catch (error) {
+      console.error('Error in generatePDF:', error);
+      alert('There was an error generating the PDF. Please try again or use the print option.');
     }
     
     // Hide loading indicator
@@ -1851,206 +1715,429 @@ const printWorkOrder = async (mode = 'cost') => {
   }
 };
 
-const geocodeAddress = async (address) => {
-  if (!address || address.trim() === '') {
-    mapboxCoords.value = { lat: null, lon: null };
-    mapboxError.value = null;
-    return;
-  }
+// Utility to replace modern CSS color functions with a fallback (for PDF/print compatibility)
+function replaceModernCssColors(str) {
+  if (!str) return str;
+  // Replace oklch(), lab(), lch(), color() with #222 (dark gray) as a fallback
+  return str
+    .replace(/oklch\([^)]*\)/gi, '#222')
+    .replace(/lab\([^)]*\)/gi, '#222')
+    .replace(/lch\([^)]*\)/gi, '#222')
+    .replace(/color\([^)]*\)/gi, '#222');
+}
 
+// Function to generate work order content (used by both print and PDF methods)
+const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
+  // First, generate QR code as a data URL
+  const qrValue = qrCodeValue.value;
+  let qrImageUrl = '';
+  
   try {
-    mapboxLoading.value = true;
-    mapboxError.value = null;
-    
-    const encodedAddress = encodeURIComponent(address);
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxAccessToken}&limit=1`;
-    
-    // Create a separate axios instance for MapBox API calls
-    const mapboxAxios = axios.create({
-      withCredentials: false // Don't send credentials with MapBox requests to avoid CORS issues
+    // Generate QR code directly to data URL using the QRCode library
+    qrImageUrl = await QRCode.toDataURL(qrValue, { 
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      quality: 0.92,
+      width: forPdf ? 600 : 300 // Higher resolution for PDF
     });
+    console.log('QR code generated successfully:', qrImageUrl.substring(0, 30) + '...');
+  } catch (e) {
+    console.error('Error creating QR code data URL:', e);
+    qrImageUrl = ''; // Empty if failed
+  }
+  
+  // Use computed properties directly
+  const customerName = selectedCustomerName.value;
+  const technicianName = selectedTechnicianName.value;
+
+  // Safely escape HTML content for description
+  const escapeHtml = (unsafe) => {
+    if (unsafe === undefined || unsafe === null) return '';
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+  
+  // Generate PDF filename based on work order title and current date
+  const filename = `${escapeHtml(formattedTitle.value || 'WorkOrder').replace(/\s+/g, '_')}_${
+    mode === 'cost' ? 'Cost' : 
+    mode === 'signature' ? 'Signature' : 
+    'Label'
+  }_${new Date().toISOString().split('T')[0]}.pdf`;
+
+  // Create the print content with styling
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${escapeHtml(formattedTitle.value) || 'Work Order'} - ${
+        mode === 'cost' ? 'Cost Breakdown' : 
+        mode === 'signature' ? 'Signature Version' : 
+        'Parts Label'
+      }</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          color: #333;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #4ade80;
+        }
+        .title {
+          font-size: 24px;
+          font-weight: bold;
+          color: #1f2937;
+        }
+        .status {
+          display: inline-block;
+          background-color: #4ade80;
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-weight: bold;
+          color: white;
+        }
+        .section {
+          margin-bottom: 20px;
+          padding: 15px;
+          background-color: #f9fafb;
+          border-radius: 8px;
+          border-left: 4px solid #4ade80;
+          page-break-inside: avoid;
+        }
+        .section-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #1f2937;
+        }
+        .grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+        .label {
+          font-size: 14px;
+          font-weight: bold;
+          color: #4b5563;
+          margin-bottom: 4px;
+        }
+        .value {
+          font-size: 16px;
+          color: #1f2937;
+        }
+        .box {
+          border: 1px solid #d1d5db;
+          border-radius: 4px;
+          padding: 10px;
+          background-color: #f9fafb;
+        }
+        .cost-item {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .cost-item:last-child {
+          border-bottom: none;
+        }
+        .cost-label {
+          font-size: 14px;
+          color: #4b5563;
+        }
+        .cost-value {
+          font-size: 14px;
+          font-weight: bold;
+          color: #1f2937;
+        }
+        .total-row {
+          font-size: 16px;
+          font-weight: bold;
+          color: #1f2937;
+          border-top: 2px solid #d1d5db;
+          padding-top: 8px;
+        }
+        .qr-container {
+          text-align: right;
+          margin-bottom: 20px;
+        }
+        .company-logo-container {
+          display: flex;
+          flex-direction: column;
+        }
+        .company-name {
+          font-size: 18px;
+          font-weight: bold;
+          color: #4ade80;
+        }
+        .company-details {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 4px;
+        }
+        @media print {
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .section {
+            break-inside: avoid;
+          }
+          .page-break {
+            page-break-before: always;
+          }
+        }
+        
+        /* Label-specific styles */
+        .label-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100vh;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+        .label-qrcode {
+          width: 130px;
+          height: 130px;
+          margin: 0 auto 20px;
+          display: block;
+        }
+        .label-title {
+          font-size: 18px;
+          font-weight: bold;
+          text-align: center;
+          margin-bottom: 10px;
+        }
+        .label-info {
+          font-size: 14px;
+          text-align: center;
+          margin-bottom: 5px;
+        }
+        
+        /* Signature area styling */
+        .signature-area {
+          margin-top: 30px;
+          padding: 20px;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          margin-bottom: 15px;
+          padding: 10px;
+        }
+        .signature-line {
+          display: flex;
+          justify-content: space-between;
+        }
+        .signature-field {
+          flex: 1;
+          max-width: 45%;
+          text-align: center;
+        }
+        .signature-label {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 5px;
+        }
+      </style>
+    </head>
+    <body>
+      ${mode === 'label' ? `
+      <div class="label-container">
+        ${qrImageUrl ? 
+          `<img src="${qrImageUrl}" class="label-qrcode" alt="QR Code">` : 
+          `<div style="width: 200px; height: 200px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+        }
+        <div class="label-title">${escapeHtml(formattedTitle.value) || 'Work Order'}</div>
+        <div class="label-info">NM Technology</div>
+        <div class="label-info">${escapeHtml(form.status) || 'Not set'}</div>
+        <div class="label-info">${escapeHtml(formattedDateTime.value) ? 'Date: ' + escapeHtml(formattedDateTime.value) : ''}</div>
+      </div>
+      ` : `
+      <!-- Standard header for full work order versions -->
+      <div class="header">
+        <div class="company-logo-container">
+          <!-- Company Logo -->
+          <div style="display: flex; align-items: center;">
+            <img src="https://www.nmtechnology.us/build/assets/nm-logo-rmbg-f8bd446d.webp" alt="NM Technology Logo" style="width: 65px; height: 35px; margin-right: 10px;">
+            <div class="company-name">Technology</div>
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="company-details">Network Management Technology, Inc.</div>
+            <div class="company-details">9227 Haven Avenue, Suite 360, Rancho Cucamonga, CA 91730</div>
+            <div class="company-details">Phone: (909) 257-7278 | Email: service@nmtechnology.us</div>
+          </div>
+        </div>
+        
+        <div class="qr-container">
+          ${qrImageUrl ? 
+            `<img src="${qrImageUrl}" width="150" height="150" alt="QR Code">` : 
+            `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+          }
+            <div style="margin-top: 5px; font-size: 12px; text-align: center;">
+              Scan for Work Order details
+            </div>
+          </div>
+      </div>
+      `}
+
+      ${mode !== 'label' ? `
+      <div class="header">
+        <div>
+          <div class="title">Work Order: ${escapeHtml(formattedTitle.value) || 'No Title'}</div>
+          <div style="font-size: 14px; color: #6b7280;">${escapeHtml(formattedDateTime.value) || 'Not scheduled'}</div>
+        </div>
+        <div>
+          <div class="status">${escapeHtml(form.status) || 'Not set'}</div>
+        </div>
+      </div>
+
+      <!-- Customer & Technician Section -->
+      <div class="section">
+        <div class="section-title">Customer & Technician</div>
+        <div class="grid">
+          <div>
+            <div class="label">Customer:</div>
+            <div class="value">${escapeHtml(customerName)}</div>
+          </div>
+          <div>
+            <div class="label">Technician:</div>
+            <div class="value">${escapeHtml(technicianName)}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Order Details Section -->
+      <div class="section">
+        <div class="section-title">Work Order Details</div>
+        <div>
+          <div class="label">Description:</div>
+          <div class="value" style="white-space: pre-line;">${escapeHtml(form.description) || 'No description provided'}</div>
+        </div>
+      </div>
+
+      <!-- Schedule & Location Section -->
+      <div class="section">
+        <div class="section-title">Schedule & Location</div>
+        <div class="grid">
+          <div>
+            <div class="label">Date & Time:</div>
+            <div class="value">${escapeHtml(formattedDateTime.value) || 'Not scheduled'}</div>
+          </div>
+          <div>
+            <div class="label">Location:</div>
+            <div class="value">${escapeHtml(form.address) || 'No address provided'}</div>
+          </div>
+        </div>
+      </div>
+
+      ${mode === 'cost' ? `
+      <!-- Cost Breakdown Section -->
+      <div class="section">
+        <div class="section-title">Cost Breakdown</div>
+        <div class="box">
+          <div class="cost-item">
+            <div class="cost-label">Labor (${form.hours} hours @ $${form.hourlyRate}/hr)</div>
+            <div class="cost-value">$${laborCost.value || 0}</div>
+          </div>
+          ${form.includeTravel ? `
+          <div class="cost-item">
+            <div class="cost-label">Travel (${form.travelMiles} miles @ $${form.mileageRate}/mile)</div>
+            <div class="cost-value">$${travelCost.value || 0}</div>
+          </div>
+          ` : ''}
+          <div class="cost-item total-row">
+            <div class="cost-label">Total</div>
+            <div class="cost-value">$${totalPrice.value || 0}</div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      ${mode === 'signature' ? `
+      <!-- Signature Section -->
+      <div class="signature-area">
+        <div style="font-weight: bold; margin-bottom: 15px;">Notes:</div>
+        <div style="min-height: 100px; border: 1px solid #d1d5db; border-radius: 4px; padding: 10px; margin-bottom: 20px;"></div>
+        
+        <div class="signature-line">
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Technician Signature</div>
+            </div>
+          </div>
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Date: ${new Date().toLocaleDateString()}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="signature-line" style="margin-top: 30px;">
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Customer Signature</div>
+            </div>
+          </div>
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Date</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+      ` : ''}
+    </body>
+    </html>
+  `;
+
+  return { htmlContent, filename };
+};
+
+// Function to print work order
+const printWorkOrder = async (mode = 'cost') => {
+  try {
+    // Create and return the HTML content and filename
+    const { htmlContent: printContent, filename: printFilename } = await generateWorkOrderContent(mode);
     
-    const response = await mapboxAxios.get(url);
-    
-    if (response.data.features && response.data.features.length > 0) {
-      const feature = response.data.features[0];
-      const [lon, lat] = feature.center;
-      
-      mapboxCoords.value = { lat, lon };
-    } else {
-      mapboxError.value = 'Address not found. Please try a more specific address.';
-      mapboxCoords.value = { lat: null, lon: null };
+    // Open print window with blank target
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-up windows to print the work order');
+      return;
     }
+    
+    // Process the HTML content to replace modern CSS color functions before printing
+    const safePrintContent = replaceModernCssColors(printContent);
+    
+    // Write the HTML content to the new window
+    printWindow.document.open();
+    printWindow.document.write(safePrintContent);
+    printWindow.document.close();
+    
+    // Wait a moment for resources to load then print
+    setTimeout(() => {
+      printWindow.focus(); // Focus the window
+      printWindow.print(); // Trigger the print dialog
+    }, 500); // Small delay to ensure content loads
   } catch (error) {
-    console.error('Geocoding error:', error);
-    mapboxError.value = 'Error finding address. Please try again.';
-    mapboxCoords.value = { lat: null, lon: null };
-  } finally {
-    mapboxLoading.value = false;
-  }
-};
-
-// Work Order number verification logic
-const checkExistingWorkOrder = async () => {
-  const number = workOrderNumber.value.trim();
-  duplicateWorkOrderFound.value = false;
-  workOrderVerified.value = false;
-  if (!number) {
-    checkingWorkOrder.value = false;
-    return;
-  }
-  checkingWorkOrder.value = true;
-  try {
-    const response = await axios.get('/api/work-orders/check-number', {
-      params: { number },
-    });
-    duplicateWorkOrderFound.value = !!response.data.exists;
-    workOrderVerified.value = !duplicateWorkOrderFound.value;
-  } catch (error) {
-    duplicateWorkOrderFound.value = false;
-    workOrderVerified.value = false;
-  } finally {
-    checkingWorkOrder.value = false;
-  }
-};
-
-const debouncedCheckExistingWorkOrder = () => {
-  if (debounceTimer.value) clearTimeout(debounceTimer.value);
-  debounceTimer.value = setTimeout(() => {
-    checkExistingWorkOrder();
-  }, 500);
-};
-
-// Load customers function
-const loadCustomers = async () => {
-  isLoadingCustomers.value = true;
-  loadError.value = false;
-  try {
-    const response = await axios.get('/api/customers');
-    // Support both paginated and non-paginated responses
-    const customerData = Array.isArray(response.data.data)
-      ? response.data.data
-      : (Array.isArray(response.data) ? response.data : []);
-    customers.value = customerData;
-    customersArray.value = customerData;
-    console.log('Customers loaded:', customerData.length);
-    return customerData;
-  } catch (error) {
-    console.error('Error loading customers:', error);
-    loadError.value = true;
-    customers.value = [];
-    customersArray.value = [];
-    return [];
-  } finally {
-    isLoadingCustomers.value = false;
-  }
-};
-
-onMounted(() => {
-  loadCustomers();
-  loadTechnicians();
-});
-
-// Load technicians function
-const loadTechnicians = async () => {
-  isLoadingTechnicians.value = true;
-  try {
-    const response = await axios.get('/api/technicians');
-    // Ensure we have valid data
-    const technicianData = Array.isArray(response.data) ? response.data : [];
-    technicians.value = technicianData;
-    console.log('Technicians loaded:', technicianData.length);
-    return technicianData;
-  } catch (error) {
-    console.error('Error loading technicians:', error);
-    technicians.value = [];
-    return [];
-  } finally {
-    isLoadingTechnicians.value = false;
-  }
-};
-
-// Quick date selection
-const quickSelectDate = (type) => {
-  const today = new Date();
-  let targetDate;
-
-  switch (type) {
-    case 'today':
-      targetDate = today;
-      break;
-    case 'tomorrow':
-      targetDate = new Date(today);
-      targetDate.setDate(today.getDate() + 1);
-      break;
-    case 'nextWeek':
-      targetDate = new Date(today);
-      targetDate.setDate(today.getDate() + 7);
-      break;
-    default:
-      targetDate = today;
-  }
-
-  form.date_time = targetDate.toISOString();
-};
-
-// Other utility functions
-const handleDatePickerToggle = (value) => {
-  try {
-    isDatePickerOpen.value = value;
-    if (value) {
-      // Ensure calendar is generated when picker opens
-      //generateCalendarDays();
-    }
-  } catch (error) {
-    console.error('Error handling date picker toggle:', error);
-    isDatePickerOpen.value = false;
-  }
-};
-
-const logSelectedCustomer = () => {
-  const customer = safeCustomersArray.value.find(c => c.id == form.customer_id);
-  console.log('Selected customer:', customer);
-};
-
-const handleFileUpload = (event) => {
-  const files = Array.from(event.target.files);
-  form.file_attachments = files;
-};
-
-const removeFile = (index) => {
-  form.file_attachments.splice(index, 1);
-};
-
-const getFileObjectURL = (file) => {
-  return URL.createObjectURL(file);
-};
-
-const submitForm = async () => {
-  if (!validateCurrentStep()) return;
-
-  isLoading.value = true;
-  try {
-    // Update the title before submitting
-    form.title = formattedTitle.value;
-
-    // Ensure grand_total is set
-    form.grand_total = totalPrice.value;
-
-    // Submit the form
-    await form.post('/work-orders', {
-      onSuccess: () => {
-        console.log('Work order created successfully');
-        handleHideModal();
-      },
-      onError: (errors) => {
-        console.error('Form submission errors:', errors);
-      }
-    });
-  } catch (error) {
-    console.error('Error submitting form:', error);
-  } finally {
-    isLoading.value = false;
+    console.error('Error in printWorkOrder:', error);
+    alert('There was an error printing the work order. Please try again.');
   }
 };
 </script>
