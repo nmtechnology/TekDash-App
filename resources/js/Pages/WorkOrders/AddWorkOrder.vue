@@ -72,16 +72,16 @@
                   <!-- Step Title - shown for all steps -->
                   <div class="text-xs">
                     {{
-                    step === 1 ? 'Customer & Tech' :
-                    step === 2 ? 'Work Order Title' :
-                    step === 3 ? 'Service Description' :
-                    step === 4 ? 'Date & Time' :
-                    step === 5 ? 'Location Address' :
-                    step === 6 ? 'Approved Hours' :
-                    step === 7 ? 'Rate & Expenses' :
-                    step === 8 ? 'Work Order Status' :
-                    step === 9 ? 'Attachments' :
-                    step === 10 ? 'Summary & Review' : ''
+                      step === 1 ? 'Customer & Tech' :
+                        step === 2 ? 'Work Order Title' :
+                          step === 3 ? 'Service Description' :
+                            step === 4 ? 'Date & Time' :
+                              step === 5 ? 'Location Address' :
+                                step === 6 ? 'Approved Hours' :
+                                  step === 7 ? 'Rate & Expenses' :
+                                    step === 8 ? 'Work Order Status' :
+                                      step === 9 ? 'Attachments' :
+                                        step === 10 ? 'Summary & Review' : ''
                     }}
                   </div>
                 </li>
@@ -134,8 +134,8 @@
                       </option>
                       <option v-for="technician in safeTechniciansArray" :key="technician.id" :value="technician.id">
                         {{ technician.first_name && technician.last_name ? (technician.first_name + ' ' +
-                        technician.last_name + (technician.employee_id ? ' (' + technician.employee_id + ')' : '')) :
-                        (technician.name || 'Technician #' + technician.id) }}
+                          technician.last_name + (technician.employee_id ? ' (' + technician.employee_id + ')' : '')) :
+                          (technician.name || 'Technician #' + technician.id) }}
                       </option>
                     </select>
                   </div>
@@ -145,17 +145,17 @@
                       <div class="text-sm text-gray-400">Selected Customer:</div>
                       <div class="text-lime-400 font-bold text-4xl">
                         {{safeCustomersArray.find(c => c.id == form.customer_id)?.business_name ||
-                        safeCustomersArray.find(c => c.id == form.customer_id)?.name || 'None selected' }}
+                          safeCustomersArray.find(c => c.id == form.customer_id)?.name || 'None selected'}}
                       </div>
                       <div class="text-sm text-gray-400 mt-2">Assigned Technician:</div>
                       <div class="text-lime-400 font-bold text-2xl">
                         {{safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name &&
-                        safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name ?
-                        (safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name + ' ' +
-                        safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name +
-                        (safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id ? ' (' +
-                        safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id + ')' : '')) :
-                        (safeTechniciansArray.find(t => t.id == form.technician_id)?.name || 'None selected') }}
+                          safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name ?
+                          (safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name + ' ' +
+                            safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name +
+                            (safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id ? ' (' +
+                              safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id + ')' : '')) :
+                          (safeTechniciansArray.find(t => t.id == form.technician_id)?.name || 'None selected')}}
                       </div>
                     </div>
                   </div>
@@ -173,34 +173,36 @@
                       business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to
                       look
                       for a WalMart when driving. </p>
-                      <div class="flex flex-col md:flex-row md:gap-4">
-                    <div class="mb-4 p-2 w-full">
-                      <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order Number</label>
-                      <div class="relative">
-                        <input
-                          v-model="workOrderNumber"
-                          @input="debouncedCheckExistingWorkOrder"
-                          id="workOrderNumber"
-                          name="workOrderNumber"
-                          type="text"
-                          class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg pr-12"
-                          required
-                          autocomplete="off"
-                          placeholder="Enter unique work order number"
-                        />
-                        <span v-if="checkingWorkOrder" class="absolute right-2 top-2 text-xs text-gray-400">Checking...</span>
-                        <span v-else-if="duplicateWorkOrderFound" class="absolute right-2 top-2 text-xs text-red-400">Duplicate!</span>
-                        <!-- Only show 'Available' if checkmark is not shown -->
-                        <span v-else-if="workOrderVerified && workOrderNumber && !duplicateWorkOrderFound" class="absolute right-8 top-2 text-xs text-green-400">Available</span>
-                        <!-- Green checkmark if validated and not duplicate, not checking, and not duplicate -->
-                        <span v-if="workOrderVerified && !duplicateWorkOrderFound && !checkingWorkOrder && workOrderNumber" class="absolute right-2 top-1/2 transform -translate-y-1/2">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </span>
+                    <div class="flex flex-col md:flex-row md:gap-4">
+                      <div class="mb-4 p-2 w-full">
+                        <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order
+                          Number</label>
+                        <div class="relative">
+                          <input v-model="workOrderNumber" @input="debouncedCheckExistingWorkOrder" id="workOrderNumber"
+                            name="workOrderNumber" type="text"
+                            class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg pr-12"
+                            required autocomplete="off" placeholder="Enter unique work order number" />
+                          <span v-if="checkingWorkOrder"
+                            class="absolute right-2 top-2 text-xs text-gray-400">Checking...</span>
+                          <span v-else-if="duplicateWorkOrderFound"
+                            class="absolute right-2 top-2 text-xs text-red-400">Duplicate!</span>
+                          <!-- Only show 'Available' if checkmark is not shown -->
+                          <span v-else-if="workOrderVerified && workOrderNumber && !duplicateWorkOrderFound"
+                            class="absolute right-8 top-2 text-xs text-green-400">Available</span>
+                          <!-- Green checkmark if validated and not duplicate, not checking, and not duplicate -->
+                          <span
+                            v-if="workOrderVerified && !duplicateWorkOrderFound && !checkingWorkOrder && workOrderNumber"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-400" fill="none"
+                              viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                d="M5 13l4 4L19 7" />
+                            </svg>
+                          </span>
+                        </div>
+                        <div v-if="duplicateWorkOrderFound" class="text-xs text-red-400 mt-1">This work order number is
+                          already in use. Please enter a unique number.</div>
                       </div>
-                      <div v-if="duplicateWorkOrderFound" class="text-xs text-red-400 mt-1">This work order number is already in use. Please enter a unique number.</div>
-                    </div>
                       <div class="p-2 w-full">
                         <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
                         <select v-model="workType" id="workType" name="workType"
@@ -296,7 +298,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span>
+                      <!-- <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span> -->
                     </div>
                   </div>
                   <div class="mt-2 flex flex-col items-center gap-2">
@@ -639,9 +641,9 @@
                       <svg v-if="form.status === status" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white"
                         viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                           clip-rule="evenodd" />
-                    </svg>
+                      </svg>
                     </button>
                   </div>
                   <!-- Selection Summary -->
@@ -670,22 +672,37 @@
                     <div v-if="form.file_attachments && form.file_attachments.length > 0" class="mt-4">
                       <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div v-for="(file, index) in form.file_attachments" :key="index" class="relative group">
-                          <!-- PDF Preview -->
-                          <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)" :filename="file.name" class="w-full h-full object-cover" />
-                          <!-- Image Preview -->
-                          <img v-else-if="file.type && file.type.startsWith('image/')" :src="getFileObjectURL(file)" :alt="file.name" class="w-full h-full object-cover" />
-                          <!-- Default File Icon -->
-                          <div v-else class="w-full h-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <div
+                            class="aspect-square rounded-lg overflow-hidden bg-gray-800/50 w-24 h-24 mx-auto flex items-center justify-center">
+                            <!-- PDF Preview -->
+                            <PdfThumbnail v-if="file.type === 'application/pdf'" :pdf-url="getFileObjectURL(file)"
+                              :filename="file.name" class="w-full h-full object-cover" />
+                            <!-- Image Preview -->
+                            <img v-else-if="file.type.startsWith('image/')" :src="getFileObjectURL(file)"
+                              :alt="file.name" class="w-full h-full object-cover" />
+                            <!-- Default File Icon -->
+                            <div v-else class="w-full h-full flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
+                                viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                             </svg>
+                            </div>
                           </div>
                           <!-- File Info Overlay -->
-                          <div class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
-                            <div class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs truncate">{{ file.name }}</div>
-                            <button @click="removeFile(index)" class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end" type="button">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 12 12" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          <div
+                            class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex flex-col justify-between p-2 rounded-lg">
+                            <div
+                              class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs truncate">
+                              {{ file.name }}
+                            </div>
+                            <button @click="removeFile(index)"
+                              class="btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-end"
+                              type="button">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 12 12"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             </button>
                           </div>
@@ -725,7 +742,8 @@
                         class="glossy-content flex items-center gap-2 p-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
                         type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                          <path
+                            d="M17  17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                         <span>Print Work Order</span>
                       </button>
@@ -828,7 +846,8 @@
                   </div>
 
                   <!-- Cost Breakdown -->
-                  <div v-if="currentStep === 10" class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-purple-400">
+                  <div v-if="currentStep === 10"
+                    class="bg-gray-800/70 rounded-lg p-4 mb-4 border-l-4 border-purple-400">
                     <h3 class="text-xl font-bold text-purple-400 mb-2">Cost Breakdown</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                       <div>
@@ -903,8 +922,10 @@
                               <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none"
                                   viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
                               </div>
                             </div>
@@ -916,8 +937,9 @@
                               class="pdf-thumbnail flex items-center justify-center bg-gray-800 rounded-md border border-gray-700 h-24">
                               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-lime-400" fill="none"
                                 viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
                               <div class="filename">{{ file.name.length > 20 ? file.name.substring(0, 17) + '...' :
                                 file.name }}</div>
                               <div class="absolute top-2 right-2 bg-gray-900/70 rounded-full p-1">
@@ -925,6 +947,7 @@
                                   viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
                               </div>
                             </div>
                           </div>
@@ -979,69 +1002,79 @@
         </div>
       </div>
     </Transition>
-    
+
     <!-- Print Options Modal -->
     <Transition enter-active-class="ease-out duration-300" enter-from-class="opacity-0" enter-to-class="opacity-100"
       leave-active-class="ease-in duration-200" leave-from-class="opacity-100" leave-to-class="opacity-0">
       <div v-show="showPrintOptionsModal"
         class="fixed inset-0 z-[1100] overflow-y-auto flex items-center justify-center">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black bg-opacity-70 transition-opacity" @click="showPrintOptionsModal = false"></div>
+        <div class="fixed inset-0 bg-black bg-opacity-70 transition-opacity" @click="showPrintOptionsModal = false">
+        </div>
 
         <!-- Modal container -->
         <div class="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-auto p-6">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-bold text-lime-400">Work Order Output</h3>
             <button @click="showPrintOptionsModal = false" class="text-red-400 hover:text-red-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          
+
           <p class="text-gray-300 mb-6">Choose a format and action for your work order:</p>
-          
+
           <div class="space-y-4">
             <!-- Cost Breakdown Option -->
             <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
               <div class="p-4 flex items-center">
                 <div class="bg-purple-600 p-2 rounded-lg mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 010-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z" clip-rule="evenodd" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 010-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z"
+                      clip-rule="evenodd" />
+                </svg>
                 </div>
                 <div class="text-left">
                   <h4 class="text-white font-bold">Cost Breakdown Version</h4>
                   <p class="text-sm text-gray-400">Includes all cost details and pricing</p>
                 </div>
               </div>
-              
+
               <div class="flex border-t border-gray-800">
                 <button @click="printWorkOrder('cost'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                    viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span>Print</span>
+                  <span>Print</span>
                 </button>
                 <div class="border-r border-gray-800"></div>
                 <button @click="generatePDF('cost'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1a9.978 9.978 0 01-1.293-.083M8 12H4a9.978 9.978 0 01-.293-2H8m8-2h4a9.978 9.978 0 01.293 2H16z" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                    viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
                   <span>Download PDF</span>
                 </button>
               </div>
             </div>
-            
+
             <!-- Signature Option -->
             <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
               <div class="p-4 flex items-center">
                 <div class="bg-blue-600 p-2 rounded-lg mr-3">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
                     <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                    <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd"
+                      d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                      clip-rule="evenodd" />
                   </svg>
                 </div>
                 <div class="text-left">
@@ -1049,64 +1082,68 @@
                   <p class="text-sm text-gray-400">Includes notes area and signature line</p>
                 </div>
               </div>
-              
+
               <div class="flex border-t border-gray-800">
                 <button @click="printWorkOrder('signature'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
-                    <path d="M17    17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    <path
+                      d="M17  17h 2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span>Print</span>
+                  <span>Print</span>
                 </button>
                 <div class="border-r border-gray-800"></div>
                 <button @click="generatePDF('signature'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   <span>Download PDF</span>
                 </button>
               </div>
             </div>
-            
+
             <!-- Label Tag Option -->
             <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
               <div class="p-4 flex items-center">
                 <div class="bg-green-600 p-2 rounded-lg mr-3">
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
-    <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
-  </svg>
-</div>
-
-
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd"
+                        d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z"
+                        clip-rule="evenodd" />
+                  </svg>
+                </div>
                 <div class="text-left">
                   <h4 class="text-white font-bold">Parts Label</h4>
                   <p class="text-sm text-gray-400">Compact QR code label for tagging materials</p>
                 </div>
               </div>
-              
+
               <div class="flex border-t border-gray-800">
                 <button @click="printWorkOrder('label'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span>Print</span>
+                  <span>Print</span>
                 </button>
                 <div class="border-r border-gray-800"></div>
                 <button @click="generatePDF('label'); showPrintOptionsModal = false;"
                   class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   <span>Download PDF</span>
                 </button>
               </div>
             </div>
+            </div>
           </div>
-        </div>
-      </Transition>
-  </div>
+        </div></Transition>
+      </div>
 </template>
 
 <script setup>
@@ -1195,6 +1232,67 @@ const checkingWorkOrder = ref(false);
 const duplicateWorkOrderFound = ref(false);
 const workOrderVerified = ref(false);
 const debounceTimer = ref(null);
+
+// Debounced check for existing work order number
+const debouncedCheckExistingWorkOrder = () => {
+  if (debounceTimer.value) clearTimeout(debounceTimer.value);
+  debounceTimer.value = setTimeout(checkExistingWorkOrder, 500);
+};
+
+function quickSelectDate(option) {
+  const now = new Date();
+  let selected;
+  if (option === 'today') {
+    selected = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
+  } else if (option === 'tomorrow') {
+    selected = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0, 0);
+  } else if (option === 'nextWeek') {
+    selected = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 9, 0, 0);
+  } else {
+    selected = now;
+  }
+  const pad = (n) => n.toString().padStart(2, '0');
+  const formatted = `${selected.getFullYear()}-${pad(selected.getMonth() + 1)}-${pad(selected.getDate())} ${pad(selected.getHours())}:${pad(selected.getMinutes())}`;
+  form.value.date_time = formatted;
+}
+
+// checkExistingWorkOrder patched to handle 422 errors gracefully
+const checkExistingWorkOrder = async () => {
+  const number = workOrderNumber.value?.trim();
+  if (!number) {
+    duplicateWorkOrderFound.value = false;
+    workOrderVerified.value = false;
+    checkingWorkOrder.value = false;
+    return;
+  }
+  checkingWorkOrder.value = true;
+  duplicateWorkOrderFound.value = false;
+  workOrderVerified.value = false;
+  try {
+    const response = await axios.get(`/api/work-orders/check-number`, {
+      params: { workOrderNumber: number }
+    });
+    if (response.data.exists) {
+      duplicateWorkOrderFound.value = true;
+      workOrderVerified.value = false;
+    } else {
+      duplicateWorkOrderFound.value = false;
+      workOrderVerified.value = true;
+    }
+  } catch (e) {
+    if (e.response && e.response.status === 422) {
+      duplicateWorkOrderFound.value = false;
+      workOrderVerified.value = false;
+    } else {
+      console.error('Error checking work order number:', e);
+      duplicateWorkOrderFound.value = false;
+      workOrderVerified.value = false;
+    }
+  } finally {
+    checkingWorkOrder.value = false;
+  }
+};
+
 const technicians = ref([]);
 const showPdfViewer = ref(false);
 const selectedPdf = ref(null);
@@ -1202,10 +1300,10 @@ const showPrintOptionsModal = ref(false); // New variable for print options moda
 const qrCodeValue = computed(() => {
   // For new work orders, create a QR code that contains a scheme to open the app and includes metadata
   // This will make the QR code scannable and potentially linkable when scanned
-  return 'tekdash://' + 
+  return 'tekdash://' +
     'workorder?' +
-    'title=' + encodeURIComponent(formattedTitle.value || '') + 
-    (form.address ? '&address=' + encodeURIComponent(form.address) : '') + 
+    'title=' + encodeURIComponent(formattedTitle.value || '') +
+    (form.address ? '&address=' + encodeURIComponent(form.address) : '') +
     (formattedDateTime.value ? '&datetime=' + encodeURIComponent(formattedDateTime.value) : '') +
     '&app_url=' + encodeURIComponent(window.location.origin + '/work-orders/');
 });
@@ -1290,14 +1388,14 @@ const totalPrice = computed(() => {
 
 const mapboxImageUrl = computed(() => {
   if (!mapboxCoords.value.lat || !mapboxCoords.value.lon) return null;
-  
+
   const lat = mapboxCoords.value.lat;
   const lon = mapboxCoords.value.lon;
   const zoom = 14;
   const width = 600;
   const height = 300;
   const marker = `pin-l-circle+ff4400(${lon},${lat})`;
-  
+
   return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${marker}/${lon},${lat},${zoom},0/${width}x${height}@2x?access_token=${mapboxAccessToken}`;
 });
 
@@ -1395,73 +1493,10 @@ const loadTechnicians = async () => {
   }
 };
 
-// --- SUBMIT FORM METHOD ---
-const submitForm = async () => {
-  if (isSubmitting.value) return;
-  isSubmitting.value = true;
-  isLoading.value = true;
-  form.errors = {};
-  try {
-    // Build FormData for file uploads
-    const formData = new FormData();
-    formData.append('customer_id', form.customer_id);
-    formData.append('technician_id', form.technician_id);
-    formData.append('title', formattedTitle.value);
-    formData.append('description', form.description);
-    formData.append('date_time', form.date_time);
-    formData.append('hourly_rate', form.hourlyRate);
-    formData.append('hours', form.hours);
-    formData.append('grand_total', form.grand_total);
-    formData.append('travel_cost', form.includeTravel ? travelCost.value : 0);
-    formData.append('has_travel', form.includeTravel ? 1 : 0);
-    formData.append('status', form.status);
-    formData.append('address', form.address);
-    formData.append('work_order_number', workOrderNumber.value);
-    formData.append('work_type', workType.value);
-    formData.append('location', location.value);
-    // Add file attachments
-    if (form.file_attachments && form.file_attachments.length > 0) {
-      Array.from(form.file_attachments).forEach((file, idx) => {
-        formData.append(`file_attachments[${idx}]`, file);
-      });
-    }
-    // Add any additional fields as needed
-    // POST to backend
-    const response = await axios.post('/work-orders', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-    });
-    if (response.data && (response.data.success || response.status === 200 || response.status === 201)) {
-      // Success: show toast, reset form, close modal
-      if (window.$toast) window.$toast.success('Work order created successfully!');
-      else alert('Work order created successfully!');
-      resetForm();
-      showModal.value = false;
-      // Optionally emit event or reload list
-    } else {
-      // Error: show error
-      if (window.$toast) window.$toast.error('Failed to create work order.');
-      else alert('Failed to create work order.');
-    }
-  } catch (error) {
-    if (error.response && error.response.data && error.response.data.errors) {
-      form.errors = error.response.data.errors;
-    }
-    if (window.$toast) window.$toast.error('Failed to create work order.');
-    else alert('Failed to create work order.');
-  } finally {
-    isSubmitting.value = false;
-    isLoading.value = false;
-  }
-};
-
 // Methods
 const resetForm = () => {
   console.log('Resetting form');
-  currentStep.value =  1;
+  currentStep.value = 1;
   isDatePickerOpen.value = false;
   // Reset form fields
   form.customer_id = props.customerId || '';
@@ -1597,32 +1632,32 @@ const generatePDF = async (mode = 'cost') => {
     isLoading.value = true;
     // Generate formatted content first
     const { htmlContent, filename } = await generateWorkOrderContent(mode, true);
-    
+
     // Create a temporary container for html2pdf to work with
     const element = document.createElement('div');
     // Use safe content with all modern CSS color functions replaced
     element.innerHTML = replaceModernCssColors(htmlContent);
-    
+
     // Apply some safe inline styles to avoid any modern CSS that might be dynamically added
     const styleElements = element.querySelectorAll('style');
     styleElements.forEach(styleEl => {
       // Process any style tags to replace modern CSS functions
       styleEl.textContent = replaceModernCssColors(styleEl.textContent);
     });
-    
+
     // Append to document but keep hidden
     document.body.appendChild(element);
     element.style.position = 'absolute';
     element.style.left = '-9999px';
-    
+
     // Configure html2pdf options with optimized settings
     const options = {
       margin: 10,
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
         letterRendering: true,
         allowTaint: true,
         logging: false, // Disable logging
@@ -1631,9 +1666,9 @@ const generatePDF = async (mode = 'cost') => {
         imageTimeout: 15000, // Increase timeout for image loading
         ignoreElements: (element) => {
           // Ignore elements that might cause problems
-          return element.tagName === 'SCRIPT' || 
-                 element.classList.contains('ignore-pdf') ||
-                 window.getComputedStyle(element).display === 'none';
+          return element.tagName === 'SCRIPT' ||
+            element.classList.contains('ignore-pdf') ||
+            window.getComputedStyle(element).display === 'none';
         },
         onclone: (clonedDoc) => {
           // Process the cloned document before rendering
@@ -1646,15 +1681,15 @@ const generatePDF = async (mode = 'cost') => {
           return clonedDoc;
         }
       },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
         orientation: 'portrait',
         compress: true, // Compress the PDF
         hotfixes: ['px_scaling'] // Fix scaling issues
       }
     };
-    
+
     // Generate and download PDF using html2pdf library with safer approach
     try {
       // Pre-process the element to handle any potential CSS issues
@@ -1664,7 +1699,7 @@ const generatePDF = async (mode = 'cost') => {
           styleTag.textContent = replaceModernCssColors(styleTag.textContent);
         }
       });
-      
+
       // Process inline styles on all elements
       const elementsWithStyle = element.querySelectorAll('[style]');
       elementsWithStyle.forEach(el => {
@@ -1672,43 +1707,43 @@ const generatePDF = async (mode = 'cost') => {
           el.setAttribute('style', replaceModernCssColors(el.getAttribute('style')));
         }
       });
-      
+
       // Convert to blob with additional error handling
       try {
         const pdfBlob = await html2pdf()
           .set(options)
           .from(element)
           .outputPdf('blob');
-        
+
         // Create a download link and trigger it
         const downloadLink = document.createElement('a');
         downloadLink.href = URL.createObjectURL(pdfBlob);
         downloadLink.download = filename;
         downloadLink.click();
-        
+
         // Clean up the URL object to free memory
         setTimeout(() => {
           URL.revokeObjectURL(downloadLink.href);
         }, 100);
       } catch (innerError) {
         console.error('PDF generation failed:', innerError);
-        
+
         // Try an alternative approach with further simplified content
-        if (innerError.message && (innerError.message.includes('oklch') || 
-            innerError.message.includes('color') || 
-            innerError.message.includes('css'))) {
-            
+        if (innerError.message && (innerError.message.includes('oklch') ||
+          innerError.message.includes('color') ||
+          innerError.message.includes('css'))) {
+
           // Try a more aggressive approach to strip all problematic styles
           const simplifiedElement = element.cloneNode(true);
-          
+
           // Remove all style tags completely
           const styleElements = simplifiedElement.querySelectorAll('style');
           styleElements.forEach(styleEl => styleEl.remove());
-          
+
           // Remove all inline styles
           const allElements = simplifiedElement.querySelectorAll('*');
           allElements.forEach(el => el.removeAttribute('style'));
-          
+
           // Add basic styling directly
           const basicStyle = document.createElement('style');
           basicStyle.textContent = `
@@ -1719,19 +1754,19 @@ const generatePDF = async (mode = 'cost') => {
             .value { font-weight: bold; }
           `;
           simplifiedElement.appendChild(basicStyle);
-          
+
           try {
             // Try one more time with simplified content
             const pdfBlob = await html2pdf()
               .set(options)
               .from(simplifiedElement)
               .outputPdf('blob');
-            
+
             const downloadLink = document.createElement('a');
             downloadLink.href = URL.createObjectURL(pdfBlob);
             downloadLink.download = filename;
             downloadLink.click();
-            
+
             setTimeout(() => {
               URL.revokeObjectURL(downloadLink.href);
             }, 100);
@@ -1743,14 +1778,14 @@ const generatePDF = async (mode = 'cost') => {
           alert('Unable to generate PDF. Please try the print option instead.');
         }
       }
-      
+
       // Clean up the temporary element
       document.body.removeChild(element);
     } catch (error) {
       console.error('Error in generatePDF:', error);
       alert('There was an error generating the PDF. Please try again or use the print option.');
     }
-    
+
     // Hide loading indicator
     isLoading.value = false;
   } catch (error) {
@@ -1776,10 +1811,10 @@ const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
   // First, generate QR code as a data URL
   const qrValue = qrCodeValue.value;
   let qrImageUrl = '';
-  
+
   try {
     // Generate QR code directly to data URL using the QRCode library
-    qrImageUrl = await QRCode.toDataURL(qrValue, { 
+    qrImageUrl = await QRCode.toDataURL(qrValue, {
       margin: 1,
       errorCorrectionLevel: 'M',
       type: 'image/png',
@@ -1791,7 +1826,7 @@ const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
     console.error('Error creating QR code data URL:', e);
     qrImageUrl = ''; // Empty if failed
   }
-  
+
   // Use computed properties directly
   const customerName = selectedCustomerName.value;
   const technicianName = selectedTechnicianName.value;
@@ -1806,13 +1841,12 @@ const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   };
-  
+
   // Generate PDF filename based on work order title and current date
-  const filename = `${escapeHtml(formattedTitle.value || 'WorkOrder').replace(/\s+/g, '_')}_${
-    mode === 'cost' ? 'Cost' : 
-    mode === 'signature' ? 'Signature' : 
-    'Label'
-  }_${new Date().toISOString().split('T')[0]}.pdf`;
+  const filename = `${escapeHtml(formattedTitle.value || 'WorkOrder').replace(/\s+/g, '_')}_${mode === 'cost' ? 'Cost' :
+      mode === 'signature' ? 'Signature' :
+        'Label'
+    }_${new Date().toISOString().split('T')[0]}.pdf`;
 
   // Create the print content with styling
   const htmlContent = `
@@ -1821,11 +1855,10 @@ const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${escapeHtml(formattedTitle.value) || 'Work Order'} - ${
-        mode === 'cost' ? 'Cost Breakdown' : 
-        mode === 'signature' ? 'Signature Version' : 
+      <title>${escapeHtml(formattedTitle.value) || 'Work Order'} - ${mode === 'cost' ? 'Cost Breakdown' :
+      mode === 'signature' ? 'Signature Version' :
         'Parts Label'
-      }</title>
+    }</title>
       <style>
         body {
           font-family: Arial, sans-serif;
@@ -2003,10 +2036,10 @@ const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
     <body>
       ${mode === 'label' ? `
       <div class="label-container">
-        ${qrImageUrl ? 
-          `<img src="${qrImageUrl}" class="label-qrcode" alt="QR Code">` : 
-          `<div style="width: 200px; height: 200px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
-        }
+        ${qrImageUrl ?
+        `<img src="${qrImageUrl}" class="label-qrcode" alt="QR Code">` :
+        `<div style="width: 200px; height: 200px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+      }
         <div class="label-title">${escapeHtml(formattedTitle.value) || 'Work Order'}</div>
         <div class="label-info">NM Technology</div>
         <div class="label-info">${escapeHtml(form.status) || 'Not set'}</div>
@@ -2029,10 +2062,10 @@ const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
         </div>
         
         <div class="qr-container">
-          ${qrImageUrl ? 
-            `<img src="${qrImageUrl}" width="150" height="150" alt="QR Code">` : 
-            `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
-          }
+          ${qrImageUrl ?
+      `<img src="${qrImageUrl}" width="150" height="150" alt="QR Code">` :
+      `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+    }
             <div style="margin-top: 5px; font-size: 12px; text-align: center;">
               Scan for Work Order details
             </div>
@@ -2159,22 +2192,22 @@ const printWorkOrder = async (mode = 'cost') => {
   try {
     // Create and return the HTML content and filename
     const { htmlContent: printContent, filename: printFilename } = await generateWorkOrderContent(mode);
-    
+
     // Open print window with blank target
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Please allow pop-up windows to print the work order');
       return;
     }
-    
+
     // Process the HTML content to replace modern CSS color functions before printing
     const safePrintContent = replaceModernCssColors(printContent);
-    
+
     // Write the HTML content to the new window
     printWindow.document.open();
     printWindow.document.write(safePrintContent);
     printWindow.document.close();
-    
+
     // Wait a moment for resources to load then print
     setTimeout(() => {
       printWindow.focus(); // Focus the window
@@ -2186,24 +2219,568 @@ const printWorkOrder = async (mode = 'cost') => {
   }
 };
 
-// Remove the old methods block (including quickSelectDate) at the bottom of the file
-
-// Add this in <script setup>
-function quickSelectDate(option) {
-  const now = new Date();
-  let selectedDate;
-  if (option === 'today') {
-    selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0); // 9:00 AM today
-  } else if (option === 'tomorrow') {
-    selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0); // 9:00 AM tomorrow
-  } else if (option === 'nextWeek') {
-    selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 9, 0); // 9:00 AM next week
-  } else {
-    selectedDate = now;
+// Submit the work order form
+const submitForm = async () => {
+  if (!validateCurrentStep()) {
+    console.error('Final validation failed');
+    return;
   }
-  // Format as 'Y-m-d H:i' for Flatpickr
-  const pad = n => n.toString().padStart(2, '0');
-  const formatted = `${selectedDate.getFullYear()}-${pad(selectedDate.getMonth() + 1)}-${pad(selectedDate.getDate())} ${pad(selectedDate.getHours())}:${pad(selectedDate.getMinutes())}`;
-  form.date_time = formatted;
+
+  if (isSubmitting.value) {
+    console.log('Already submitting, preventing double submission');
+    return;
+  }
+
+  try {
+    isSubmitting.value = true;
+    console.log('Submitting work order form...', form.data());
+
+    // Prepare form data for submission
+    const formData = {
+      ...form.data(),
+      title: formattedTitle.value,
+      work_type: workType.value,
+      work_order_number: workOrderNumber.value,
+      location: location.value,
+      price: totalPrice.value,
+      grand_total: totalPrice.value,
+      hourly_rate: form.hourlyRate, // Ensure backend compatibility
+    };
+
+    // Use Inertia's post method to submit the form
+    form.post('/work-orders', {
+      data: formData,
+      onSuccess: (page) => {
+        console.log('Work order created successfully:', page);
+        // Reset form and close modal on success
+        resetForm();
+        showModal.value = false;
+        // Show success message or redirect as needed
+        alert('Work order created successfully!');
+      },
+      onError: (errors) => {
+        console.error('Form submission errors:', errors);
+        isSubmitting.value = false;
+        // Handle validation errors
+        if (errors) {
+          const errorMessages = Object.values(errors).flat().join('\n');
+          alert(`Please fix the following errors:\n${errorMessages}`);
+        }
+      },
+      onFinish: () => {
+        isSubmitting.value = false;
+      }
+    });
+  } catch (error) {
+    console.error('Error submitting work order:', error);
+    isSubmitting.value = false;
+    alert('There was an error creating the work order. Please try again.');
+  }
+};
+
+// Handle file upload for attachments
+const handleFileUpload = (event) => {
+  const files = Array.from(event.target.files);
+  if (files.length > 0) {
+    // Add new files to existing attachments
+    form.file_attachments = [...(form.file_attachments || []), ...files];
+    console.log('Files uploaded:', files.length, 'Total attachments:', form.file_attachments.length);
+  }
+};
+
+// Remove a file from attachments
+const removeFile = (index) => {
+  if (form.file_attachments && index >= 0 && index < form.file_attachments.length) {
+    form.file_attachments.splice(index, 1);
+    console.log('File removed at index:', index, 'Remaining attachments:', form.file_attachments.length);
+  }
+};
+
+// Get object URL for file preview
+const getFileObjectURL = (file) => {
+  if (file && file instanceof File) {
+    return URL.createObjectURL(file);
+  }
+  return '';
+};
+</script>
+
+<style scoped>
+.calendar-day-button {
+  font-size: 1rem;
+  min-height: 40px;
 }
-// ...existing code...
+
+.calendar-day-button:hover {
+  background-color: rgba(55, 65, 81, 0.5);
+  /* bg-gray-700/50 */
+}
+
+.calendar-day-selected {
+  border: 2px solid #a3e635;
+  /* border-lime-400 */
+  background-color: rgba(63, 98, 18, 0.4);
+  /* bg-lime-900/40 */
+  color: #bef264;
+  /* text-lime-300 */
+}
+
+.calendar-day-today {
+  border: 1px solid #a3e635;
+  /* border-lime-400 */
+  background-color: rgba(63, 98, 18, 0.3);
+  /* bg-lime-800/30 */
+  color: #fff;
+}
+
+.date-picker-container {
+  background-color: #1f2937;
+  /* bg-gray-800 */
+  border-radius: 0.75rem;
+  /* rounded-xl */
+  padding: 1.5rem;
+  /* p-6 */
+  border: 2px solid rgba(0, 232, 77, 0.962);
+  /* border-lime-400/50 */
+}
+
+/* Existing styles... */
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: hsl(262, 69%, 44%);
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 95vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.bg-white {
+  background-color: white;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.block {
+  display: block;
+}
+
+.text {
+  font-size: 0.875rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.text-gray-700 {
+  color: #000000;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+.w-full {
+  width: 90%;
+}
+
+.border {
+  border-width: 1px;
+}
+
+.border-gray-300 {
+  border-color: #d2d6dc;
+}
+
+.rounded-md {
+  border-radius: 0.375rem;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.focus\:ring-indigo-500:focus {
+  --tw-ring-color: outline-green-400;
+}
+
+.focus\:border-indigo-500:focus {
+  border-color: #6cae00
+}
+
+.sm\:text-sm {
+  font-size: 0.875rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+/* Glass morphism styles */
+.glossy-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.85);
+  max-width: 1400px;
+  width: 98vw;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glossy-header {
+  background: linear-gradient(to right, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.85));
+}
+
+.glossy-footer {
+  background: linear-gradient(to right, rgba(20, 30, 48, 0.95), rgba(30, 41, 59, 0.92));
+  box-shadow: 0 -4px 10px -1px rgba(0, 0, 0, 0.2), 0 -2px 6px -1px rgba(0, 0, 0, 0.12);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  z-index: 40;
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 16px;
+  margin-top: auto;
+}
+
+.glossy-section {
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.5), rgba(31, 41, 55, 0.3));
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glossy-content {
+  background: linear-gradient(145deg, rgba(31, 41, 55, 0.6), rgba(17, 24, 39, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Scrollable content area */
+.overflow-y-auto {
+  flex-grow: 1;
+  overflow-y: auto;
+  scrollbar-color: rgba(75, 85, 99, 0.5) rgba(17, 24, 39, 0.3);
+  scrollbar-width: thin;
+  padding: 0.75rem;
+  max-height: 85vh;
+  /* Allow more space in the modal */
+  scroll-behavior: smooth;
+  padding-bottom: 90px;
+  /* Extra padding to account for the footer */
+}
+
+/* Custom scrollbar */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: rgba(17, 24, 39, 0.3);
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.5);
+  border-radius: 3px;
+}
+
+/* Progress bar styling */
+progress {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+progress::-webkit-progress-bar {
+  background-color: rgba(18, 237, 84, 0.6);
+  border-radius: 4px;
+}
+
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #84cc16, #65a30d);
+  border-radius: 4px;
+}
+
+progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #84cc16, #65a30d);
+  border-radius: 4px;
+}
+
+/* Responsive form fields */
+@media (max-width: 1124px) {
+  .glossy-section .flex {
+    flex-direction: column;
+  }
+
+  .glossy-card {
+    height: auto;
+    max-height: 95vh;
+    width: 95%;
+  }
+
+  /* Adjust padding for smaller screens */
+  .px-6 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Enhanced glossy card and footer styles */
+.glossy-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.85);
+  max-width: 1400px;
+  width: 98vw;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glossy-header {
+  background: linear-gradient(to right, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.85));
+}
+
+.glossy-footer {
+  background: linear-gradient(to right, rgba(20, 30, 48, 0.95), rgba(30, 41, 59, 0.92));
+  box-shadow: 0 -4px 10px -1px rgba(0, 0, 0, 0.2), 0 -2px 6px -1px rgba(0, 0, 0, 0.12);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  z-index: 40;
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 16px;
+  margin-top: auto;
+}
+
+/* Glass button styling */
+.glass-button {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.glass-button:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  color: rgb(255, 255, 255);
+}
+
+.glass-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.6);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+  background: rgba(139, 92, 246, 0.4);
+}
+
+/* Add additional space for content */
+.glossy-section {
+  margin-bottom: 1rem;
+}
+
+/* Enhanced step component styling */
+.steps-horizontal {
+  margin-top: 0.75rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.steps .step:before {
+  background-color: rgba(75, 85, 99, 0.4);
+  border-color: rgba(75, 85, 99, 0.6);
+  z-index: 1;
+}
+
+.steps .step:after,
+.steps .step>.step-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.05);
+  z-index: 5;
+}
+
+.steps .step.step-success:before {
+  background-color: #84cc16;
+  border-color: #65a30d;
+}
+
+.steps .step.step-lime-400:after,
+.steps .step.step-lime-400>.step-icon {
+  background-color: #84cc16;
+  border-color: #65a30d;
+  color: #111827;
+  box-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
+}
+
+.steps .step.step-success:after,
+.steps .step.step-success>.step-icon {
+  background-color: #4ade80;
+  border-color: #22c55e;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Step title styles for better visibility */
+.steps .step .absolute {
+  background-color: rgba(17, 24, 39, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* PDF Thumbnail styles */
+.pdf-thumbnail-wrapper {
+  width: 100%;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.pdf-thumbnail {
+  width: 100%;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-color: rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pdf-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-color: rgba(132, 204, 22, 0.5);
+}
+
+.pdf-thumbnail .thumbnail-canvas {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+}
+
+.pdf-thumbnail .pdf-icon {
+  width: 36px;
+  height: 36px;
+  color: #84cc16;
+  margin-bottom: 8px;
+}
+
+.pdf-thumbnail .filename {
+  font-size: 0.75rem;
+  color: white;
+  text-align: center;
+  padding: 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+  background-color: rgba(31, 41, 55, 0.8);
+  border-radius: 4px;
+  position: absolute;
+  bottom: 8px;
+}
+
+/* QR Code styling */
+.qr-code-container {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.qr-code-container:hover {
+  transform: scale(1.02);
+}
+
+/* Status badge in Step 10 */
+.summary-status-badge {
+  padding: 6px 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  font-size: 0.875rem;
+}
+</style>
