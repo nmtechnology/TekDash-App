@@ -83,7 +83,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('/work-orders/{id}/activities', [WorkOrderController::class, 'getActivities'])->name('work-orders.activities');
     
     // Notes
-    Route::post('/work-orders/{workOrder}/notes', [WorkOrderController::class, 'addNote']);
     Route::get('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'index'])->name('work-order.notes.index');
     Route::post('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'store'])->name('work-order.notes.store');
     

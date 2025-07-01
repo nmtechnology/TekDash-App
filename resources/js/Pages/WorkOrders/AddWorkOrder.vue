@@ -1148,7 +1148,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { useForm, usePage } from '@inertiajs/vue3';
+import { useForm, usePage, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
 import PdfThumbnail from '@/Components/PdfThumbnail.vue';
@@ -2235,28 +2235,48 @@ const submitForm = async () => {
     isSubmitting.value = true;
     console.log('Submitting work order form...', form.data());
 
-    // Prepare form data for submission
-    const formData = {
-      ...form.data(),
-      title: formattedTitle.value,
-      work_type: workType.value,
-      work_order_number: workOrderNumber.value,
-      location: location.value,
-      price: totalPrice.value,
-      grand_total: totalPrice.value,
-      hourly_rate: form.hourlyRate, // Ensure backend compatibility
-    };
+    // Get current user from Inertia props
+    const { props } = usePage();
+    const currentUser = props.auth?.user;
+    
+    if (!currentUser?.id) {
+      throw new Error('User not authenticated');
+    }
+
+    // Ensure title is set
+    const workOrderTitle = formattedTitle.value || `${workType.value || 'Work Order'} / ${workOrderNumber.value || 'No WO#'} / ${location.value || 'No Location'}`;
+
+    // Update form with required fields before submission
+    form.user_id = currentUser.id;
+    form.title = workOrderTitle;
+    form.work_type = workType.value;
+    form.work_order_number = workOrderNumber.value;
+    form.location = location.value;
+    form.price = totalPrice.value;
+    form.grand_total = totalPrice.value;
+    form.hourly_rate = form.hourlyRate; // Ensure backend compatibility
+
+    console.log('Form data before submission:', {
+      user_id: form.user_id,
+      title: form.title,
+      customer_id: form.customer_id,
+      technician_id: form.technician_id,
+      // ... other fields for debugging
+    });
 
     // Use Inertia's post method to submit the form
     form.post('/work-orders', {
-      data: formData,
       onSuccess: (page) => {
         console.log('Work order created successfully:', page);
         // Reset form and close modal on success
         resetForm();
         showModal.value = false;
-        // Show success message or redirect as needed
+        // Show success message
         alert('Work order created successfully!');
+        
+        // Use Inertia router to refresh the current page with fresh data
+        // This will update all components (calendar, revenue stats, etc.) without a full page reload
+        router.reload();
       },
       onError: (errors) => {
         console.error('Form submission errors:', errors);

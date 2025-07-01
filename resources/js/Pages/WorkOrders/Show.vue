@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import QRCode from 'qrcode.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { DocumentIcon, PhotoIcon, DocumentTextIcon, QrCodeIcon } from '@heroicons/vue/24/outline';
@@ -22,6 +23,9 @@ const props = defineProps({
         default: () => []
     }
 });
+
+const { props: pageProps } = usePage();
+const currentUserId = pageProps.auth?.user?.id;
 
 const processing = ref(false);
 const createInvoice = async () => {
@@ -291,10 +295,10 @@ const isImage = (doc) => {
                         <Messenger 
                         :initialNotes="workOrder.notes" 
                         :workOrderId="workOrder.id"
-                        :userId="$page.props.auth.user.name"
+                        :userId="currentUserId"
                         :getUserName="getUserName"
                         :getUserAvatar="getUserAvatar"
-                        :currentUserAvatar="$page.props.auth.user.profile_photo_url"
+                        :currentUserAvatar="pageProps.auth.user.profile_photo_url"
                             class="bg-gray-800 rounded-lg p-4"
                         />
                     </div>

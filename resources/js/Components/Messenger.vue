@@ -374,7 +374,7 @@ export default {
       };
       
       // Use axios.post instead of Inertia.post
-      axios.post(`/work-orders/${props.workOrderId}/notes`, 
+      axios.post(`/work-orders/${props.workOrderId}/notes`,
         { 
           text: newNote.text,
           urgent: isUrgent.value // Include urgent flag in the API request

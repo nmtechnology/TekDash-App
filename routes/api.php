@@ -67,7 +67,8 @@ Route::post('/work-orders/{workOrder}/duplicate', [WorkOrderController::class, '
 
 // Notes and attachments
 Route::get('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'index'])->name('work-order.notes.index');
-Route::post('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'store'])->name('work-order.notes.store');
+// Route::post('/work-orders/{workOrderId}/notes', [\App\Http\Controllers\NoteController::class, 'store'])->name('work-order.notes.store');
+Route::post('/work-orders/{workOrderId}/notes', [WorkOrderController::class, 'addNote']);
 Route::post('/work-orders/{id}/images', [WorkOrderController::class, 'addImage']);
 Route::delete('/work-orders/{id}/images/{imageId}', [WorkOrderController::class, 'deleteImage']);
 Route::get('/work-orders/{id}/file-attachments', [WorkOrderController::class, 'getFileAttachments']);

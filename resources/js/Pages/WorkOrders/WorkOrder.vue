@@ -507,9 +507,16 @@
 
               <!-- Messenger Content -->
               <div class="flex-1 overflow-y-auto p-3 max-w-full">
-                <Messenger class="max-w-full" :workOrderId="props.workOrder.id" :userId="props.workOrder.user_id"
-                  :initialNotes="props.workOrder.notes || []" :currentUserId="props.workOrder.user_id"
-                  :getUserName="getUserName" :getUserAvatar="getUserAvatar" :users="props.users" />
+                <Messenger class="max-w-full"
+                  :workOrderId="props.workOrder.id"
+                  :userId="currentUserId"
+                  :initialNotes="props.workOrder.notes || []"
+                  :currentUserId="currentUserId"
+                  :getUserName="getUserName"
+                  :getUserAvatar="getUserAvatar"
+                  :currentUserAvatar="currentUserAvatar"
+                  :users="props.users"
+                />
               </div>
 
               <!-- Messenger Footer -->
@@ -539,6 +546,7 @@ import { CalendarIcon } from 'lucide-vue-next';
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover';
 import { Button } from '@/Components/ui/button';
 import { RangeCalendar } from '@/Components/ui/range-calendar';
+import { usePage } from '@inertiajs/vue3';
 
 // Format currency utility (since @/Utils/formatCurrency does not exist)
 function formatCurrency(value) {
@@ -1200,6 +1208,11 @@ const duplicateWorkOrder = async (event) => {
     }
   }
 };
+
+// --- Page props ---
+const page = usePage();
+const currentUserId = page.props.auth?.user?.id;
+const currentUserAvatar = page.props.auth?.user?.profile_photo_url || '';
 </script>
 
 <style scoped>
