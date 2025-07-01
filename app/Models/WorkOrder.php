@@ -19,6 +19,7 @@ class WorkOrder extends Model
 
     protected $fillable = [
         'title',
+        'visit_number',
         'description',
         'date_time',
         'status',

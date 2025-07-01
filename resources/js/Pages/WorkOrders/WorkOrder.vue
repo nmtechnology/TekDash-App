@@ -88,6 +88,7 @@
             </div>
             <div class="text-gray-300 text-sm">
               Created: {{ formatDate(props.workOrder.created_at) }}
+              <span v-if="props.workOrder.visit_number" class="ml-2 text-indigo-400">Visit #{{ props.workOrder.visit_number }}</span>
             </div>
           </div>
 
@@ -303,11 +304,13 @@
               </button>
 
               <!-- Duplicate button -->
-              <button @click="duplicateWorkOrder($event)" :disabled="['Complete', 'Archived'].includes(props.workOrder.status)" :class="[
-                'glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-purple-400 font-bold hover:bg-purple-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs',
-                { 'opacity-50 cursor-not-allowed': ['Complete', 'Archived'].includes(props.workOrder.status) }
-              ]"
-                :title="['Complete', 'Archived'].includes(props.workOrder.status) ? 'Cannot duplicate completed or archived work orders' : 'Create a duplicate work order'">
+              <button @click="duplicateWorkOrder($event)"
+                :disabled="!canDuplicate"
+                :class="[
+                  'glossy-btn btn w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 py-1.5 text-purple-400 font-bold hover:bg-purple-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs',
+                  { 'opacity-50 cursor-not-allowed': !canDuplicate }
+                ]"
+                :title="canDuplicate ? 'Create a duplicate work order' : 'Cannot duplicate archived work orders'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -319,9 +322,9 @@
               <!-- Get Signature button -->
               <button @click="getSignature"
                 class="glossy-btn btn w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-blue-400 font-bold hover:bg-blue-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
-                :disabled="!hasPdfAttachment || props.workOrder.status === 'Scheduled'"
-                :class="{ 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-indigo-400': !hasPdfAttachment || props.workOrder.status === 'Scheduled' }"
-                :title="getSignatureButtonTitle">
+                :disabled="!canCollectSignature"
+                :class="{ 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-indigo-400': !canCollectSignature }"
+                :title="signatureButtonTitle">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -735,7 +738,8 @@ const saveField = async (field) => {
     // For regular fields (not images), use the updateField endpoint
     const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
       [field]: form.value[field],
-      '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'
+      )
     });
 
     if (response.data.success) {
@@ -919,11 +923,44 @@ function handlePreviewAttachment(attachment) {
   }
 }
 
-// --- Signature button title ---
-const getSignatureButtonTitle = computed(() => {
+// --- Signature button enabled/disabled logic ---
+const canCollectSignature = computed(() => {
+  // Enable for In Progress, Part Needed, Complete, or Part/Return, and PDF present
+  const status = (props.workOrder.status || '').toLowerCase();
+  return (
+    hasPdfAttachment.value && (
+      status.includes('in progress') ||
+      status.includes('part needed') ||
+      status.includes('complete') ||
+      status.includes('part') ||
+      status.includes('return')
+    )
+  );
+});
+
+const signatureButtonTitle = computed(() => {
+  const status = (props.workOrder.status || '').toLowerCase();
   if (!hasPdfAttachment.value) return 'No PDF attachments available for signature.';
-  if (props.workOrder.status === 'Scheduled') return 'Signature collection is not available for Scheduled work orders.';
+  if (!(
+    status.includes('in progress') ||
+    status.includes('part needed') ||
+    status.includes('complete') ||
+    status.includes('part') ||
+    status.includes('return')
+  )) return 'Signature collection is only available for In Progress, Part Needed, or Complete work orders.';
   return 'Collect signature on PDF attachments';
+});
+
+// --- Duplicate button enabled/disabled logic ---
+const canDuplicate = computed(() => {
+  // Active for all except In Progress, Complete, and Archived
+  return !['In Progress', 'Complete', 'Archived'].includes(props.workOrder.status);
+});
+
+// --- Archive button enabled/disabled logic ---
+const canArchive = computed(() => {
+  // Only active for Complete status
+  return props.workOrder.status === 'Complete';
 });
 
 // --- User name/avatar helpers for Messenger ---
@@ -1162,30 +1199,30 @@ const deleteWorkOrder = async () => {
 const duplicateWorkOrder = async (event) => {
   try {
     event.preventDefault();
-    
     // Prompt user for new date
     const newDate = window.prompt('Please enter a new date for the duplicated work order (MM/DD/YYYY):', 
       new Date().toLocaleDateString('en-US'));
-    
     if (!newDate) {
-      // User cancelled the prompt
       return;
     }
-
     // Validate the date format
     const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
     if (!dateRegex.test(newDate)) {
       showError('Please enter a valid date in MM/DD/YYYY format');
       return;
     }
-
     // Convert the date to ISO format for the API
     const [month, day, year] = newDate.split('/');
     const isoDate = new Date(year, month - 1, day).toISOString();
 
-    // Send the duplicate request with the new date
+    // Determine the next visit number
+    const currentVisit = props.workOrder.visit_number || 1;
+    const nextVisit = currentVisit + 1;
+
+    // Send the duplicate request with the new date and visit number
     const response = await axios.post(`/work-orders/${props.workOrder.id}/duplicate`, {
-      date_time: isoDate  // Send the new date to the backend
+      date_time: isoDate,
+      visit_number: nextVisit
     }, {
       headers: {
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
@@ -1193,9 +1230,8 @@ const duplicateWorkOrder = async (event) => {
         'Accept': 'application/json'
       }
     });
-    
     if (response.data.message) {
-      showSuccess('Work order duplicated successfully with scheduled date: ' + newDate);
+      showSuccess('Work order duplicated successfully with scheduled date: ' + newDate + ' (Visit #' + nextVisit + ')');
       emit('workOrderDuplicated', response.data);
       emit('close');
     }
@@ -1213,6 +1249,16 @@ const duplicateWorkOrder = async (event) => {
 const page = usePage();
 const currentUserId = page.props.auth?.user?.id;
 const currentUserAvatar = page.props.auth?.user?.profile_photo_url || '';
+
+// Function to handle image uploads
+function handleImageUpload(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  // Convert FileList to Array and assign to form.value.images
+  form.value.images = Array.from(files);
+  editingField.value.images = true;
+  uploadError.value = null;
+}
 </script>
 
 <style scoped>

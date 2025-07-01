@@ -2,32 +2,28 @@
   <div class="messenger bg-transparent flex flex-col h-full">
     <!-- Messages list -->
     <div class="messages p-1 space-y-4 overflow-y-auto flex-1">
-      <div 
-        :class="[
+      <div :class="[
           'chat', 
           note.user_id === userId ? 'chat-end' : 'chat-start',
           note.isNew ? 'chat-new' : '',
-        ]" 
-        v-for="note in notes" 
-        :key="note.id"
-      >
+        ]" v-for="note in notes" :key="note.id">
         <!-- User avatar - Show note author's initials -->
         <div class="chat-image">
-          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700 mask mask-hexagon">
+          <div
+            class="h-10 w-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center border border-gray-700 mask mask-hexagon">
             <div class="avatar-initials text-white text-lg font-bold" :title="note.user_name || 'Unknown'">
               {{ note.user_initials || getUserInitials(note.user_id) }}
             </div>
           </div>
         </div>
-        
+
         <!-- Message content as chat bubble with varied colors -->
-        <div 
-          class="chat-bubble" 
-          :class="getBubbleClass(note)"
-        >
+        <div class="chat-bubble" :class="getBubbleClass(note)">
           <div v-if="note.urgent" class="font-bold text-xs mb-1 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             URGENT
           </div>
@@ -38,65 +34,71 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Input area with shadcn components -->
     <div class="border-t border-gray-700 p-2 mt-auto">
       <div class="flex items-start space-x-2">
         <!-- Current user avatar - Always show initials for consistency -->
-        <!-- <div class="flex-shrink-0">
-          <div class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-900 mask mask-hexagon">
+        <div class="flex-shrink-0">
+          <div
+            class="h-10 w-10 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-900 mask mask-hexagon">
             <div class="avatar-initials text-lime-400 text-lg font-bold">
               {{ getCurrentUserInitials() }}
             </div>
           </div>
-        </div> -->
-        
+        </div>
+
         <!-- Message input using shadcn components -->
         <div class="flex-1 grid gap-2">
           <div class="relative">
-            <Textarea
-              v-model="newNoteText"
-              placeholder="Type your message here..."
-              rows="1"
-              @keydown.enter.prevent="addNote"
-              ref="messageInput"
-              class="resize-none min-h-[40px] pr-10"
-            />
-            
+            <Textarea v-model="newNoteText" placeholder="Type your message here..." rows="1"
+              @keydown.enter.prevent="addNote" ref="messageInput" class="resize-none min-h-[40px] pr-10" />
+
             <!-- Urgent message button -->
-            <button 
-              @click.stop="toggleUrgentMessage" 
+            <button @click.stop="toggleUrgentMessage"
               class="absolute bottom-2 right-10 p-1 rounded-full hover:bg-gray-700"
               :class="isUrgent ? 'text-red-500 hover:text-red-400 bg-gray-700' : 'text-red-400 hover:text-red-300'"
-              title="Mark as urgent"
-              type="button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              title="Mark as urgent" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </button>
-            
+
             <!-- Emoji button -->
-            <button 
-              @click.stop="showEmojiPickerModal = true" 
+            <button @click.stop="showEmojiPickerModal = true"
               class="absolute bottom-2 right-2 p-1 rounded-full hover:bg-gray-700 text-yellow-400 hover:text-yellow-300"
-              title="Add emoji"
-              type="button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              title="Add emoji" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
           </div>
-          
+
           <div class="flex justify-end">
-            <button 
-              @click="addNote" 
+            <!-- Add this inside the Messenger input area, near the Send button -->
+            <div class="flex items-center gap-2 mt-2">
+              <select v-model="selectedStatus" class="rounded-md border-gray-700 bg-gray-800 text-white px-2 py-1">
+                <option disabled value="">Change Status</option>
+                <option v-for="status in statusOptions" :key="status" :value="status">
+                  {{ status }}
+                </option>
+              </select>
+              <button @click="changeStatus"
+                class="btn px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+                :disabled="!selectedStatus" type="button">
+                Update Status
+              </button>
+            </div>
+
+            <button @click="addNote"
               class="glossy-btn btn font-bold inline-flex justify-center rounded-md border px-4 py-2 text-lime-400 hover:bg-lime-400 hover:text-lime-500 text-base transition-all duration-200 shadow-lg"
-              :disabled="!newNoteText.trim()"
-              type="button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              :disabled="!newNoteText.trim()" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               Send Message
@@ -105,16 +107,13 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Emoji Picker Modal - Add this section -->
     <div v-if="showEmojiPickerModal" class="emoji-modal-backdrop" @click="showEmojiPickerModal = false">
       <div class="emoji-modal-container" @click.stop>
         <div class="emoji-modal-header">
           <h3 class="emoji-modal-title">Select Emoji</h3>
-          <button 
-            @click="showEmojiPickerModal = false" 
-            class="emoji-modal-close"
-          >
+          <button @click="showEmojiPickerModal = false" class="emoji-modal-close">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -301,6 +300,39 @@ export default {
         }
       });
     };
+
+    // Add to setup()
+const selectedStatus = ref('');
+const statusOptions = [
+  'Open',
+  'In Progress',
+  'On Hold',
+  'Completed',
+  'Cancelled'
+];
+
+const changeStatus = async () => {
+  if (!selectedStatus.value) return;
+  try {
+    await axios.post(`/work-orders/${props.workOrderId}/status`, {
+      status: selectedStatus.value
+    });
+    // Optionally, post a note about the status change
+    notes.value.push({
+      id: 'status-' + Date.now(),
+      text: `Status changed to "${selectedStatus.value}"`,
+      user_id: props.userId,
+      created_at: new Date().toISOString(),
+      isNew: true
+    });
+    // Optionally, fetch notes again or emit an event to parent
+    fetchNotes();
+    selectedStatus.value = '';
+  } catch (error) {
+    alert('Failed to update status.');
+    console.error(error);
+  }
+};
     
     // Improved CSRF token retrieval
     const getCsrfToken = () => {

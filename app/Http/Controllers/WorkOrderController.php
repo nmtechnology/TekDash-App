@@ -6,6 +6,8 @@ use App\Models\WorkOrder;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\Note;
+use App\Models\Attachment;
+use Illuminate\Support\Facades\Storage;
 
 class WorkOrderController extends Controller
 {
@@ -211,25 +213,18 @@ public function getDetails($id)
     }
 
     // Duplicate the specified resource
-    public function duplicate($id)
+    public function duplicate($id, Request $request)
     {
         $workOrder = WorkOrder::findOrFail($id);
         $newWorkOrder = $workOrder->replicate();
         $newWorkOrder->user_id = auth()->id();
-        
-        // Fix the pattern to search for duplicates
-        $baseTitle = preg_replace('/ -\d+ \(Return\)$/', '', $workOrder->title);
-        $latestDuplicate = WorkOrder::where('title', 'like', $baseTitle . ' -%')->orderBy('id', 'desc')->first();
-        
-        if ($latestDuplicate) {
-            // Extract the number from the latest duplicate
-            preg_match('/ -(\d+) \(Return\)$/', $latestDuplicate->title, $matches);
-            $copyNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 2;
-        } else {
-            $copyNumber = 2;
-        }
-        
-        $newWorkOrder->title = $baseTitle . ' -' . str_pad($copyNumber, 2, '0', STR_PAD_LEFT) . ' (Return)';
+
+        // Use visit_number from request or increment
+        $nextVisit = $request->input('visit_number', ($workOrder->visit_number ?? 1) + 1);
+        $newWorkOrder->visit_number = $nextVisit;
+        $newWorkOrder->date_time = $request->input('date_time', $workOrder->date_time);
+        // Do not change title for visit tracking
+        $newWorkOrder->title = $workOrder->title;
 
         // Handle file attachments
         if ($workOrder->file_attachments) {
@@ -242,7 +237,7 @@ public function getDetails($id)
             }
             $newWorkOrder->file_attachments = json_encode($newFileAttachments);
         }
-        
+
         // Copy images if they exist
         if ($workOrder->images) {
             $images = json_decode($workOrder->images, true);
@@ -257,8 +252,10 @@ public function getDetails($id)
 
         $newWorkOrder->save();
 
-        $userName = auth()->user()->name;
-        return redirect()->route('dashboard')->with('message', "Work order duplicated successfully by $userName");
+        return response()->json([
+            'message' => 'Work order duplicated successfully.',
+            'work_order' => $newWorkOrder
+        ]);
     }
 
     public function addNote(Request $request, $workOrderId)
@@ -463,7 +460,7 @@ public function getActivities($id)
                     'created_at' => $activity->created_at->toISOString(),
                     'updated_at' => $activity->updated_at->toISOString()
                 ];
-            })
+            })->all()
         ]);
     } catch (\Exception $e) {
         return response()->json([
@@ -473,65 +470,36 @@ public function getActivities($id)
     }
 }
 
-    // API endpoint for deleting a work order
-    public function deleteWorkOrder($id)
-    {
-        try {
-            $workOrder = WorkOrder::findOrFail($id);
-            
-            // Create the activity log before deleting the work order
-            \DB::beginTransaction();
-            try {
-                // Manually create the deletion activity log
-                \App\Models\WorkOrderActivity::create([
-                    'work_order_id' => $workOrder->id,
-                    'user_id' => auth()->id(),
-                    'field_name' => 'work_order',
-                    'old_value' => 'Active',
-                    'new_value' => 'Deleted',
-                    'action_type' => 'delete',
-                    'description' => 'Work order deleted',
-                ]);
-                
-                // Temporarily disable the observer
-                \App\Models\WorkOrder::withoutEvents(function () use ($workOrder) {
-                    $workOrder->delete();
-                });
-                
-                \DB::commit();
-            } catch (\Exception $innerException) {
-                \DB::rollBack();
-                throw $innerException;
-            }
-            
-            return response()->json(['success' => true, 'message' => 'Work order deleted successfully.']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+/**
+ * Handle file uploads for a work order (attachments: images, pdfs, etc.)
+ */
+public function uploadAttachments(Request $request, $id)
+{
+    $workOrder = WorkOrder::findOrFail($id);
+    $request->validate([
+        'attachments.*' => 'required|file|max:10240', // 10MB max per file
+    ]);
+
+    $uploaded = [];
+    if ($request->hasFile('attachments')) {
+        foreach ($request->file('attachments') as $file) {
+            $path = $file->store('work_orders/' . $workOrder->id, 'public');
+            $attachment = Attachment::create([
+                'work_order_id' => $workOrder->id,
+                'file_path' => $path,
+                'file_name' => $file->getClientOriginalName(),
+                'file_type' => $file->getClientMimeType(),
+                'file_size' => $file->getSize(),
+                'url' => Storage::disk('public')->url($path),
+            ]);
+            $uploaded[] = $attachment;
         }
     }
-    
-    /**
-     * Check if a work order with the given number already exists.
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function checkWorkOrderExists(Request $request)
-    {
-        $request->validate([
-            'workOrderNumber' => 'required|string'
-        ]);
-        
-        $workOrderNumber = $request->workOrderNumber;
-        
-        // The work order number is typically part of the title field
-        // Format is usually: "{workType} / {workOrderNumber} / {location}"
-        $exists = WorkOrder::where('title', 'like', "%/{$workOrderNumber}/%")
-            ->orWhere('title', 'like', "%{$workOrderNumber}%")
-            ->exists();
-            
-        return response()->json([
-            'exists' => $exists
-        ]);
-    }
+    // Return all attachments for this work order
+    $attachments = $workOrder->attachments()->get();
+    return response()->json([
+        'success' => true,
+        'attachments' => $attachments,
+    ]);
+}
 }
