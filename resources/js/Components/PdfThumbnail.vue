@@ -27,7 +27,8 @@ import { ref, onMounted, computed, watch } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 
-// Set the worker source to the local worker file via Vite
+// Explicitly set the worker source and verify
+console.log('PDF.js worker URL:', pdfjsWorker);
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default {
@@ -47,6 +48,9 @@ export default {
   setup(props, { emit }) {
     const canvas = ref(null);
     const thumbnailGenerated = ref(false);
+    
+    // Log worker setup verification
+    console.log('PdfThumbnail: Worker source is set to:', pdfjsLib.GlobalWorkerOptions.workerSrc);
 
     const truncatedFilename = computed(() => {
       const maxLength = 20;
@@ -54,55 +58,143 @@ export default {
       return props.filename.substring(0, maxLength - 3) + '...';
     });
 
-    // Helper function to normalize URLs
+    // Improved URL normalization function
     const normalizeUrl = (url) => {
-      if (!url) return '';
-      
-      // Get the current origin to ensure consistent URLs
-      const origin = window.location.origin;
-      
-      // If it's already a full URL
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        // Replace localhost with current origin if needed to avoid CORS issues
-        if (url.includes('localhost') && !origin.includes('localhost')) {
-          return url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
-        }
-        return url;
+      if (!url) {
+        console.error('PdfThumbnail: Empty URL provided');
+        return '';
       }
       
-      // Otherwise add origin to relative URL
-      return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+      console.log('PdfThumbnail: Normalizing URL:', url);
+      
+      // Get the current origin
+      const origin = window.location.origin;
+      let normalizedUrl = url;
+      
+      // Handle already absolute URLs
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Replace localhost with current origin if needed
+        if (url.includes('localhost') && !origin.includes('localhost')) {
+          normalizedUrl = url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+          console.log('PdfThumbnail: Replaced localhost URL:', normalizedUrl);
+        }
+      } 
+      // Handle storage URLs
+      else if (url.includes('storage/')) {
+        // Ensure URL has proper storage path formatting
+        const storagePath = url.includes('/storage/') ? url : `/storage/${url.replace(/^storage\//, '')}`;
+        normalizedUrl = `${origin}${storagePath}`;
+        console.log('PdfThumbnail: Formatted storage URL:', normalizedUrl);
+      }
+      // Handle other relative URLs
+      else {
+        normalizedUrl = `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+        console.log('PdfThumbnail: Normalized relative URL:', normalizedUrl);
+      }
+      
+      return normalizedUrl;
     };
     
     const generateThumbnail = async () => {
+      if (!props.pdfUrl) {
+        console.error('PdfThumbnail: No PDF URL provided');
+        thumbnailGenerated.value = false;
+        emit('error', new Error('No PDF URL provided'));
+        return;
+      }
+      
       try {
-        // Normalize the URL to prevent CORS issues
+        // Normalize the URL
         const normalizedUrl = normalizeUrl(props.pdfUrl);
-        console.log('Loading PDF thumbnail from:', normalizedUrl);
+        console.log('PdfThumbnail: Loading PDF thumbnail from:', normalizedUrl);
         
+        // Check if URL is accessible first
+        try {
+          const checkResponse = await fetch(normalizedUrl, { 
+            method: 'HEAD',
+            credentials: 'include', // Include cookies for authenticated requests
+            headers: {
+              'Accept': 'application/pdf',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+          
+          console.log('PdfThumbnail: URL check response:', checkResponse.status, checkResponse.ok);
+          
+          if (!checkResponse.ok) {
+            console.error('PdfThumbnail: URL is not accessible:', checkResponse.status);
+            thumbnailGenerated.value = false;
+            emit('error', new Error(`URL not accessible: ${checkResponse.status}`));
+            return;
+          }
+        } catch (fetchError) {
+          console.error('PdfThumbnail: Cannot fetch URL:', fetchError);
+          // Continue anyway, as the fetch might fail but pdf.js might still load it
+        }
+        
+        console.log('PdfThumbnail: Creating PDF loading task');
+        
+        // Improved PDF loading with proper error handling and cMapUrl
         const loadingTask = pdfjsLib.getDocument({
           url: normalizedUrl,
+          withCredentials: true,
+          cMapUrl: `${window.location.origin}/node_modules/pdfjs-dist/cmaps/`,
+          cMapPacked: true
         });
+        
+        console.log('PdfThumbnail: Awaiting PDF document');
         const pdf = await loadingTask.promise;
+        
+        console.log('PdfThumbnail: PDF loaded successfully, pages:', pdf.numPages);
+        if (pdf.numPages < 1) {
+          throw new Error('PDF has no pages');
+        }
+        
         const page = await pdf.getPage(1);
+        console.log('PdfThumbnail: First page retrieved');
+        
+        if (!canvas.value) {
+          console.error('PdfThumbnail: Canvas reference is null');
+          throw new Error('Canvas reference is null');
+        }
+        
         const viewport = page.getViewport({ scale: 0.3 });
-        const context = canvas.value.getContext('2d');
+        const context = canvas.value.getContext('2d', { alpha: false });
+        
+        // Set proper dimensions
         canvas.value.width = viewport.width;
         canvas.value.height = viewport.height;
-        await page.render({
+        
+        console.log('PdfThumbnail: Rendering page to canvas', {
+          width: viewport.width,
+          height: viewport.height
+        });
+        
+        // Render the page
+        const renderTask = page.render({
           canvasContext: context,
           viewport: viewport
-        }).promise;
+        });
+        
+        await renderTask.promise;
+        console.log('PdfThumbnail: Rendering complete');
         thumbnailGenerated.value = true;
       } catch (error) {
-        console.error('Error generating PDF thumbnail:', error);
+        console.error('PdfThumbnail: Error generating PDF thumbnail:', error);
+        console.error('PdfThumbnail: Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          url: props.pdfUrl
+        });
         thumbnailGenerated.value = false;
-        emit('error', error); // Emit error event so parent can show fallback
+        emit('error', error);
       }
     };
 
-    // Regenerate thumbnail if pdfUrl changes
-    watch(() => props.pdfUrl, () => {
+    // Regenerate thumbnail when URL changes
+    watch(() => props.pdfUrl, (newUrl, oldUrl) => {
+      console.log('PdfThumbnail: URL changed from', oldUrl, 'to', newUrl);
       thumbnailGenerated.value = false;
       generateThumbnail();
     });
@@ -116,6 +208,7 @@ export default {
     };
 
     onMounted(() => {
+      console.log('PdfThumbnail: Component mounted, generating thumbnail');
       generateThumbnail();
     });
 
@@ -204,15 +297,6 @@ export default {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  outline: none;
-}
-
-.delete-button {
-  width: 24px;
-  height: 24px;
   background: transparent;
   border: none;
   cursor: pointer;

@@ -1063,46 +1063,90 @@ function isImageFile(attachment) {
 // Helper: Get the full URL for an attachment
 function getAttachmentUrl(attachment) {
   if (!attachment) return '';
+
+  // Debug information
+  console.log('WorkOrder: Getting attachment URL for:', attachment);
   
   // Get the current origin to ensure consistent URLs
   const origin = window.location.origin;
+  
+  let result = '';
   
   if (typeof attachment === 'string') {
     // If it's already a full URL, return as is
     if (attachment.startsWith('http://') || attachment.startsWith('https://')) {
       // Replace localhost with current origin if needed
       if (attachment.includes('localhost') && !origin.includes('localhost')) {
-        return attachment.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+        result = attachment.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+        console.log('WorkOrder: Replaced localhost URL:', result);
+      } else {
+        result = attachment;
       }
-      return attachment;
+    } 
+    // Handle storage URLs specifically
+    else if (attachment.includes('storage/')) {
+      // Ensure URL has proper storage path formatting
+      const storagePath = attachment.includes('/storage/') ? attachment : `/storage/${attachment.replace(/^storage\//, '')}`;
+      result = `${origin}${storagePath}`;
+      console.log('WorkOrder: Formatted storage URL:', result);
+    } 
+    // Handle other relative URLs
+    else {
+      result = `${origin}${attachment.startsWith('/') ? '' : '/'}${attachment}`;
+      console.log('WorkOrder: Normalized relative URL:', result);
     }
-    // Otherwise add origin
-    return `${origin}${attachment.startsWith('/') ? '' : '/'}${attachment}`;
-  }
-  
-  if (attachment.url) {
+  } else if (attachment.url) {
     // If it's already a full URL, return as is or fix localhost
     if (attachment.url.startsWith('http://') || attachment.url.startsWith('https://')) {
       if (attachment.url.includes('localhost') && !origin.includes('localhost')) {
-        return attachment.url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+        result = attachment.url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+        console.log('WorkOrder: Replaced localhost URL from object:', result);
+      } else {
+        result = attachment.url;
       }
-      return attachment.url;
+    } 
+    // Handle storage URLs within attachment.url
+    else if (attachment.url.includes('storage/')) {
+      // Ensure URL has proper storage path formatting
+      const storagePath = attachment.url.includes('/storage/') ? attachment.url : `/storage/${attachment.url.replace(/^storage\//, '')}`;
+      result = `${origin}${storagePath}`;
+      console.log('WorkOrder: Formatted storage URL from object:', result);
     }
-    // Otherwise add origin
-    return `${origin}${attachment.url.startsWith('/') ? '' : '/'}${attachment.url}`;
+    // Handle other relative URLs
+    else {
+      result = `${origin}${attachment.url.startsWith('/') ? '' : '/'}${attachment.url}`;
+      console.log('WorkOrder: Normalized relative URL from object:', result);
+    }
+  } else if (attachment.path) {
+    // Better handling of storage paths from path property
+    const path = attachment.path.startsWith('/storage/') 
+      ? attachment.path 
+      : `/storage/${attachment.path.replace(/^public[\/]/, '').replace(/^storage\//, '')}`;
+    result = `${origin}${path}`;
+    console.log('WorkOrder: Built URL from path:', result);
+  } else if (attachment.file_name) {
+    // Better handling of storage paths from file_name property
+    const path = attachment.file_name.startsWith('/storage/') 
+      ? attachment.file_name 
+      : `/storage/${attachment.file_name.replace(/^public[\/]/, '').replace(/^storage\//, '')}`;
+    result = `${origin}${path}`;
+    console.log('WorkOrder: Built URL from file_name:', result);
   }
   
-  if (attachment.path) {
-    const path = `/storage/${attachment.path.replace(/^public[\/]/, '')}`;
-    return `${origin}${path}`;
+  // Verify the URL is properly formed
+  try {
+    new URL(result);
+    console.log('WorkOrder: Final attachment URL (valid):', result);
+  } catch (e) {
+    console.error('WorkOrder: Generated invalid URL:', result, e);
+    // Try to fix the URL by forcing it to be absolute
+    if (result && !result.startsWith('http')) {
+      result = `${origin}${result.startsWith('/') ? '' : '/'}${result}`;
+      console.log('WorkOrder: Attempted URL fix:', result);
+    }
   }
   
-  if (attachment.file_name) {
-    const path = `/storage/${attachment.file_name.replace(/^public[\/]/, '')}`;
-    return `${origin}${path}`;
-  }
-  
-  return '';
+  return result;
 }
 
 // Method: getAllAttachments for template usage

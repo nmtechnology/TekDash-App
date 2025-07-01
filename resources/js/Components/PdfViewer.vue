@@ -331,41 +331,57 @@ export default {
       emit('close');
     };
     
-    // Simple URL processing function - avoid complexity
+    // Enhanced URL normalization function for PDF URLs
     const getFullPdfUrl = (url) => {
-      if (!url) return '';
+      if (!url) {
+        console.error('PdfViewer: Empty URL provided');
+        return '';
+      }
+      
+      console.log('PdfViewer: Normalizing URL:', url);
       
       // Get the current origin to ensure consistent URLs
       const origin = window.location.origin;
+      let normalizedUrl = url;
       
-      // If it's already a full URL
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        // Replace localhost with current origin if needed to avoid CORS issues
-        if (url.includes('localhost') && !origin.includes('localhost')) {
-          return url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+      try {
+        // Handle already absolute URLs
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          // Replace localhost with current origin if needed to avoid CORS issues
+          if (url.includes('localhost') && !origin.includes('localhost')) {
+            normalizedUrl = url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+            console.log('PdfViewer: Replaced localhost URL:', normalizedUrl);
+          }
+        } 
+        // Handle storage URLs specifically
+        else if (url.includes('storage/')) {
+          // Ensure URL has proper storage path formatting
+          const storagePath = url.includes('/storage/') ? url : `/storage/${url.replace(/^storage\//, '')}`;
+          normalizedUrl = `${origin}${storagePath}`;
+          console.log('PdfViewer: Formatted storage URL:', normalizedUrl);
+        } 
+        // Handle other relative URLs
+        else {
+          // Ensure path starts with slash
+          if (!url.startsWith('/')) {
+            url = '/' + url;
+          }
+          
+          normalizedUrl = `${origin}${url}`;
+          console.log('PdfViewer: Normalized relative URL:', normalizedUrl);
         }
-        return url;
+        
+        // Validate the URL
+        new URL(normalizedUrl);
+        
+      } catch (e) {
+        console.error('PdfViewer: Error normalizing URL:', e, url);
+        // Try a simple fallback
+        normalizedUrl = `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+        console.log('PdfViewer: Fallback URL:', normalizedUrl);
       }
       
-      // For local paths, simplify the logic
-      let fullPath = url;
-      
-      // Ensure path starts with slash
-      if (!fullPath.startsWith('/')) {
-        fullPath = '/' + fullPath;
-      }
-      
-      // Add storage prefix if needed and not already there
-      if (!fullPath.includes('/storage/')) {
-        fullPath = '/storage' + fullPath;
-      }
-      
-      // Add domain
-      if (typeof window !== 'undefined') {
-        fullPath = `${window.location.origin}${fullPath}`;
-      }
-      
-      return fullPath;
+      return normalizedUrl;
     };
     
     // Setup the PDF viewer with proper URLs
