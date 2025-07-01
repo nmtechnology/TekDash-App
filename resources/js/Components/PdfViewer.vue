@@ -328,8 +328,15 @@ export default {
     const getFullPdfUrl = (url) => {
       if (!url) return '';
       
-      // If it's already a full URL, return as is
+      // Get the current origin to ensure consistent URLs
+      const origin = window.location.origin;
+      
+      // If it's already a full URL
       if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Replace localhost with current origin if needed to avoid CORS issues
+        if (url.includes('localhost') && !origin.includes('localhost')) {
+          return url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+        }
         return url;
       }
       

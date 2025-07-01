@@ -395,7 +395,7 @@ public function updateField(Request $request, $id)
     $value = $request->input($field);
     
     // Validate field name to prevent mass assignment vulnerabilities
-    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'hourly_rate', 'hours', 'travel_cost', 'has_travel', 'grand_total'];
+    $allowedFields = ['customer_id', 'user_id', 'title', 'description', 'date_time', 'status', 'hourly_rate', 'hours', 'travel_cost', 'has_travel', 'grand_total', 'address'];
     
     if (!in_array($field, $allowedFields)) {
         return response()->json([

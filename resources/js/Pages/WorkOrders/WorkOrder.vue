@@ -1019,10 +1019,45 @@ function isImageFile(attachment) {
 // Helper: Get the full URL for an attachment
 function getAttachmentUrl(attachment) {
   if (!attachment) return '';
-  if (typeof attachment === 'string') return attachment;
-  if (attachment.url) return attachment.url;
-  if (attachment.path) return `/storage/${attachment.path.replace(/^public[\/]/, '')}`;
-  if (attachment.file_name) return `/storage/${attachment.file_name.replace(/^public[\/]/, '')}`;
+  
+  // Get the current origin to ensure consistent URLs
+  const origin = window.location.origin;
+  
+  if (typeof attachment === 'string') {
+    // If it's already a full URL, return as is
+    if (attachment.startsWith('http://') || attachment.startsWith('https://')) {
+      // Replace localhost with current origin if needed
+      if (attachment.includes('localhost') && !origin.includes('localhost')) {
+        return attachment.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+      }
+      return attachment;
+    }
+    // Otherwise add origin
+    return `${origin}${attachment.startsWith('/') ? '' : '/'}${attachment}`;
+  }
+  
+  if (attachment.url) {
+    // If it's already a full URL, return as is or fix localhost
+    if (attachment.url.startsWith('http://') || attachment.url.startsWith('https://')) {
+      if (attachment.url.includes('localhost') && !origin.includes('localhost')) {
+        return attachment.url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+      }
+      return attachment.url;
+    }
+    // Otherwise add origin
+    return `${origin}${attachment.url.startsWith('/') ? '' : '/'}${attachment.url}`;
+  }
+  
+  if (attachment.path) {
+    const path = `/storage/${attachment.path.replace(/^public[\/]/, '')}`;
+    return `${origin}${path}`;
+  }
+  
+  if (attachment.file_name) {
+    const path = `/storage/${attachment.file_name.replace(/^public[\/]/, '')}`;
+    return `${origin}${path}`;
+  }
+  
   return '';
 }
 

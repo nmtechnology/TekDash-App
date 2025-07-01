@@ -377,3 +377,14 @@ Route::post('/email/verification-notification', function (Request $request) {
 Route::get('/debug/login', function () {
     return Inertia::render('Auth/DebugLogin');
 })->middleware('web');
+
+// Serve storage files with CORS headers
+Route::middleware(['storage.cors'])->group(function () {
+    Route::get('/storage/{path}', function ($path) {
+        $fullPath = storage_path('app/public/' . $path);
+        if (!file_exists($fullPath)) {
+            abort(404);
+        }
+        return response()->file($fullPath);
+    })->where('path', '.*');
+});

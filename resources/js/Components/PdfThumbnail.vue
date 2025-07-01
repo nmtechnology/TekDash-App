@@ -54,10 +54,34 @@ export default {
       return props.filename.substring(0, maxLength - 3) + '...';
     });
 
+    // Helper function to normalize URLs
+    const normalizeUrl = (url) => {
+      if (!url) return '';
+      
+      // Get the current origin to ensure consistent URLs
+      const origin = window.location.origin;
+      
+      // If it's already a full URL
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Replace localhost with current origin if needed to avoid CORS issues
+        if (url.includes('localhost') && !origin.includes('localhost')) {
+          return url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
+        }
+        return url;
+      }
+      
+      // Otherwise add origin to relative URL
+      return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+    
     const generateThumbnail = async () => {
       try {
+        // Normalize the URL to prevent CORS issues
+        const normalizedUrl = normalizeUrl(props.pdfUrl);
+        console.log('Loading PDF thumbnail from:', normalizedUrl);
+        
         const loadingTask = pdfjsLib.getDocument({
-          url: props.pdfUrl,
+          url: normalizedUrl,
         });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
