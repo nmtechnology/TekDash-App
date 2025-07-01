@@ -227,6 +227,13 @@ export default {
     const modifiedPdfUrl = ref(null);
     const showDebugInfo = ref(props.debug);
     
+    // Setup toast notification system - use consistent naming
+    const toast = useToast();
+    const success = (message) => toast.success(message);
+    const showError = (message) => toast.error(message);
+    const warning = (message) => toast.warning(message);
+    const info = (message) => toast.info(message);
+    
     // Determine best display method based on browser
     const useObjectTag = ref(
       navigator.userAgent.includes('Chrome') || 
@@ -865,9 +872,8 @@ export default {
       }
     };
 
-    // Toast helpers (from useToast)
-    const { success, error: showError, warning, info } = useToast();
-
+    // We're already using the toast functions defined earlier
+    
     return {
       loading,
       loaded,
@@ -897,7 +903,11 @@ export default {
       finishAndClose,
       handleThumbnailClick,
       closePreview,
-      handleDocumentUpload
+      handleDocumentUpload,
+      success,
+      showError,
+      warning,
+      info
     };
   }
 };

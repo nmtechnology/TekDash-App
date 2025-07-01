@@ -889,6 +889,50 @@ const showInfo = (message) => {
   toastInfo(message);
 };
 
+// Handle document upload from PdfViewer component
+const handleDocumentUpload = (data) => {
+  if (data && data.success) {
+    // Show success message
+    showSuccess(`Document "${data.fileName}" was successfully uploaded`);
+    
+    // Close the preview modal after a short delay
+    setTimeout(() => {
+      closePreview();
+      
+      // If the document was signed, show an additional confirmation
+      if (data.signed) {
+        showSuccess(`Document was signed by ${data.signature.firstName} ${data.signature.lastName}`);
+      }
+      
+      // Refresh the work order data to show the new attachment
+      refreshWorkOrder();
+    }, 1000);
+  } else {
+    // Show error message if upload failed
+    showError('Failed to upload document. Please try again.');
+  }
+};
+
+// Function to refresh the work order data
+const refreshWorkOrder = async () => {
+  try {
+    // Fetch the latest work order data
+    const response = await axios.get(`/work-orders/${props.workOrder.id}`);
+    if (response.data) {
+      // Update local form with new attachments
+      if (response.data.attachments) {
+        // Update the work order with new data (but keep local form edits)
+        Object.keys(response.data).forEach(key => {
+          if (key !== 'attachments') return; // Only update attachments for now
+          props.workOrder[key] = response.data[key];
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error refreshing work order:', error);
+  }
+};
+
 // Function to update status
 function updateStatus() {
   // Only allow editing if not already editing
