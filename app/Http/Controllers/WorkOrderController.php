@@ -502,4 +502,31 @@ public function uploadAttachments(Request $request, $id)
         'attachments' => $attachments,
     ]);
 }
+
+public function updateGrandTotal(Request $request, $id)
+{
+    try {
+        $workOrder = WorkOrder::findOrFail($id);
+        
+        // Calculate the grand total based on hours and hourly rate
+        $laborCost = (float)$workOrder->hours * (float)$workOrder->hourly_rate;
+        $travelCost = $workOrder->has_travel ? (float)$workOrder->travel_cost : 0;
+        $grandTotal = $laborCost + $travelCost;
+        
+        // Update the work order
+        $workOrder->grand_total = $grandTotal;
+        $workOrder->save();
+        
+        return response()->json([
+            'success' => true,
+            'grand_total' => $grandTotal,
+            'message' => 'Grand total updated successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 }

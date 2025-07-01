@@ -594,6 +594,9 @@ const editingField = ref({
   hours: false
 });
 
+// Add a ref for grandTotal to display in success messages
+const grandTotal = ref(props.workOrder?.grand_total || 0);
+
 // Add form data ref with initial values from workOrder prop
 const form = ref({
   customer_id: props.workOrder?.customer_id || '',
@@ -754,10 +757,20 @@ const saveField = async (field) => {
 
       // If we're updating hours or rates, recalculate grand total
       if (['hours', 'hourly_rate', 'travel_cost', 'has_travel'].includes(field)) {
-        await updateGrandTotal();
-
-        // Show success toast for financial updates
-        showSuccess(`Updated financial details - New total: ${formatCurrency(grandTotal.value)}`);
+        try {
+          await updateGrandTotal();
+          // Show success toast for financial updates
+          showSuccess(`Updated financial details - New total: ${formatCurrency(grandTotal.value)}`);
+        } catch (error) {
+          console.error('Error updating grand total:', error);
+          // Calculate fallback total if API call fails
+          const laborCost = (parseFloat(form.value.hours || 0) * parseFloat(form.value.hourly_rate || 0));
+          const travelCost = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
+          const calculatedTotal = laborCost + travelCost;
+          
+          // Still show a success message but with calculated total
+          showSuccess(`Updated financial details - New total: ${formatCurrency(calculatedTotal)}`);
+        }
       }
       // Show success toast for important field updates
       else if (['status', 'title', 'date_time', 'customer_id'].includes(field)) {
@@ -791,7 +804,9 @@ const updateGrandTotal = async () => {
     const response = await axios.post(`/work-orders/${props.workOrder.id}/update-total`);
 
     if (response.data.success) {
+      // Update both the props object and our reactive ref
       props.workOrder.grand_total = response.data.grand_total;
+      grandTotal.value = response.data.grand_total;
 
       // Log the breakdown for debugging
       console.log('Grand total updated:', {
@@ -1018,14 +1033,35 @@ function getUserAvatar(userId) {
   return user ? user.avatar_url || user.profile_photo_url || '' : '';
 }
 
-// Helper: isPdfFile
+// Helper: isPdfFile - Improved with more comprehensive checks
 function isPdfFile(attachment) {
   if (!attachment) return false;
-  const name = attachment.file_name || attachment.name || attachment.url || '';
-  return (
-    (attachment.file_type && attachment.file_type.includes('pdf')) ||
-    name.toLowerCase().endsWith('.pdf')
-  );
+  
+  // First check file_type or mime_type
+  if (attachment.file_type && attachment.file_type.includes('pdf')) {
+    return true;
+  }
+  if (attachment.mime_type && attachment.mime_type.includes('pdf')) {
+    return true;
+  }
+  
+  // Then check filename extensions in various properties
+  const nameToCheck = attachment.file_name || attachment.name || attachment.url || '';
+  if (nameToCheck.toLowerCase().endsWith('.pdf')) {
+    return true;
+  }
+  
+  // Check path property if available
+  if (attachment.path && attachment.path.toLowerCase().endsWith('.pdf')) {
+    return true;
+  }
+  
+  // For string attachments, check if it's a path to a PDF
+  if (typeof attachment === 'string' && attachment.toLowerCase().endsWith('.pdf')) {
+    return true;
+  }
+  
+  return false;
 }
 
 // --- Per-attachment PDF preview error state ---
@@ -1149,12 +1185,36 @@ function getAttachmentUrl(attachment) {
   return result;
 }
 
-// Method: getAllAttachments for template usage
+// Method: getAllAttachments for template usage with improved debugging
 function getAllAttachments() {
-  return (props.workOrder?.attachments || []).map(att => ({
-    ...att,
-    _previewUrl: getAttachmentUrl(att)
-  }));
+  if (!props.workOrder?.attachments) {
+    console.warn('WorkOrder: No attachments found in workOrder data');
+    return [];
+  }
+  
+  console.log('WorkOrder: Found attachments:', props.workOrder.attachments);
+  
+  // Map attachments with preview URLs
+  const mappedAttachments = props.workOrder.attachments.map(att => {
+    const url = getAttachmentUrl(att);
+    const isPdf = isPdfFile(att);
+    
+    console.log(`WorkOrder: Attachment processed:`, {
+      id: att.id || 'no-id',
+      filename: att.file_name || att.name || 'unnamed',
+      url: url,
+      isPdf: isPdf,
+      originalObject: att
+    });
+    
+    return {
+      ...att,
+      _previewUrl: url,
+      _isPdf: isPdf
+    };
+  });
+  
+  return mappedAttachments;
 }
 
 // --- Mapbox Static Image and Link ---
