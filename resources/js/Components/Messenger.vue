@@ -304,11 +304,13 @@ export default {
     // Add to setup()
 const selectedStatus = ref('');
 const statusOptions = [
-  'Open',
+  'Scheduled',
   'In Progress',
-  'On Hold',
-  'Completed',
-  'Cancelled'
+  'Part Needed',
+  'Complete',
+  'Cancelled',
+  'Archived',
+  'Invoiced'
 ];
 
 const changeStatus = async () => {
@@ -470,7 +472,10 @@ const changeStatus = async () => {
       getBubbleClass,
       getUserName: computed(() => typeof props.getUserName === 'function' 
         ? props.getUserName 
-        : () => props.getUserName)
+        : () => props.getUserName),
+      selectedStatus,
+      statusOptions,
+      changeStatus,
     };
   }
 };
@@ -743,10 +748,23 @@ const changeStatus = async () => {
 
 /* Custom button styles to match footer */
 .btn {
-  @apply inline-flex items-center justify-center rounded-md border border-transparent font-semibold text-sm transition-all duration-150;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border-width: 1px;
+  border-color: transparent;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .btn:disabled {
-  @apply cursor-not-allowed opacity-50;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 </style>

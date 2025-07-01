@@ -839,6 +839,28 @@ export default {
       }
     };
 
+    // Add missing emits for closePreview and handleDocumentUpload
+    // These are expected as props/events by the parent WorkOrder.vue
+
+    // In the <script> setup, add the following methods:
+
+    const closePreview = () => {
+      // Emit close event to parent
+      if (typeof emit === 'function') {
+        emit('close');
+      }
+    };
+
+    const handleDocumentUpload = (...args) => {
+      // Emit document-uploaded event to parent
+      if (typeof emit === 'function') {
+        emit('document-uploaded', ...args);
+      }
+    };
+
+    // Toast helpers (from useToast)
+    const { success, error: showError, warning, info } = useToast();
+
     return {
       loading,
       loaded,
@@ -866,7 +888,9 @@ export default {
       signedFilename,
       sanitizeFilename,
       finishAndClose,
-      handleThumbnailClick
+      handleThumbnailClick,
+      closePreview,
+      handleDocumentUpload
     };
   }
 };

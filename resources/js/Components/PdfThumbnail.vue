@@ -4,7 +4,8 @@
       <canvas 
         ref="canvas" 
         class="thumbnail-canvas"
-        :style="{ display: thumbnailGenerated ? 'block' : 'none' }"
+        width="120" height="160"
+        :style="{ opacity: thumbnailGenerated ? 1 : 0, transition: 'opacity 0.2s' }"
       ></canvas>
       <div class="pdf-icon" v-if="!thumbnailGenerated">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
@@ -22,7 +23,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 
@@ -60,24 +61,27 @@ export default {
         });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
-        
         const viewport = page.getViewport({ scale: 0.3 });
         const context = canvas.value.getContext('2d');
-        
         canvas.value.width = viewport.width;
         canvas.value.height = viewport.height;
-
         await page.render({
           canvasContext: context,
           viewport: viewport
         }).promise;
-
         thumbnailGenerated.value = true;
       } catch (error) {
         console.error('Error generating PDF thumbnail:', error);
         thumbnailGenerated.value = false;
+        emit('error', error); // Emit error event so parent can show fallback
       }
     };
+
+    // Regenerate thumbnail if pdfUrl changes
+    watch(() => props.pdfUrl, () => {
+      thumbnailGenerated.value = false;
+      generateThumbnail();
+    });
 
     const handleClick = () => {
       emit('click', { url: props.pdfUrl, filename: props.filename });

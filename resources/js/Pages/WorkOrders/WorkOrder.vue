@@ -147,7 +147,7 @@
               <div>
                 <label class="block text-sm font-medium text-gray-300">Address</label>
                 <div v-if="!editingField.address" @click="startEditing('address')" class="text-gray-100">
-                  {{ form.address }}
+                  {{ form.address || props.workOrder.address || 'No address provided' }}
                 </div>
                 <div v-else class="mt-1">
                   <input type="text" v-model="form.address" @blur="saveField('address')"
@@ -224,11 +224,11 @@
           <div class="mb-4">
             <h3 class="text-lg font-medium text-gray-200 mb-2">Files & Attachments</h3>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              <template v-for="attachment in getAllAttachments()" :key="attachment.id">
+              <template v-for="attachment in getAllAttachments()" :key="attachment.id || attachment.file_name || attachment.path || attachment.url || attachment">
                 <!-- Image Preview -->
                 <div v-if="isImageFile(attachment)" @click="handlePreviewAttachment(attachment)"
                   class="cursor-pointer relative group">
-                  <img :src="attachment.url || attachment" class="w-full h-32 object-cover rounded-lg" />
+                  <img :src="getAttachmentUrl(attachment)" class="w-full h-32 object-cover rounded-lg" />
                   <div
                     class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span class="text-white">Preview</span>
@@ -237,22 +237,20 @@
 
                 <!-- PDF Preview -->
                 <div v-else-if="isPdfFile(attachment)" class="cursor-pointer">
-                  <div
-                    class="pdf-preview-container h-32 bg-gray-800 rounded-lg overflow-hidden flex flex-col hover:bg-gray-700 transition-colors"
-                    @click="handlePreviewAttachment(attachment)">
-                    <!-- Use PdfThumbnail component for PDFs -->
-                    <PdfThumbnail :pdfUrl="attachment.url || attachment" :filename="getFileName(attachment)"
-                      class="flex-1" />
-
-                    <!-- Action indicators below thumbnail -->
-                    <div class="flex items-center justify-center py-2 space-x-2 bg-gray-900 bg-opacity-80">
-                      <span class="text-xs bg-blue-800 text-white px-2 py-1 rounded-sm">View</span>
-                      <span class="text-xs bg-green-800 text-white px-2 py-1 rounded-sm"
-                        :class="{ 'opacity-50': props.workOrder.status === 'Scheduled' }">
-                        Sign
-                      </span>
+                  <template v-if="!pdfPreviewErrorMap[attachment.id || attachment.file_name || attachment.path || attachment.url]">
+                    <PdfThumbnail
+                      :pdfUrl="getAttachmentUrl(attachment)"
+                      @error="setPdfPreviewError(attachment.id || attachment.file_name || attachment.path || attachment.url)"
+                    />
+                  </template>
+                  <template v-else>
+                    <div class="flex flex-col items-center justify-center h-32 w-full bg-gray-800 rounded-lg">
+                      <svg class="h-8 w-8 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span class="text-xs text-gray-400 mt-2">PDF Preview Unavailable</span>
                     </div>
-                  </div>
+                  </template>
                 </div>
               </template>
             </div>
@@ -260,7 +258,7 @@
 
           <!-- Messaging Section Button -->
           <div>
-            <button @click="toggleMessengerModal"
+            <!-- <button @click="toggleMessengerModal"
               class="btn bg-gray-800 hover:bg-gray-700 text-lime-400 border border-gray-700 rounded-lg px-4 py-2 flex items-center gap-2 shadow-lg transition-all duration-200">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -268,7 +266,7 @@
                   d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               Open Messages
-            </button>
+            </button> -->
           </div>
         </div>
 
@@ -426,7 +424,7 @@
                 </template>
 
                 <!-- PDF preview with viewer -->
-                <template v-else-if="previewMode === 'pdf'">
+                <template v-if="previewMode === 'pdf'">
                   <PdfViewer :pdfUrl="typeof previewAttachment === 'string' ? previewAttachment : previewAttachment.url"
                     :title="getFileName(previewAttachment)" :workOrderId="props.workOrder.id"
                     :workOrderTitle="props.workOrder.title" :editable="props.workOrder.status !== 'Scheduled'"
@@ -617,6 +615,9 @@ const form = ref({
 
 // Reference for the title input field to allow focusing
 const titleInput = ref(null);
+
+// Reference for the file input field to allow clearing after upload
+const fileInput = ref(null);
 
 // Function to start editing a field
 const startEditing = (field) => {
@@ -983,6 +984,12 @@ function isPdfFile(attachment) {
   );
 }
 
+// --- Per-attachment PDF preview error state ---
+const pdfPreviewErrorMap = ref({});
+function setPdfPreviewError(key) {
+  pdfPreviewErrorMap.value[key] = true;
+}
+
 // Helper: Get filename from attachment
 function getFileName(attachment) {
   if (!attachment) return 'Unknown file';
@@ -1009,26 +1016,23 @@ function isImageFile(attachment) {
   return ['jpg', 'jpeg', 'png', 'gif', 'heic'].includes(ext);
 }
 
-// Add missing hasPdfAttachment computed property
-const hasPdfAttachment = computed(() => {
-  const attachments = props.workOrder?.attachments || [];
-  return attachments.some(att => isPdfFile(att));
-});
-
-// Computed: totalAmount for display
-const totalAmount = computed(() => {
-  const hours = parseFloat(form.value.hours || 0);
-  const rate = parseFloat(form.value.hourly_rate || 0);
-  const travel = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
-  return (hours * rate) + travel;
-});
+// Helper: Get the full URL for an attachment
+function getAttachmentUrl(attachment) {
+  if (!attachment) return '';
+  if (typeof attachment === 'string') return attachment;
+  if (attachment.url) return attachment.url;
+  if (attachment.path) return `/storage/${attachment.path.replace(/^public[\/]/, '')}`;
+  if (attachment.file_name) return `/storage/${attachment.file_name.replace(/^public[\/]/, '')}`;
+  return '';
+}
 
 // Method: getAllAttachments for template usage
 function getAllAttachments() {
-  return props.workOrder?.attachments || [];
+  return (props.workOrder?.attachments || []).map(att => ({
+    ...att,
+    _previewUrl: getAttachmentUrl(att)
+  }));
 }
-
-
 
 // --- Mapbox Static Image and Link ---
 const mapboxAccessToken = 'pk.eyJ1Ijoibm10ZWNoIiwiYSI6ImNtYndzNG0yZTB2MTQycm9yMmxrZTJiOXYifQ.teJIWClLiWUJvvacQC3EFQ'; // TODO: Replace with your real Mapbox public token
@@ -1259,6 +1263,34 @@ function handleImageUpload(event) {
   editingField.value.images = true;
   uploadError.value = null;
 }
+
+// Function to open the first PDF for signature collection
+function getSignature() {
+  // Find the first PDF attachment
+  const pdf = (props.workOrder.attachments || []).find(att => isPdfFile(att));
+  if (pdf) {
+    previewAttachment.value = pdf;
+    previewMode.value = 'pdf';
+  } else {
+    showError('No PDF available for signature.');
+  }
+}
+
+// --- Computed: totalAmount for display in template ---
+const totalAmount = computed(() => {
+  if (props.workOrder && typeof props.workOrder.grand_total !== 'undefined') {
+    return props.workOrder.grand_total;
+  }
+  const hours = parseFloat(form.value.hours || 0);
+  const rate = parseFloat(form.value.hourly_rate || 0);
+  const travel = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
+  return (hours * rate) + travel;
+});
+
+// --- Computed: hasPdfAttachment for signature logic ---
+const hasPdfAttachment = computed(() => {
+  return (props.workOrder.attachments || []).some(att => isPdfFile(att));
+});
 </script>
 
 <style scoped>
