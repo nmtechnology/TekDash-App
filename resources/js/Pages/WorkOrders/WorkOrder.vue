@@ -39,6 +39,16 @@
                 </svg>
                 Save All Changes
               </button>
+              <!-- Print Work Order button -->
+              <button type="button" @click.prevent="showPrintOptionsModal = true; console.log('Opening print modal')"
+                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-purple-400 font-bold hover:bg-purple-400 hover:text-black z-50 relative cursor-pointer"
+                title="Print or download the work order">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Print
+              </button>
               <button @click="toggleTimelineModal"
                 class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 font-bold hover:bg-lime-400 hover:text-black z-50 relative"
                 title="Toggle Timeline">
@@ -237,10 +247,10 @@
 
                 <!-- PDF Preview -->
                 <div v-else-if="isPdfFile(attachment)" class="cursor-pointer">
-                  <template v-if="!pdfPreviewErrorMap[attachment.id || attachment.file_name || attachment.path || attachment.url]">
+                  <template v-if="attachment && getAttachmentUrl(attachment) && !pdfPreviewErrorMap[attachment.id || attachment.file_name || attachment.path || attachment.url || 'unknown']">
                     <PdfThumbnail
                       :pdfUrl="getAttachmentUrl(attachment)"
-                      @error="setPdfPreviewError(attachment.id || attachment.file_name || attachment.path || attachment.url)"
+                      @error="setPdfPreviewError(attachment.id || attachment.file_name || attachment.path || attachment.url || 'unknown')"
                     />
                   </template>
                   <template v-else>
@@ -528,6 +538,149 @@
           </div>
         </div>
       </div>
+
+      <!-- Print Options Modal -->
+      <Transition enter-active-class="ease-out duration-300" enter-from-class="opacity-0" enter-to-class="opacity-100"
+        leave-active-class="ease-in duration-200" leave-from-class="opacity-100" leave-to-class="opacity-0">
+        <div v-show="showPrintOptionsModal"
+          class="fixed inset-0 z-[3000] overflow-y-auto flex items-center justify-center">
+          <!-- Backdrop -->
+          <div class="fixed inset-0 bg-black bg-opacity-70 transition-opacity pointer-events-auto" 
+            @click.prevent="showPrintOptionsModal = false; console.log('Backdrop click - closing modal')">
+          </div>
+
+          <!-- Modal container -->
+          <div class="relative z-[3001] bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-auto p-6 pointer-events-auto">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-bold text-lime-400">Work Order Output</h3>
+              <button type="button" @click.prevent="showPrintOptionsModal = false; console.log('Close button clicked')" 
+                class="text-red-400 hover:text-red-500 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p class="text-gray-300 mb-6">Choose a format and action for your work order:</p>
+
+            <div class="space-y-4">
+              <!-- Cost Breakdown Option -->
+              <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
+                <div class="p-4 flex items-center">
+                  <div class="bg-purple-600 p-2 rounded-lg mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 010-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="text-left">
+                    <h4 class="text-white font-bold">Cost Breakdown Version</h4>
+                    <p class="text-sm text-gray-400">Includes all cost details and pricing</p>
+                  </div>
+                </div>
+
+                <div class="flex border-t border-gray-800">
+                  <button type="button" @click.prevent="printWorkOrder('cost'); showPrintOptionsModal = false; console.log('Print cost clicked')"
+                    class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                      viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Print</span>
+                  </button>
+                  <div class="border-r border-gray-800"></div>
+                  <button type="button" @click.prevent="generatePDF('cost'); showPrintOptionsModal = false; console.log('Download PDF cost clicked')"
+                    class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Signature Option -->
+              <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
+                <div class="p-4 flex items-center">
+                  <div class="bg-blue-600 p-2 rounded-lg mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
+                      <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                      <path fill-rule="evenodd"
+                        d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="text-left">
+                    <h4 class="text-white font-bold">Signature Version</h4>
+                    <p class="text-sm text-gray-400">Includes notes area and signature line</p>
+                  </div>
+                </div>
+
+                <div class="flex border-t border-gray-800">
+                  <button type="button" @click.prevent="printWorkOrder('signature'); showPrintOptionsModal = false; console.log('Print signature clicked')"
+                    class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Print</span>
+                  </button>
+                  <div class="border-r border-gray-800"></div>
+                  <button type="button" @click.prevent="generatePDF('signature'); showPrintOptionsModal = false; console.log('Download PDF signature clicked')"
+                    class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Parts Label Option -->
+              <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
+                <div class="p-4 flex items-center">
+                  <div class="bg-green-600 p-2 rounded-lg mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd"
+                        d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="text-left">
+                    <h4 class="text-white font-bold">Parts Label</h4>
+                    <p class="text-sm text-gray-400">Compact QR code label for tagging materials</p>
+                  </div>
+                </div>
+
+                <div class="flex border-t border-gray-800">
+                  <button type="button" @click.prevent="printWorkOrder('label'); showPrintOptionsModal = false; console.log('Print label clicked')"
+                    class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v-4a2 2 0 002-2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Print</span>
+                  </button>
+                  <div class="border-r border-gray-800"></div>
+                  <button type="button" @click.prevent="generatePDF('label'); showPrintOptionsModal = false; console.log('Download PDF label clicked')"
+                    class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-center flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download PDF</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </div>
   </div>
 </template>
@@ -540,6 +693,7 @@ import PdfThumbnail from '@/Components/PdfThumbnail.vue';
 import Timeline from '@/Components/Timeline.vue';
 import { Badge } from '@/Components/ui/badge';
 import { useToast } from '@/Composables/useToast';
+import { getAttachmentUrl, isPdfFile, isImageFile, getFileName, processAttachments } from '@/helpers/attachmentHelpers';
 import axios from 'axios';
 import format from 'date-fns/format';
 import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalized/date';
@@ -548,6 +702,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover
 import { Button } from '@/Components/ui/button';
 import { RangeCalendar } from '@/Components/ui/range-calendar';
 import { usePage } from '@inertiajs/vue3';
+import QRCode from 'qrcode'; // For JavaScript library
+import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 
 // Format currency utility (since @/Utils/formatCurrency does not exist)
 function formatCurrency(value) {
@@ -581,6 +737,16 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'archived']);
 
+// Create a local computed property that ensures attachments is always an array
+const safeWorkOrder = computed(() => {
+  if (!props.workOrder) return { attachments: [] };
+  
+  return {
+    ...props.workOrder,
+    attachments: Array.isArray(props.workOrder.attachments) ? props.workOrder.attachments : []
+  };
+});
+
 // Define the editingField ref to track which fields are being edited
 const editingField = ref({
   title: false,
@@ -596,6 +762,508 @@ const editingField = ref({
 
 // Add a ref for grandTotal to display in success messages
 const grandTotal = ref(props.workOrder?.grand_total || 0);
+
+// Print functionality variables
+const showPrintOptionsModal = ref(false);
+const isLoading = ref(false);
+
+// QR Code value for this work order
+const qrCodeValue = computed(() => {
+  // Create a direct URL to the work order page when scanned
+  return window.location.origin + '/work-orders/' + props.workOrder.id;
+});
+
+// Utility to replace modern CSS color functions with a fallback (for PDF/print compatibility)
+function replaceModernCssColors(str) {
+  if (!str) return str;
+  // Replace oklch(), lab(), lch(), color() with #222 (dark gray) as a fallback
+  return str
+    .replace(/oklch\([^)]*\)/gi, '#222')
+    .replace(/lab\([^)]*\)/gi, '#222')
+    .replace(/lch\([^)]*\)/gi, '#222')
+    .replace(/color\([^)]*\)/gi, '#222');
+}
+
+// Helper function to escape HTML content for safety
+const escapeHtml = (unsafe) => {
+  if (unsafe === undefined || unsafe === null) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+// Function to generate work order content (used by both print and PDF methods)
+const generateWorkOrderContent = async (mode = 'cost', forPdf = false) => {
+  // First, generate QR code as a data URL
+  const qrValue = qrCodeValue.value;
+  let qrImageUrl = '';
+
+  try {
+    // Generate QR code directly to data URL using the QRCode library
+    qrImageUrl = await QRCode.toDataURL(qrValue, {
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      quality: 0.92,
+      width: forPdf ? 600 : 300 // Higher resolution for PDF
+    });
+    console.log('QR code generated successfully');
+  } catch (e) {
+    console.error('Error creating QR code data URL:', e);
+    qrImageUrl = ''; // Empty if failed
+  }
+
+  // Get customer and technician data
+  const customerName = props.workOrder?.customer?.name || props.workOrder?.customer?.business_name || 'Not specified';
+  const technicianName = props.workOrder?.technician?.name || 
+                       (props.workOrder?.technician?.first_name && props.workOrder?.technician?.last_name ? 
+                        `${props.workOrder.technician.first_name} ${props.workOrder.technician.last_name}` : 
+                        'Not specified');
+
+  // Calculate costs for display
+  const hourlyRate = props.workOrder.hourly_rate || 0;
+  const hours = props.workOrder.hours || 0;
+  const laborCost = hourlyRate * hours;
+  const travelCost = props.workOrder.travel_cost || 0;
+  const totalPrice = laborCost + travelCost;
+
+  // Generate PDF filename based on work order title and current date
+  const filename = `${escapeHtml(props.workOrder.title || 'WorkOrder').replace(/\s+/g, '_')}_${mode === 'cost' ? 'Cost' :
+      mode === 'signature' ? 'Signature' :
+        'Label'
+    }_${new Date().toISOString().split('T')[0]}.pdf`;
+
+  // Create the print content with styling
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${escapeHtml(props.workOrder.title) || 'Work Order'} - ${mode === 'cost' ? 'Cost Breakdown' :
+      mode === 'signature' ? 'Signature Version' :
+        'Parts Label'
+    }</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          color: #333;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #4ade80;
+        }
+        .title {
+          font-size: 24px;
+          font-weight: bold;
+          color: #1f2937;
+        }
+        .status {
+          display: inline-block;
+          background-color: #4ade80;
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-weight: bold;
+          color: white;
+        }
+        .section {
+          margin-bottom: 20px;
+          padding: 15px;
+          background-color: #f9fafb;
+          border-radius: 8px;
+          border-left: 4px solid #4ade80;
+          page-break-inside: avoid;
+        }
+        .section-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #1f2937;
+        }
+        .grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+        .label {
+          font-size: 14px;
+          font-weight: bold;
+          color: #4b5563;
+          margin-bottom: 4px;
+        }
+        .value {
+          font-size: 16px;
+          color: #1f2937;
+        }
+        .box {
+          border: 1px solid #d1d5db;
+          border-radius: 4px;
+          padding: 10px;
+          background-color: #f9fafb;
+        }
+        .cost-item {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .cost-item:last-child {
+          border-bottom: none;
+        }
+        .cost-label {
+          font-size: 14px;
+          color: #4b5563;
+        }
+        .cost-value {
+          font-size: 14px;
+          font-weight: bold;
+          color: #1f2937;
+        }
+        .total-row {
+          font-size: 16px;
+          font-weight: bold;
+          color: #1f2937;
+          border-top: 2px solid #d1d5db;
+          padding-top: 8px;
+        }
+        .qr-container {
+          text-align: right;
+          margin-bottom: 20px;
+        }
+        .company-logo-container {
+          display: flex;
+          flex-direction: column;
+        }
+        .company-name {
+          font-size: 18px;
+          font-weight: bold;
+          color: #4ade80;
+        }
+        .company-details {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 4px;
+        }
+        @media print {
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .section {
+            break-inside: avoid;
+          }
+          .page-break {
+            page-break-before: always;
+          }
+        }
+        
+        /* Label-specific styles */
+        .label-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100vh;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+        .label-qrcode {
+          width: 130px;
+          height: 130px;
+          margin: 0 auto 20px;
+          display: block;
+        }
+        .label-title {
+          font-size: 18px;
+          font-weight: bold;
+          text-align: center;
+          margin-bottom: 10px;
+        }
+        .label-info {
+          font-size: 14px;
+          text-align: center;
+          margin-bottom: 5px;
+        }
+        
+        /* Signature area styling */
+        .signature-area {
+          margin-top: 30px;
+          padding: 20px;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          margin-bottom: 15px;
+          padding: 10px;
+        }
+        .signature-line {
+          display: flex;
+          justify-content: space-between;
+        }
+        .signature-field {
+          flex: 1;
+          max-width: 45%;
+          text-align: center;
+        }
+        .signature-label {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 5px;
+        }
+      </style>
+    </head>
+    <body>
+      ${mode === 'label' ? `
+      <div class="label-container">
+        ${qrImageUrl ?
+        `<img src="${qrImageUrl}" class="label-qrcode" alt="QR Code">` :
+        `<div style="width: 200px; height: 200px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+      }
+        <div class="label-title">${escapeHtml(props.workOrder.title) || 'Work Order'}</div>
+        <div class="label-info">NM Technology</div>
+        <div class="label-info">${escapeHtml(props.workOrder.status) || 'Not set'}</div>
+        <div class="label-info">${props.workOrder.date_time ? 'Date: ' + formatDate(props.workOrder.date_time) : ''}</div>
+      </div>
+      ` : `
+      <!-- Standard header for full work order versions -->
+      <div class="header">
+        <div class="company-logo-container">
+          <!-- Company Logo -->
+          <div style="display: flex; align-items: center;">
+            <img src="https://www.nmtechnology.us/build/assets/nm-logo-rmbg-f8bd446d.webp" alt="NM Technology Logo" style="width: 65px; height: 35px; margin-right: 10px;">
+            <div class="company-name">Technology</div>
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="company-details">Network Management Technology, Inc.</div>
+            <div class="company-details">9227 Haven Avenue, Suite 360, Rancho Cucamonga, CA 91730</div>
+            <div class="company-details">Phone: (909) 257-7278 | Email: service@nmtechnology.us</div>
+          </div>
+        </div>
+        
+        <div class="qr-container">
+          ${qrImageUrl ?
+      `<img src="${qrImageUrl}" width="150" height="150" alt="QR Code">` :
+      `<div style="width: 180px; height: 180px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-left: auto; text-align: center; font-size: 12px;">QR Code<br>Not Available</div>`
+    }
+            <div style="margin-top: 5px; font-size: 12px; text-align: center;">
+              Scan for Work Order details
+            </div>
+          </div>
+      </div>
+      `}
+
+      ${mode !== 'label' ? `
+      <div class="header">
+        <div>
+          <div class="title">Work Order: ${escapeHtml(props.workOrder.title) || 'No Title'}</div>
+          <div style="font-size: 14px; color: #6b7280;">${escapeHtml(formatDate(props.workOrder.date_time)) || 'Not scheduled'}</div>
+        </div>
+        <div>
+          <div class="status">${escapeHtml(props.workOrder.status) || 'Not set'}</div>
+        </div>
+      </div>
+
+      <!-- Customer & Technician Section -->
+      <div class="section">
+        <div class="section-title">Customer & Technician</div>
+        <div class="grid">
+          <div>
+            <div class="label">Customer:</div>
+            <div class="value">${escapeHtml(customerName)}</div>
+          </div>
+          <div>
+            <div class="label">Technician:</div>
+            <div class="value">${escapeHtml(technicianName)}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Order Details Section -->
+      <div class="section">
+        <div class="section-title">Work Order Details</div>
+        <div>
+          <div class="label">Description:</div>
+          <div class="value">${escapeHtml(props.workOrder.description) || 'No description provided'}</div>
+        </div>
+        ${props.workOrder.address ? `
+        <div style="margin-top: 15px;">
+          <div class="label">Location:</div>
+          <div class="value">${escapeHtml(props.workOrder.address)}</div>
+        </div>
+        ` : ''}
+      </div>
+
+      ${mode === 'cost' ? `
+      <!-- Cost Section -->
+      <div class="section">
+        <div class="section-title">Cost Breakdown</div>
+        <div class="cost-item">
+          <div class="cost-label">Labor (${hours} hours @ $${hourlyRate}/hour)</div>
+          <div class="cost-value">$${laborCost || 0}</div>
+        </div>
+        ${travelCost > 0 ? `
+        <div class="cost-item">
+          <div class="cost-label">Travel Cost</div>
+          <div class="cost-value">$${travelCost || 0}</div>
+        </div>
+        ` : ''}
+        <div class="cost-item total-row">
+          <div class="cost-label">Total</div>
+          <div class="cost-value">$${totalPrice || 0}</div>
+        </div>
+      </div>
+      ` : ''}
+
+      ${mode === 'signature' ? `
+      <!-- Signature Section -->
+      <div class="signature-area">
+        <div style="font-weight: bold; margin-bottom: 15px;">Notes:</div>
+        <div style="min-height: 100px; border: 1px solid #d1d5db; border-radius: 4px; padding: 10px; margin-bottom: 20px;"></div>
+        
+        <div class="signature-line">
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Technician Signature</div>
+            </div>
+          </div>
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Date: ${new Date().toLocaleDateString()}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="signature-line" style="margin-top: 30px;">
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Customer Signature</div>
+            </div>
+          </div>
+          <div class="signature-field">
+            <div style="border-top: 1px solid #d1d5db; padding-top: 5px;">
+              <div class="signature-label">Date</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+      ` : ''}
+    </body>
+    </html>
+  `;
+
+  return { htmlContent, filename };
+};
+
+// Function to print work order
+const printWorkOrder = async (mode = 'cost') => {
+  try {
+    console.log('printWorkOrder function called with mode:', mode);
+    
+    // Create and return the HTML content and filename
+    const { htmlContent: printContent } = await generateWorkOrderContent(mode);
+    console.log('Generated HTML content successfully');
+
+    // Open print window with blank target
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      console.error('Could not open print window - pop-ups may be blocked');
+      alert('Please allow pop-up windows to print the work order');
+      return;
+    }
+    console.log('Print window opened successfully');
+
+    // Process the HTML content to replace modern CSS color functions before printing
+    const safePrintContent = replaceModernCssColors(printContent);
+
+    // Write the HTML content to the new window
+    printWindow.document.open();
+    printWindow.document.write(safePrintContent);
+    printWindow.document.close();
+
+    // Wait a moment for resources to load then print
+    setTimeout(() => {
+      printWindow.focus(); // Focus the window
+      printWindow.print(); // Trigger the print dialog
+    }, 500); // Small delay to ensure content loads
+  } catch (error) {
+    console.error('Error in printWorkOrder:', error);
+    alert('There was an error printing the work order. Please try again.');
+  }
+};
+
+// Generate PDF function
+const generatePDF = async (mode = 'cost') => {
+  try {
+    console.log('generatePDF function called with mode:', mode);
+    isLoading.value = true;
+    
+    // Generate formatted content first
+    const { htmlContent, filename } = await generateWorkOrderContent(mode, true);
+    console.log('Generated HTML content for PDF successfully');
+
+    // Create a temporary container for html2pdf to work with
+    const element = document.createElement('div');
+    // Use safe content with all modern CSS color functions replaced
+    element.innerHTML = replaceModernCssColors(htmlContent);
+    console.log('Created DOM element for PDF generation');
+
+    // Apply some safe inline styles to avoid any modern CSS that might be dynamically added
+    const styleElements = element.querySelectorAll('style');
+    styleElements.forEach(styleEl => {
+      // Process any style tags to replace modern CSS functions
+      styleEl.textContent = replaceModernCssColors(styleEl.textContent);
+    });
+
+    // Append to document but keep hidden
+    document.body.appendChild(element);
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+
+    // Configure html2pdf options with optimized settings
+    const options = {
+      margin: 10,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        allowTaint: true,
+        logging: false, // Disable logging
+        removeContainer: true, // Clean up container after render
+        backgroundColor: '#ffffff', // Ensure white background
+        imageTimeout: 15000, // Increase timeout for image loading
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Generate PDF
+    await html2pdf()
+      .from(element)
+      .set(options)
+      .save();
+
+    // Clean up the temporary element
+    document.body.removeChild(element);
+    
+    // Hide loading indicator
+    isLoading.value = false;
+  } catch (error) {
+    console.error('Error in generatePDF:', error);
+    alert('There was an error generating the PDF. Please try again or use the print option.');
+    isLoading.value = false;
+  }
+};
 
 // Add form data ref with initial values from workOrder prop
 const form = ref({
@@ -685,12 +1353,20 @@ const saveField = async (field) => {
       if (response.data.success || response.status === 200) {
         editingField.value.images = false;
 
-        // Update the work order with new attachments
+        // Update the work order with new attachments with better reactivity handling
+        let newAttachments = [];
+        
         if (response.data.attachments) {
-          props.workOrder.attachments = response.data.attachments;
+          newAttachments = Array.isArray(response.data.attachments) ? 
+            response.data.attachments : [];
         } else if (response.data.workOrder && response.data.workOrder.attachments) {
-          props.workOrder.attachments = response.data.workOrder.attachments;
+          newAttachments = Array.isArray(response.data.workOrder.attachments) ? 
+            response.data.workOrder.attachments : [];
         }
+        
+        // Create a new array to ensure Vue detects the change
+        props.workOrder.attachments = [...newAttachments];
+        console.log('WorkOrder: Attachments updated after upload:', props.workOrder.attachments);
 
         // Clear the file input for subsequent uploads
         if (fileInput.value) {
@@ -712,6 +1388,11 @@ const saveField = async (field) => {
         if (pdfFiles.length > 0 && props.workOrder.status !== 'Scheduled') {
           showInfo(`${pdfFiles.length} PDF document(s) ready for signatures`);
         }
+        
+        // Force a refresh of the work order data to ensure we have the latest attachments
+        setTimeout(() => {
+          refreshWorkOrder();
+        }, 500);
       }
 
       return; // Skip the regular field update since we've handled the upload
@@ -742,8 +1423,7 @@ const saveField = async (field) => {
     // For regular fields (not images), use the updateField endpoint
     const response = await axios.post(`/work-orders/${props.workOrder.id}/update-field`, {
       [field]: form.value[field],
-      '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'
-      )
+      '_token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     });
 
     if (response.data.success) {
@@ -768,6 +1448,9 @@ const saveField = async (field) => {
           const travelCost = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
           const calculatedTotal = laborCost + travelCost;
           
+          // Update the local grand total reference
+          grandTotal.value = calculatedTotal;
+          
           // Still show a success message but with calculated total
           showSuccess(`Updated financial details - New total: ${formatCurrency(calculatedTotal)}`);
         }
@@ -783,7 +1466,20 @@ const saveField = async (field) => {
     }
   } catch (error) {
     console.error(`Error saving ${field}:`, error);
-    showError(`Failed to update ${field.replace('_', ' ')}: ${error.response?.data?.message || 'Please try again'}`);
+    
+    // More specific error handling for financial fields
+    if (['hours', 'hourly_rate', 'travel_cost', 'has_travel'].includes(field)) {
+      showError(`Failed to update financial details: ${error.response?.data?.message || 'Please try again'}`);
+      
+      // Ensure we still have a value for grandTotal even if the update failed
+      if (typeof grandTotal.value !== 'number' || isNaN(grandTotal.value)) {
+        const laborCost = (parseFloat(form.value.hours || 0) * parseFloat(form.value.hourly_rate || 0));
+        const travelCost = form.value.has_travel ? parseFloat(form.value.travel_cost || 0) : 0;
+        grandTotal.value = laborCost + travelCost;
+      }
+    } else {
+      showError(`Failed to update ${field.replace('_', ' ')}: ${error.response?.data?.message || 'Please try again'}`);
+    }
 
     // Provide more specific guidance for certain fields
     if (field === 'customer_id' && error.response?.status === 404) {
@@ -931,20 +1627,30 @@ const handleDocumentUpload = (data) => {
 // Function to refresh the work order data
 const refreshWorkOrder = async () => {
   try {
+    // Show a loading message for user feedback
+    showInfo('Refreshing work order data...');
+    
     // Fetch the latest work order data
     const response = await axios.get(`/work-orders/${props.workOrder.id}`);
+    
     if (response.data) {
-      // Update local form with new attachments
+      // Update attachments with proper reactivity
       if (response.data.attachments) {
-        // Update the work order with new data (but keep local form edits)
-        Object.keys(response.data).forEach(key => {
-          if (key !== 'attachments') return; // Only update attachments for now
-          props.workOrder[key] = response.data[key];
-        });
+        // Ensure attachments is always an array before assignment
+        const newAttachments = Array.isArray(response.data.attachments) ? 
+          response.data.attachments : [];
+        
+        // Update with Vue reactivity
+        props.workOrder.attachments = [...newAttachments];
+        
+        // Log success for debugging
+        console.log('WorkOrder: Attachments refreshed successfully', props.workOrder.attachments);
+        showSuccess('Work order data refreshed successfully');
       }
     }
   } catch (error) {
     console.error('Error refreshing work order:', error);
+    showError('Failed to refresh work order data. Please try again.');
   }
 };
 
@@ -1033,188 +1739,31 @@ function getUserAvatar(userId) {
   return user ? user.avatar_url || user.profile_photo_url || '' : '';
 }
 
-// Helper: isPdfFile - Improved with more comprehensive checks
-function isPdfFile(attachment) {
-  if (!attachment) return false;
-  
-  // First check file_type or mime_type
-  if (attachment.file_type && attachment.file_type.includes('pdf')) {
-    return true;
-  }
-  if (attachment.mime_type && attachment.mime_type.includes('pdf')) {
-    return true;
-  }
-  
-  // Then check filename extensions in various properties
-  const nameToCheck = attachment.file_name || attachment.name || attachment.url || '';
-  if (nameToCheck.toLowerCase().endsWith('.pdf')) {
-    return true;
-  }
-  
-  // Check path property if available
-  if (attachment.path && attachment.path.toLowerCase().endsWith('.pdf')) {
-    return true;
-  }
-  
-  // For string attachments, check if it's a path to a PDF
-  if (typeof attachment === 'string' && attachment.toLowerCase().endsWith('.pdf')) {
-    return true;
-  }
-  
-  return false;
-}
-
 // --- Per-attachment PDF preview error state ---
 const pdfPreviewErrorMap = ref({});
 function setPdfPreviewError(key) {
   pdfPreviewErrorMap.value[key] = true;
 }
 
-// Helper: Get filename from attachment
-function getFileName(attachment) {
-  if (!attachment) return 'Unknown file';
-  if (typeof attachment === 'string') {
-    // If attachment is a URL string, extract the filename
-    return attachment.split('/').pop() || 'Unknown file';
-  }
-  // Return filename from various possible attachment object structures
-  return attachment.file_name || attachment.name || attachment.url?.split('/').pop() || 'Unknown file';
-}
-
-// Helper: isImageFile for attachment type checking
-function isImageFile(attachment) {
-  if (!attachment) return false;
-
-  // Check if attachment has file_type property
-  if (attachment.file_type) {
-    return attachment.file_type.startsWith('image/');
-  }
-
-  // Check file name extension as fallback
-  const name = attachment.file_name || attachment.name || attachment.url || '';
-  const ext = name.toLowerCase().split('.').pop();
-  return ['jpg', 'jpeg', 'png', 'gif', 'heic'].includes(ext);
-}
-
-// Helper: Get the full URL for an attachment
-function getAttachmentUrl(attachment) {
-  if (!attachment) return '';
-
-  // Debug information
-  console.log('WorkOrder: Getting attachment URL for:', attachment);
-  
-  // Get the current origin to ensure consistent URLs
-  const origin = window.location.origin;
-  
-  let result = '';
-  
-  if (typeof attachment === 'string') {
-    // If it's already a full URL, return as is
-    if (attachment.startsWith('http://') || attachment.startsWith('https://')) {
-      // Replace localhost with current origin if needed
-      if (attachment.includes('localhost') && !origin.includes('localhost')) {
-        result = attachment.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
-        console.log('WorkOrder: Replaced localhost URL:', result);
-      } else {
-        result = attachment;
-      }
-    } 
-    // Handle storage URLs specifically
-    else if (attachment.includes('storage/')) {
-      // Ensure URL has proper storage path formatting
-      const storagePath = attachment.includes('/storage/') ? attachment : `/storage/${attachment.replace(/^storage\//, '')}`;
-      result = `${origin}${storagePath}`;
-      console.log('WorkOrder: Formatted storage URL:', result);
-    } 
-    // Handle other relative URLs
-    else {
-      result = `${origin}${attachment.startsWith('/') ? '' : '/'}${attachment}`;
-      console.log('WorkOrder: Normalized relative URL:', result);
-    }
-  } else if (attachment.url) {
-    // If it's already a full URL, return as is or fix localhost
-    if (attachment.url.startsWith('http://') || attachment.url.startsWith('https://')) {
-      if (attachment.url.includes('localhost') && !origin.includes('localhost')) {
-        result = attachment.url.replace(/http:\/\/localhost(?:\:\d+)?/, origin);
-        console.log('WorkOrder: Replaced localhost URL from object:', result);
-      } else {
-        result = attachment.url;
-      }
-    } 
-    // Handle storage URLs within attachment.url
-    else if (attachment.url.includes('storage/')) {
-      // Ensure URL has proper storage path formatting
-      const storagePath = attachment.url.includes('/storage/') ? attachment.url : `/storage/${attachment.url.replace(/^storage\//, '')}`;
-      result = `${origin}${storagePath}`;
-      console.log('WorkOrder: Formatted storage URL from object:', result);
-    }
-    // Handle other relative URLs
-    else {
-      result = `${origin}${attachment.url.startsWith('/') ? '' : '/'}${attachment.url}`;
-      console.log('WorkOrder: Normalized relative URL from object:', result);
-    }
-  } else if (attachment.path) {
-    // Better handling of storage paths from path property
-    const path = attachment.path.startsWith('/storage/') 
-      ? attachment.path 
-      : `/storage/${attachment.path.replace(/^public[\/]/, '').replace(/^storage\//, '')}`;
-    result = `${origin}${path}`;
-    console.log('WorkOrder: Built URL from path:', result);
-  } else if (attachment.file_name) {
-    // Better handling of storage paths from file_name property
-    const path = attachment.file_name.startsWith('/storage/') 
-      ? attachment.file_name 
-      : `/storage/${attachment.file_name.replace(/^public[\/]/, '').replace(/^storage\//, '')}`;
-    result = `${origin}${path}`;
-    console.log('WorkOrder: Built URL from file_name:', result);
-  }
-  
-  // Verify the URL is properly formed
-  try {
-    new URL(result);
-    console.log('WorkOrder: Final attachment URL (valid):', result);
-  } catch (e) {
-    console.error('WorkOrder: Generated invalid URL:', result, e);
-    // Try to fix the URL by forcing it to be absolute
-    if (result && !result.startsWith('http')) {
-      result = `${origin}${result.startsWith('/') ? '' : '/'}${result}`;
-      console.log('WorkOrder: Attempted URL fix:', result);
-    }
-  }
-  
-  return result;
-}
+// Helper functions are now imported from attachmentHelpers.js
 
 // Method: getAllAttachments for template usage with improved debugging
 function getAllAttachments() {
-  if (!props.workOrder?.attachments) {
-    console.warn('WorkOrder: No attachments found in workOrder data');
-    return [];
+  try {
+    // Use our safe computed property that ensures attachments is always an array
+    const attachments = safeWorkOrder.value.attachments || [];
+    
+    // Only do minimal logging to avoid excessive console output
+    if (attachments.length === 0) {
+      console.debug('WorkOrder: No attachments found in workOrder data');
+    }
+    
+    // Use our helper function to process attachments (handles empty arrays safely)
+    return attachments.length > 0 ? processAttachments(attachments) : [];
+  } catch (error) {
+    console.error('WorkOrder: Error in getAllAttachments:', error);
+    return []; // Return empty array on error
   }
-  
-  console.log('WorkOrder: Found attachments:', props.workOrder.attachments);
-  
-  // Map attachments with preview URLs
-  const mappedAttachments = props.workOrder.attachments.map(att => {
-    const url = getAttachmentUrl(att);
-    const isPdf = isPdfFile(att);
-    
-    console.log(`WorkOrder: Attachment processed:`, {
-      id: att.id || 'no-id',
-      filename: att.file_name || att.name || 'unnamed',
-      url: url,
-      isPdf: isPdf,
-      originalObject: att
-    });
-    
-    return {
-      ...att,
-      _previewUrl: url,
-      _isPdf: isPdf
-    };
-  });
-  
-  return mappedAttachments;
 }
 
 // --- Mapbox Static Image and Link ---
@@ -1450,7 +1999,7 @@ function handleImageUpload(event) {
 // Function to open the first PDF for signature collection
 function getSignature() {
   // Find the first PDF attachment
-  const pdf = (props.workOrder.attachments || []).find(att => isPdfFile(att));
+  const pdf = safeWorkOrder.value.attachments.find(att => isPdfFile(att));
   if (pdf) {
     previewAttachment.value = pdf;
     previewMode.value = 'pdf';
@@ -1472,7 +2021,7 @@ const totalAmount = computed(() => {
 
 // --- Computed: hasPdfAttachment for signature logic ---
 const hasPdfAttachment = computed(() => {
-  return (props.workOrder.attachments || []).some(att => isPdfFile(att));
+  return safeWorkOrder.value.attachments.some(att => isPdfFile(att));
 });
 </script>
 
@@ -1509,7 +2058,7 @@ const hasPdfAttachment = computed(() => {
 
 .pdf-preview-container {
   transition: all 0.2s ease-in-out;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255,  255, 255, 0.1);
 }
 
 .pdf-preview-container:hover {
