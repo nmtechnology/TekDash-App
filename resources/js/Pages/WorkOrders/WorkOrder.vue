@@ -12,20 +12,38 @@
         <div class="glossy-header p-4 border-b border-gray-700">
           <div class="flex items-center justify-between">
             <div class="flex-grow relative group">
-              <div v-if="!editingField.title" @click="startEditing('title')"
-                class="text-xl font-semibold text-gray-100 cursor-pointer hover:text-indigo-400 flex items-center">
-                <span>{{ form.title || 'Untitled Work Order' }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" fill="none"
-                  viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </div>
-              <div v-else class="w-full max-w-xl">
-                <input type="text" v-model="form.title" @blur="saveField('title')"
-                  class="block w-full px-3 py-1 text-xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  ref="titleInput" @keyup.enter="saveField('title')" placeholder="Enter work order title" autofocus />
+              <div class="flex items-center">
+                <div v-if="!editingField.title" @click="startEditing('title')"
+                  class="text-xl font-semibold text-gray-100 cursor-pointer hover:text-indigo-400 flex items-center">
+                  <span>{{ form.title || 'Untitled Work Order' }}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </div>
+                <div v-else class="w-full max-w-xl">
+                  <input type="text" v-model="form.title" @blur="saveField('title')"
+                    class="block w-full px-3 py-1 text-xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    ref="titleInput" @keyup.enter="saveField('title')" placeholder="Enter work order title" autofocus />
+                </div>
+                
+                <!-- Status Badge - moved from content section -->
+                <div class="ml-3">
+                  <template v-if="!editingField.status">
+                    <Badge :variant="statusBadgeVariant.variant"
+                      :class="statusBadgeVariant.class + ' cursor-pointer ring-1 ring-inset'" @click="updateStatus">
+                      {{ props.workOrder.status }}
+                    </Badge>
+                  </template>
+                  <div v-else class="inline-block">
+                    <select v-model="form.status" @blur="saveField('status')" @change="saveField('status')"
+                      class="bg-gray-800 border border-gray-600 rounded-md text-white px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                      <option v-for="status in VALID_STATUSES" :key="status" :value="status">{{ status }}</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="flex space-x-2 items-center">
@@ -80,22 +98,8 @@
 
         <!-- Content section -->
         <div class="flex-1 p-5 pb-8 overflow-y-auto timeline-container">
-          <!-- Work Order Status and Time -->
-          <div class="mb-4 flex flex-wrap justify-between items-center">
-            <div>
-              <template v-if="!editingField.status">
-                <Badge :variant="statusBadgeVariant.variant"
-                  :class="statusBadgeVariant.class + ' cursor-pointer ring-1 ring-inset mr-2'" @click="updateStatus">
-                  {{ props.workOrder.status }}
-                </Badge>
-              </template>
-              <div v-else class="inline-block">
-                <select v-model="form.status" @blur="saveField('status')" @change="saveField('status')"
-                  class="bg-gray-800 border border-gray-600 rounded-md text-white px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                  <option v-for="status in VALID_STATUSES" :key="status" :value="status">{{ status }}</option>
-                </select>
-              </div>
-            </div>
+          <!-- Work Order Creation Time -->
+          <div class="mb-4 flex flex-wrap justify-end items-center">
             <div class="text-gray-300 text-sm">
               Created: {{ formatDate(props.workOrder.created_at) }}
               <span v-if="props.workOrder.visit_number" class="ml-2 text-indigo-400">Visit #{{ props.workOrder.visit_number }}</span>

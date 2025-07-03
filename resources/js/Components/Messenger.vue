@@ -30,7 +30,7 @@
           {{ note.text }}
         </div>
         <div class="chat-footer text-xs opacity-70 mt-1">
-          <span class="font-semibold">{{ note.user_name || 'User' }}</span> • {{ formatTimestamp(note.created_at) }}
+ • {{ formatTimestamp(note.created_at) }}
         </div>
       </div>
     </div>
@@ -129,6 +129,7 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { router } from '@inertiajs/vue3';
 import EmojiPicker from './EmojiPicker.vue';
 import { Button } from '@/Components/ui/button';
 import { Textarea } from '@/Components/ui/textarea';
@@ -187,8 +188,18 @@ export default {
     
     // Function to fetch notes from the server
     const fetchNotes = () => {
-      axios.get(`/work-orders/${props.workOrderId}/notes`)
+      // We'll keep using axios for GET requests since Inertia is mainly for page navigation
+      // and we just want to refresh the data without a full page reload
+      axios.get(`/work-orders/${props.workOrderId}/notes`, { 
+        headers: { 'Accept': 'application/json' },
+        withCredentials: true 
+      })
         .then(response => {
+          if (!response.data) {
+            console.error('No data returned from notes endpoint');
+            return;
+          }
+          
           // Process the notes data to ensure each note has user initials
           notes.value = response.data.map(note => {
             if (!note.user_initials && note.user && note.user.name) {
@@ -313,49 +324,71 @@ const statusOptions = [
   'Invoiced'
 ];
 
-const changeStatus = async () => {
+const changeStatus = () => {
   if (!selectedStatus.value) return;
-  try {
-    await axios.post(`/work-orders/${props.workOrderId}/status`, {
-      status: selectedStatus.value
-    });
-    // Optionally, post a note about the status change
-    notes.value.push({
-      id: 'status-' + Date.now(),
-      text: `Status changed to "${selectedStatus.value}"`,
+  
+  // Add a temporary status change notification
+  const statusChangeId = 'status-' + Date.now();
+  notes.value.push({
+    id: statusChangeId,
+    text: `Status changed to "${selectedStatus.value}"`,
+    user_id: props.userId,
+    created_at: new Date().toISOString(),
+    isNew: true
+  });
+  
+  // Use axios.post for API endpoints that return JSON responses
+  axios.post(`/work-orders/${props.workOrderId}/status`, 
+    { 
+      status: selectedStatus.value,
       user_id: props.userId,
-      created_at: new Date().toISOString(),
-      isNew: true
-    });
-    // Optionally, fetch notes again or emit an event to parent
-    fetchNotes();
-    selectedStatus.value = '';
-  } catch (error) {
-    alert('Failed to update status.');
-    console.error(error);
-  }
+      notify: true // Add flag to trigger notifications
+    })
+    .then(response => {
+      // Status updated successfully
+      fetchNotes(); // Refresh notes to get the official status change entry
+      selectedStatus.value = ''; // Reset the dropdown
+
+      // Send notifications to all users
+      sendNotification(
+        'work_order_status',
+        `Work Order #${props.workOrderId} status changed to "${selectedStatus.value}"`,
+        false
+      );
+    })
+    .catch(error => {
+      // Remove the temporary status change notification on error
+      notes.value = notes.value.filter(n => n.id !== statusChangeId);
+      
+      let errorMessage = 'Unknown error occurred';
+      if (error.response && error.response.data) {
+        if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+      }
+      alert(`Failed to update status: ${errorMessage}`);
+      console.error('Status update error:', error);
+    }
+  );
+};
+
+// Add notification function - separate from changeStatus
+const sendNotification = (type, message, isUrgent = false) => {
+  axios.post('/notifications/send', {
+    type: type,
+    work_order_id: props.workOrderId,
+    message: message,
+    user_id: props.userId,
+    urgent: isUrgent,
+    email_all: true
+  }).catch(error => {
+    console.error('Error sending notification:', error);
+  });
 };
     
-    // Improved CSRF token retrieval
-    const getCsrfToken = () => {
-      // Get from the meta tag (most reliable in Laravel)
-      const metaToken = document.head.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      if (metaToken) return metaToken;
-      
-      // Get from cookie (decode it properly)
-      const cookies = document.cookie.split(';').map(cookie => cookie.trim());
-      const xsrfCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
-      if (xsrfCookie) {
-        return decodeURIComponent(xsrfCookie.split('=')[1]);
-      }
-      
-      // Last resort - try from form input
-      const inputToken = document.querySelector('input[name="_token"]')?.value;
-      if (inputToken) return inputToken;
-      
-      console.error('CSRF token not found');
-      return '';
-    };
+    // We don't need a separate CSRF token retrieval function anymore as Inertia handles this automatically
 
     onMounted(() => {
       // Fetch notes on component mount
@@ -395,47 +428,47 @@ const changeStatus = async () => {
         }
       }, 10);
       
-      // Get CSRF token
-      const token = getCsrfToken();
-      
-      // Set up axios with proper headers
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': token,
-          'Accept': 'application/json'
-        }
-      };
-      
-      // Use axios.post instead of Inertia.post
-      axios.post(`/work-orders/${props.workOrderId}/notes`,
+      // Use axios.post for API endpoints that return JSON responses
+      axios.post(`/work-orders/${props.workOrderId}/notes`, 
         { 
           text: newNote.text,
-          urgent: isUrgent.value // Include urgent flag in the API request
+          user_id: props.userId, // Make sure user_id is included
+          urgent: newNote.urgent // Include urgent flag in the API request
         },
-        config
+        {
+          headers: { 'Accept': 'application/json' },
+          withCredentials: true
+        }
       ).then(response => {
         console.log('Note saved successfully:', response.data);
-        const noteIndex = notes.value.findIndex(n => n.id === tempId);
-        if (noteIndex !== -1 && response.data) {
-          // Update the temporary note with the server data
-          notes.value[noteIndex] = { ...response.data, isNew: false };
-          
-          // Fetch all notes to ensure we have the complete updated list
-          fetchNotes();
+        // Fetch all notes to ensure we have the complete updated list
+        fetchNotes();
+        
+        // Send notification about the new note
+        if (isUrgent.value) {
+          sendNotification('new_urgent_note', newNote.text, true);
         }
       }).catch(error => {
         console.error('Error adding note:', error);
         // Show error message
         let errorMessage = 'Failed to save your note. ';
         if (error.response && error.response.data) {
-          errorMessage += Object.values(error.response.data).join(', ');
+          if (typeof error.response.data === 'string') {
+            errorMessage += error.response.data;
+          } else if (error.response.data.message) {
+            errorMessage += error.response.data.message;
+          } else if (error.response.data.error) {
+            errorMessage += error.response.data.error;
+          } else {
+            errorMessage += Object.values(error.response.data).join(', ');
+          }
         } else {
           errorMessage += 'Please try again.';
         }
         alert(errorMessage);
         notes.value = notes.value.filter(n => n.id !== tempId);
-      });
+      }
+      );
     };
 
     // Function to get bubble classes based on message type and sender
@@ -468,7 +501,6 @@ const changeStatus = async () => {
       insertEmoji,
       toggleUrgentMessage,
       isUrgent,
-      getCsrfToken,
       getBubbleClass,
       getUserName: computed(() => typeof props.getUserName === 'function' 
         ? props.getUserName 
