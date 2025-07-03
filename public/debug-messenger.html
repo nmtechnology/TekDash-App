@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Messenger Component</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .code {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 4px;
+            padding: 10px;
+            overflow: auto;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .warning {
+            background-color: #fffbea;
+            border-left: 4px solid #ecc94b;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            color: #744210;
+        }
+    </style>
+</head>
+<body>
+    <h1>Testing the Messenger Component</h1>
+    
+    <div class="card">
+        <h2>Quick Instructions</h2>
+        <p>There are two ways to load test notes in the Messenger component:</p>
+        <ol>
+            <li>
+                <strong>URL Parameter Method:</strong> Add <code>?demo=true</code> to the URL of any page that includes the Messenger component.
+                <div class="code">https://yourapp.test/work-orders/123?demo=true</div>
+            </li>
+            <li>
+                <strong>Console Method:</strong> Open your browser's developer console and call the following function:
+                <div class="code">
+                    // Find the Vue component instance for the Messenger
+                    const messengerComponent = document.querySelector('.messenger').__vue__;<br>
+                    // If that doesn't work, try this:
+                    // const messengerComponent = document.querySelector('.messenger').__vueParentComponent.ctx;<br>
+                    // Call the test notes function
+                    messengerComponent.addTestNotes();
+                </div>
+            </li>
+        </ol>
+    </div>
+
+    <div class="warning">
+        <strong>Note:</strong> The test notes are for visual testing only and will not persist in your database. They are added locally in the component's state.
+    </div>
+    
+    <h2>Test Notes Details</h2>
+    <p>The test notes include:</p>
+    <ul>
+        <li>Messages from different user roles (admin, technician, customer)</li>
+        <li>Regular and urgent messages (urgent messages should appear in red)</li>
+        <li>Messages with timestamps ranging from 3 days ago to 1 hour ago</li>
+    </ul>
+
+    <p>This helps verify that:</p>
+    <ul>
+        <li>Message bubbles are colored correctly based on sender</li>
+        <li>Urgent messages are styled correctly with the red color and warning icon</li>
+        <li>User avatars show correct initials</li>
+        <li>Messages appear in chronological order</li>
+    </ul>
+    
+    <button onclick="window.location.href='/work-orders/' + prompt('Enter a Work Order ID:', '1') + '?demo=true'">Go to Work Order with Test Notes</button>
+</body>
+</html>

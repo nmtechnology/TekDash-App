@@ -79,21 +79,6 @@
           </div>
 
           <div class="flex justify-end">
-            <!-- Add this inside the Messenger input area, near the Send button -->
-            <div class="flex items-center gap-2 mt-2">
-              <select v-model="selectedStatus" class="rounded-md border-gray-700 bg-gray-800 text-white px-2 py-1">
-                <option disabled value="">Change Status</option>
-                <option v-for="status in statusOptions" :key="status" :value="status">
-                  {{ status }}
-                </option>
-              </select>
-              <button @click="changeStatus"
-                class="btn px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-                :disabled="!selectedStatus" type="button">
-                Update Status
-              </button>
-            </div>
-
             <button @click="addNote"
               class="glossy-btn btn font-bold inline-flex justify-center rounded-md border px-4 py-2 text-lime-400 hover:bg-lime-400 hover:text-lime-500 text-base transition-all duration-200 shadow-lg"
               :disabled="!newNoteText.trim()" type="button">
@@ -210,6 +195,12 @@ export default {
                 note.user_initials = nameParts[0].substring(0, 2).toUpperCase();
               }
             }
+            
+            // Ensure the urgent flag is properly set (convert from number/string to boolean if needed)
+            if (note.urgent === '1' || note.urgent === 1) {
+              note.urgent = true;
+            }
+            
             return note;
           });
           
@@ -307,72 +298,29 @@ export default {
       // Focus back to textarea after toggling
       nextTick(() => {
         if (messageInput.value) {
-          messageInput.value.focus();
+          // Handle focusing on the textarea element which may be wrapped by the Textarea component
+          try {
+            // Try to access the input element directly if available
+            if (messageInput.value.$el) {
+              const textareaElement = messageInput.value.$el.querySelector('textarea');
+              if (textareaElement) {
+                textareaElement.focus();
+                return;
+              }
+            }
+            
+            // If the above doesn't work, try other approaches
+            if (typeof messageInput.value.focus === 'function') {
+              messageInput.value.focus();
+            }
+          } catch (error) {
+            console.log('Could not focus on textarea:', error);
+          }
         }
       });
     };
 
-    // Add to setup()
-const selectedStatus = ref('');
-const statusOptions = [
-  'Scheduled',
-  'In Progress',
-  'Part Needed',
-  'Complete',
-  'Cancelled',
-  'Archived',
-  'Invoiced'
-];
-
-const changeStatus = () => {
-  if (!selectedStatus.value) return;
-  
-  // Add a temporary status change notification
-  const statusChangeId = 'status-' + Date.now();
-  notes.value.push({
-    id: statusChangeId,
-    text: `Status changed to "${selectedStatus.value}"`,
-    user_id: props.userId,
-    created_at: new Date().toISOString(),
-    isNew: true
-  });
-  
-  // Use axios.post for API endpoints that return JSON responses
-  axios.post(`/work-orders/${props.workOrderId}/status`, 
-    { 
-      status: selectedStatus.value,
-      user_id: props.userId,
-      notify: true // Add flag to trigger notifications
-    })
-    .then(response => {
-      // Status updated successfully
-      fetchNotes(); // Refresh notes to get the official status change entry
-      selectedStatus.value = ''; // Reset the dropdown
-
-      // Send notifications to all users
-      sendNotification(
-        'work_order_status',
-        `Work Order #${props.workOrderId} status changed to "${selectedStatus.value}"`,
-        false
-      );
-    })
-    .catch(error => {
-      // Remove the temporary status change notification on error
-      notes.value = notes.value.filter(n => n.id !== statusChangeId);
-      
-      let errorMessage = 'Unknown error occurred';
-      if (error.response && error.response.data) {
-        if (error.response.data.error) {
-          errorMessage = error.response.data.error;
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        }
-      }
-      alert(`Failed to update status: ${errorMessage}`);
-      console.error('Status update error:', error);
-    }
-  );
-};
+    // Status change functionality has been removed
 
 // Add notification function - separate from changeStatus
 const sendNotification = (type, message, isUrgent = false) => {
@@ -390,9 +338,103 @@ const sendNotification = (type, message, isUrgent = false) => {
     
     // We don't need a separate CSRF token retrieval function anymore as Inertia handles this automatically
 
+    // Function to add test notes for demo purposes
+    const addTestNotes = () => {
+      // Create some test users
+      const testUsers = [
+        { id: 'admin123', name: 'Admin User', role: 'admin' },
+        { id: 'tech456', name: 'Technician Smith', role: 'technician' },
+        { id: 'customer789', name: 'Customer Johnson', role: 'customer' },
+        { id: props.userId, name: 'Current User', role: 'current' }
+      ];
+      
+      // Create some test notes from different users
+      const testNotes = [
+        {
+          id: 'demo-1',
+          text: 'Hello, I need assistance with this work order.',
+          user_id: 'customer789',
+          user_name: 'Customer Johnson',
+          user_initials: 'CJ',
+          created_at: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
+          urgent: false
+        },
+        {
+          id: 'demo-2',
+          text: 'I\'ll be out to check the issue tomorrow morning.',
+          user_id: 'tech456',
+          user_name: 'Technician Smith',
+          user_initials: 'TS',
+          created_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
+          urgent: false
+        },
+        {
+          id: 'demo-3',
+          text: 'URGENT: The problem has gotten worse, water is leaking everywhere!',
+          user_id: 'customer789',
+          user_name: 'Customer Johnson', 
+          user_initials: 'CJ',
+          created_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
+          urgent: true
+        },
+        {
+          id: 'demo-4',
+          text: 'I understand the urgency. I\'m on my way now!',
+          user_id: 'tech456',
+          user_name: 'Technician Smith',
+          user_initials: 'TS',
+          created_at: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString(),
+          urgent: false
+        },
+        {
+          id: 'demo-5',
+          text: 'This work order has been prioritized. Let me know if you need additional resources.',
+          user_id: 'admin123',
+          user_name: 'Admin User',
+          user_initials: 'AU',
+          created_at: new Date(new Date().setHours(new Date().getHours() - 3)).toISOString(),
+          urgent: false
+        },
+        {
+          id: 'demo-6',
+          text: 'URGENT: We need parts immediately to fix this issue!',
+          user_id: 'tech456',
+          user_name: 'Technician Smith',
+          user_initials: 'TS',
+          created_at: new Date(new Date().setHours(new Date().getHours() - 2)).toISOString(),
+          urgent: true
+        },
+        {
+          id: 'demo-7',
+          text: 'I\'ve approved the emergency parts order. The parts should arrive within 2 hours.',
+          user_id: 'admin123',
+          user_name: 'Admin User',
+          user_initials: 'AU',
+          created_at: new Date(new Date().setHours(new Date().getHours() - 1)).toISOString(),
+          urgent: false
+        }
+      ];
+      
+      // Add test notes to the notes array
+      notes.value = [...testNotes, ...notes.value];
+      
+      // Scroll to the most recent message
+      setTimeout(() => {
+        const messagesContainer = document.querySelector('.messages');
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      }, 100);
+    };
+
     onMounted(() => {
       // Fetch notes on component mount
       fetchNotes();
+      
+      // Add test notes if URL parameter is present
+      if (window.location.search.includes('demo=true')) {
+        addTestNotes();
+      }
     });
     
     // Improved add note functionality
@@ -433,7 +475,7 @@ const sendNotification = (type, message, isUrgent = false) => {
         { 
           text: newNote.text,
           user_id: props.userId, // Make sure user_id is included
-          urgent: newNote.urgent // Include urgent flag in the API request
+          urgent: newNote.urgent // Make sure it's a boolean value (true/false)
         },
         {
           headers: { 'Accept': 'application/json' },
@@ -445,7 +487,7 @@ const sendNotification = (type, message, isUrgent = false) => {
         fetchNotes();
         
         // Send notification about the new note
-        if (isUrgent.value) {
+        if (newNote.urgent) {
           sendNotification('new_urgent_note', newNote.text, true);
         }
       }).catch(error => {
@@ -474,7 +516,8 @@ const sendNotification = (type, message, isUrgent = false) => {
     // Function to get bubble classes based on message type and sender
     const getBubbleClass = (note) => {
       // If the message is urgent, always use chat-bubble-error (red)
-      if (note.urgent) {
+      // Check for both boolean true and string/number values
+      if (note.urgent === true || note.urgent === '1' || note.urgent === 1) {
         return 'chat-bubble-error';
       }
       
@@ -502,12 +545,10 @@ const sendNotification = (type, message, isUrgent = false) => {
       toggleUrgentMessage,
       isUrgent,
       getBubbleClass,
+      addTestNotes, // Expose the test notes function
       getUserName: computed(() => typeof props.getUserName === 'function' 
         ? props.getUserName 
-        : () => props.getUserName),
-      selectedStatus,
-      statusOptions,
-      changeStatus,
+        : () => props.getUserName)
     };
   }
 };
