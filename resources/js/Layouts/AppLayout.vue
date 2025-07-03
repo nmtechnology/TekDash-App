@@ -67,7 +67,7 @@ function handleSearch(query) {
     showSearchResults.value = true;
     
     // Connect to your actual Laravel backend endpoint for searching work orders
-    axios.get('/search-work-orders', {
+    axios.get('/api/search-work-orders', {
         params: { query }
     })
     .then(response => {
@@ -147,7 +147,7 @@ function logout() {
     <div class="min-h-screen bg-gray-900 relative isolate overflow-hidden bg-opacity-95 flex">
       <!-- Sidebar Toggle Button (always visible, fixed at top left) -->
       <button
-        class="fixed top-4 left-4 z-50 bg-gray-900/80 border border-gray-800 rounded-full p-2 shadow-lg hover:bg-gray-800 transition"
+        class="fixed top-4 left-4 z-50 bg-gray-900/90 border border-gray-700 rounded-full p-2 shadow-lg hover:bg-gray-800 transition-all hover:border-lime-400/50"
         @click="sidebarOpen = !sidebarOpen"
         aria-label="Toggle sidebar"
       >
@@ -159,11 +159,11 @@ function logout() {
         </svg>
       </button>
       <!-- Sidebar -->
-      <aside :class="['shadcn-sidebar', sidebarOpen ? 'left-0' : '-left-64', 'fixed top-0 z-50 h-full w-64 transition-all duration-300 bg-gray-900/80 border-r border-gray-800 backdrop-blur-lg']">
+      <aside :class="['shadcn-sidebar', sidebarOpen ? 'left-0' : '-left-72', 'fixed top-0 z-50 h-full w-72 transition-all duration-300 bg-gray-900/80 border-r border-gray-800 backdrop-blur-lg']">
         <div class="flex flex-col h-full">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
             <span class="flex items-center gap-2 text-xl font-bold text-lime-400">
-              <ApplicationMark class="h-7 w-7" />
+              <ApplicationMark class="h-8 w-8" />
               TekDash
             </span>
             <button class="md:hidden text-gray-400 hover:text-lime-400" @click="sidebarOpen = false">
@@ -172,6 +172,12 @@ function logout() {
               </svg>
             </button>
           </div>
+          
+          <!-- Search component in sidebar -->
+          <div class="px-4 pt-4">
+            <Search placeholder="Search..." @search="handleSearch" class="w-full" />
+          </div>
+          
           <nav class="flex-1 px-4 py-6 space-y-2">
             <Link href="/dashboard" class="shadcn-nav-link shadcn-nav-link-dashboard">
               <svg class="inline-block mr-2 h-5 w-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0v6m0 0H7m6 0h6" /></svg>
@@ -198,11 +204,40 @@ function logout() {
               About
             </Link>
           </nav>
+          <!-- User profile and notifications in sidebar -->
           <div class="px-4 py-4 border-t border-gray-800">
+            <!-- User avatar and profile dropdown -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="avatar">
+                  <div class="w-10 rounded-full">
+                    <img :src="$page.props.auth.user.profile_photo_url" :alt="$page.props.auth.user.name" />
+                  </div>
+                </div>
+                <div>
+                  <p class="font-medium text-white">{{ $page.props.auth.user.name }}</p>
+                  <p class="text-xs text-gray-400">{{ $page.props.auth.user.email }}</p>
+                </div>
+              </div>
+              <NotificationsDropdown class="sidebar-notifications" />
+            </div>
+
+            <!-- User quick links -->
+            <div class="grid grid-cols-2 gap-2 mb-4">
+              <Link href="#" class="shadcn-quick-link">
+                <span>Profile</span>
+              </Link>
+              <Link href="#" class="shadcn-quick-link">
+                <span>Settings</span>
+              </Link>
+            </div>
+
+            <!-- Logout button -->
             <form method="POST" @submit.prevent="logout">
               <button type="submit" class="w-full text-left shadcn-nav-link">Logout</button>
             </form>
           </div>
+
           <!-- Sidebar toggle button for large screens -->
           <div class="hidden md:flex justify-center items-center py-3 border-t border-gray-800">
             <button
@@ -225,40 +260,25 @@ function logout() {
       <!-- Sidebar overlay for mobile -->
       <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-black/40 md:hidden" @click="sidebarOpen = false"></div>
       <!-- Main content area -->
-      <div class="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 transition-all duration-300">
+      <div class="flex-1 flex flex-col min-h-screen transition-all duration-300"
+           :class="[sidebarOpen ? 'md:ml-72' : 'ml-0']">
         <!-- Top navbar UNDER sidebar, lower z-index -->
         <nav class="navbar fixed-navbar bg-base-100 shadow-sm top-0 left-0 right-0 z-30 glass-header transition-all duration-300"
              :class="{ 'scrolled': isScrolled }">
-          <div class="navbar-start">
-
+          <div class="navbar-start flex items-center justify-start">
+            <!-- Space for the sidebar toggle button on small screens -->
+            <div class="w-16 md:hidden"></div>
           </div>
-          <div class="navbar-center">
-            <span class="btn-ghost text-xl md:hidden flex items-center gap-2">
-              <ApplicationMark class="h-6 w-6" />
-              TekDash
-            </span>
+          <div class="navbar-center flex justify-center items-center">
+            <!-- Centered TekDash branding -->
+            <Link href="/dashboard" class="btn-ghost text-xl flex items-center justify-center gap-2">
+              <ApplicationMark class="h-7 w-7" />
+              <span class="font-bold text-lime-400">TekDash</span>
+            </Link>
           </div>
-          <div class="navbar-end">
-            <div class="w-80 max-w-lg md:w-96 md:max-w-xl lg:w-[420px] xl:w-[500px] search-container">
-              <Search placeholder="Search Work Orders..." @search="handleSearch" />
-            </div>
-            <NotificationsDropdown />
-            <div class="dropdown dropdown-end">
-              <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-                <div class="w-10 rounded-full">
-                  <img :src="$page.props.auth.user.profile_photo_url" :alt="$page.props.auth.user.name" />
-                </div>
-              </div>
-              <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-                <li><Link href="#">Profile</Link></li>
-                <li><Link href="#">Settings</Link></li>
-                <li>
-                  <form method="POST" @submit.prevent="logout">
-                    <button type="submit">Logout</button>
-                  </form>
-                </li>
-              </ul>
-            </div>
+          <div class="navbar-end flex items-center justify-end">
+            <!-- Empty div to maintain navbar balance -->
+            <div class="w-16 md:w-4"></div>
           </div>
         </nav>
         <!-- Background Element -->
@@ -290,8 +310,9 @@ function logout() {
 }
 
 .search-container {
-    width: 200px;
+    width: 100%;
     max-width: 100%;
+    margin-bottom: 8px;
 }
 
 @media (max-width: 640px) {
@@ -325,6 +346,9 @@ function logout() {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 30;
   transition: all 0.3s ease;
+  height: 64px; /* Fixed height for consistency */
+  display: flex;
+  align-items: center;
 }
 
 .fixed-navbar.scrolled {
@@ -595,7 +619,12 @@ body {
 
 .shadcn-sidebar {
   transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
+  width: 18rem; /* w-72 = 18rem */
+  will-change: transform;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
 .shadcn-nav-link {
   display: flex;
   align-items: center;
@@ -605,6 +634,7 @@ body {
   text-decoration: none;
   transition: background 0.2s, color 0.2s;
   color: #a3e635;
+  white-space: nowrap;
 }
 .shadcn-nav-link-dashboard { color: #60a5fa; }
 .shadcn-nav-link-workorders { color: #a78bfa; }
@@ -616,18 +646,98 @@ body {
   background: rgba(163, 230, 53, 0.08);
   color: #bef264;
 }
+
+/* Styles for search in sidebar */
+.shadcn-sidebar .search-container {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.shadcn-sidebar :deep(input) {
+  background-color: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f3f4f6;
+  font-size: 0.875rem; /* Slightly smaller font for better fit */
+}
+
+.shadcn-sidebar :deep(.input) {
+  height: 2.5rem; /* Slightly more compact */
+  min-height: 2.5rem;
+}
+
+.shadcn-sidebar :deep(.kbd) {
+  font-size: 0.65rem; /* Smaller keyboard shortcuts */
+  padding: 0.15rem 0.25rem;
+}
+
+.shadcn-sidebar :deep(input:focus) {
+  border-color: rgba(163, 230, 53, 0.5);
+  box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.2);
+}
+
+.shadcn-sidebar :deep(input::placeholder) {
+  color: rgba(243, 244, 246, 0.5);
+}
+
+/* Sidebar notification and profile styles */
+.sidebar-notifications :deep(.dropdown-content) {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.5rem;
+}
+
+.shadcn-quick-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background-color: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  color: #f3f4f6;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.shadcn-quick-link:hover {
+  background-color: rgba(31, 41, 55, 1);
+  border-color: rgba(163, 230, 53, 0.5);
+}
+
+/* Navbar styling for centered content */
+.navbar-center .btn-ghost {
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+}
+
+.navbar-center .btn-ghost:hover {
+  background: rgba(163, 230, 53, 0.08);
+}
+
+/* Make TekDash logo always visible and centered */
 @media (min-width: 768px) {
   .shadcn-sidebar {
-    /* Removed left: 0 !important; to allow sidebarOpen to control visibility on all screens */
     position: fixed;
   }
 }
+
 @media (max-width: 767px) {
   .shadcn-sidebar {
     z-index: 50;
   }
+  
   .flex-1 {
     margin-left: 0 !important;
+  }
+  
+  /* Center logo on mobile */
+  .navbar-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
   }
 }
 </style>

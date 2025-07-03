@@ -348,8 +348,7 @@
               <!-- Upload Files button -->
               <button @click.prevent="$refs.fileInput.click()" v-if="!editingField.images"
                 class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 hover:bg-lime-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="http://www.w3.org/2000/svg" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
@@ -362,7 +361,7 @@
                   class="glossy-btn btn font-bold w-full inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-green-400 hover:bg-green-400 hover:text-black sm:ml-2 sm:w-auto sm:text-xs"
                   :disabled="isUploading">
                   <svg v-if="!isUploading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
+                    viewBox="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                   <svg v-else class="animate-spin h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -645,7 +644,7 @@
               <div class="w-full mb-4 bg-gray-700 rounded-lg overflow-hidden">
                 <div class="p-4 flex items-center">
                   <div class="bg-green-600 p-2 rounded-lg mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="http://www.w3.org/2000/svg">
                       <path fill-rule="evenodd"
                         d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z"
                         clip-rule="evenodd" />
@@ -1347,13 +1346,11 @@ const saveField = async (field) => {
             }
           }
         }
-      );
-
-      // Handle successful upload
+      );      // Handle successful upload
       if (response.data.success || response.status === 200) {
         editingField.value.images = false;
-
-        // Update the work order with new attachments with better reactivity handling
+        
+        // Process attachments from the response
         let newAttachments = [];
         
         if (response.data.attachments) {
@@ -1364,10 +1361,13 @@ const saveField = async (field) => {
             response.data.workOrder.attachments : [];
         }
         
+        // Process attachments for consistent format
+        const processedAttachments = processAttachments(newAttachments);
+        console.log('WorkOrder: Processed attachments after upload:', processedAttachments);
+        
         // Create a new array to ensure Vue detects the change
-        props.workOrder.attachments = [...newAttachments];
-        console.log('WorkOrder: Attachments updated after upload:', props.workOrder.attachments);
-
+        props.workOrder.attachments = [...processedAttachments];
+        
         // Clear the file input for subsequent uploads
         if (fileInput.value) {
           fileInput.value.value = '';
@@ -1380,18 +1380,34 @@ const saveField = async (field) => {
         showSuccess(`${form.value.images.length} file(s) uploaded successfully`);
         uploadError.value = null;
 
-        // Recognize and highlight PDFs for signature opportunities
+        // Check for PDFs in the uploaded files
         const pdfFiles = form.value.images.filter(file =>
           file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
         );
 
-        if (pdfFiles.length > 0 && props.workOrder.status !== 'Scheduled') {
-          showInfo(`${pdfFiles.length} PDF document(s) ready for signatures`);
+        if (pdfFiles.length > 0) {
+          console.log(`WorkOrder: Detected ${pdfFiles.length} PDF files in upload`);
+          
+          if (props.workOrder.status !== 'Scheduled') {
+            showInfo(`${pdfFiles.length} PDF document(s) ready for signatures`);
+          }
+          
+          // Force immediate check for PDF attachments
+          nextTick(() => {
+            console.log('WorkOrder: Checking for PDFs after nextTick:', hasPdfAttachment.value);
+          });
         }
         
         // Force a refresh of the work order data to ensure we have the latest attachments
+        console.log('WorkOrder: Scheduling refresh after upload');
         setTimeout(() => {
-          refreshWorkOrder();
+          refreshWorkOrder().then(() => {
+            // After refresh, force a check of signature button state
+            nextTick(() => {
+              console.log('WorkOrder: After refresh - PDF attachments:', hasPdfAttachment.value);
+              console.log('WorkOrder: After refresh - Can collect signature:', canCollectSignature.value);
+            });
+          });
         }, 500);
       }
 
@@ -1615,8 +1631,24 @@ const handleDocumentUpload = (data) => {
         showSuccess(`Document was signed by ${data.signature.firstName} ${data.signature.lastName}`);
       }
       
-      // Refresh the work order data to show the new attachment
-      refreshWorkOrder();
+      console.log('WorkOrder: Document upload successful, refreshing work order data...');
+      
+      // Make sure we properly refresh the work order attachments
+      // This is a critical step to ensure the signature button works after upload
+      refreshWorkOrder().then(() => {
+        // Force a re-evaluation of the hasPdfAttachment computed property
+        console.log('WorkOrder: Refresh complete, PDF attachments available:', hasPdfAttachment.value);
+        
+        if (hasPdfAttachment.value) {
+          console.log('WorkOrder: PDF attachments detected after refresh');
+        } else {
+          console.log('WorkOrder: No PDF attachments detected after refresh, forcing additional check');
+          // If still no PDFs found, try one more check with a small delay
+          setTimeout(() => {
+            console.log('WorkOrder: Delayed check for PDF attachments:', hasPdfAttachment.value);
+          }, 500);
+        }
+      });
     }, 1000);
   } else {
     // Show error message if upload failed
@@ -1629,27 +1661,107 @@ const refreshWorkOrder = async () => {
   try {
     // Show a loading message for user feedback
     showInfo('Refreshing work order data...');
+    console.log('WorkOrder: Refreshing work order data for ID:', props.workOrder.id);
     
-    // Fetch the latest work order data
-    const response = await axios.get(`/work-orders/${props.workOrder.id}`);
+    // Use the appropriate endpoint for fetching work order data as JSON
+    const response = await axios.get(`/api/work-orders/${props.workOrder.id}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    // Check if response is valid JSON
+    if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+      console.error('WorkOrder: Received HTML response instead of JSON');
+      // Don't clear existing attachments if we got HTML
+      return;
+    }
+    
+    console.log('WorkOrder: Refresh API response:', response.data);
     
     if (response.data) {
-      // Update attachments with proper reactivity
-      if (response.data.attachments) {
-        // Ensure attachments is always an array before assignment
-        const newAttachments = Array.isArray(response.data.attachments) ? 
+      // Extract and process the work order data
+      const workOrderData = response.data.workOrder || response.data;
+      
+      // Get attachments from the response
+      let newAttachments = [];
+      
+      if (workOrderData.attachments) {
+        console.log('WorkOrder: Found attachments in response data:', workOrderData.attachments);
+        newAttachments = Array.isArray(workOrderData.attachments) ? 
+          workOrderData.attachments : [];
+      } else if (response.data.attachments) {
+        console.log('WorkOrder: Found attachments at top level of response:', response.data.attachments);
+        newAttachments = Array.isArray(response.data.attachments) ? 
           response.data.attachments : [];
-        
-        // Update with Vue reactivity
-        props.workOrder.attachments = [...newAttachments];
-        
-        // Log success for debugging
-        console.log('WorkOrder: Attachments refreshed successfully', props.workOrder.attachments);
-        showSuccess('Work order data refreshed successfully');
+      } else {
+        // Instead of clearing attachments when none are found, keep the existing ones
+        console.log('WorkOrder: No attachments found in response, keeping existing attachments');
+        newAttachments = safeWorkOrder.value.attachments || [];
       }
+      
+      // Only process attachments if we actually have some
+      if (newAttachments && newAttachments.length > 0) {
+        // Process the attachments to ensure consistent format
+        const processedAttachments = processAttachments(newAttachments);
+        console.log('WorkOrder: Processed attachments:', processedAttachments);
+        
+        if (processedAttachments && processedAttachments.length > 0) {
+          // Ensure we preserve PDF detection flags from existing attachments
+          const existingAttachments = props.workOrder.attachments || [];
+          const existingPdfIds = new Map();
+          
+          // Build a map of existing PDFs by URL or name
+          existingAttachments.forEach(att => {
+            if (att._isPdf) {
+              const key = att.url || att.file_name || att.name || att.path;
+              if (key) existingPdfIds.set(key, true);
+            }
+          });
+          
+          // Mark any attachments that were previously identified as PDFs
+          const enhancedAttachments = processedAttachments.map(att => {
+            const key = att.url || att.file_name || att.name || att.path;
+            if (key && existingPdfIds.has(key)) {
+              console.log(`WorkOrder: Preserving PDF flag for ${key}`);
+              att._isPdf = true;
+            }
+            return att;
+          });
+          
+          // Force Vue to detect the change by creating a new array and replacing the entire property
+          props.workOrder.attachments = [...enhancedAttachments];
+          console.log('WorkOrder: Updated attachments array with processed attachments');
+          
+          // Force re-evaluation of hasPdfAttachment computed property
+          nextTick(() => {
+            console.log('WorkOrder: PDF detection after update:', hasPdfAttachment.value);
+          });
+        } else {
+          // Don't overwrite existing attachments with an empty array if processing failed
+          console.log('WorkOrder: Processed attachments array is empty, keeping existing attachments');
+        }
+      } else {
+        console.log('WorkOrder: No attachments to process, keeping existing attachments');
+      }
+      
+      // Update other properties from the response
+      if (workOrderData) {
+        Object.keys(workOrderData).forEach(key => {
+          if (key !== 'attachments') {
+            props.workOrder[key] = workOrderData[key];
+          }
+        });
+      }
+      
+      // Log success
+      console.log('WorkOrder: Work order data refreshed successfully');
+      showSuccess('Work order data refreshed');
     }
   } catch (error) {
-    console.error('Error refreshing work order:', error);
+    console.error('WorkOrder: Error refreshing work order:', error);
     showError('Failed to refresh work order data. Please try again.');
   }
 };
@@ -1691,17 +1803,42 @@ function handlePreviewAttachment(attachment) {
 
 // --- Signature button enabled/disabled logic ---
 const canCollectSignature = computed(() => {
-  // Enable for In Progress, Part Needed, Complete, or Part/Return, and PDF present
-  const status = (props.workOrder.status || '').toLowerCase();
-  return (
-    hasPdfAttachment.value && (
-      status.includes('in progress') ||
-      status.includes('part needed') ||
-      status.includes('complete') ||
-      status.includes('part') ||
-      status.includes('return')
-    )
+  // Force access to hasPdfAttachment to ensure it's calculated
+  const hasPdf = hasPdfAttachment.value;
+  const status = (props.workOrder?.status || '').toLowerCase();
+  
+  console.log('WorkOrder: canCollectSignature evaluation:');
+  console.log('WorkOrder: - Status =', status);
+  console.log('WorkOrder: - hasPdfAttachment =', hasPdf);
+  
+  // If we don't have any PDF attachments, we can't collect signatures
+  if (!hasPdf) {
+    console.log('WorkOrder: No PDF attachments available for signature');
+    return false;
+  }
+  
+  // Check if the work order status allows signature collection
+  // We need to be more flexible with partial string matches
+  const validStatus = (
+    status === 'in progress' ||
+    status === 'part needed' ||
+    status === 'complete' ||
+    status.includes('progress') ||
+    status.includes('part') ||
+    status.includes('return')
   );
+  
+  console.log('WorkOrder: - validStatus =', validStatus);
+  
+  // For debugging, if we have PDFs but status is invalid, log a clear message
+  if (hasPdf && !validStatus) {
+    console.log(`WorkOrder: Has PDFs but status "${status}" doesn't allow signature collection`);
+  }
+  
+  const result = hasPdf && validStatus;
+  console.log('WorkOrder: - canCollectSignature final result =', result);
+  
+  return result;
 });
 
 const signatureButtonTitle = computed(() => {
@@ -1739,6 +1876,28 @@ function getUserAvatar(userId) {
   return user ? user.avatar_url || user.profile_photo_url || '' : '';
 }
 
+// --- Watch for changes in attachments ---
+watch(() => props.workOrder.attachments, (newAttachments, oldAttachments) => {
+  console.log('WorkOrder: Attachments changed - re-evaluating PDF detection');
+  
+  if (!newAttachments || !Array.isArray(newAttachments)) {
+    console.log('WorkOrder: New attachments array is invalid');
+    return;
+  }
+  
+  if (!oldAttachments || !Array.isArray(oldAttachments)) {
+    console.log('WorkOrder: Old attachments array was invalid, processing new attachments');
+  } else {
+    console.log(`WorkOrder: Attachments changed from ${oldAttachments.length} to ${newAttachments.length}`);
+  }
+  
+  // Force immediate check for PDFs (this will trigger hasPdfAttachment computed property)
+  nextTick(() => {
+    console.log('WorkOrder: PDF detection after attachments changed:', hasPdfAttachment.value);
+    console.log('WorkOrder: Signature button state after attachments changed:', canCollectSignature.value);
+  });
+});
+
 // --- Per-attachment PDF preview error state ---
 const pdfPreviewErrorMap = ref({});
 function setPdfPreviewError(key) {
@@ -1753,13 +1912,54 @@ function getAllAttachments() {
     // Use our safe computed property that ensures attachments is always an array
     const attachments = safeWorkOrder.value.attachments || [];
     
-    // Only do minimal logging to avoid excessive console output
+    // Enhanced debugging
+    console.log('WorkOrder: getAllAttachments called');
+    
+    // Check if we have any attachments
     if (attachments.length === 0) {
-      console.debug('WorkOrder: No attachments found in workOrder data');
+      console.log('WorkOrder: No attachments found in workOrder data');
+      return [];
     }
     
-    // Use our helper function to process attachments (handles empty arrays safely)
-    return attachments.length > 0 ? processAttachments(attachments) : [];
+    // Log detailed info about attachments
+    console.log(`WorkOrder: Found ${attachments.length} attachments`);
+    
+    // Cache a map of attachment types for debugging
+    const attachmentTypes = attachments.map((att, i) => {
+      const isPdf = isPdfFile(att);
+      const isImg = isImageFile(att);
+      const type = isPdf ? 'PDF' : isImg ? 'Image' : 'Other';
+      const name = att.file_name || att.name || `attachment-${i}`;
+      
+      console.log(`WorkOrder: Attachment ${i} (${name}) is type ${type}`);
+      if (isPdf) {
+        console.log(`WorkOrder: PDF detected: ${name}`);
+      }
+      
+      return { index: i, name, type };
+    });
+    
+    console.log('WorkOrder: Attachment types summary:', attachmentTypes);
+    
+    // Process attachments to ensure consistent format
+    const processed = processAttachments(attachments);
+    
+    // Final verification of processed attachments
+    if (processed.length > 0) {
+      console.log(`WorkOrder: Successfully processed ${processed.length} attachments`);
+      
+      // Check if we have PDFs after processing
+      const pdfs = processed.filter(att => att._isPdf);
+      if (pdfs.length > 0) {
+        console.log(`WorkOrder: Found ${pdfs.length} PDF attachments after processing`);
+      } else {
+        console.log('WorkOrder: No PDF attachments found after processing');
+      }
+    } else {
+      console.log('WorkOrder: No attachments after processing');
+    }
+    
+    return processed;
   } catch (error) {
     console.error('WorkOrder: Error in getAllAttachments:', error);
     return []; // Return empty array on error
@@ -2021,7 +2221,57 @@ const totalAmount = computed(() => {
 
 // --- Computed: hasPdfAttachment for signature logic ---
 const hasPdfAttachment = computed(() => {
-  return safeWorkOrder.value.attachments.some(att => isPdfFile(att));
+  console.log('WorkOrder: hasPdfAttachment computed property called');
+  
+  // Make sure we have attachments to check
+  if (!safeWorkOrder.value.attachments || !Array.isArray(safeWorkOrder.value.attachments)) {
+    console.log('WorkOrder: No valid attachments array found');
+    return false;
+  }
+  
+  // Log the number of attachments to check
+  console.log(`WorkOrder: Checking ${safeWorkOrder.value.attachments.length} attachments for PDFs`);
+  
+  if (safeWorkOrder.value.attachments.length === 0) {
+    console.log('WorkOrder: Attachments array is empty');
+    return false;
+  }
+  
+  // First check if any attachment has the _isPdf flag already set
+  const hasPreProcessedPdf = safeWorkOrder.value.attachments.some(att => att && att._isPdf === true);
+  if (hasPreProcessedPdf) {
+    console.log('WorkOrder: Found attachment with _isPdf flag set to true');
+    return true;
+  }
+  
+  // Then try to detect PDFs using the isPdfFile helper
+  let hasPdf = false;
+  
+  safeWorkOrder.value.attachments.forEach((att, index) => {
+    if (!att) {
+      console.log(`WorkOrder: Attachment ${index} is null or undefined`);
+      return;
+    }
+    
+    // Log key properties to help diagnose issues
+    const name = att.file_name || att.name || att.path || att.url || 'unnamed';
+    console.log(`WorkOrder: Checking attachment ${index} (${name})`);
+    
+    // Check if it's a PDF using the improved isPdfFile function
+    const isPdf = isPdfFile(att);
+    console.log(`WorkOrder: Attachment ${index} (${name}) isPDF = ${isPdf}`);
+    
+    if (isPdf) {
+      console.log(`WorkOrder: PDF found in attachment ${index}: ${name}`);
+      hasPdf = true;
+      
+      // Cache the result for future checks
+      att._isPdf = true;
+    }
+  });
+  
+  console.log('WorkOrder: Final hasPdfAttachment result =', hasPdf);
+  return hasPdf;
 });
 </script>
 

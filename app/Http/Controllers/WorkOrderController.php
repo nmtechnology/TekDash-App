@@ -21,6 +21,30 @@ class WorkOrderController extends Controller
             'users' => $users,
         ]);
     }
+    
+    /**
+     * Search for work orders by title, description, or customer ID
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+        
+        if (empty($query) || strlen($query) < 2) {
+            return response()->json([]);
+        }
+        
+        $workOrders = WorkOrder::where('title', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+            ->orWhere('customer_id', 'like', "%{$query}%")
+            ->with('user:id,name,email')
+            ->limit(10)
+            ->get();
+            
+        return response()->json($workOrders);
+    }
 
     // Show the form for creating a new resource
     public function create()

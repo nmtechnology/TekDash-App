@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 
@@ -159,6 +159,19 @@ export default {
     };
     
     const generateThumbnail = async () => {
+      // First check if the canvas is available
+      if (!canvas.value) {
+        console.warn('PdfThumbnail: Canvas not available, waiting for nextTick');
+        await nextTick();
+        
+        // Check again after nextTick
+        if (!canvas.value) {
+          console.warn('PdfThumbnail: Canvas still not available after nextTick, retrying in 100ms');
+          setTimeout(() => generateThumbnail(), 100);
+          return;
+        }
+      }
+      
       if (!props.pdfUrl) {
         console.error('PdfThumbnail: No PDF URL provided');
         thumbnailGenerated.value = false;
@@ -243,10 +256,20 @@ export default {
         console.log('PdfThumbnail: First page retrieved');
         
         if (!canvas.value) {
-          console.error('PdfThumbnail: Canvas reference is null');
-          thumbnailError.value = true;
-          isLoading.value = false;
-          throw new Error('Canvas reference is null');
+          console.error('PdfThumbnail: Canvas reference is null, waiting for nextTick');
+          
+          // Try to wait for the DOM to update before accessing canvas
+          await nextTick();
+          
+          // Check again after nextTick
+          if (!canvas.value) {
+            console.error('PdfThumbnail: Canvas reference still null after nextTick');
+            thumbnailError.value = true;
+            isLoading.value = false;
+            throw new Error('Canvas reference is null');
+          } else {
+            console.log('PdfThumbnail: Canvas reference available after nextTick');
+          }
         }
         
         const viewport = page.getViewport({ scale: 0.3 });
@@ -336,157 +359,24 @@ export default {
       emit('delete', props.pdfUrl);
     };
 
-    onMounted(() => {
-      console.log('PdfThumbnail: Component mounted, generating thumbnail');
-      generateThumbnail();
-    });
-
-    return {
-      canvas,
-      thumbnailGenerated,
-      thumbnailError,
-      truncatedFilename,
-      isLoading,
-      handleClick,
-      handleDelete
+        // Implement a safer mounting strategy with retries
+        onMounted(async () => {
+          console.log('PdfThumbnail: Component mounted, generating thumbnail');
+          
+          // Wait for DOM to be fully rendered
+          await nextTick();
+          generateThumbnail();
+        });
+    
+        return {
+          canvas,
+          thumbnailGenerated,
+          thumbnailError,
+          isLoading,
+          truncatedFilename,
+          handleClick,
+          handleDelete
+        };
+      }
     };
-  }
-}
-</script>
-
-<style scoped>
-.pdf-thumbnail-wrapper {
-  display: inline-block;
-  cursor: pointer;
-  transition: transform 0.2s;
-  width: 100%;
-  max-width: 180px;
-  min-width: 100px;
-}
-
-.pdf-thumbnail-wrapper:hover {
-  transform: scale(1.05);
-}
-
-.pdf-thumbnail {
-  width: 100%;
-  aspect-ratio: 3/4;
-  min-width: 100px;
-  max-width: 180px;
-  min-height: 120px;
-  max-height: 240px;
-  border: 1px solid #263343;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #2a2a2a;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-}
-
-.thumbnail-canvas {
-  width: 100%;
-  height: auto;
-  min-height: 120px;
-  max-height: 200px;
-  object-fit: contain;
-  background: #010101;
-  display: block;
-}
-
-.pdf-icon {
-  width: 100%;
-  height: 60%;
-  min-height: 120px;
-  max-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #232323;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 5;
-}
-
-.pdf-icon svg.pdf-svg {
-  width: 80px;
-  height: 60px;
-  fill: #9dff00e9;
-}
-
-.loading-text {
-  color: #9dff00;
-  font-size: 0.75rem;
-  margin-top: 8px;
-  animation: pulse 1.5s infinite;
-}
-
-.error-text {
-  color: #ff4d4f;
-  font-size: 0.75rem;
-  margin-top: 8px;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
-
-.filename {
-  padding: 8px;
-  font-size: 0.95rem;
-  color: #1f2937;
-  text-align: center;
-  word-break: break-word;
-  background: #272727;
-  width: 100%;
-  border-top: 1px solid #e2e8f0;
-}
-
-.delete-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  outline: none;
-}
-
-.delete-button svg {
-  width: 30px;
-  height: 30px;
-  fill: #ff4d4f;
-}
-
-@media (max-width: 600px) {
-  .pdf-thumbnail-wrapper {
-    max-width: 120px;
-    min-width: 80px;
-  }
-  .pdf-thumbnail {
-    min-width: 80px;
-    max-width: 120px;
-    min-height: 80px;
-    max-height: 160px;
-    border-radius: 8px;
-  }
-  .thumbnail-canvas, .pdf-icon {
-    min-height: 80px;
-    max-height: 120px;
-  }
-  .pdf-icon svg {
-    width: 48px;
-    height: 36px;
-  }
-  .filename {
-    font-size: 0.8rem;
-    padding: 6px;
-  }
-}
-</style>
+    </script>

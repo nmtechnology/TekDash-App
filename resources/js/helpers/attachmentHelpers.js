@@ -14,7 +14,24 @@ export function getAttachmentUrl(attachment) {
     // Get the current origin to ensure consistent URLs
     const origin = window.location.origin;
     
+    // Debug log to see what attachment is being processed
+    const attachmentName = typeof attachment === 'string' ? attachment : 
+      attachment.file_name || attachment.name || attachment.url || 'Unknown';
+    console.log('AttachmentHelper: Getting URL for attachment:', attachmentName);
+    
+    // If the attachment is already a URL object, convert it to string
+    if (attachment instanceof URL) {
+      return attachment.toString();
+    }
+    
+    // Cache result value
     let result = '';
+    
+    // If the attachment has a cached _previewUrl, use it
+    if (attachment && attachment._previewUrl) {
+      console.log('AttachmentHelper: Using cached preview URL');
+      return attachment._previewUrl;
+    }
     
     if (typeof attachment === 'string') {
       // If it's already a full URL, return as is
@@ -79,6 +96,7 @@ export function getAttachmentUrl(attachment) {
       }
     }
     
+    console.log('AttachmentHelper: Final URL generated:', result);
     return result;
   } catch (e) {
     console.error('Error getting attachment URL:', e);
@@ -92,37 +110,72 @@ export function getAttachmentUrl(attachment) {
  * @returns {boolean} - True if the attachment is a PDF file
  */
 export function isPdfFile(attachment) {
-  if (!attachment) return false;
-  
-  try {
-    // First check file_type or mime_type
-    if (attachment.file_type && attachment.file_type.includes('pdf')) {
-      return true;
-    }
-    if (attachment.mime_type && attachment.mime_type.includes('pdf')) {
-      return true;
-    }
-    
-    // Then check filename extensions in various properties
-    const nameToCheck = attachment.file_name || attachment.name || attachment.url || '';
-    if (nameToCheck.toLowerCase().endsWith('.pdf')) {
-      return true;
-    }
-    
-    // Check path property if available
-    if (attachment.path && attachment.path.toLowerCase().endsWith('.pdf')) {
-      return true;
-    }
-    
-    // For string attachments, check if it's a path to a PDF
-    if (typeof attachment === 'string' && attachment.toLowerCase().endsWith('.pdf')) {
-      return true;
-    }
-  } catch (e) {
-    console.error('Error checking if file is PDF:', e);
+  if (!attachment) {
+    console.log('AttachmentHelper: isPdfFile received null/undefined input');
+    return false;
   }
   
-  return false;
+  try {
+    const attachmentType = typeof attachment;
+    console.log(`AttachmentHelper: Checking if file is PDF (type: ${attachmentType}):`, 
+      attachmentType === 'string' ? attachment : 
+      (attachment.file_name || attachment.name || 'object'));
+    
+    // For string attachments, check if it's a path to a PDF
+    if (attachmentType === 'string') {
+      const isPdf = attachment.toLowerCase().endsWith('.pdf');
+      console.log(`AttachmentHelper: String path check result: ${isPdf ? 'IS PDF' : 'not PDF'}`);
+      return isPdf;
+    }
+    
+    // Check all possible type-related properties
+    const typeProperties = ['file_type', 'mime_type', 'type', 'content_type', 'mime'];
+    for (const prop of typeProperties) {
+      if (attachment[prop] && attachment[prop].toLowerCase().includes('pdf')) {
+        console.log(`AttachmentHelper: PDF detected via ${prop}: ${attachment[prop]}`);
+        return true;
+      }
+    }
+    
+    // Check all possible name/path properties for .pdf extension
+    const nameProperties = ['file_name', 'name', 'path', 'url', 'filename', 'original_name'];
+    for (const prop of nameProperties) {
+      if (attachment[prop] && typeof attachment[prop] === 'string' && 
+          attachment[prop].toLowerCase().endsWith('.pdf')) {
+        console.log(`AttachmentHelper: PDF detected via ${prop} extension: ${attachment[prop]}`);
+        return true;
+      }
+    }
+    
+    // Special case: check if there's an _isPdf flag already set
+    if (attachment._isPdf === true) {
+      console.log('AttachmentHelper: PDF detected via pre-set _isPdf flag');
+      return true;
+    }
+    
+    // If we have attachments as nested properties, recurse
+    if (attachment.attachment && typeof attachment.attachment === 'object') {
+      const isPdf = isPdfFile(attachment.attachment);
+      if (isPdf) {
+        console.log('AttachmentHelper: PDF detected via nested attachment property');
+        return true;
+      }
+    }
+    
+    // For File objects from browser uploads
+    if (attachment instanceof File) {
+      const isPdf = attachment.type === 'application/pdf' || 
+                    attachment.name?.toLowerCase().endsWith('.pdf');
+      console.log(`AttachmentHelper: File object check result: ${isPdf ? 'IS PDF' : 'not PDF'}`);
+      return isPdf;
+    }
+    
+    console.log('AttachmentHelper: Not a PDF file after all checks');
+    return false;
+  } catch (e) {
+    console.error('Error checking if file is PDF:', e);
+    return false;
+  }
 }
 
 /**
@@ -179,25 +232,80 @@ export function getFileName(attachment) {
  * @returns {Array} - The processed attachments
  */
 export function processAttachments(attachments) {
-  if (!Array.isArray(attachments)) return [];
+  // Handle empty or invalid inputs gracefully
+  if (!attachments) {
+    console.log('AttachmentHelper: processAttachments received null/undefined input');
+    return [];
+  }
+  
+  // If a single attachment is passed (not in an array), convert it to an array
+  if (!Array.isArray(attachments)) {
+    console.log('AttachmentHelper: processAttachments received non-array, converting:', attachments);
+    
+    // If it's a string that might be JSON, try to parse it
+    if (typeof attachments === 'string' && attachments.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(attachments);
+        if (Array.isArray(parsed)) {
+          console.log('AttachmentHelper: Successfully parsed JSON string to array');
+          attachments = parsed;
+        }
+      } catch (e) {
+        console.log('AttachmentHelper: Failed to parse string as JSON');
+      }
+    }
+    
+    // If still not an array, wrap in array
+    if (!Array.isArray(attachments)) {
+      attachments = attachments ? [attachments] : [];
+    }
+  }
   
   try {
-    return attachments.map(att => {
-      if (!att) return null;
-      
-      const url = getAttachmentUrl(att);
-      const isPdf = isPdfFile(att);
-      
-      return {
-        ...att,
-        _previewUrl: url,
-        _isPdf: isPdf,
-        _isImage: isImageFile(att),
-        _fileName: getFileName(att)
-      };
-    }).filter(Boolean); // Remove any null items
+    console.log(`AttachmentHelper: Processing ${attachments.length} attachments`);
+    
+    const processed = attachments
+      .filter(att => att !== null && att !== undefined)
+      .map(att => {
+        // Generate and cache key properties for each attachment
+        const url = getAttachmentUrl(att);
+        const isPdf = isPdfFile(att);
+        const isImg = isImageFile(att);
+        const fileName = getFileName(att);
+        
+        console.log(`AttachmentHelper: Processed attachment ${fileName} - isPDF: ${isPdf}, isImage: ${isImg}, url: ${url}`);
+        
+        // Start with original attachment
+        const processedAtt = { ...att };
+        
+        // Ensure consistent property names across all attachments
+        processedAtt.url = processedAtt.url || url;
+        processedAtt.file_name = processedAtt.file_name || processedAtt.name || fileName;
+        
+        // Normalize path property
+        if (!processedAtt.path && processedAtt.url) {
+          const urlObj = new URL(processedAtt.url);
+          processedAtt.path = urlObj.pathname;
+        }
+        
+        // Add metadata flags for consistent checking
+        processedAtt._previewUrl = url;
+        processedAtt._isPdf = isPdf;
+        processedAtt._isImage = isImg;
+        processedAtt._fileName = fileName;
+        
+        // Add ID if missing (helps with keying in v-for loops)
+        if (!processedAtt.id && !processedAtt._id) {
+          processedAtt._id = Math.random().toString(36).substring(2, 15);
+        }
+        
+        return processedAtt;
+      });
+    
+    console.log(`AttachmentHelper: Returning ${processed.length} processed attachments`);
+    return processed;
   } catch (e) {
-    console.error('Error processing attachments:', e);
+    console.error('AttachmentHelper: Error processing attachments:', e);
     return [];
   }
 }

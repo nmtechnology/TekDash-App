@@ -188,10 +188,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     });
 
     // Work Order Search Routes - fixed controller references
-    Route::get('/search-work-orders', [WorkOrderController::class, 'search'])
-        ->name('search.work-orders');
-
-    Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'getDetails'])
+        Route::get('/work-orders/{id}/details', [WorkOrderController::class, 'getDetails'])
         ->name('work-orders.details');
 
     // PDF viewer route for secure PDF loading

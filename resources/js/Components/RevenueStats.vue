@@ -5,7 +5,7 @@ import axios from 'axios';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import NetworkStatusIndicator from '@/Components/NetworkStatusIndicator.vue';
-
+import ApplicationMark from '@/Components/ApplicationMark.vue';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -521,8 +521,9 @@ function connectToQuickBooks() {
 </script>
 
 <template>
-  <div class="revenue-stats-container glass-container p-5 mb-6 mt-12">
-    <div class="flex justify-between items-center mb-4">
+  <div class="revenue-stats-container glass-container p-3 sm:p-5 mb-6 mt-8 sm:mt-12">
+    <!-- Make header responsive: stack on small screens, row on larger screens -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
       <div class="flex items-center gap-2">
         <button
           @click="toggleCollapse"
@@ -533,34 +534,38 @@ function connectToQuickBooks() {
             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
           </svg>
         </button>
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
-          NM Technology's Revenue Statistics
-          <NetworkStatusIndicator class="inline-block ml-2" />
-        </h2>
+        <div class="flex items-center">
+          <ApplicationMark class="h-6 w-auto" />
+          <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white ml-1 truncate">Technology's Revenue Statistics</h2>
+          <NetworkStatusIndicator class="ml-2" />
+        </div>
       </div>
-      <div class="flex gap-2">
+      <!-- Make buttons row scrollable on mobile -->
+      <div class="flex gap-2 overflow-x-auto pb-2 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0">
         <button 
           @click="connectToQuickBooks" 
-          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition"
+          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition shrink-0"
           title="Connect with QuickBooks"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 015.656 0l4 4a4 4 0 11-5.656 5.656l-1.102-1.101" />
           </svg>
-          Connect QuickBooks
+          <span class="hidden sm:inline">Connect QuickBooks</span>
+          <span class="sm:hidden">QuickBooks</span>
         </button>
         <button
           @click="() => exchangeQuickBooksToken('XAB11749794225Ry3ulvPM9Wuw4dPrbDJoJQAuyCf1UOjJorur', '4620816365039049610')"
-          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition"
+          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition shrink-0"
           title="Exchange Test Token"
         >
-          Exchange Test Token
+          <span class="hidden sm:inline">Exchange Test Token</span>
+          <span class="sm:hidden">Test Token</span>
         </button>
         <button
           @click="fetchRevenueData" 
           :disabled="isLoading"
-          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition"
+          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition shrink-0"
         >
           <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -570,20 +575,21 @@ function connectToQuickBooks() {
         </button>
         <button
           @click="showDebug = !showDebug"
-          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition"
+          class="glass-button flex items-center gap-1 px-2 py-1 text-sm rounded transition shrink-0"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <span>{{ showDebug ? 'Hide Debug' : 'Show Debug' }}</span>
+          <span class="hidden sm:inline">{{ showDebug ? 'Hide Debug' : 'Show Debug' }}</span>
+          <span class="sm:hidden">{{ showDebug ? 'Hide' : 'Debug' }}</span>
         </button>
       </div>
     </div>
 
     <!-- Summary when collapsed -->
     <div v-if="isCollapsed && !isLoading" class="glass-card p-3 rounded-lg">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+        <div class="flex flex-wrap items-center gap-4">
           <div>
             <span class="text-gray-400 text-xs">Last 30 Days</span>
             <p class="text-purple-400 text-lg font-bold">{{ formatCurrency(revenueData.last30DaysRevenue) }}</p>
@@ -598,19 +604,19 @@ function connectToQuickBooks() {
             </p>
           </div>
         </div>
-        <p class="text-gray-400 text-xs">Click to expand for full details</p>
+        <p class="text-gray-400 text-xs mt-2 sm:mt-0">Click to expand for full details</p>
       </div>
     </div>
     
     <!-- Debug panel - always visible regardless of collapse state -->
-    <div v-if="showDebug" class="glass-debug p-4 rounded-lg mb-4 overflow-auto max-h-64 text-sm font-mono">
+    <div v-if="showDebug" class="glass-debug p-3 sm:p-4 rounded-lg mb-4 overflow-auto max-h-64 text-xs sm:text-sm font-mono">
       <h3 class="text-purple-400 mb-2">Debug Information:</h3>
-      <div v-if="debugInfo">
-        <p>Completed Status: <span class="text-cyan-300">{{ debugInfo.completedStatus }}</span></p>
-        <p>Date Column: <span class="text-cyan-300">{{ debugInfo.completedDateColumn }}</span></p>
-        <p>Available Statuses: <span class="text-cyan-300">{{ debugInfo.availableStatuses?.join(', ') }}</span></p>
-        <p>Current Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.currentMonthRevenue) }}</span></p>
-        <p>Last Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.lastMonthRevenue) }}</span></p>
+      <div v-if="debugInfo" class="text-xs">
+        <p class="mb-1">Completed Status: <span class="text-cyan-300">{{ debugInfo.completedStatus }}</span></p>
+        <p class="mb-1">Date Column: <span class="text-cyan-300">{{ debugInfo.completedDateColumn }}</span></p>
+        <p class="mb-1">Available Statuses: <span class="text-cyan-300">{{ debugInfo.availableStatuses?.join(', ') }}</span></p>
+        <p class="mb-1">Current Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.currentMonthRevenue) }}</span></p>
+        <p class="mb-1">Last Month Revenue: <span class="text-cyan-300">{{ formatCurrency(debugInfo.lastMonthRevenue) }}</span></p>
       </div>
       <div v-else>No debug information available</div>
       
@@ -630,25 +636,25 @@ function connectToQuickBooks() {
           <div v-if="speedTestResults.error" class="text-red-400">
             Error: {{ speedTestResults.error }}
           </div>
-          <div v-else class="grid grid-cols-2 gap-2">
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-                <p>Download Speed: <span class="text-cyan-300 font-bold">{{ 
+                <p class="mb-1">Download Speed: <span class="text-cyan-300 font-bold">{{ 
                 typeof speedTestResults.speedMbps === 'number' && !isNaN(speedTestResults.speedMbps) && speedTestResults.speedMbps > 0
                   ? speedTestResults.speedMbps.toFixed(2) 
                   : speedTestResults.speedMbps === 0 ? '< 0.01' : '0.00'
                 }} Mbps</span></p>
-              <p>Latency: <span class="text-cyan-300 font-bold">{{ 
+              <p class="mb-1">Latency: <span class="text-cyan-300 font-bold">{{ 
                 typeof speedTestResults.latency === 'number' && !isNaN(speedTestResults.latency) 
                   ? speedTestResults.latency.toFixed(0) 
                   : '0' 
               }} ms</span></p>
             </div>
             <div>
-              <p>Data Transferred: <span class="text-cyan-300">{{ (speedTestResults.fileSize / 1024).toFixed(2) }} KB</span></p>
-              <p>Test Duration: <span class="text-cyan-300">{{ speedTestResults.duration.toFixed(0) }} ms</span></p>
-              <p v-if="speedTestResults.iterations">Files Downloaded: <span class="text-cyan-300">{{ speedTestResults.iterations }}</span></p>
-              <p v-if="speedTestResults.method">Method: <span class="text-cyan-300">{{ speedTestResults.method }}</span></p>
-              <p>Timestamp: <span class="text-cyan-300">{{ new Date(speedTestResults.timestamp).toLocaleTimeString() }}</span></p>
+              <p class="mb-1">Data Transferred: <span class="text-cyan-300">{{ (speedTestResults.fileSize / 1024).toFixed(2) }} KB</span></p>
+              <p class="mb-1">Test Duration: <span class="text-cyan-300">{{ speedTestResults.duration.toFixed(0) }} ms</span></p>
+              <p class="mb-1" v-if="speedTestResults.iterations">Files Downloaded: <span class="text-cyan-300">{{ speedTestResults.iterations }}</span></p>
+              <p class="mb-1" v-if="speedTestResults.method">Method: <span class="text-cyan-300">{{ speedTestResults.method }}</span></p>
+              <p class="mb-1">Timestamp: <span class="text-cyan-300">{{ new Date(speedTestResults.timestamp).toLocaleTimeString() }}</span></p>
             </div>
           </div>
         </div>
@@ -670,47 +676,47 @@ function connectToQuickBooks() {
     >
       <div v-if="!isCollapsed" class="content-wrapper">
         <!-- Error message display -->
-        <div v-if="errorMessage" class="glass-error p-4 rounded-lg mb-4">
-          <h3 class="font-bold mb-1">Error Loading Data</h3>
-          <p>{{ errorMessage }}</p>
+        <div v-if="errorMessage" class="glass-error p-3 sm:p-4 rounded-lg mb-4">
+          <h3 class="font-bold mb-1 text-sm sm:text-base">Error Loading Data</h3>
+          <p class="text-xs sm:text-sm">{{ errorMessage }}</p>
           <div class="mt-2">
             <button 
               @click="fetchRevenueData" 
-              class="glass-error-button px-3 py-1 rounded-md text-sm"
+              class="glass-error-button px-3 py-1 rounded-md text-xs sm:text-sm"
             >
               Retry
             </button>
           </div>
         </div>
 
-        <!-- Loading indicator -->
-        <div v-if="isLoading" class="flex justify-center items-center h-64">
-          <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-400"></div>
+        <!-- Loading indicator - reduced height for mobile -->
+        <div v-if="isLoading" class="flex justify-center items-center h-40 sm:h-64">
+          <div class="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-t-2 border-b-2 border-purple-400"></div>
         </div>
 
         <div v-else>
-          <!-- Recent time period stats cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="glass-card p-4 rounded-lg">
-              <p class="text-gray-400 text-sm font-medium">Last 7 Days</p>
-              <p class="text-purple-400 text-2xl font-bold">{{ formatCurrency(revenueData.last7DaysRevenue) }}</p>
+          <!-- Recent time period stats cards - responsive grid with better small screen support -->
+          <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+            <div class="glass-card p-3 sm:p-4 rounded-lg">
+              <p class="text-gray-400 text-xs sm:text-sm font-medium">Last 7 Days</p>
+              <p class="text-purple-400 text-xl sm:text-2xl font-bold">{{ formatCurrency(revenueData.last7DaysRevenue) }}</p>
             </div>
 
-            <div class="glass-card p-4 rounded-lg">
-              <p class="text-gray-400 text-sm font-medium">Last 30 Days</p>
-              <p class="text-purple-400 text-2xl font-bold">{{ formatCurrency(revenueData.last30DaysRevenue) }}</p>
+            <div class="glass-card p-3 sm:p-4 rounded-lg">
+              <p class="text-gray-400 text-xs sm:text-sm font-medium">Last 30 Days</p>
+              <p class="text-purple-400 text-xl sm:text-2xl font-bold">{{ formatCurrency(revenueData.last30DaysRevenue) }}</p>
             </div>
             
-            <div class="glass-card p-4 rounded-lg">
-              <p class="text-gray-400 text-sm font-medium">Total Revenue</p>
-              <p class="text-purple-400 text-2xl font-bold">{{ formatCurrency(revenueData.totalRevenue) }}</p>
+            <div class="glass-card p-3 sm:p-4 rounded-lg">
+              <p class="text-gray-400 text-xs sm:text-sm font-medium">Total Revenue</p>
+              <p class="text-purple-400 text-xl sm:text-2xl font-bold">{{ formatCurrency(revenueData.totalRevenue) }}</p>
             </div>
 
-            <div class="glass-card p-4 rounded-lg">
-              <p class="text-gray-400 text-sm font-medium">Growth vs. Last Month</p>
+            <div class="glass-card p-3 sm:p-4 rounded-lg">
+              <p class="text-gray-400 text-xs sm:text-sm font-medium">Growth vs. Last Month</p>
               <div class="flex items-center">
                 <span :class="[
-                  'text-xl font-bold', 
+                  'text-lg sm:text-xl font-bold', 
                   revenueData.comparedToLastMonth > 0 ? 'text-green-500' : 'text-red-500'
                 ]">
                   {{ revenueData.comparedToLastMonth > 0 ? '+' : '' }}{{ revenueData.comparedToLastMonth }}%
@@ -719,10 +725,10 @@ function connectToQuickBooks() {
             </div>
           </div>
 
-          <!-- Chart and additional stats grid layout -->
-          <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <!-- Chart takes up 3/4 of space on large screens -->
-            <div class="lg:col-span-3 h-64 glass-card p-3 rounded-lg">
+          <!-- Chart and additional stats grid layout - improved for mobile -->
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-2 sm:gap-4">
+            <!-- Chart takes up 3/4 of space on large screens, full width on mobile -->
+            <div class="lg:col-span-3 h-48 sm:h-64 glass-card p-2 sm:p-3 rounded-lg">
               <Line 
                 v-if="revenueData.monthly.length > 0" 
                 :data="chartData" 
@@ -731,13 +737,13 @@ function connectToQuickBooks() {
               />
             </div>
 
-            <!-- Stats column takes up 1/4 of space -->
-            <div class="lg:col-span-1 flex flex-col gap-4">
-              <div class="glass-card p-4 rounded-lg">
-                <p class="text-gray-400 text-sm font-medium">Year Over Year</p>
+            <!-- Stats column takes up 1/4 of space on large screens, shows as row on mobile -->
+            <div class="lg:col-span-1 grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-4">
+              <div class="glass-card p-3 sm:p-4 rounded-lg">
+                <p class="text-gray-400 text-xs sm:text-sm font-medium">Year Over Year</p>
                 <div class="flex items-center">
                   <span :class="[
-                    'text-xl font-bold', 
+                    'text-lg sm:text-xl font-bold', 
                     revenueData.comparedToLastYear > 0 ? 'text-green-500' : 'text-red-500'
                   ]">
                     {{ revenueData.comparedToLastYear > 0 ? '+' : '' }}{{ revenueData.comparedToLastYear }}%
@@ -745,9 +751,9 @@ function connectToQuickBooks() {
                 </div>
               </div>
 
-              <div class="glass-card p-4 rounded-lg">
-                <p class="text-gray-400 text-sm font-medium">Next Month Forecast</p>
-                <p class="text-cyan-400 text-xl font-bold">{{ formatCurrency(revenueData.forecastNextMonth) }}</p>
+              <div class="glass-card p-3 sm:p-4 rounded-lg">
+                <p class="text-gray-400 text-xs sm:text-sm font-medium">Next Month Forecast</p>
+                <p class="text-cyan-400 text-lg sm:text-xl font-bold">{{ formatCurrency(revenueData.forecastNextMonth) }}</p>
               </div>
             </div>
           </div>
@@ -758,15 +764,25 @@ function connectToQuickBooks() {
 </template>
 
 <style scoped>
+/* Custom Tailwind-like breakpoints for xs screens */
+@media (min-width: 480px) {
+  .xs\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Glass Morphism Styles */
 .glass-container {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   transition: all 0.3s ease;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .glass-card {
@@ -776,12 +792,16 @@ function connectToQuickBooks() {
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   transition: all 0.3s ease;
+  border-radius: 8px;
 }
 
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px 0 rgba(31, 38, 135, 0.2);
+/* Reduce hover effect on mobile */
+@media (hover: hover) {
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px 0 rgba(31, 38, 135, 0.2);
+  }
 }
 
 .glass-button {

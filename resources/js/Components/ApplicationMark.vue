@@ -15,7 +15,7 @@
   .animated-logo {
     width: 65px; /* Adjust the size as needed */
     height: 35px; /* Adjust the size as needed */
-    animation: spin-pause 15s linear infinite; /* Apply the spin-pause animation */
+    animation: spin-pause 120s linear infinite; /* Apply the spin-pause animation */
     transform-style: preserve-3d; /* Preserve 3D transformations */
   }
   

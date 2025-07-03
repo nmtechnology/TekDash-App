@@ -35,30 +35,83 @@ function clearSearch() {
 </script>
 
 <template>
-  <label class="input input-bordered flex items-center gap-2 search-container">
-    <div v-if="loading" class="loading loading-spinner loading-xs"></div>
-    <svg v-else class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <g
-        stroke-linejoin="round"
-        stroke-linecap="round"
-        stroke-width="2.5"
-        fill="none"
-        stroke="currentColor"
-      >
-        <circle cx="11" cy="11" r="8"></circle>
-        <path d="m21 21-4.3-4.3"></path>
-      </g>
-    </svg>
-    <input
-      v-model="searchQuery"
-      type="search"
-      class="grow"
-      :placeholder="placeholder"
-      :disabled="loading"
-    />
-    <div class="flex items-center gap-1 opacity-50">
-      <kbd class="kbd kbd-sm">⌘</kbd>
-      <kbd class="kbd kbd-sm">K</kbd>
-    </div>
-  </label>
+  <div class="search-container">
+    <label class="input input-bordered flex items-center gap-2 w-full">
+      <div v-if="loading" class="loading loading-spinner loading-xs"></div>
+      <svg v-else class="h-[1em] opacity-50 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <g
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          stroke-width="2.5"
+          fill="none"
+          stroke="currentColor"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </g>
+      </svg>
+      <input
+        v-model="searchQuery"
+        type="search"
+        class="grow min-w-0"
+        :placeholder="placeholder"
+        :disabled="loading"
+      />
+      <div class="flex items-center gap-1 opacity-50 flex-shrink-0">
+        <kbd class="kbd kbd-xs">⌘</kbd>
+        <kbd class="kbd kbd-xs">K</kbd>
+      </div>
+    </label>
+  </div>
 </template>
+
+<style scoped>
+.search-container {
+  width: 100%;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  width: 100%;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  background-color: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f3f4f6;
+  transition: all 0.2s ease;
+  padding: 0.5rem;
+}
+
+.input:focus-within {
+  border-color: rgba(163, 230, 53, 0.5);
+  box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.2);
+}
+
+input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f3f4f6;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+}
+
+input::placeholder {
+  color: rgba(243, 244, 246, 0.5);
+}
+
+.kbd {
+  background-color: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(243, 244, 246, 0.2);
+  color: rgba(243, 244, 246, 0.7);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
