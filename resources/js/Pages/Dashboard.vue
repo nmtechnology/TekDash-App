@@ -7,7 +7,7 @@ import RevenueStats from '@/Components/RevenueStats.vue';
 import Search from '@/Components/Search.vue';
 import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 import AddCustomerButton from '@/Components/AddCustomerButton.vue';
-import AddTechnicianButton from '@/Components/AddTechnicianButton.vue';
+import AddTechnicianButton from '@/Pages/Technicians/AddTechnicianButton.vue';
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';

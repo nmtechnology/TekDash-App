@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Banner from '@/Components/Banner.vue';
@@ -10,7 +10,6 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import ToastContainer from '@/Components/ToastContainer.vue';
 import axios from 'axios';
 import NotificationsDropdown from '@/Components/NotificationsDropdown.vue';
-import Search from '@/Components/Search.vue';
 
 defineProps({
     title: String,
@@ -30,7 +29,123 @@ const showingNavigationDropdown = ref(false);
 const isScrolled = ref(false);
 const sidebarOpen = ref(false);
 
-// Add scroll event listener to detect scrolling for navbar effects
+// Customer dropdown state
+const showCustomerDropdown = ref(false);
+const customers = ref([]);
+const customerColors = ['bg-emerald-500', 'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500', 'bg-amber-500', 'bg-lime-500', 'bg-cyan-500', 'bg-sky-500', 'bg-teal-500'];
+const isLoadingCustomers = ref(false);
+const customerError = ref(false);
+const focusedCustomerIndex = ref(-1);
+
+// Function to fetch customers
+async function fetchCustomers() {
+  if (customers.value.length > 0) return; // Don't fetch again if we already have data
+  
+  try {
+    isLoadingCustomers.value = true;
+    customerError.value = false;
+    
+    const response = await axios.get('/api/customers');
+    
+    // Parse the response based on its structure
+    // It could be an array of customers directly, or nested in data property,
+    // or in a paginated structure like {data: [...], meta: {...}}
+    let customersData = [];
+    
+    if (Array.isArray(response.data)) {
+      // Direct array of customers
+      customersData = response.data;
+    } else if (response.data && Array.isArray(response.data.data)) {
+      // Nested in data property or paginated response
+      customersData = response.data.data;
+    } else if (response.data && typeof response.data === 'object') {
+      // Single customer object
+      customersData = [response.data];
+    }
+    
+    // Filter out any null or invalid customers and ensure they have required fields
+    customers.value = customersData
+      .filter(customer => customer && typeof customer === 'object')
+      .map(customer => {
+        // Log any customers without an ID for debugging
+        if (!customer.id) {
+          console.warn('Customer without ID found', customer);
+        }
+        
+        // Ensure customer has at least one of business_name or poc_name
+        if (!customer.business_name && !customer.poc_name) {
+          customer.business_name = `Customer ${customer.id || ''}`;
+        }
+        
+        return customer;
+      })
+      // Sort customers alphabetically by business_name or poc_name
+      .sort((a, b) => {
+        const nameA = (a.business_name || a.poc_name || '').toLowerCase();
+        const nameB = (b.business_name || b.poc_name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+      
+    console.log('Fetched customers:', customers.value);
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    customers.value = [];
+    customerError.value = true;
+  } finally {
+    isLoadingCustomers.value = false;
+  }
+}
+
+// Function to retry fetching customers
+function retryFetchCustomers() {
+  if (!isLoadingCustomers.value) {
+    fetchCustomers();
+  }
+}
+
+// Get a consistent color for each customer based on their ID
+function getCustomerColor(customerId) {
+  // Handle null/undefined customerId gracefully
+  if (customerId === null || customerId === undefined) {
+    return customerColors[0]; // Default to first color
+  }
+  
+  const index = typeof customerId === 'number' ? customerId % customerColors.length : 0;
+  return customerColors[index];
+}
+
+// Get customer initials for avatar display
+function getCustomerInitials(customer) {
+  if (!customer) return '?';
+  
+  if (customer.business_name) {
+    // For business names, get the first letter or first letters of multiple words
+    const businessParts = customer.business_name.split(' ');
+    if (businessParts.length > 1 && businessParts[0].length > 2) {
+      // For multi-word business names, take first letter of first word
+      return businessParts[0].charAt(0).toUpperCase();
+    } else if (businessParts.length > 1) {
+      // For short business names with multiple words, take first letter of first two words
+      return (businessParts[0].charAt(0) + businessParts[1].charAt(0)).toUpperCase();
+    }
+    // Just the first letter if only one word
+    return customer.business_name.charAt(0).toUpperCase();
+  } else if (customer.poc_name) {
+    // If it's a person's name (point of contact), try to get first and last initials
+    const nameParts = customer.poc_name.split(' ');
+    if (nameParts.length > 1) {
+      // Get first letter of first name and first letter of last name
+      return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+    }
+    // Just the first letter if only one name part
+    return customer.poc_name.charAt(0).toUpperCase();
+  }
+  
+  // Fallback
+  return '•';
+}
+
+// Add event listeners on mount
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
     
@@ -39,8 +154,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    // Clean up all event listeners on unmount
     document.removeEventListener('click', handleClickOutside);
     window.removeEventListener('scroll', handleScroll);
+    removeKeyboardNavigation();
 });
 
 // Handle scroll events
@@ -50,6 +167,38 @@ function handleScroll() {
     } else {
         isScrolled.value = false;
     }
+}
+
+// Toggle customer dropdown and fetch customers when opened
+function toggleCustomerDropdown() {
+  showCustomerDropdown.value = !showCustomerDropdown.value;
+  if (showCustomerDropdown.value) {
+    // Reset focused index when opening dropdown
+    focusedCustomerIndex.value = -1;
+    
+    // Announce to screen readers that dropdown is open
+    announceToScreenReader('Customer dropdown opened');
+    
+    fetchCustomers().then(() => {
+      // Add a small delay to ensure DOM is updated
+      setTimeout(() => {
+        setupShineEffect();
+        setupKeyboardNavigation();
+        
+        // Announce number of customers loaded
+        const count = customers.value.length;
+        if (count > 0) {
+          announceToScreenReader(`${count} customers loaded`);
+        }
+      }, 100);
+    });
+  } else {
+    // Remove keyboard event listeners when closing dropdown
+    removeKeyboardNavigation();
+    
+    // Announce to screen readers that dropdown is closed
+    announceToScreenReader('Customer dropdown closed');
+  }
 }
 
 // Work order search functionality
@@ -118,6 +267,257 @@ function handleClickOutside(event) {
     if (!event.target.closest('.search-container')) {
         showSearchResults.value = false;
     }
+    
+    // Close customer dropdown when clicking outside
+    if (!event.target.closest('.customer-dropdown') && !event.target.closest('.customer-dropdown-button')) {
+        if (showCustomerDropdown.value) {
+            showCustomerDropdown.value = false;
+            // Return focus to the dropdown button when closing
+            const dropdownButton = document.querySelector('.customer-dropdown-button');
+            if (dropdownButton) dropdownButton.focus();
+        }
+    }
+}
+
+// Handle shine effect for customer tiles
+function setupShineEffect() {
+  const customerDropdown = document.querySelector('.customer-dropdown');
+  if (!customerDropdown) return;
+  
+  const customerLinks = customerDropdown.querySelectorAll('.customer-tile');
+  console.log('Setting up shine effect for', customerLinks.length, 'customer tiles');
+  
+  // Remove existing listeners from all links first to prevent duplicates
+  customerLinks.forEach(link => {
+    link.removeEventListener('mousemove', handleShineEffect);
+  });
+  
+  // Add fresh listeners
+  customerLinks.forEach(link => {
+    link.addEventListener('mousemove', handleShineEffect);
+    
+    // Reset values when mouse leaves
+    link.addEventListener('mouseleave', () => {
+      link.style.setProperty('--x', '50%');
+      link.style.setProperty('--y', '50%');
+    });
+    
+    // Set initial position at center
+    link.style.setProperty('--x', '50%');
+    link.style.setProperty('--y', '50%');
+  });
+}
+
+// Separate handler function for shine effect to avoid duplicate anonymous functions
+function handleShineEffect(e) {
+  const rect = this.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  this.style.setProperty('--x', `${x}px`);
+  this.style.setProperty('--y', `${y}px`);
+}
+
+// Setup keyboard navigation for customer dropdown
+function setupKeyboardNavigation() {
+  document.addEventListener('keydown', handleCustomerKeyNavigation);
+}
+
+// Remove keyboard navigation event listeners
+function removeKeyboardNavigation() {
+  document.removeEventListener('keydown', handleCustomerKeyNavigation);
+}
+
+// Handle keyboard navigation for customer tiles
+function handleCustomerKeyNavigation(e) {
+  // Only handle keyboard navigation when the dropdown is open
+  if (!showCustomerDropdown.value || customers.value.length === 0) return;
+  
+  const gridCols = 3; // Number of columns in the grid
+  const totalCustomers = customers.value.length;
+  
+  switch (e.key) {
+    case 'ArrowRight':
+      e.preventDefault();
+      if (focusedCustomerIndex.value < totalCustomers - 1) {
+        focusedCustomerIndex.value++;
+        focusCustomerTile();
+      }
+      break;
+      
+    case 'ArrowLeft':
+      e.preventDefault();
+      if (focusedCustomerIndex.value > 0) {
+        focusedCustomerIndex.value--;
+        focusCustomerTile();
+      }
+      break;
+      
+    case 'ArrowUp':
+      e.preventDefault();
+      if (focusedCustomerIndex.value >= gridCols) {
+        focusedCustomerIndex.value -= gridCols;
+        focusCustomerTile();
+      }
+      break;
+      
+    case 'ArrowDown':
+      e.preventDefault();
+      if (focusedCustomerIndex.value + gridCols < totalCustomers) {
+        focusedCustomerIndex.value += gridCols;
+        focusCustomerTile();
+      }
+      break;
+      
+    case 'Enter':
+    case ' ': // Space
+      e.preventDefault();
+      if (focusedCustomerIndex.value >= 0 && focusedCustomerIndex.value < totalCustomers) {
+        navigateToCustomer(focusedCustomerIndex.value);
+      }
+      break;
+      
+    case 'Escape':
+      e.preventDefault();
+      showCustomerDropdown.value = false;
+      // Return focus to the dropdown button
+      const dropdownButton = document.querySelector('.customer-dropdown-button');
+      if (dropdownButton) dropdownButton.focus();
+      break;
+      
+    case 'Tab':
+      // Don't prevent default for Tab, but reset the dropdown if focus leaves
+      setTimeout(() => {
+        if (!document.activeElement.closest('.customer-dropdown')) {
+          showCustomerDropdown.value = false;
+        }
+      }, 10);
+      break;
+      
+    case 'Home':
+      e.preventDefault();
+      focusedCustomerIndex.value = 0;
+      focusCustomerTile();
+      break;
+      
+    case 'End':
+      e.preventDefault();
+      focusedCustomerIndex.value = totalCustomers - 1;
+      focusCustomerTile();
+      break;
+      
+    default:
+      // Handle letter key navigation - find first customer starting with pressed key
+      if (e.key.length === 1 && e.key.match(/[a-z0-9]/i)) {
+        e.preventDefault();
+        
+        const letter = e.key.toLowerCase();
+        const currentIndex = focusedCustomerIndex.value;
+        
+        // Start searching from the next index after current, or from beginning if at end
+        let startIndex = currentIndex >= 0 ? (currentIndex + 1) % totalCustomers : 0;
+        let index = startIndex;
+        let found = false;
+        
+        // First try to find a match after the current position
+        do {
+          const customer = customers.value[index];
+          const name = (customer.business_name || customer.poc_name || '').toLowerCase();
+          
+          if (name.startsWith(letter)) {
+            focusedCustomerIndex.value = index;
+            focusCustomerTile();
+            found = true;
+            break;
+          }
+          
+          index = (index + 1) % totalCustomers;
+        } while (index !== startIndex);
+        
+        // If no match found after current position, search from beginning
+        if (!found && currentIndex > 0) {
+          startIndex = 0;
+          index = startIndex;
+          
+          while (index < currentIndex) {
+            const customer = customers.value[index];
+            const name = (customer.business_name || customer.poc_name || '').toLowerCase();
+            
+            if (name.startsWith(letter)) {
+              focusedCustomerIndex.value = index;
+              focusCustomerTile();
+              found = true;
+              break;
+            }
+            
+            index++;
+          }
+        }
+      }
+      break;
+  }
+}
+
+// Focus the currently selected customer tile
+function focusCustomerTile() {
+  setTimeout(() => {
+    const tiles = document.querySelectorAll('.customer-tile');
+    if (tiles[focusedCustomerIndex.value]) {
+      tiles[focusedCustomerIndex.value].focus();
+      
+      // Announce to screen readers
+      const customer = customers.value[focusedCustomerIndex.value];
+      if (customer) {
+        announceToScreenReader(`${customer.business_name || customer.poc_name || 'Customer'} selected`);
+      }
+      
+      // Ensure the focused tile is visible by scrolling if necessary
+      const container = document.querySelector('.customers-grid');
+      const tile = tiles[focusedCustomerIndex.value];
+      
+      if (container && tile) {
+        const containerRect = container.getBoundingClientRect();
+        const tileRect = tile.getBoundingClientRect();
+        
+        if (tileRect.bottom > containerRect.bottom) {
+          container.scrollTop += (tileRect.bottom - containerRect.bottom);
+        } else if (tileRect.top < containerRect.top) {
+          container.scrollTop -= (containerRect.top - tileRect.top);
+        }
+      }
+    }
+  }, 10);
+}
+
+// Function to announce messages to screen readers
+function announceToScreenReader(message) {
+  // Create or get existing announcement element
+  let announcement = document.getElementById('sr-announcement');
+  
+  if (!announcement) {
+    announcement = document.createElement('div');
+    announcement.id = 'sr-announcement';
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.style.position = 'absolute';
+    announcement.style.width = '1px';
+    announcement.style.height = '1px';
+    announcement.style.padding = '0';
+    announcement.style.margin = '-1px';
+    announcement.style.overflow = 'hidden';
+    announcement.style.clip = 'rect(0, 0, 0, 0)';
+    announcement.style.whiteSpace = 'nowrap';
+    announcement.style.border = '0';
+    document.body.appendChild(announcement);
+  }
+  
+  // Clear and set the message
+  announcement.textContent = '';
+  
+  // Use setTimeout to ensure the change is registered by screen readers
+  setTimeout(() => {
+    announcement.textContent = message;
+  }, 50);
 }
 
 // Update the logout method
@@ -173,11 +573,6 @@ function logout() {
             </button>
           </div>
           
-          <!-- Search component in sidebar -->
-          <div class="px-4 pt-4">
-            <Search placeholder="Search..." @search="handleSearch" class="w-full" />
-          </div>
-          
           <nav class="flex-1 px-4 py-6 space-y-2">
             <Link href="/dashboard" class="shadcn-nav-link shadcn-nav-link-dashboard">
               <svg class="inline-block mr-2 h-5 w-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0v6m0 0H7m6 0h6" /></svg>
@@ -187,10 +582,127 @@ function logout() {
               <svg class="inline-block mr-2 h-5 w-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 0h6m-6 0a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2m-6 0v2a2 2 0 002 2h2a2 2 0 002-2v-2" /></svg>
               Work Orders
             </Link>
-            <Link href="/customers" class="shadcn-nav-link shadcn-nav-link-customers">
-              <svg class="inline-block mr-2 h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
-              Customers
-            </Link>
+            <!-- Customers with dropdown -->
+            <div class="relative">
+              <button 
+                @click="toggleCustomerDropdown"
+                @keydown.enter.prevent="toggleCustomerDropdown"
+                @keydown.space.prevent="toggleCustomerDropdown"
+                @keydown.down.prevent="toggleCustomerDropdown(); focusedCustomerIndex = 0; nextTick(() => focusCustomerTile())"
+                aria-haspopup="true"
+                :aria-expanded="showCustomerDropdown"
+                :aria-controls="showCustomerDropdown ? 'customer-dropdown-content' : undefined"
+                aria-label="Customers dropdown"
+                role="button"
+                class="shadcn-nav-link shadcn-nav-link-customers w-full flex justify-between items-center customer-dropdown-button"
+              >
+                <div class="flex items-center">
+                  <svg class="inline-block mr-2 h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
+                  Customers
+                </div>
+                <svg 
+                  class="h-4 w-4 transition-transform duration-200" 
+                  :class="showCustomerDropdown ? 'rotate-180' : ''" 
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              
+              <!-- Dropdown content -->
+              <div 
+                v-if="showCustomerDropdown" 
+                id="customer-dropdown-content"
+                class="customer-dropdown mt-1 pl-6 pr-2 pb-2 overflow-hidden"
+                role="menu"
+                aria-label="Customer navigation"
+                aria-orientation="vertical"
+              >
+                <!-- Loading indicator -->
+                <div v-if="isLoadingCustomers" class="py-6 flex flex-col items-center justify-center">
+                  <svg class="animate-spin h-6 w-6 text-cyan-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span class="text-xs text-cyan-400">Loading customers...</span>
+                </div>
+                
+                <!-- Error state -->
+                <div v-else-if="customerError" class="py-4 text-center px-3">
+                  <svg class="w-8 h-8 text-amber-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                  </svg>
+                  <p class="text-xs text-gray-300 font-medium">Unable to load customers</p>
+                  <button @click="retryFetchCustomers" 
+                          class="mt-2 text-xxs bg-gray-800/70 hover:bg-gray-700/70 text-cyan-400 px-2 py-1 rounded-md transition-colors">
+                    Try again
+                  </button>
+                </div>
+                
+                <!-- Empty state -->
+                <div v-else-if="customers.length === 0" class="py-4 text-center">
+                  <svg class="w-8 h-8 text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  </svg>
+                  <p class="text-sm text-gray-400">No customers found</p>
+                </div>
+                
+                <!-- Customer tiles -->
+                <div v-else class="grid grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pt-2 px-1 pr-2 pb-1 customers-grid">
+                  <Link 
+                    v-for="(customer, index) in customers" 
+                    :key="customer && customer.id ? customer.id : index"
+                    :href="customer && customer.id ? `/customers/${customer.id}` : '/customers'"
+                    :style="{ animationDelay: `${index * 0.05}s` }"
+                    :tabindex="showCustomerDropdown ? 0 : -1"
+                    role="menuitem"
+                    :aria-label="customer ? (customer.business_name || customer.poc_name || `Customer ${customer.id || ''}`) : 'Customer'"
+                    :aria-selected="focusedCustomerIndex === index"
+                    :class="[
+                      'customer-tile group p-2 rounded-md transition-all hover:scale-[1.03] hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-cyan-500 focus:ring-offset-gray-900 border border-transparent hover:border-gray-700/50',
+                      focusedCustomerIndex === index ? 'bg-gray-800/50 border-gray-600/70 ring-2 ring-cyan-500 ring-offset-1 ring-offset-gray-900' : ''
+                    ]"
+                    @keydown.space.prevent="navigateToCustomer(index)"
+                    @focus="focusedCustomerIndex = index"
+                  >
+                    <div class="flex flex-col items-center text-center">
+                      <div 
+                        class="w-12 h-12 rounded-full flex items-center justify-center mb-1.5 text-white font-semibold shadow-lg border border-gray-700/50 group-hover:border-gray-600 transition-all" 
+                        :class="getCustomerColor(customer ? customer.id : null)"
+                      >
+                        <span class="text-lg">
+                          {{ getCustomerInitials(customer) }}
+                        </span>
+                      </div>
+                      <div class="flex flex-col min-h-[32px] justify-center">
+                        <span class="text-xs font-medium truncate w-full text-gray-200 group-hover:text-white transition-colors">
+                          {{ 
+                            customer ? 
+                            (customer.business_name || customer.poc_name || `Customer ${customer.id || ''}`) : 
+                            'Customer' 
+                          }}
+                        </span>
+                        <span v-if="customer && customer.business_name && customer.poc_name" 
+                              class="text-xxs truncate w-full text-gray-400 group-hover:text-gray-300 transition-colors mt-0.5">
+                          {{ customer.poc_name }}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+                
+                <!-- View all customers link -->
+                <Link 
+                  href="/customers" 
+                  class="mt-3 flex items-center justify-center py-2 w-full rounded-md text-cyan-400 text-sm font-medium hover:bg-gray-800/50 border border-gray-700/40 hover:border-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                >
+                  <span>View All Customers</span>
+                  <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                  </svg>
+                </Link>
+              </div>
+            </div>
             <Link href="/technicians" class="shadcn-nav-link shadcn-nav-link-technicians">
               <svg class="inline-block mr-2 h-5 w-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
               Technicians
@@ -227,7 +739,7 @@ function logout() {
               <Link href="#" class="shadcn-quick-link">
                 <span>Profile</span>
               </Link>
-              <Link href="#" class="shadcn-quick-link">
+              <Link href="http://127.0.0.1:8000/teams/1" class="shadcn-quick-link">
                 <span>Settings</span>
               </Link>
             </div>
@@ -714,6 +1226,124 @@ body {
 
 .navbar-center .btn-ghost:hover {
   background: rgba(163, 230, 53, 0.08);
+}
+
+/* Customer dropdown styles */
+.customer-dropdown {
+  background: rgba(17, 24, 39, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 
+              0 8px 10px -6px rgba(0, 0, 0, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+  perspective: 800px;
+}
+
+/* Animation for customer tiles */
+.customer-tile {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  opacity: 0;
+}
+
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98) rotateX(-5deg);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%);
+  }
+  20% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 20%, 0% 20%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Customer tiles styling */
+.customer-dropdown .grid a {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.customer-dropdown .grid a:hover {
+  background-color: rgba(31, 41, 55, 0.7);
+  box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.3), 
+              0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.customer-dropdown .grid a:hover::before,
+.customer-dropdown .grid a:focus::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--x) var(--y), rgba(255, 255, 255, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.customer-dropdown .grid a:active {
+  transform: scale(0.97);
+}
+
+/* Keyboard focus styles */
+.customer-dropdown .grid a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.6), 0 0 0 4px rgba(8, 145, 178, 0.2);
+  background-color: rgba(31, 41, 55, 0.7);
+  border-color: rgba(8, 145, 178, 0.4);
+  transform: scale(1.03);
+}
+
+/* Add a special indicator for keyboard navigation */
+.customer-dropdown .grid a[aria-selected="true"] {
+  position: relative;
+  z-index: 10;
+}
+
+.customer-dropdown .grid a[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(8, 145, 178, 0.7);
+  border-radius: 0.375rem;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(8, 145, 178, 0.4);
+}
+
+/* Custom scrollbar for customer dropdown */
+.customer-dropdown .grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.customer-dropdown .grid::-webkit-scrollbar-track {
+  background: rgba(17, 24, 39, 0.3);
+  border-radius: 4px;
+}
+
+.customer-dropdown .grid::-webkit-scrollbar-thumb {
+  background: rgba(8, 145, 178, 0.5);
+  border-radius: 4px;
+}
+
+.customer-dropdown .grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(8, 145, 178, 0.7);
 }
 
 /* Make TekDash logo always visible and centered */

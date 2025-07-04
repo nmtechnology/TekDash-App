@@ -98,7 +98,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { Link } from '@inertiajs/vue3'
-import AddTechnicianButton from '@/Components/AddTechnicianButton.vue'
+import AddTechnicianButton from './AddTechnicianButton.vue'
 
 const search = ref('')
 const technicians = ref([])

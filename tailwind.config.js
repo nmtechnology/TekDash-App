@@ -26,6 +26,9 @@ export default {
                     ...defaultTheme.fontFamily.sans
                 ]
     		},
+            fontSize: {
+                'xxs': '0.65rem',
+            },
     		borderRadius: {
     			lg: 'var(--radius)',
     			md: 'calc(var(--radius) - 2px)',
