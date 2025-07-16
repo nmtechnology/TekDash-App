@@ -119,7 +119,7 @@ class CustomerController extends Controller
         }
     }
 
-    public function show(Customer $customer)
+    public function show(Request $request, Customer $customer)
     {
         // Get the customer's recent work orders
         $recentWorkOrders = \App\Models\WorkOrder::where('customer_id', $customer->id)
@@ -127,7 +127,15 @@ class CustomerController extends Controller
             ->limit(5)
             ->get();
             
-        return response()->json([
+        // Return JSON for API requests, Inertia for web
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'customer' => $customer,
+                'recentWorkOrders' => $recentWorkOrders
+            ]);
+        }
+        
+        return Inertia::render('Customers/Show', [
             'customer' => $customer,
             'recentWorkOrders' => $recentWorkOrders
         ]);

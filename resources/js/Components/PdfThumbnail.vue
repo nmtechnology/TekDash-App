@@ -38,9 +38,14 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 
-// Explicitly set the worker source and verify
-console.log('PDF.js worker URL:', pdfjsWorker);
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// Explicitly set the worker source
+// Fix the URL to avoid SVG viewBox errors - use a string instead of URL object
+const workerSrc = typeof pdfjsWorker === 'string' ? 
+  pdfjsWorker : 
+  '/build/assets/pdf.worker-2ru0a0LU.mjs';
+  
+console.log('PDF.js worker URL:', workerSrc);
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export default {
   name: 'PdfThumbnail',
@@ -96,7 +101,15 @@ export default {
       try {
         // Get the current origin
         const origin = window.location.origin;
-        let normalizedUrl = url.trim();
+        
+        // Make sure we're working with a string to avoid SVG viewBox errors
+        let normalizedUrl = typeof url === 'string' ? url.trim() : String(url).trim();
+        
+        // Fix for SVG viewBox error: if URL object is detected instead of string
+        if (normalizedUrl.includes('[object URL]') || normalizedUrl.includes('[object')) {
+          console.error('PdfThumbnail: URL object detected instead of string:', normalizedUrl);
+          normalizedUrl = '/storage/' + Math.random().toString(36).substring(2, 15);
+        }
         
         // Remove hash fragments and query strings for consistency
         normalizedUrl = normalizedUrl.split('#')[0];

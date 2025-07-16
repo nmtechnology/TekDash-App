@@ -30,7 +30,7 @@
           {{ note.text }}
         </div>
         <div class="chat-footer text-xs opacity-70 mt-1">
- • {{ formatTimestamp(note.created_at) }}
+          <span class="font-semibold">{{ note.user_name || 'User' }}</span> • {{ formatTimestamp(note.created_at) }}
         </div>
       </div>
     </div>
@@ -114,7 +114,6 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
-import { router } from '@inertiajs/vue3';
 import EmojiPicker from './EmojiPicker.vue';
 import { Button } from '@/Components/ui/button';
 import { Textarea } from '@/Components/ui/textarea';
@@ -173,18 +172,8 @@ export default {
     
     // Function to fetch notes from the server
     const fetchNotes = () => {
-      // We'll keep using axios for GET requests since Inertia is mainly for page navigation
-      // and we just want to refresh the data without a full page reload
-      axios.get(`/work-orders/${props.workOrderId}/notes`, { 
-        headers: { 'Accept': 'application/json' },
-        withCredentials: true 
-      })
+      axios.get(`/work-orders/${props.workOrderId}/notes`)
         .then(response => {
-          if (!response.data) {
-            console.error('No data returned from notes endpoint');
-            return;
-          }
-          
           // Process the notes data to ensure each note has user initials
           notes.value = response.data.map(note => {
             if (!note.user_initials && note.user && note.user.name) {
@@ -195,12 +184,6 @@ export default {
                 note.user_initials = nameParts[0].substring(0, 2).toUpperCase();
               }
             }
-            
-            // Ensure the urgent flag is properly set (convert from number/string to boolean if needed)
-            if (note.urgent === '1' || note.urgent === 1) {
-              note.urgent = true;
-            }
-            
             return note;
           });
           
@@ -298,143 +281,35 @@ export default {
       // Focus back to textarea after toggling
       nextTick(() => {
         if (messageInput.value) {
-          // Handle focusing on the textarea element which may be wrapped by the Textarea component
-          try {
-            // Try to access the input element directly if available
-            if (messageInput.value.$el) {
-              const textareaElement = messageInput.value.$el.querySelector('textarea');
-              if (textareaElement) {
-                textareaElement.focus();
-                return;
-              }
-            }
-            
-            // If the above doesn't work, try other approaches
-            if (typeof messageInput.value.focus === 'function') {
-              messageInput.value.focus();
-            }
-          } catch (error) {
-            console.log('Could not focus on textarea:', error);
-          }
+          messageInput.value.focus();
         }
       });
     };
-
-    // Status change functionality has been removed
-
-// Add notification function - separate from changeStatus
-const sendNotification = (type, message, isUrgent = false) => {
-  axios.post('/notifications/send', {
-    type: type,
-    work_order_id: props.workOrderId,
-    message: message,
-    user_id: props.userId,
-    urgent: isUrgent,
-    email_all: true
-  }).catch(error => {
-    console.error('Error sending notification:', error);
-  });
-};
     
-    // We don't need a separate CSRF token retrieval function anymore as Inertia handles this automatically
-
-    // Function to add test notes for demo purposes
-    const addTestNotes = () => {
-      // Create some test users
-      const testUsers = [
-        { id: 'admin123', name: 'Admin User', role: 'admin' },
-        { id: 'tech456', name: 'Technician Smith', role: 'technician' },
-        { id: 'customer789', name: 'Customer Johnson', role: 'customer' },
-        { id: props.userId, name: 'Current User', role: 'current' }
-      ];
+    // Improved CSRF token retrieval
+    const getCsrfToken = () => {
+      // Get from the meta tag (most reliable in Laravel)
+      const metaToken = document.head.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (metaToken) return metaToken;
       
-      // Create some test notes from different users
-      const testNotes = [
-        {
-          id: 'demo-1',
-          text: 'Hello, I need assistance with this work order.',
-          user_id: 'customer789',
-          user_name: 'Customer Johnson',
-          user_initials: 'CJ',
-          created_at: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
-          urgent: false
-        },
-        {
-          id: 'demo-2',
-          text: 'I\'ll be out to check the issue tomorrow morning.',
-          user_id: 'tech456',
-          user_name: 'Technician Smith',
-          user_initials: 'TS',
-          created_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-          urgent: false
-        },
-        {
-          id: 'demo-3',
-          text: 'URGENT: The problem has gotten worse, water is leaking everywhere!',
-          user_id: 'customer789',
-          user_name: 'Customer Johnson', 
-          user_initials: 'CJ',
-          created_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-          urgent: true
-        },
-        {
-          id: 'demo-4',
-          text: 'I understand the urgency. I\'m on my way now!',
-          user_id: 'tech456',
-          user_name: 'Technician Smith',
-          user_initials: 'TS',
-          created_at: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString(),
-          urgent: false
-        },
-        {
-          id: 'demo-5',
-          text: 'This work order has been prioritized. Let me know if you need additional resources.',
-          user_id: 'admin123',
-          user_name: 'Admin User',
-          user_initials: 'AU',
-          created_at: new Date(new Date().setHours(new Date().getHours() - 3)).toISOString(),
-          urgent: false
-        },
-        {
-          id: 'demo-6',
-          text: 'URGENT: We need parts immediately to fix this issue!',
-          user_id: 'tech456',
-          user_name: 'Technician Smith',
-          user_initials: 'TS',
-          created_at: new Date(new Date().setHours(new Date().getHours() - 2)).toISOString(),
-          urgent: true
-        },
-        {
-          id: 'demo-7',
-          text: 'I\'ve approved the emergency parts order. The parts should arrive within 2 hours.',
-          user_id: 'admin123',
-          user_name: 'Admin User',
-          user_initials: 'AU',
-          created_at: new Date(new Date().setHours(new Date().getHours() - 1)).toISOString(),
-          urgent: false
-        }
-      ];
+      // Get from cookie (decode it properly)
+      const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+      const xsrfCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
+      if (xsrfCookie) {
+        return decodeURIComponent(xsrfCookie.split('=')[1]);
+      }
       
-      // Add test notes to the notes array
-      notes.value = [...testNotes, ...notes.value];
+      // Last resort - try from form input
+      const inputToken = document.querySelector('input[name="_token"]')?.value;
+      if (inputToken) return inputToken;
       
-      // Scroll to the most recent message
-      setTimeout(() => {
-        const messagesContainer = document.querySelector('.messages');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      }, 100);
+      console.error('CSRF token not found');
+      return '';
     };
 
     onMounted(() => {
       // Fetch notes on component mount
       fetchNotes();
-      
-      // Add test notes if URL parameter is present
-      if (window.location.search.includes('demo=true')) {
-        addTestNotes();
-      }
     });
     
     // Improved add note functionality
@@ -470,54 +345,53 @@ const sendNotification = (type, message, isUrgent = false) => {
         }
       }, 10);
       
-      // Use axios.post for API endpoints that return JSON responses
-      axios.post(`/work-orders/${props.workOrderId}/notes`, 
+      // Get CSRF token
+      const token = getCsrfToken();
+      
+      // Set up axios with proper headers
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': token,
+          'Accept': 'application/json'
+        }
+      };
+      
+      // Use axios.post instead of Inertia.post
+      axios.post(`/work-orders/${props.workOrderId}/notes`,
         { 
           text: newNote.text,
-          user_id: props.userId, // Make sure user_id is included
-          urgent: newNote.urgent // Make sure it's a boolean value (true/false)
+          urgent: isUrgent.value // Include urgent flag in the API request
         },
-        {
-          headers: { 'Accept': 'application/json' },
-          withCredentials: true
-        }
+        config
       ).then(response => {
         console.log('Note saved successfully:', response.data);
-        // Fetch all notes to ensure we have the complete updated list
-        fetchNotes();
-        
-        // Send notification about the new note
-        if (newNote.urgent) {
-          sendNotification('new_urgent_note', newNote.text, true);
+        const noteIndex = notes.value.findIndex(n => n.id === tempId);
+        if (noteIndex !== -1 && response.data) {
+          // Update the temporary note with the server data
+          notes.value[noteIndex] = { ...response.data, isNew: false };
+          
+          // Fetch all notes to ensure we have the complete updated list
+          fetchNotes();
         }
       }).catch(error => {
         console.error('Error adding note:', error);
         // Show error message
         let errorMessage = 'Failed to save your note. ';
         if (error.response && error.response.data) {
-          if (typeof error.response.data === 'string') {
-            errorMessage += error.response.data;
-          } else if (error.response.data.message) {
-            errorMessage += error.response.data.message;
-          } else if (error.response.data.error) {
-            errorMessage += error.response.data.error;
-          } else {
-            errorMessage += Object.values(error.response.data).join(', ');
-          }
+          errorMessage += Object.values(error.response.data).join(', ');
         } else {
           errorMessage += 'Please try again.';
         }
         alert(errorMessage);
         notes.value = notes.value.filter(n => n.id !== tempId);
-      }
-      );
+      });
     };
 
     // Function to get bubble classes based on message type and sender
     const getBubbleClass = (note) => {
       // If the message is urgent, always use chat-bubble-error (red)
-      // Check for both boolean true and string/number values
-      if (note.urgent === true || note.urgent === '1' || note.urgent === 1) {
+      if (note.urgent) {
         return 'chat-bubble-error';
       }
       
@@ -544,8 +418,8 @@ const sendNotification = (type, message, isUrgent = false) => {
       insertEmoji,
       toggleUrgentMessage,
       isUrgent,
+      getCsrfToken,
       getBubbleClass,
-      addTestNotes, // Expose the test notes function
       getUserName: computed(() => typeof props.getUserName === 'function' 
         ? props.getUserName 
         : () => props.getUserName)
@@ -825,15 +699,11 @@ const sendNotification = (type, message, isUrgent = false) => {
   align-items: center;
   justify-content: center;
   border-radius: 0.375rem;
-  border-width: 1px;
-  border-color: transparent;
+  border: 1px solid transparent;
   font-weight: 600;
   font-size: 0.875rem;
-  transition: all 0.2s;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  transition-property: all;
+  transition-duration: 150ms;
 }
 
 .btn:disabled {
