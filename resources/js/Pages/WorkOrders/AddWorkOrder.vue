@@ -23,23 +23,12 @@
             @click.stop>
             <!-- Fixed Header with Steps -->
             <div class="modal-header glossy-header px-4 py-3 border-b border-gray-700">
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between items-center">
+              <div class="flex flex-col gap-2 w-full">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
                   <h3 class="text-lime-400 text-xl md:text-2xl font-bold" id="modal-title">
                     Create New Work Order
                   </h3>
-                  <button @click="handleHideModal"
-                    class="btn ml-2 text-red-400 hover:text-red-400 transition-colors duration-200 focus:outline-none"
-                    aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <!-- Steps component in header -->
-                <div class="flex justify-center w-full pt-2">
-                  <ul class="steps steps-horizontal w-full overflow-x-auto no-scrollbar">
+                  <ul class="steps steps-horizontal w-full md:w-auto overflow-x-auto no-scrollbar md:ml-6">
                     <li v-for="step in totalSteps" :key="step" class="step transition-all duration-300 relative" :class="{
                       'step-lime-400 text-lime-400 font-bold': step === currentStep,
                       'step-success text-green-400': step < currentStep,
@@ -86,6 +75,14 @@
                       </div>
                     </li>
                   </ul>
+                  <button @click="handleHideModal"
+                    class="btn ml-2 text-red-400 hover:text-red-400 transition-colors duration-200 focus:outline-none"
+                    aria-label="Close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -608,7 +605,7 @@ const form = useForm({
   customer_id: '',
   title: '',
   description: '',
-  date_time: '',
+  date_time: null, // Ensure this is null, not an empty string
   end_date: '',
   visit_dates: [],
   price: '120.00',
@@ -640,6 +637,13 @@ const mapboxCoords = ref({ lat: null, lon: null });
 watch(() => form.address, (newAddress) => {
   geocodeAddress(newAddress);
 }, { immediate: false });
+
+watch(() => form.date_time, (val, oldVal) => {
+  if (typeof val === 'string') {
+    const parsed = new Date(val);
+    form.date_time = isNaN(parsed.getTime()) ? null : parsed;
+  }
+});
 
 // Computed properties
 const formattedTitle = computed(() => {
@@ -781,7 +785,7 @@ const resetForm = () => {
   form.customer_id = props.customerId || '';
   form.title = '';
   form.description = '';
-  form.date_time = '';
+  form.date_time = null; // Always reset to null
   form.end_date = '';
   form.visit_dates = [];
   form.price = '120.00';
