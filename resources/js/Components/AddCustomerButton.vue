@@ -175,40 +175,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineEmits } from 'vue';
+import { ref, defineEmits } from 'vue';
 import { useToast } from '@/Composables/useToast';
+import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 
 // Define component emits
 const emit = defineEmits(['customer-added']);
 
-// Initialize Axios configuration
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-axios.defaults.headers.common['Accept'] = 'application/json';
-
-// Initialize Sanctum and CSRF protection
-async function initializeSanctum() {
-  try {
-    // Get CSRF cookie first
-    await axios.get('/sanctum/csrf-cookie');
-    
-    // Get CSRF token from meta tag and set up headers
-    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    if (token) {
-      axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
-    } else {
-      throw new Error('CSRF token not found');
-    }
-  } catch (error) {
-    console.error('Error initializing Sanctum:', error);
-    throw error;
-  }
-}
-
 // Component setup
 const showModal = ref(false);
-const form = ref({
+const form = useForm({
   business_name: '',
   address: '',
   poc_name: '',
@@ -225,115 +202,70 @@ const checkNameTimeout = ref(null);
 
 const toast = useToast();
 
-async function addCustomer() {
-  try {
-    // Clear previous error message
-    errorMessage.value = '';
-    
-    // Client-side validation
-    if (!form.value.business_name?.trim()) {
-      errorMessage.value = 'Business name is required';
-      return;
-    }
-    
-    // Check if business name already exists
-    if (businessNameExists.value) {
-      errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
-      return;
-    }
-    
-    if (!form.value.address?.trim()) {
-      errorMessage.value = 'Address is required';
-      return;
-    }
-    if (!form.value.poc_name?.trim()) {
-      errorMessage.value = 'POC name is required';
-      return;
-    }
-    if (!form.value.poc_email?.trim()) {
-      errorMessage.value = 'POC email is required';
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.poc_email?.trim())) {
-      errorMessage.value = 'Please enter a valid email address';
-      return;
-    }
-    
-    await initializeSanctum();
-    const formData = new FormData();
-    // Explicitly append all required fields, trimming whitespace
-    formData.append('business_name', form.value.business_name?.trim());
-    formData.append('address', form.value.address?.trim());
-    formData.append('poc_name', form.value.poc_name?.trim());
-    formData.append('poc_email', form.value.poc_email?.trim());
-    formData.append('fax', form.value.fax?.trim() || '');
-    formData.append('net_terms', form.value.net_terms);
-    formData.append('pay_rate', form.value.pay_rate?.toString() || '120.00');
-    // Add files if they exist
-    if (form.value.attachable_files) {
-      Array.from(form.value.attachable_files).forEach((file, index) => {
-        formData.append(`attachable_files[${index}]`, file);
-      });
-    }
-    // Make the API call
-    const response = await axios.post('/api/customers', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      }
-    });
-    toast.success('Customer added successfully!');
-    showModal.value = false;
-    form.value = {
-      business_name: '',
-      address: '',
-      poc_name: '',
-      poc_email: '',
-      fax: '',
-      net_terms: 'Net 30',
-      pay_rate: '120.00',
-      attachable_files: null,
-    };
-    emit('customer-added', response.data);
-  } catch (error) {
-    // Log the full error response for debugging
-    if (error.response) {
-      console.log('AddCustomer API error:', error.response.data);
-    } else {
-      console.log('AddCustomer API error:', error);
-    }
-    if (error.response) {
-      if (error.response.status === 401) {
-        toast.error('Please log in to add a customer');
-      } else if (error.response.status === 419) {
-        toast.error('Your session has expired. Please refresh the page and try again.');
-        // Try to reinitialize Sanctum
-        await initializeSanctum();
-      } else if (error.response.status === 422 && error.response.data.errors) {
-        // Handle validation errors from the server
-        const messages = Object.values(error.response.data.errors).flat();
-        errorMessage.value = messages.join('\n');
-        
-        // Log more details about the validation error
-        console.error('Validation errors:', error.response.data.errors);
-        
-        // Special handling for business name already exists
-        if (error.response.data.errors.business_name && 
-            error.response.data.errors.business_name.some(msg => msg.includes('already exists'))) {
-          errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
-        }
-      } else if (error.response.status === 409 || (error.response.data && error.response.data.message && error.response.data.message.includes('already exists'))) {
+function addCustomer() {
+  // Clear previous error message
+  errorMessage.value = '';
+  
+  // Client-side validation
+  if (!form.business_name?.trim()) {
+    errorMessage.value = 'Business name is required';
+    return;
+  }
+  
+  // Check if business name already exists
+  if (businessNameExists.value) {
+    errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
+    return;
+  }
+  
+  if (!form.address?.trim()) {
+    errorMessage.value = 'Address is required';
+    return;
+  }
+  if (!form.poc_name?.trim()) {
+    errorMessage.value = 'POC name is required';
+    return;
+  }
+  if (!form.poc_email?.trim()) {
+    errorMessage.value = 'POC email is required';
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.poc_email?.trim())) {
+    errorMessage.value = 'Please enter a valid email address';
+    return;
+  }
+  
+  // Submit form using Inertia.js
+  form.post('/api/customers', {
+    forceFormData: true, // Ensure files are properly handled
+    onSuccess: (page) => {
+      toast.success('Customer added successfully!');
+      showModal.value = false;
+      
+      // Get the response data from the page props or directly from page
+      const response = page?.props?.response || page?.props?.flash?.response || page;
+      
+      // Emit customer-added event with the response data
+      emit('customer-added', response.customer || response);
+      
+      // Reset form
+      form.reset();
+      form.clearErrors();
+    },
+    onError: (errors) => {
+      console.error('Validation errors:', errors);
+      
+      if (errors.business_name && errors.business_name.includes('already exists')) {
+        businessNameExists.value = true;
         errorMessage.value = 'A customer with this business name already exists. Please use a different name.';
       } else {
-        const errorMsg = error.response.data?.message || 'Failed to add customer';
-        errorMessage.value = errorMsg;
-        toast.error(errorMsg);
+        errorMessage.value = Object.values(errors).flat().join('\n');
       }
-    } else {
-      const genericError = 'An error occurred while adding the customer. Please try again.';
-      errorMessage.value = genericError;
-      toast.error(genericError);
+    },
+    onFinish: () => {
+      // This will run regardless of success or failure
     }
-  }
+  });
 }
 
 // Check if business name already exists
@@ -363,7 +295,7 @@ async function checkBusinessNameExists(name) {
 }
 
 function handleFileChange(event) {
-  form.value.attachable_files = Array.from(event.target.files);
+  form.attachable_files = event.target.files;
 }
 
 // Handler for business name input changes with debounce

@@ -298,7 +298,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <!-- <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span> -->
+                      <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span>
                     </div>
                   </div>
                   <div class="mt-2 flex flex-col items-center gap-2">
@@ -311,10 +311,14 @@
                         Week</button>
                     </div>
                     <div class="w-full max-w-md relative">
-                      <Flatpickr v-model="form.date_time"
-                        :config="{ enableTime: true, dateFormat: 'Y-m-d H:i', minDate: 'today' }"
-                        class="w-full glossy-content text-lg p-3 rounded-lg border border-lime-400 focus:ring-lime-400"
-                        placeholder="Select date and time" />
+                      <!-- ShadCN DatePicker -->
+                      <DatePicker 
+                        v-model="form.date_time" 
+                        :min-date="new Date()" 
+                        with-time
+                        use12Hours
+                        class="w-full"
+                      />
                     </div>
                   </div>
                   <!-- Selected Date/Time Preview -->
@@ -1160,8 +1164,7 @@ import ApplicationMark from '@/Components/ApplicationMark.vue';
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 import { Popover, PopoverTrigger, PopoverContent } from '@/Components/ui/popover';
 import { format, isValid } from 'date-fns';
-import Flatpickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import DatePicker from '@/Components/ui/calendar/DatePicker.vue';
 
 // Set up Axios to include CSRF token
 axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -1251,9 +1254,8 @@ function quickSelectDate(option) {
   } else {
     selected = now;
   }
-  const pad = (n) => n.toString().padStart(2, '0');
-  const formatted = `${selected.getFullYear()}-${pad(selected.getMonth() + 1)}-${pad(selected.getDate())} ${pad(selected.getHours())}:${pad(selected.getMinutes())}`;
-  form.value.date_time = formatted;
+  // Directly assign the Date object since our new DatePicker accepts a Date object
+  form.date_time = selected;
 }
 
 // checkExistingWorkOrder patched to handle 422 errors gracefully
@@ -1415,7 +1417,8 @@ const selectedDateFormatted = computed(() => {
 const formattedDateTime = computed(() => {
   if (!form.date_time) return '';
   try {
-    const date = new Date(form.date_time);
+    // Handle both string and Date object
+    const date = form.date_time instanceof Date ? form.date_time : new Date(form.date_time);
     if (isValid(date)) {
       return format(date, 'EEEE, MMMM d, yyyy \'at\' h:mm a');
     }
@@ -2255,6 +2258,17 @@ const submitForm = async () => {
     form.price = totalPrice.value;
     form.grand_total = totalPrice.value;
     form.hourly_rate = form.hourlyRate; // Ensure backend compatibility
+    
+    // Format date if it's a Date object
+    if (form.date_time instanceof Date) {
+      const pad = (n) => n.toString().padStart(2, '0');
+      const year = form.date_time.getFullYear();
+      const month = pad(form.date_time.getMonth() + 1);
+      const day = pad(form.date_time.getDate());
+      const hours = pad(form.date_time.getHours());
+      const minutes = pad(form.date_time.getMinutes());
+      form.date_time = `${year}-${month}-${day} ${hours}:${minutes}:00`;
+    }
 
     console.log('Form data before submission:', {
       user_id: form.user_id,
