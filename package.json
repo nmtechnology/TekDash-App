@@ -38,6 +38,7 @@
         "@heroicons/vue": "^2.2.0",
         "@popperjs/core": "^2.11.8",
         "@tailwindcss/vite": "^4.0.11",
+        "@vuepic/vue-datepicker": "^11.0.2",
         "@vueuse/core": "^13.3.0",
         "cally": "^0.8.0",
         "chart.js": "^4.4.8",
@@ -47,6 +48,7 @@
         "daypilot-pro-vue": "https://npm.daypilot.org/daypilot-pro-vue/trial/2024.4.6180.tar.gz",
         "flatpickr": "^4.6.13",
         "html2pdf.js": "^0.10.3",
+        "lodash": "^4.17.21",
         "lucide-vue-next": "^0.514.0",
         "pdf-lib": "^1.17.1",
         "pdfjs-dist": "^5.3.31",
@@ -58,7 +60,8 @@
         "tippy.js": "^6.3.7",
         "vue-chartjs": "^5.3.2",
         "vue-draggable-plus": "^0.6.0",
-        "vue-flatpickr-component": "^11.0.5"
+        "vue-flatpickr-component": "^11.0.5",
+        "vue3-date-time-picker": "^2.8.3"
     },
     "type": "module"
 }

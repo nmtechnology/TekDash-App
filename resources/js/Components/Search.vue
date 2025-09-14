@@ -35,7 +35,7 @@ function clearSearch() {
 </script>
 
 <template>
-  <div class="search-container">
+  <div class="search-container responsive-search">
     <label class="input input-bordered flex items-center gap-2 w-full">
       <div v-if="loading" class="loading loading-spinner loading-xs"></div>
       <svg v-else class="h-[1em] opacity-50 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -53,7 +53,7 @@ function clearSearch() {
       <input
         v-model="searchQuery"
         type="search"
-        class="grow min-w-0"
+        class="grow min-w-0 search-input"
         :placeholder="placeholder"
         :disabled="loading"
       />
@@ -88,16 +88,20 @@ function clearSearch() {
   box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.2);
 }
 
-input {
+.search-input {
   background: transparent;
   border: none;
   outline: none;
   color: #f3f4f6;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   text-overflow: ellipsis;
+  min-width: 0;
+  width: 100%;
+  padding: 0.25rem 0.5rem;
 }
 
-input::placeholder {
+input::placeholder,
+.search-input::placeholder {
   color: rgba(243, 244, 246, 0.5);
 }
 
@@ -113,5 +117,33 @@ input::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Responsive styles for mobile and desktop */
+.responsive-search {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .responsive-search {
+    max-width: 100vw;
+    padding: 0 0.5rem;
+  }
+  .input {
+    height: 2rem;
+    min-height: 2rem;
+    padding: 0.25rem;
+  }
+  .search-input {
+    font-size: 0.85rem;
+    padding: 0.15rem 0.25rem;
+  }
+  .kbd {
+    font-size: 0.55rem;
+    height: 1rem;
+    min-width: 1rem;
+    padding: 0.05rem 0.15rem;
+  }
 }
 </style>
