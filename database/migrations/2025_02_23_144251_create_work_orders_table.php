@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('work_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
+            $table->unsignedBigInteger('customer_id');
             $table->string('title');
             $table->text('description');
             $table->dateTime('date_time');
@@ -25,10 +25,10 @@ return new class extends Migration
             $table->json('images')->nullable();
             $table->boolean('archived')->default(false);
             $table->timestamp('archived_at')->nullable();
-            $table->string('invoice_id')->nullable()->after('archived');
+            $table->string('invoice_id')->nullable();
             $table->string('address')->nullable();
             $table->decimal('hours', 8, 2)->nullable();
-            $table->foreignId('technician_id')->nullable()->constrained('technicians')->onDelete('set null');
+            $table->unsignedBigInteger('technician_id')->nullable();
             $table->timestamps();
         });
     }

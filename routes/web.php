@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Auth\RegisterController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\QuickBooksAuthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PDFController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 
 // CSRF and session setup routes
 Route::middleware(['web'])->group(function () {
@@ -384,4 +386,17 @@ Route::middleware(['storage.cors'])->group(function () {
         }
         return response()->file($fullPath);
     })->where('path', '.*');
+});
+
+// Logout Routes
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
+
+// Fallback for GET logout requests to prevent the MethodNotAllowedHttpException
+Route::get('/logout', function () {
+    return redirect()->route('logout')->with('error', 'Please use the logout button to log out securely.');
 });

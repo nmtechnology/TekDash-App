@@ -70,9 +70,12 @@
             </form>
 
             <div class="mt-6 text-center">
-                <a href="{{ route('logout') }}" class="text-lime-400 hover:text-lime-300 transition hover:underline">
-                    Logout
-                </a>
+                <form method="POST" action="{{ route('logout') }}" class="inline-block">
+                    @csrf
+                    <button type="submit" class="text-lime-400 hover:text-lime-300 transition hover:underline">
+                        Logout
+                    </button>
+                </form>
             </div>
         </div>
     </div>
