@@ -1,7 +1,7 @@
 <template>
   <div>
     <button @click="handleShowModal"
-      class="btn flex items-center gap-2 px-4 py-2 font-bold text-sm bg-lime-500 hover:bg-lime-600 text-black transition-all duration-300 shadow-md hover:shadow-lg">
+      class="btn btn-success flex items-center gap-2 font-bold text-sm">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
@@ -19,17 +19,28 @@
         <!-- Modal container -->
         <div class="flex items-center justify-center w-full h-full p-2 md:p-4">
           <div
-            class="glossy-card rounded-lg shadow-xl w-full max-w-lg md:max-w-2xl flex flex-col h-[90vh] mx-auto responsive-modal"
+            class="glossy-card rounded-lg shadow-xl w-full max-w-lg md:max-w-2xl flex flex-col h-[90vh] mx-auto responsive-modal relative"
             @click.stop>
             <!-- Fixed Header with Steps -->
-            <div class="modal-header glossy-header px-4 py-3 border-b border-gray-700">
-              <div class="flex flex-col gap-2 w-full">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
-                  <h3 class="text-lime-400 text-xl md:text-2xl font-bold" id="modal-title">
+            <div class="modal-header glossy-header px-6 py-4 border-b border-gray-700">
+              <div class="flex flex-col w-full gap-2">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lime-400 text-lg md:text-xl font-bold" id="modal-title">
                     Create New Work Order
                   </h3>
-                  <ul class="steps steps-horizontal w-full md:w-auto overflow-x-auto no-scrollbar md:ml-6">
-                    <li v-for="step in totalSteps" :key="step" class="step transition-all duration-300 relative" :class="{
+                  <button @click="handleHideModal"
+                    class="btn btn-sm btn-circle btn-ghost text-red-400 hover:text-red-400"
+                    aria-label="Close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div class="w-full overflow-x-auto pt-3">
+                  <ul class="steps steps-horizontal w-full">
+                    <li v-for="step in totalSteps" :key="step" class="step transition-all duration-300 relative step-neutral" :class="{
                       'step-lime-400 text-lime-400 font-bold': step === currentStep,
                       'step-success text-green-400': step < currentStep,
                       'text-gray-500': step > currentStep,
@@ -76,7 +87,7 @@
                     </li>
                   </ul>
                   <button @click="handleHideModal"
-                    class="btn ml-2 text-red-400 hover:text-red-400 transition-colors duration-200 focus:outline-none"
+                    class="btn btn-circle btn-ghost btn-sm text-red-400 hover:text-red-400"
                     aria-label="Close modal">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                       stroke="currentColor">
@@ -88,7 +99,7 @@
             </div>
 
             <!-- Scrollable middle content -->
-            <div class="modal-body flex-1 overflow-y-auto px-4 py-2">
+            <div class="modal-body flex-1 overflow-y-auto px-6 py-4 mt-[96px] mb-[72px]">
               <form @submit.prevent="submitForm" class="flex flex-col flex-grow">
                 <div class="bg-gray-900 bg-opacity-90 rounded-lg">
                   <!-- Step 1: Customer & Technician Selection -->
@@ -397,23 +408,60 @@
               </form>
             </div>
 
-            <!-- Fixed Footer with button -->
-            <div class="modal-footer glossy-footer px-4 py-3 border-t border-gray-700">
-              <div class="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  @click="handleHideModal"
-                  class="glass-button px-4 py-2 bg-gray-700/50 text-white hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  class="glass-button px-4 py-2 bg-purple-600/60 text-white hover:bg-purple-700"
-                  @click="submitForm"
-                >
-                  Add Work Order
-                </button>
+            <!-- Fixed Footer with navigation buttons -->
+            <div class="modal-footer glossy-footer px-6 py-4 border-t border-gray-700">
+              <div class="flex justify-between w-full items-center">
+                <!-- Left side - Back button (hidden on first step) -->
+                <div>
+                  <button
+                    type="button"
+                    v-show="currentStep > 1"
+                    @click="prevStep"
+                    class="btn btn-ghost btn-sm md:btn-md text-gray-300 hover:text-white"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                  </button>
+                </div>
+                
+                <!-- Right side - Next/Submit and Cancel buttons -->
+                <div class="flex space-x-3">
+                  <button
+                    type="button"
+                    @click="handleHideModal"
+                    class="btn btn-ghost btn-sm md:btn-md"
+                  >
+                    Cancel
+                  </button>
+                  
+                  <!-- Next button (shown on all steps except last) -->
+                  <button
+                    v-if="currentStep < totalSteps"
+                    type="button"
+                    @click="nextStep"
+                    class="btn btn-primary btn-sm md:btn-md"
+                  >
+                    Next
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                  
+                  <!-- Submit button (only shown on last step) -->
+                  <button
+                    v-if="currentStep === totalSteps"
+                    type="button"
+                    @click="submitForm"
+                    class="btn btn-success btn-sm md:btn-md"
+                  >
+                    Add Work Order
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -849,7 +897,7 @@ const nextStep = async () => {
         currentStep.value++;
         // Use nextTick from Vue instead of this.$nextTick
         nextTick(() => {
-          const formElement = document.querySelector('.overflow-y-auto');
+          const formElement = document.querySelector('.modal-body');
           if (formElement) {
             formElement.scrollTop = 0;
           }
@@ -858,6 +906,10 @@ const nextStep = async () => {
     } finally {
       isLoading.value = false;
     }
+  } else {
+    // Show validation error message
+    const toast = useToast();
+    toast.error('Please complete all required fields before proceeding.');
   }
 };
 
@@ -868,7 +920,7 @@ const prevStep = async () => {
     if (currentStep.value > 1) {
       currentStep.value--;
       nextTick(() => {
-        const formElement = document.querySelector('.overflow-y-auto');
+        const formElement = document.querySelector('.modal-body');
         if (formElement) {
           formElement.scrollTop = 0;
         }
@@ -2124,6 +2176,25 @@ progress::-moz-progress-bar {
   }
 }
 
+/* Ensure modal is usable on small screens */
+@media (max-width: 640px) {
+  .modal-header {
+    padding-bottom: 10px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .modal-body {
+    margin-top: 90px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .modal-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    height: 64px;
+  }
+}
+
 /* Steps horizontal scroll for mobile */
 .steps-horizontal {
   overflow-x: auto;
@@ -2185,7 +2256,7 @@ progress::-moz-progress-bar {
     font-size: 1rem;
   }
   .glossy-header h3 {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
 }
 
@@ -2196,9 +2267,8 @@ progress::-moz-progress-bar {
   left: 0;
   right: 0;
   width: 100%;
-  position: fixed;
+  position: absolute;
   z-index: 1001;
-  min-height: 120px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -2213,19 +2283,35 @@ progress::-moz-progress-bar {
   left: 0;
   right: 0;
   width: 100%;
-  position: fixed;
+  position: absolute;
   z-index: 1001;
-  height: 80px;
+  height: 72px;
   display: flex;
   align-items: center;
 }
 
-/* Ensure modal content does not go under header/footer */
-.pt-[70px] {
-  padding-top: 70px !important;
+/* Modal content positioning helpers */
+.responsive-modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.pb-[80px] {
-  padding-bottom: 80px !important;
+
+.modal-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .scrollable-modal-content {
