@@ -160,7 +160,8 @@ Route::post('work-orders/{id}/invoice', [WorkOrderController::class, 'createInvo
 // Fix the document upload endpoint (remove duplicate /api)
 Route::post('/documents/upload-signed', [DocumentController::class, 'uploadSignedDocument']);
 
-// Quickbooks Routes (if needed)
+/*
+// Quickbooks Routes (if needed) - Commented out temporarily
 Route::get('/quickbooks/connect', [QuickBooksAuthController::class, 'connect'])->name('quickbooks.connect');
 Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');
 Route::get('/quickbooks/disconnect', [QuickBooksAuthController::class, 'disconnect'])->name('quickbooks.disconnect');
@@ -178,6 +179,10 @@ Route::get('/quickbooks/invoices', [QuickBooksController::class, 'getInvoices'])
 Route::get('/quickbooks/invoice/{id}', [QuickBooksController::class, 'getInvoice'])->name('quickbooks.invoice');
 Route::get('/quickbooks/customers', [QuickBooksController::class, 'getCustomers'])->name('quickbooks.customers');
 Route::get('/quickbooks/customer/{id}', [QuickBooksController::class, 'getCustomer'])->name('quickbooks.customer');
+*/
+
+/*
+// Additional QuickBooks routes - temporarily commented out
 Route::get('/quickbooks/items', [QuickBooksController::class, 'getItems'])->name('quickbooks.items');
 Route::get('/quickbooks/item/{id}', [QuickBooksController::class, 'getItem'])->name('quickbooks.item');
 Route::get('/quickbooks/estimate/{id}', [QuickBooksController::class, 'getEstimate'])->name('quickbooks.estimate');
@@ -192,6 +197,7 @@ Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/pdf', [QuickBooksContro
 Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/send', [QuickBooksController::class, 'sendPayment'])->name('quickbooks.invoice.payment.send');
 Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/refund', [QuickBooksController::class, 'refundPayment'])->name('quickbooks.invoice.payment.refund');
 Route::get('/quickbooks/invoice/{id}/payment/{paymentId}/refund/pdf', [QuickBooksController::class, 'getRefundPdf'])->name('quickbooks.invoice.payment.refund.pdf');
+*/
 
 
 // uplaodSignedDocument

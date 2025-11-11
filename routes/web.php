@@ -8,7 +8,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CsrfController;
 use App\Http\Controllers\GroqController;
 use App\Http\Controllers\WorkOrderController;
-use App\Http\Controllers\QuickBooksAuthController;
+// use App\Http\Controllers\QuickBooksAuthController; // Commented out temporarily
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PDFController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -30,7 +30,7 @@ Route::get('/', function () {
         'customers' => \App\Models\Customer::select(['id', 'business_name'])->orderBy('business_name')->get(),
         'users' => \App\Models\User::select(['id', 'name'])->get(),
     ]);
-});
+})->name('welcome');
 
 // CSRF Token Routes
 Route::get('/csrf/refresh', [CsrfController::class, 'refresh'])
@@ -314,6 +314,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('technicians.update');
 });
 
+// Temporarily commenting out QuickBooks routes to fix route list issues
+/*
 // QuickBooks Integration Routes
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/quickbooks/authorize', [QuickBooksAuthController::class, 'authorize'])
@@ -341,6 +343,13 @@ Route::get('/quickbooks/authorize', [App\Http\Controllers\QuickBooksController::
     ->name('quickbooks.authorize');
     
 Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback'])->name('quickbooks.callback');
+*/
+
+// Work Order Attachment Routes
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::post('/work-orders/{workOrder}/delete-attachment', [WorkOrderController::class, 'deleteAttachment'])
+        ->name('work-orders.delete-attachment');
+});
 
 // Add CSRF token refresh routes
 Route::get('/csrf-token', function () {

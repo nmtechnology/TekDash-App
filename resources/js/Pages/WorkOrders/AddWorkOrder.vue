@@ -1,102 +1,101 @@
 <template>
   <div>
+    <!-- Modern Glass Trigger Button -->
     <button @click="handleShowModal"
-      class="btn btn-success flex items-center gap-2 font-bold text-sm">
+      class="flex items-center gap-3 px-6 py-3 rounded-xl bg-lime-400/20 hover:bg-lime-400/30 border border-lime-400/30 hover:border-lime-400/50 text-lime-400 hover:text-lime-300 font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-lime-400/25">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
-      Work Order
+      <span class="hidden sm:inline">Create Work Order</span>
+      <span class="sm:hidden">New WO</span>
     </button>
 
-    <!-- Modal -->
-    <Transition enter-active-class="ease-out duration-300" enter-from-class="opacity-0" enter-to-class="opacity-100"
-      leave-active-class="ease-in duration-200" leave-from-class="opacity-100" leave-to-class="opacity-0">
-      <div v-show="showModal"
-        class="fixed inset-0 z-[1000] flex items-center justify-center">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black bg-opacity-70 transition-opacity" @click="handleHideModal"></div>
+    <!-- Modern Glass Modal -->
+    <Transition 
+      enter-active-class="ease-out duration-300" 
+      enter-from-class="opacity-0 scale-95" 
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="ease-in duration-200" 
+      leave-from-class="opacity-100 scale-100" 
+      leave-to-class="opacity-0 scale-95">
+      <div v-show="showModal" class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+        
+        <!-- Animated Glass Backdrop -->
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="handleHideModal">
+          <!-- Background Blobs -->
+          <div class="absolute top-20 left-20 w-96 h-96 bg-lime-400/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+          <div class="absolute top-40 right-20 w-80 h-80 bg-cyan-400/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+          <div class="absolute bottom-20 left-1/3 w-72 h-72 bg-purple-400/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+        </div>
 
-        <!-- Modal container -->
-        <div class="flex items-center justify-center w-full h-full p-2 md:p-4">
-          <div
-            class="glossy-card rounded-lg shadow-xl w-full max-w-lg md:max-w-2xl flex flex-col h-[90vh] mx-auto responsive-modal relative"
-            @click.stop>
-            <!-- Fixed Header with Steps -->
-            <div class="modal-header glossy-header px-6 py-4 border-b border-gray-700">
-              <div class="flex flex-col w-full gap-2">
-                <div class="flex items-center justify-between">
-                  <h3 class="text-lime-400 text-lg md:text-xl font-bold" id="modal-title">
-                    Create New Work Order
-                  </h3>
-                  <button @click="handleHideModal"
-                    class="btn btn-sm btn-circle btn-ghost text-red-400 hover:text-red-400"
-                    aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+        <!-- Modal Container -->
+        <div class="relative w-full max-w-4xl h-[90vh] bg-white/5 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden" @click.stop>
+          
+          <!-- Modern Header with Steps -->
+          <div class="relative bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-xl border-b border-white/20 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-lime-400/20 border border-lime-400/30 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
                 </div>
-                
-                <div class="w-full overflow-x-auto pt-3">
-                  <ul class="steps steps-horizontal w-full">
-                    <li v-for="step in totalSteps" :key="step" class="step transition-all duration-300 relative step-neutral" :class="{
-                      'step-lime-400 text-lime-400 font-bold': step === currentStep,
-                      'step-success text-green-400': step < currentStep,
-                      'text-gray-500': step > currentStep,
-                      'after:!bg-green-400': step < currentStep && step < totalSteps,
-                      'before:!bg-green-400': step <= currentStep && step > 1
-                    }">
-                      <!-- Step Icons (Checkmark for completed, Circle for current, Small circle for future) -->
-                      <span v-if="step < currentStep" class="flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20"
-                          fill="currentColor">
-                          <path fill-rule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clip-rule="evenodd" />
-                        </svg>
-                      </span>
-                      <span v-else-if="step === currentStep" class="flex items-center justify-center animate-pulse">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-lime-400" viewBox="0 0 20 20"
-                          fill="currentColor">
-                          <circle cx="10" cy="10" r="6" />
-                        </svg>
-                      </span>
-                      <span v-else class="flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20"
-                          fill="currentColor">
-                          <circle cx="10" cy="10" r="4" />
-                        </svg>
-                      </span>
-
-                      <!-- Step Title - shown for all steps -->
-                      <div class="text-xs">
-                        {{
-                          step === 1 ? 'Customer & Tech' :
-                            step === 2 ? 'Work Order Title' :
-                              step === 3 ? 'Service Description' :
-                                step === 4 ? 'Date & Time' :
-                                  step === 5 ? 'Location Address' :
-                                    step === 6 ? 'Approved Hours' :
-                                      step === 7 ? 'Rate & Expenses' :
-                                        step === 8 ? 'Work Order Status' :
-                                          step === 9 ? 'Attachments' :
-                                            step === 10 ? 'Summary & Review' : ''
-                        }}
-                      </div>
-                    </li>
-                  </ul>
-                  <button @click="handleHideModal"
-                    class="btn btn-circle btn-ghost btn-sm text-red-400 hover:text-red-400"
-                    aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <div>
+                  <h3 class="text-xl font-bold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent">
+                    Create Work Order
+                  </h3>
+                  <p class="text-gray-400 text-sm">Step {{ currentStep }} of {{ totalSteps }}</p>
+                </div>
+              </div>
+              <button @click="handleHideModal"
+                class="w-10 h-10 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 hover:border-red-400/50 text-red-400 hover:text-red-300 transition-all flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Modern Step Progress -->
+            <div class="relative">
+              <!-- Progress Bar Background -->
+              <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-lime-400 to-cyan-400 rounded-full transition-all duration-500 ease-out"
+                     :style="`width: ${(currentStep / totalSteps) * 100}%`"></div>
+              </div>
+              
+              <!-- Step Indicators -->
+              <div class="flex justify-between items-center mt-4 overflow-x-auto pb-2">
+                <div v-for="step in totalSteps" :key="step" 
+                     class="flex flex-col items-center min-w-0 flex-shrink-0 group"
+                     :class="step < totalSteps ? 'mr-4 sm:mr-6' : ''">
+                  <!-- Step Circle -->
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200"
+                       :class="[
+                         step < currentStep 
+                           ? 'bg-lime-400/30 border-lime-400 text-lime-400' 
+                           : step === currentStep 
+                             ? 'bg-cyan-400/30 border-cyan-400 text-cyan-400 animate-pulse' 
+                             : 'bg-white/10 border-white/30 text-gray-400'
+                       ]">
+                    <svg v-if="step < currentStep" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                     </svg>
-                  </button>
+                    <span v-else class="text-xs font-semibold">{{ step }}</span>
+                  </div>
+                  
+                  <!-- Step Label -->
+                  <div class="text-xs text-center mt-2 max-w-16 sm:max-w-20"
+                       :class="[
+                         step < currentStep ? 'text-lime-400' 
+                         : step === currentStep ? 'text-cyan-400 font-semibold' 
+                         : 'text-gray-500'
+                       ]">
+                    {{ getStepLabel(step) }}
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
 
             <!-- Scrollable middle content -->
             <div class="modal-body flex-1 overflow-y-auto px-6 py-4 mt-[96px] mb-[72px]">

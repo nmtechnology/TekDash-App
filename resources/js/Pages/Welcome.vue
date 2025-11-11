@@ -259,7 +259,7 @@ html {
                     <Link
                         v-if="canRegister"
                         :href="route('register')"
-                        class="btn btn-primary btn-sm lg:btn-md"
+                        class="btn btn-sm lg:btn-md bg-lime-400 hover:bg-lime-500 text-black border-lime-400 hover:border-lime-500"
                     >
                         Register
                     </Link>
@@ -295,7 +295,7 @@ html {
                         <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                             <Link 
                                 :href="route('login')" 
-                                class="btn btn-primary btn-lg group"
+                                class="btn btn-lg group bg-lime-400 hover:bg-lime-500 text-black border-lime-400 hover:border-lime-500"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -305,7 +305,7 @@ html {
                             
                             <Link 
                                 :href="route('register')" 
-                                class="btn btn-outline btn-lg group"
+                                class="btn btn-lg group bg-transparent hover:bg-lime-400/10 text-lime-400 border-lime-400 hover:border-lime-500 hover:text-lime-300"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -406,7 +406,7 @@ html {
                     </div>
                     
                     <div class="flex items-center space-x-4 text-xs text-gray-400">
-                        <span>Laravel v{{ laravelVersion }}</span>
+                        <span>TekDash v{{ laravelVersion }}</span>
                         <span>•</span>
                         <span>PHP v{{ phpVersion }}</span>
                     </div>
