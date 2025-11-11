@@ -96,378 +96,1061 @@
               </div>
             </div>
           </div>
-
-            <!-- Scrollable middle content -->
-            <div class="modal-body flex-1 overflow-y-auto px-6 py-4 mt-[96px] mb-[72px]">
-              <form @submit.prevent="submitForm" class="flex flex-col flex-grow">
-                <div class="bg-gray-900 bg-opacity-90 rounded-lg">
-                  <!-- Step 1: Customer & Technician Selection -->
-                  <div v-show="currentStep === 1">
-                    <div class="glossy-section mb-2">
-                      <label for="customer_id" class="text-green-400 block text-3xl font-extrabold">Customer</label>
-                      <p class="text-md text-white font-semibold">Select a customer for this work order.</p>
-                      <select v-model="form.customer_id" id="customer_id" name="customer_id"
-                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                        required @change="logSelectedCustomer">
-                        <option value="" disabled>Select a customer ({{ safeCustomersArray.length }} active customers
-                          available)</option>
-                        <option v-for="customer in safeCustomersArray" :key="customer.id" :value="customer.id">
-                          {{ customer.business_name || customer.name || `Customer #${customer.id}` }}
-                        </option>
-                      </select>
-                      <div class="text-xs text-gray-400 mt-1">Note: Only active customers are displayed. Contact an
-                        administrator if a customer is missing.</div>
+          
+          <!-- Scrollable Content Area -->
+          <div class="flex-1 overflow-y-auto p-6">
+            <form @submit.prevent="submitForm" class="space-y-6">
+              
+              <!-- Step 1: Customer & Technician Selection -->
+              <div v-show="currentStep === 1" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-400/20 border border-cyan-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" />
+                      </svg>
                     </div>
-                    <!-- Technician Selection -->
-                    <div class="glossy-section mb-4">
-                      <label for="technician_id" class="text-green-400 block text-3xl font-extrabold">Assign
-                        Technician</label>
-                      <p class="text-md text-white font-semibold">Select a technician for this work order.</p>
-                      <div v-if="isLoadingTechnicians" class="text-center py-3">
-                        <div
-                          class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full">
-                        </div>
-                        <span class="ml-2 text-lime-400">Loading technicians...</span>
-                      </div>
-                      <div v-else-if="safeTechniciansArray.length === 0"
-                        class="mt-2 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
-                        <div class="flex items-center">
-                          <span class="text-red-400">No technicians found. Please check back later.</span>
-                        </div>
-                      </div>
-                      <select v-else v-model="form.technician_id" id="technician_id" name="technician_id"
-                        class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                        required>
-                        <option value="" disabled>Select a technician ({{ safeTechniciansArray.length }} available)
-                        </option>
-                        <option v-for="technician in safeTechniciansArray" :key="technician.id" :value="technician.id">
-                          {{ technician.first_name && technician.last_name ? (technician.first_name + ' ' +
-                            technician.last_name + (technician.employee_id ? ' (' + technician.employee_id + ')' : '')) :
-                            (technician.name || 'Technician #' + technician.id) }}
-                        </option>
-                      </select>
-                    </div>
-                    <!-- Selection Summary for Step 1 -->
-                    <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                      <div class="text-center">
-                        <div class="text-sm text-gray-400">Selected Customer:</div>
-                        <div class="text-lime-400 font-bold text-4xl">
-                          {{safeCustomersArray.find(c => c.id == form.customer_id)?.business_name ||
-                            safeCustomersArray.find(c => c.id == form.customer_id)?.name || 'None selected'}}
-                        </div>
-                        <div class="text-sm text-gray-400 mt-2">Assigned Technician:</div>
-                        <div class="text-lime-400 font-bold text-2xl">
-                          {{safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name &&
-                            safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name ?
-                            (safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name + ' ' +
-                              safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name +
-                              (safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id ? ' (' +
-                                safeTechniciansArray.find(t => t.id == form.technician_id)?.employee_id + ')' : '')) :
-                            (safeTechniciansArray.find(t => t.id == form.technician_id)?.name || 'None selected')}}
-                        </div>
-                      </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Select Customer</h4>
+                      <p class="text-gray-400 text-sm">Choose the customer for this work order</p>
                     </div>
                   </div>
-
-                  <!-- Step 2: Work Order Title -->
-                  <div v-show="currentStep === 2">
-                    <div class="glossy-section">
-                      <h3 class="text-lime-400 text-2xl font-medium mb-2">Create A Title</h3>
-                      <p class="text-2xl text-white">This section will generate a title for TekDash to enable it to be
-                        searched in our system.
-                        Work order #'s cannot be used twice and the work order should have been duplicated if this is a
-                        return
-                        trip instead of creating a new work order. Location name is not the address, itpis the name of the
-                        business the technician will be at, so for example if it is for Wal-Mart, then the tech knows to
-                        look
-                        for a WalMart when driving. </p>
-                      <div class="flex flex-col md:flex-row md:gap-4">
-                        <div class="mb-4 p-2 w-full">
-                          <label for="workOrderNumber" class="block text-sm font-medium text-green-400">Work Order
-                            Number</label>
-                          <div class="relative">
-                            <input v-model="workOrderNumber" @input="debouncedCheckExistingWorkOrder" id="workOrderNumber"
-                              name="workOrderNumber" type="text"
-                              class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg pr-12"
-                              required autocomplete="off" placeholder="Enter unique work order number" />
-                            <span v-if="checkingWorkOrder"
-                              class="absolute right-2 top-2 text-xs text-gray-400">Checking...</span>
-                            <span v-else-if="duplicateWorkOrderFound"
-                              class="absolute right-2 top-2 text-xs text-red-400">Duplicate!</span>
-                            <!-- Only show 'Available' if checkmark is not shown -->
-                            <span v-else-if="workOrderVerified && workOrderNumber && !duplicateWorkOrderFound"
-                              class="absolute right-8 top-2 text-xs text-green-400">Available</span>
-                            <!-- Green checkmark if validated and not duplicate, not checking, and not duplicate -->
-                            <span
-                              v-if="workOrderVerified && !duplicateWorkOrderFound && !checkingWorkOrder && workOrderNumber"
-                              class="absolute right-2 top-1/2 -translate-y-1/2 transform">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-400" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                  d="M5 13l4 4L19 7" />
-                              </svg>
-                            </span>
-                          </div>
-                          <div v-if="duplicateWorkOrderFound" class="text-xs text-red-400 mt-1">This work order number is
-                            already in use. Please enter a unique number.</div>
-                        </div>
-                        <div class="p-2 w-full">
-                          <label for="workType" class="block text-sm font-medium text-green-400">Work Type</label>
-                          <select v-model="workType" id="workType" name="workType"
-                            class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
-                            required>
-                            <option value="" disabled>Select work type</option>
-                            <option value="CCTV">CCTV</option>
-                            <option value="ALARM">ALARM</option>
-                            <option value="CABLING">CABLING</option>
-                            <option value="POS">POS</option>
-                            <option value="INTERCOM">INTERCOM</option>
-                            <option value="FIRE">FIRE</option>
-                            <option value="ACCESS-CONTROL">ACCESS-CONTROL</option>
-                            <option value="TS">TS (Troubleshooting)</option>
-                            <option value="PM">PM (Preventive Maintenance)</option>
-                            <option value="INSTALL">INSTALL</option>
-                            <option value="ESTIMATE">ESTIMATE</option>
-                            <option value="WALK-THRU">WALK-THRU</option>
-                            <option value="MEETING">MEETING</option>
-                            <option value="APPT">APPT (Appointment)</option>
-                            <option value="SERVICE">SERVICE</option>
-                            <option value="REPAIR">REPAIR</option>
-                            <option value="UPGRADE">UPGRADE</option>
-                            <option value="PERSONAL-LEAVE">PERSONAL-LEAVE</option>
-                            <option value="TRAINING">TRAINING</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="p-2 w-full mr-1">
-                        <label for="location" class="block text-sm font-medium text-green-400">Location/Business
-                          name</label>
-                        <select v-model="location" id="location" name="location"
-                          class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg"
+                  <select v-model="form.customer_id" 
+                          class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/25 transition-all"
                           required>
-                          <option value="" disabled>Select business name</option>
-                          <option value="Chili's">Chili's</option>
-                          <option value="Brinks">Brinks</option>
-                          <option value="Chase">Chase</option>
-                          <option value="Dillard's">Dillard's</option>
-                          <option value="DutchBros">DutchBros</option>
-                          <option value="RaisingCaines">RaisingCaines</option>
-                          <option value="ChaseATM">ChaseATM</option>
-                          <option value="WalMart">WalMart</option>
-                          <option value="Target">Target</option>
-                          <option value="Whataburger">Whataburger</option>
-                          <option value="MisterCarwash">MisterCarwash</option>
-                          <option value="WellsFargo">WellsFargo</option>
-                          <option value="NewSite">NewSite</option>
-                        </select>
-                      </div>
-                      <!-- Preview of combined title -->
+                    <option value="" disabled class="text-gray-500">Select a customer ({{ safeCustomersArray.length }} available)</option>
+                    <option v-for="customer in safeCustomersArray" :key="customer.id" :value="customer.id" class="text-gray-900">
+                      {{ customer.business_name || customer.name || `Customer #${customer.id}` }}
+                    </option>
+                  </select>
+                </div>
 
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-orange-400/20 border border-orange-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                      </svg>
                     </div>
-                    <!-- Selection Summary -->
-                    <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                      <div class="text-center">
-                        <div class="text-sm text-gray-400">Generated Title:</div>
-                        <div class="text-lime-400 font-bold text-4xl">{{ formattedTitle || 'No title generated' }}</div>
-                      </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Assign Technician</h4>
+                      <p class="text-gray-400 text-sm">Choose the technician for this assignment</p>
                     </div>
                   </div>
+                  <div v-if="isLoadingTechnicians" class="flex items-center justify-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-400"></div>
+                    <span class="ml-3 text-orange-400">Loading technicians...</span>
+                  </div>
+                  <div v-else-if="safeTechniciansArray.length === 0" class="text-center py-8">
+                    <div class="w-16 h-16 rounded-full bg-red-500/20 border border-red-400/30 flex items-center justify-center mx-auto mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <p class="text-red-400 font-medium">No technicians available</p>
+                    <p class="text-gray-500 text-sm">Please check back later</p>
+                  </div>
+                  <select v-else v-model="form.technician_id" 
+                          class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-orange-400/50 focus:ring-2 focus:ring-orange-400/25 transition-all"
+                          required>
+                    <option value="" disabled class="text-gray-500">Select a technician ({{ safeTechniciansArray.length }} available)</option>
+                    <option v-for="technician in safeTechniciansArray" :key="technician.id" :value="technician.id" class="text-gray-900">
+                      {{ technician.first_name && technician.last_name ? 
+                          `${technician.first_name} ${technician.last_name}${technician.employee_id ? ` (${technician.employee_id})` : ''}` :
+                          (technician.name || `Technician #${technician.id}`) }}
+                    </option>
+                  </select>
+                </div>
 
-                  <!-- Step 3: Description -->
-                  <div v-show="currentStep === 3" class="glossy-section mb-2">
-                    <label for="description" class="block text-2xl font-medium text-green-400">Enter A Service
-                      Description</label>
-                    <p class="text-lg text-white">Enter the details of what was requested on the work order sent by the
-                      customer, here's a hint, you can copy and paste the description from the work orders into here which
-                      saves you time.</p>
-                    <textarea v-model="form.description" id="description" name="description"
-                      placeholder="What is the Field Technician doing onsite?"
-                      class="glossy-content text-lime-400 mt-1 p-4 rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white sm:text-lg w-full min-h-[250px] font-medium"
-                      required></textarea>
-                    <!-- Selection Summary -->
-                    <div class="mt-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
-                      <div class="text-center">
-                        <div class="text-lg text-gray-400">Entered Description:</div>
-                        <div class="text-lime-400 text-lg font-bold whitespace-pre-line">{{ descriptionSummary }}</div>
-                      </div>
+                <!-- Selection Summary -->
+                <div class="bg-gradient-to-r from-lime-400/10 to-cyan-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Selection Summary</h5>
+                  <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-gray-400 text-sm">Customer</p>
+                      <p class="text-lime-400 font-semibold mt-1">
+                        {{ safeCustomersArray.find(c => c.id == form.customer_id)?.business_name ||
+                           safeCustomersArray.find(c => c.id == form.customer_id)?.name || 
+                           'None selected' }}
+                      </p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-gray-400 text-sm">Technician</p>
+                      <p class="text-cyan-400 font-semibold mt-1">
+                        {{ safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name &&
+                           safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name ?
+                           `${safeTechniciansArray.find(t => t.id == form.technician_id)?.first_name} ${safeTechniciansArray.find(t => t.id == form.technician_id)?.last_name}` :
+                           'None selected' }}
+                      </p>
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <!-- Step 4: Date/Time -->
-                  <div v-show="currentStep === 4" class="glossy-section mb-2">
-                    <label class="block text-sm font-medium text-green-400">Date and Time Selection</label>
-                    <p class="text-sm text-white mb-3">Select the date and time for this work order using our enhanced
-                      date
-                      picker.</p>
-                    <div class="bg-lime-600/20 border border-lime-600/30 rounded-md p-3 mb-4">
-                      <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-500 mr-2" fill="none"
-                          viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span class="text-sm text-lime-500">We've upgraded our date picker for a better experience!</span>
-                      </div>
+              <!-- Step 2: Work Order Title -->
+              <div v-show="currentStep === 2" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-purple-400/20 border border-purple-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
                     </div>
-                    <div class="mt-2 flex flex-col items-center gap-2">
-                      <div class="flex gap-2 mb-2">
-                        <button type="button" class="glass-button px-3 py-1"
-                          @click="quickSelectDate('today')">Today</button>
-                        <button type="button" class="glass-button px-3 py-1"
-                          @click="quickSelectDate('tomorrow')">Tomorrow</button>
-                        <button type="button" class="glass-button px-3 py-1" @click="quickSelectDate('nextWeek')">Next
-                          Week</button>
-                      </div>
-                      <div class="w-full max-w-md relative">
-                        <!-- ShadCN DatePicker -->
-                        <DatePicker 
-                          v-model="form.date_time" 
-                          :min-date="new Date()" 
-                          with-time
-                          use12Hours
-                          class="w-full"
-                        />
-                      </div>
-                    </div>
-                    <!-- Selected Date/Time Preview -->
-                    <div class="mt-8 p-6 rounded-lg bg-gray-800/50 border-2 border-lime-400">
-                      <div class="text-center">
-                        <div class="text-lg text-gray-400">Selected Date & Time:</div>
-                        <div class="text-3xl text-lime-400 font-extrabold mt-2">{{ formattedDateTime }}</div>
-                      </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Create Work Order Title</h4>
+                      <p class="text-gray-400 text-sm">Generate a searchable title for this work order</p>
                     </div>
                   </div>
-
-                  <!-- Step 5: Address -->
-                  <div v-show="currentStep === 5" class="pb-2">
-                    <div class="glossy-section mb-4">
-                      <label for="address" class="block text-2xl font-extrabold text-green-400 mb-2">Enter The
-                        Location</label>
-                      <p class="text-xl text-white font-semibold mb-2">Enter the address for the work order location.</p>
+                  
+                  <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-300 mb-2">Work Order Number</label>
                       <div class="relative">
-                        <input v-model="form.address" id="address" name="address" type="text"
-                          class="glossy-content text-lime-400 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-white focus:ring-white text-2xl sm:text-2xl font-bold p-4"
-                          @blur="geocodeAddress(form.address)"
-                          placeholder="Enter complete address (street, city, state, zip)" required />
-
-                        <!-- Search icon or processing indicator -->
-                        <div class="absolute top-1/2 right-4 transform -translate-y-1/2">
-                          <div v-if="mapboxLoading"
-                            class="animate-spin w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full"></div>
-                          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <input v-model="workOrderNumber" 
+                               @input="debouncedCheckExistingWorkOrder"
+                               type="text"
+                               class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-purple-400/50 focus:ring-2 focus:ring-purple-400/25 transition-all pr-12"
+                               placeholder="Enter unique number"
+                               required />
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2">
+                          <div v-if="checkingWorkOrder" class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-400"></div>
+                          <svg v-else-if="workOrderVerified && !duplicateWorkOrderFound && workOrderNumber" 
+                               xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <svg v-else-if="duplicateWorkOrderFound" 
+                               xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </div>
                       </div>
+                      <p v-if="duplicateWorkOrderFound" class="text-red-400 text-xs mt-1">Number already in use</p>
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium text-gray-300 mb-2">Work Type</label>
+                      <select v-model="workType" 
+                              class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-purple-400/50 focus:ring-2 focus:ring-purple-400/25 transition-all"
+                              required>
+                        <option value="" disabled class="text-gray-500">Select work type</option>
+                        <option value="CCTV" class="text-gray-900">CCTV</option>
+                        <option value="ALARM" class="text-gray-900">ALARM</option>
+                        <option value="CABLING" class="text-gray-900">CABLING</option>
+                        <option value="POS" class="text-gray-900">POS</option>
+                        <option value="INTERCOM" class="text-gray-900">INTERCOM</option>
+                        <option value="FIRE" class="text-gray-900">FIRE</option>
+                        <option value="ACCESS-CONTROL" class="text-gray-900">ACCESS-CONTROL</option>
+                        <option value="TS" class="text-gray-900">TS (Troubleshooting)</option>
+                        <option value="PM" class="text-gray-900">PM (Preventive Maintenance)</option>
+                        <option value="INSTALL" class="text-gray-900">INSTALL</option>
+                        <option value="ESTIMATE" class="text-gray-900">ESTIMATE</option>
+                        <option value="WALK-THRU" class="text-gray-900">WALK-THRU</option>
+                        <option value="MEETING" class="text-gray-900">MEETING</option>
+                        <option value="APPT" class="text-gray-900">APPT (Appointment)</option>
+                        <option value="SERVICE" class="text-gray-900">SERVICE</option>
+                        <option value="REPAIR" class="text-gray-900">REPAIR</option>
+                        <option value="UPGRADE" class="text-gray-900">UPGRADE</option>
+                        <option value="PERSONAL-LEAVE" class="text-gray-900">PERSONAL-LEAVE</option>
+                        <option value="TRAINING" class="text-gray-900">TRAINING</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Location/Business Name</label>
+                    <select v-model="location" 
+                            class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-purple-400/50 focus:ring-2 focus:ring-purple-400/25 transition-all"
+                            required>
+                      <option value="" disabled class="text-gray-500">Select business name</option>
+                      <option value="Chili's" class="text-gray-900">Chili's</option>
+                      <option value="Brinks" class="text-gray-900">Brinks</option>
+                      <option value="Chase" class="text-gray-900">Chase</option>
+                      <option value="Dillard's" class="text-gray-900">Dillard's</option>
+                      <option value="DutchBros" class="text-gray-900">DutchBros</option>
+                      <option value="RaisingCaines" class="text-gray-900">RaisingCaines</option>
+                      <option value="ChaseATM" class="text-gray-900">ChaseATM</option>
+                      <option value="WalMart" class="text-gray-900">WalMart</option>
+                      <option value="Target" class="text-gray-900">Target</option>
+                      <option value="Whataburger" class="text-gray-900">Whataburger</option>
+                      <option value="MisterCarwash" class="text-gray-900">MisterCarwash</option>
+                      <option value="WellsFargo" class="text-gray-900">WellsFargo</option>
+                      <option value="NewSite" class="text-gray-900">NewSite</option>
+                    </select>
+                  </div>
+                </div>
 
-                      <!-- Mapbox Static Map Preview -->
-                      <div v-if="form.address" class="mt-4">
-                        <!-- Show loading indicator while geocoding -->
-                        <div v-if="mapboxLoading"
-                          class="flex items-center justify-center p-4 bg-gray-800 rounded-lg border border-gray-700 min-h-[200px]">
-                          <div
-                            class="animate-spin inline-block w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full mr-2">
-                          </div>
-                          <span class="text-lime-400">Loading map preview...</span>
-                        </div>
+                <!-- Generated Title Preview -->
+                <div class="bg-gradient-to-r from-purple-400/10 to-pink-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Generated Title Preview</h5>
+                  <div class="text-center p-6 rounded-xl bg-white/5">
+                    <p class="text-purple-400 font-bold text-xl">{{ formattedTitle || 'Configure fields to generate title' }}</p>
+                  </div>
+                </div>
+              </div>
 
-                        <!-- Show error if geocoding failed -->
-                        <div v-else-if="mapboxError" class="p-4 bg-red-900/30 border border-red-500 rounded-lg">
-                          <div class="flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none"
-                              viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 9v2m0 4h.01M6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <span class="text-red-400">{{ mapboxError }}</span>
-                          </div>
-                        </div>
+              <!-- Step 3: Service Description -->
+              <div v-show="currentStep === 3" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-400/20 border border-blue-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Service Description</h4>
+                      <p class="text-gray-400 text-sm">Describe what the technician will be doing</p>
+                    </div>
+                  </div>
+                  <textarea v-model="form.description" 
+                            class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/25 transition-all min-h-[200px] resize-none"
+                            placeholder="Enter detailed description of the work to be performed..."
+                            required></textarea>
+                </div>
 
-                        <!-- Show map image if available -->
-                        <a v-else-if="mapboxImageUrl" :href="mapboxMapsLink" target="_blank" rel="noopener"
-                          title="Open in Map App">
-                          <img :src="mapboxImageUrl" alt="Map snapshot"
-                            class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
-                            style="width: 100%; max-height: 300px; min-height: 180px; object-fit: cover; background: #222;" />
-                          <div class="text-xs text-gray-400 mt-1">Click map to open location in browser</div>
-                        </a>
+                <!-- Description Preview -->
+                <div class="bg-gradient-to-r from-blue-400/10 to-indigo-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Description Preview</h5>
+                  <div class="p-4 rounded-xl bg-white/5">
+                    <p class="text-blue-400 whitespace-pre-line">{{ descriptionSummary }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 4: Date & Time -->
+              <div v-show="currentStep === 4" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-400/20 border border-emerald-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Schedule Date & Time</h4>
+                      <p class="text-gray-400 text-sm">Select when this work will be performed</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Quick Select Buttons -->
+                  <div class="flex flex-wrap gap-2 mb-6">
+                    <button type="button" @click="quickSelectDate('today')"
+                            class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 hover:border-emerald-400/50 text-emerald-400 rounded-lg transition-all">
+                      Today
+                    </button>
+                    <button type="button" @click="quickSelectDate('tomorrow')"
+                            class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 hover:border-emerald-400/50 text-emerald-400 rounded-lg transition-all">
+                      Tomorrow
+                    </button>
+                    <button type="button" @click="quickSelectDate('nextWeek')"
+                            class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 hover:border-emerald-400/50 text-emerald-400 rounded-lg transition-all">
+                      Next Week
+                    </button>
+                  </div>
+                  
+                  <!-- Glass Morphism Date/Time Inputs -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Date Input -->
+                    <div>
+                      <label class="block text-emerald-400 text-sm font-semibold mb-2">Select Date</label>
+                      <input
+                        v-model="selectedDateString"
+                        type="date"
+                        :min="todayString"
+                        class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/25 transition-all [color-scheme:dark]"
+                        required
+                      />
+                    </div>
+                    
+                    <!-- Time Input -->
+                    <div>
+                      <label class="block text-emerald-400 text-sm font-semibold mb-2">Select Time</label>
+                      <input
+                        v-model="selectedTimeString"
+                        type="time"
+                        class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/25 transition-all [color-scheme:dark]"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Selected DateTime Preview -->
+                <div class="bg-gradient-to-r from-emerald-400/10 to-teal-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Scheduled For</h5>
+                  <div class="text-center p-6 rounded-xl bg-white/5">
+                    <p class="text-emerald-400 font-bold text-2xl">{{ formattedDateTime }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 5: Address -->
+              <div v-show="currentStep === 5" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-red-400/20 border border-red-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Location Address</h4>
+                      <p class="text-gray-400 text-sm">Enter the complete work site address</p>
+                    </div>
+                  </div>
+                  
+                  <div class="relative">
+                    <input v-model="form.address" 
+                           @blur="geocodeAddress(form.address)"
+                           type="text"
+                           class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-red-400/50 focus:ring-2 focus:ring-red-400/25 transition-all pr-12"
+                           placeholder="Enter complete address (street, city, state, zip)"
+                           required />
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2">
+                      <div v-if="mapboxLoading" class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-red-400"></div>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- Map Preview -->
+                  <div v-if="form.address" class="mt-4">
+                    <div v-if="mapboxLoading" class="flex items-center justify-center p-6 bg-white/5 rounded-xl min-h-[200px]">
+                      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-400 mr-3"></div>
+                      <span class="text-red-400">Loading map preview...</span>
+                    </div>
+                    <div v-else-if="mapboxError" class="p-4 bg-red-500/20 border border-red-400/30 rounded-xl">
+                      <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span class="text-red-400">{{ mapboxError }}</span>
                       </div>
-                      <!-- Address Summary for Review -->
-                      <div v-if="form.address" class="mt-6 p-6 rounded-lg bg-gray-900/80 border-2 border-lime-400">
-                        <div class="text-2xl font-extrabold text-lime-400 mb-2">Address Review</div>
-                        <div class="text-2xl text-white font-bold tracking-wide">{{ form.address }}</div>
-                        <div class="text-lg text-gray-300 mt-2">Please review the address above and ensure it is correct
-                          before proceeding.</div>
+                    </div>
+                    <a v-else-if="mapboxImageUrl" :href="mapboxMapsLink" target="_blank" rel="noopener" class="block">
+                      <img :src="mapboxImageUrl" alt="Map preview" class="w-full h-48 object-cover rounded-xl border border-white/20 hover:opacity-90 transition-opacity" />
+                      <p class="text-xs text-gray-400 mt-2">Click map to open in browser</p>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Address Review -->
+                <div v-if="form.address" class="bg-gradient-to-r from-red-400/10 to-orange-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Address Review</h5>
+                  <div class="text-center p-4 rounded-xl bg-white/5">
+                    <p class="text-red-400 font-semibold">{{ form.address }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 6: Hours & Duration -->
+              <div v-show="currentStep === 6" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Work Duration</h4>
+                      <p class="text-gray-400 text-sm">Estimate how long this job will take</p>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Hours Input -->
+                    <div>
+                      <label class="block text-yellow-400 text-sm font-semibold mb-2">Hours Required</label>
+                      <div class="relative">
+                        <input
+                          v-model.number="form.hours"
+                          type="range"
+                          min="2"
+                          max="16"
+                          step="0.5"
+                          class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+                        />
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                          <span>2h</span>
+                          <span>8h</span>
+                          <span>16h</span>
+                        </div>
+                      </div>
+                      <div class="mt-3 text-center">
+                        <span class="text-2xl font-bold text-yellow-400">{{ form.hours }}</span>
+                        <span class="text-gray-400 ml-1">{{ form.hours === 1 ? 'hour' : 'hours' }}</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Travel Options -->
+                    <div>
+                      <label class="block text-yellow-400 text-sm font-semibold mb-2">Travel & Mileage</label>
+                      <div class="space-y-3">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                          <input
+                            v-model="form.includeTravel"
+                            type="checkbox"
+                            class="w-4 h-4 rounded border-2 border-yellow-400/30 bg-white/10 text-yellow-400 focus:ring-yellow-400/25"
+                          />
+                          <span class="text-white">Include travel time & mileage</span>
+                        </label>
+                        
+                        <div v-if="form.includeTravel" class="pl-7 space-y-3">
+                          <div>
+                            <label class="block text-xs text-gray-400 mb-1">Miles (round trip)</label>
+                            <input
+                              v-model.number="form.travelMiles"
+                              type="number"
+                              min="1"
+                              max="500"
+                              class="w-full p-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-lg text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/25 transition-all text-sm"
+                              placeholder="45"
+                            />
+                          </div>
+                          <div>
+                            <label class="block text-xs text-gray-400 mb-1">Rate per mile</label>
+                            <input
+                              v-model.number="form.mileageRate"
+                              type="number"
+                              step="0.01"
+                              min="0.50"
+                              max="2.00"
+                              class="w-full p-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-lg text-white focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/25 transition-all text-sm"
+                              placeholder="1.00"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </form>
-            </div>
 
-            <!-- Fixed Footer with navigation buttons -->
-            <div class="modal-footer glossy-footer px-6 py-4 border-t border-gray-700">
-              <div class="flex justify-between w-full items-center">
-                <!-- Left side - Back button (hidden on first step) -->
-                <div>
-                  <button
-                    type="button"
-                    v-show="currentStep > 1"
-                    @click="prevStep"
-                    class="btn btn-ghost btn-sm md:btn-md text-gray-300 hover:text-white"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Previous
-                  </button>
-                </div>
-                
-                <!-- Right side - Next/Submit and Cancel buttons -->
-                <div class="flex space-x-3">
-                  <button
-                    type="button"
-                    @click="handleHideModal"
-                    class="btn btn-ghost btn-sm md:btn-md"
-                  >
-                    Cancel
-                  </button>
-                  
-                  <!-- Next button (shown on all steps except last) -->
-                  <button
-                    v-if="currentStep < totalSteps"
-                    type="button"
-                    @click="nextStep"
-                    class="btn btn-primary btn-sm md:btn-md"
-                  >
-                    Next
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  
-                  <!-- Submit button (only shown on last step) -->
-                  <button
-                    v-if="currentStep === totalSteps"
-                    type="button"
-                    @click="submitForm"
-                    class="btn btn-success btn-sm md:btn-md"
-                  >
-                    Add Work Order
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
+                <!-- Duration Preview -->
+                <div class="bg-gradient-to-r from-yellow-400/10 to-amber-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Duration Summary</h5>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-yellow-400 font-bold text-xl">{{ form.hours }}h</p>
+                      <p class="text-gray-400 text-sm">Work Time</p>
+                    </div>
+                    <div v-if="form.includeTravel" class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-yellow-400 font-bold text-xl">{{ form.travelMiles }}</p>
+                      <p class="text-gray-400 text-sm">Miles RT</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-yellow-400 font-bold text-xl">${{ travelCost }}</p>
+                      <p class="text-gray-400 text-sm">Travel Cost</p>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <!-- Step 7: Rates & Pricing -->
+              <div v-show="currentStep === 7" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-green-400/20 border border-green-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Pricing & Rates</h4>
+                      <p class="text-gray-400 text-sm">Set your hourly rate and calculate costs</p>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Hourly Rate Selection -->
+                    <div>
+                      <label class="block text-green-400 text-sm font-semibold mb-3">Hourly Rate</label>
+                      <div class="grid grid-cols-4 gap-2 mb-4">
+                        <button
+                          v-for="rate in rateValues.slice(0, 8)"
+                          :key="rate"
+                          type="button"
+                          @click="form.hourlyRate = rate; form.hourly_rate = rate"
+                          :class="[
+                            'p-3 rounded-lg transition-all text-sm font-semibold',
+                            form.hourlyRate === rate
+                              ? 'bg-green-400/30 border border-green-400/50 text-green-400'
+                              : 'bg-white/10 border border-white/20 text-gray-300 hover:bg-white/20 hover:text-white'
+                          ]"
+                        >
+                          ${{ rate }}
+                        </button>
+                      </div>
+                      
+                      <!-- Custom Rate Input -->
+                      <div>
+                        <label class="block text-xs text-gray-400 mb-2">Custom Rate</label>
+                        <div class="relative">
+                          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-green-400">$</span>
+                          <input
+                            v-model.number="form.hourlyRate"
+                            @input="form.hourly_rate = form.hourlyRate"
+                            type="number"
+                            min="55"
+                            max="300"
+                            step="5"
+                            class="w-full pl-8 pr-4 py-3 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-green-400/50 focus:ring-2 focus:ring-green-400/25 transition-all"
+                            placeholder="120"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Cost Breakdown -->
+                    <div>
+                      <label class="block text-green-400 text-sm font-semibold mb-3">Cost Breakdown</label>
+                      <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                          <span class="text-gray-300">Labor ({{ form.hours }}h × ${{ form.hourlyRate }})</span>
+                          <span class="text-green-400 font-semibold">${{ laborCost }}</span>
+                        </div>
+                        <div v-if="form.includeTravel" class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                          <span class="text-gray-300">Travel ({{ form.travelMiles }} mi × ${{ form.mileageRate }})</span>
+                          <span class="text-green-400 font-semibold">${{ travelCost }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-green-400/10 border border-green-400/30 rounded-lg">
+                          <span class="text-white font-semibold">Total Estimate</span>
+                          <span class="text-green-400 font-bold text-xl">${{ totalPrice }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 8: Status & Priority -->
+              <div v-show="currentStep === 8" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-400/20 border border-indigo-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Status & Priority</h4>
+                      <p class="text-gray-400 text-sm">Set the work order status and priority level</p>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Status Selection -->
+                    <div>
+                      <label class="block text-indigo-400 text-sm font-semibold mb-3">Work Order Status</label>
+                      <div class="space-y-2">
+                        <label v-for="status in ['Scheduled', 'In Progress', 'Pending', 'On Hold']" :key="status" 
+                               class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all"
+                               :class="form.status === status ? 'bg-indigo-400/20 border border-indigo-400/30' : 'bg-white/5 hover:bg-white/10'">
+                          <input
+                            v-model="form.status"
+                            type="radio"
+                            :value="status"
+                            class="w-4 h-4 text-indigo-400 bg-white/10 border-indigo-400/30 focus:ring-indigo-400/25"
+                          />
+                          <span class="text-white font-medium">{{ status }}</span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <!-- Priority Level -->
+                    <div>
+                      <label class="block text-indigo-400 text-sm font-semibold mb-3">Priority Level</label>
+                      <select v-model="form.priority"
+                              class="w-full p-3 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-400/25 transition-all">
+                        <option value="" disabled class="text-gray-500">Select priority...</option>
+                        <option value="Low" class="text-gray-900">Low Priority</option>
+                        <option value="Normal" class="text-gray-900">Normal Priority</option>
+                        <option value="High" class="text-gray-900">High Priority</option>
+                        <option value="Urgent" class="text-gray-900">Urgent</option>
+                      </select>
+                      
+                      <!-- Priority Description -->
+                      <div v-if="form.priority" class="mt-3 p-3 rounded-lg"
+                           :class="{
+                             'bg-green-400/10 border border-green-400/30': form.priority === 'Low',
+                             'bg-blue-400/10 border border-blue-400/30': form.priority === 'Normal', 
+                             'bg-yellow-400/10 border border-yellow-400/30': form.priority === 'High',
+                             'bg-red-400/10 border border-red-400/30': form.priority === 'Urgent'
+                           }">
+                        <p class="text-sm"
+                           :class="{
+                             'text-green-400': form.priority === 'Low',
+                             'text-blue-400': form.priority === 'Normal',
+                             'text-yellow-400': form.priority === 'High', 
+                             'text-red-400': form.priority === 'Urgent'
+                           }">
+                          {{ getPriorityDescription(form.priority) }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status Preview -->
+                <div class="bg-gradient-to-r from-indigo-400/10 to-purple-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Status Summary</h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-indigo-400 font-bold text-xl">{{ form.status || 'Not Set' }}</p>
+                      <p class="text-gray-400 text-sm">Current Status</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="font-bold text-xl"
+                         :class="{
+                           'text-green-400': form.priority === 'Low',
+                           'text-blue-400': form.priority === 'Normal',
+                           'text-yellow-400': form.priority === 'High',
+                           'text-red-400': form.priority === 'Urgent',
+                           'text-gray-400': !form.priority
+                         }">
+                        {{ form.priority || 'Not Set' }}
+                      </p>
+                      <p class="text-gray-400 text-sm">Priority Level</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 9: File Attachments -->
+              <div v-show="currentStep === 9" class="space-y-6">
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-purple-400/20 border border-purple-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">File Attachments</h4>
+                      <p class="text-gray-400 text-sm">Upload photos, documents, or reference files (optional)</p>
+                    </div>
+                  </div>
+                  
+                  <!-- File Drop Zone -->
+                  <div 
+                    class="border-2 border-dashed border-purple-400/30 rounded-xl p-8 text-center hover:border-purple-400/50 transition-all file-drop-zone"
+                    @drop.prevent="handleFileDrop"
+                    @dragover.prevent
+                    @dragenter.prevent
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-purple-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="text-white font-medium mb-2">Drag and drop files here, or click to browse</p>
+                    <p class="text-gray-400 text-sm">Supports: JPG, PNG, PDF, DOC, XLS (Max 10MB each)</p>
+                    <input 
+                      ref="fileInput"
+                      type="file" 
+                      multiple 
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                      @change="handleFileSelect"
+                      class="hidden"
+                    />
+                    <button type="button" 
+                            @click="$refs.fileInput.click()"
+                            class="mt-4 px-6 py-2 bg-purple-400/20 hover:bg-purple-400/30 border border-purple-400/30 hover:border-purple-400/50 text-purple-400 rounded-lg transition-all">
+                      Choose Files
+                    </button>
+                  </div>
+                  
+                  <!-- File List with Previews -->
+                  <div v-if="form.file_attachments.length > 0" class="mt-4 space-y-2">
+                    <div v-for="(file, index) in form.file_attachments" :key="index"
+                         class="flex items-center justify-between p-3 bg-white/5 rounded-lg group hover:bg-white/10 transition-all">
+                      <div class="flex items-center gap-3">
+                        <!-- File Type Icon -->
+                        <div class="w-12 h-12 rounded-lg bg-purple-400/20 border border-purple-400/30 flex items-center justify-center cursor-pointer hover:bg-purple-400/30 transition-all"
+                             @click="showFilePreview(file, index)">
+                          <!-- Image preview -->
+                          <img v-if="file.type.startsWith('image/')" 
+                               :src="file.preview" 
+                               :alt="file.name"
+                               class="w-full h-full object-cover rounded-lg" />
+                          <!-- PDF icon -->
+                          <svg v-else-if="file.type === 'application/pdf'" 
+                               xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <!-- Document icon -->
+                          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <span class="text-white text-sm font-medium truncate block">{{ file.name }}</span>
+                          <span class="text-gray-400 text-xs">{{ formatFileSize(file.size) }} • {{ getFileType(file.type) }}</span>
+                        </div>
+                      </div>
+                      <button type="button" @click="removeFile(index)"
+                              class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1 rounded hover:bg-red-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Attachment Summary -->
+                <div class="bg-gradient-to-r from-purple-400/10 to-pink-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h5 class="text-lg font-semibold text-white mb-4">Attachments Summary</h5>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-purple-400 font-bold text-xl">{{ form.file_attachments.length }}</p>
+                      <p class="text-gray-400 text-sm">Total Files</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-purple-400 font-bold text-xl">{{ getImageCount() }}</p>
+                      <p class="text-gray-400 text-sm">Images</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-purple-400 font-bold text-xl">{{ getDocumentCount() }}</p>
+                      <p class="text-gray-400 text-sm">Documents</p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl bg-white/5">
+                      <p class="text-purple-400 font-bold text-xl">{{ formatFileSize(getTotalSize()) }}</p>
+                      <p class="text-gray-400 text-sm">Total Size</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 10: Review & Summary -->
+              <div v-show="currentStep === 10" class="space-y-6">
+                <!-- QR Code Section -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-lime-400/20 border border-lime-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Work Order QR Code</h4>
+                      <p class="text-gray-400 text-sm">Quick access code for mobile technicians</p>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- QR Code Display -->
+                    <div class="flex flex-col items-center">
+                      <div class="bg-white p-4 rounded-xl shadow-lg">
+                        <div ref="qrCodeElement" class="w-48 h-48"></div>
+                      </div>
+                      <div class="mt-4 text-center">
+                        <p class="text-white font-medium">WO-{{ generateWorkOrderId() }}</p>
+                        <p class="text-gray-400 text-sm">Scan for mobile access</p>
+                      </div>
+                      <div class="flex gap-2 mt-3">
+                        <button type="button" 
+                                @click="generateQRCode"
+                                class="px-4 py-2 bg-indigo-400/20 hover:bg-indigo-400/30 border border-indigo-400/30 hover:border-indigo-400/50 text-indigo-400 rounded-lg transition-all text-sm">
+                          Generate QR
+                        </button>
+                        <button type="button" 
+                                @click="downloadQRCode"
+                                class="px-4 py-2 bg-lime-400/20 hover:bg-lime-400/30 border border-lime-400/30 hover:border-lime-400/50 text-lime-400 rounded-lg transition-all text-sm">
+                          Download QR
+                        </button>
+                        <button type="button" 
+                                @click="printQRCode"
+                                class="px-4 py-2 bg-cyan-400/20 hover:bg-cyan-400/30 border border-cyan-400/30 hover:border-cyan-400/50 text-cyan-400 rounded-lg transition-all text-sm">
+                          Print QR
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- QR Code Info -->
+                    <div class="space-y-4">
+                      <div class="p-4 bg-white/5 rounded-xl">
+                        <h6 class="font-medium text-white mb-2">QR Code Contains:</h6>
+                        <ul class="text-sm text-gray-300 space-y-1">
+                          <li>• Work Order ID: WO-{{ generateWorkOrderId() }}</li>
+                          <li>• Customer: {{ selectedCustomerName }}</li>
+                          <li>• Address: {{ form.address }}</li>
+                          <li>• Priority: {{ getPriorityDescription(form.priority) }}</li>
+                          <li>• Mobile Access URL</li>
+                        </ul>
+                      </div>
+                      
+                      <div class="p-4 bg-gradient-to-r from-lime-400/10 to-cyan-400/10 rounded-xl border border-white/10">
+                        <h6 class="font-medium text-white mb-2">Mobile Features:</h6>
+                        <ul class="text-sm text-gray-300 space-y-1">
+                          <li>• Update work order status</li>
+                          <li>• Add photos and notes</li>
+                          <li>• Record time tracking</li>
+                          <li>• Customer signature capture</li>
+                          <li>• GPS location verification</li>
+                        </ul>
+                      </div>
+                      
+                      <div class="p-4 bg-purple-400/10 rounded-xl border border-purple-400/20">
+                        <div class="flex items-center gap-2 mb-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-1a2 2 0 00-2-2H6a2 2 0 00-2 2v1a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <span class="font-medium text-purple-400 text-sm">Secure Access</span>
+                        </div>
+                        <p class="text-xs text-gray-400">QR code includes encrypted technician authentication for secure mobile access</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-400/20 border border-emerald-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Review & Summary</h4>
+                      <p class="text-gray-400 text-sm">Verify all details before creating the work order</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Summary Grid -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Customer & Basic Info -->
+                    <div class="space-y-4">
+                      <div class="bg-cyan-400/10 border border-cyan-400/30 rounded-lg p-4">
+                        <h6 class="text-cyan-400 font-semibold mb-2">Customer & Technician</h6>
+                        <p class="text-white text-sm">{{ selectedCustomerName }}</p>
+                        <p class="text-gray-400 text-xs">{{ selectedTechnicianName }}</p>
+                      </div>
+                      
+                      <div class="bg-purple-400/10 border border-purple-400/30 rounded-lg p-4">
+                        <h6 class="text-purple-400 font-semibold mb-2">Work Order Details</h6>
+                        <p class="text-white text-sm font-medium">{{ formattedTitle }}</p>
+                        <p class="text-gray-400 text-xs">{{ descriptionSummary }}</p>
+                      </div>
+                      
+                      <div class="bg-emerald-400/10 border border-emerald-400/30 rounded-lg p-4">
+                        <h6 class="text-emerald-400 font-semibold mb-2">Schedule & Location</h6>
+                        <p class="text-white text-sm">{{ formattedDateTime }}</p>
+                        <p class="text-gray-400 text-xs">{{ form.address }}</p>
+                      </div>
+                    </div>
+                    
+                    <!-- Duration & Pricing -->
+                    <div class="space-y-4">
+                      <div class="bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-4">
+                        <h6 class="text-yellow-400 font-semibold mb-2">Duration & Travel</h6>
+                        <p class="text-white text-sm">{{ form.hours }} hours of work</p>
+                        <p v-if="form.includeTravel" class="text-gray-400 text-xs">{{ form.travelMiles }} miles travel included</p>
+                        <p v-else class="text-gray-400 text-xs">No travel included</p>
+                      </div>
+                      
+                      <div class="bg-green-400/10 border border-green-400/30 rounded-lg p-4">
+                        <h6 class="text-green-400 font-semibold mb-2">Pricing Breakdown</h6>
+                        <div class="space-y-1 text-sm">
+                          <div class="flex justify-between">
+                            <span class="text-gray-400">Labor:</span>
+                            <span class="text-white">${{ laborCost }}</span>
+                          </div>
+                          <div v-if="form.includeTravel" class="flex justify-between">
+                            <span class="text-gray-400">Travel:</span>
+                            <span class="text-white">${{ travelCost }}</span>
+                          </div>
+                          <div class="flex justify-between font-bold border-t border-green-400/30 pt-1 mt-2">
+                            <span class="text-green-400">Total:</span>
+                            <span class="text-green-400">${{ totalPrice }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="bg-indigo-400/10 border border-indigo-400/30 rounded-lg p-4">
+                        <h6 class="text-indigo-400 font-semibold mb-2">Status & Files</h6>
+                        <p class="text-white text-sm">{{ form.status || 'Scheduled' }} Priority: {{ form.priority || 'Normal' }}</p>
+                        <p class="text-gray-400 text-xs">{{ form.file_attachments.length }} file(s) attached</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Modern Footer with Navigation -->
+          <div class="relative bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-xl border-t border-white/20 p-6">
+            <div class="flex items-center justify-between">
+              <!-- Previous Button -->
+              <button type="button" @click="previousStep" 
+                      :disabled="currentStep === 1"
+                      :class="[
+                        'flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all',
+                        currentStep === 1 
+                          ? 'bg-gray-500/20 border border-gray-400/30 text-gray-500 cursor-not-allowed' 
+                          : 'bg-gray-500/20 hover:bg-gray-500/30 border border-gray-400/30 hover:border-gray-400/50 text-gray-300 hover:text-white'
+                      ]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="hidden sm:inline">Previous</span>
+              </button>
+
+              <!-- Step Counter -->
+              <div class="text-center">
+                <div class="text-sm text-gray-400">Step</div>
+                <div class="text-lg font-semibold text-white">{{ currentStep }} / {{ totalSteps }}</div>
+              </div>
+
+              <!-- Next/Submit Button -->
+              <button type="button" 
+                      v-if="currentStep < totalSteps"
+                      @click="nextStep" 
+                      :disabled="!canProceedToNextStep"
+                      :class="[
+                        'flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all',
+                        canProceedToNextStep 
+                          ? 'bg-lime-400/20 hover:bg-lime-400/30 border border-lime-400/30 hover:border-lime-400/50 text-lime-400 hover:text-lime-300' 
+                          : 'bg-gray-500/20 border border-gray-400/30 text-gray-500 cursor-not-allowed'
+                      ]">
+                <span class="hidden sm:inline">Next</span>
+                <span class="sm:hidden">Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <!-- Submit Button (Final Step) -->
+              <button type="submit" 
+                      v-else
+                      @click="submitForm"
+                      :disabled="!canSubmitForm"
+                      :class="[
+                        'flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all',
+                        canSubmitForm 
+                          ? 'bg-lime-400/20 hover:bg-lime-400/30 border border-lime-400/30 hover:border-lime-400/50 text-lime-400 hover:text-lime-300' 
+                          : 'bg-gray-500/20 border border-gray-400/30 text-gray-500 cursor-not-allowed'
+                      ]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="hidden sm:inline">Create Work Order</span>
+                <span class="sm:hidden">Create</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </Transition>
   </div>
+
+  <!-- File Preview Modal -->
+  <Transition name="modal" appear>
+    <div v-if="filePreviewModal" class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" @click="closeFilePreview"></div>
+        
+        <!-- Modal panel -->
+        <div class="relative inline-block align-bottom bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/20 px-6 py-6 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-purple-400/20 border border-purple-400/30 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-white">{{ currentPreviewFile?.name }}</h3>
+                <p class="text-sm text-gray-400">{{ formatFileSize(currentPreviewFile?.size || 0) }} • {{ getFileType(currentPreviewFile?.type || '') }}</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <!-- Navigation buttons -->
+              <button v-if="form.file_attachments.length > 1"
+                      @click="previousFilePreview"
+                      :disabled="previewIndex <= 0"
+                      class="p-2 rounded-lg bg-gray-500/20 hover:bg-gray-500/30 border border-gray-400/30 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <span v-if="form.file_attachments.length > 1" class="text-sm text-gray-400">
+                {{ previewIndex + 1 }} / {{ form.file_attachments.length }}
+              </span>
+              
+              <button v-if="form.file_attachments.length > 1"
+                      @click="nextFilePreview"
+                      :disabled="previewIndex >= form.file_attachments.length - 1"
+                      class="p-2 rounded-lg bg-gray-500/20 hover:bg-gray-500/30 border border-gray-400/30 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              
+              <button @click="closeFilePreview"
+                      class="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-400 hover:text-red-300 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <!-- File content -->
+          <div class="bg-white/5 backdrop-blur-xl rounded-xl p-6 border border-white/10 max-h-[70vh] overflow-auto">
+            <!-- Image preview -->
+            <div v-if="currentPreviewFile?.type.startsWith('image/')" class="flex justify-center">
+              <img :src="currentPreviewFile.preview" 
+                   :alt="currentPreviewFile.name"
+                   class="max-w-full max-h-[60vh] object-contain rounded-lg shadow-lg" />
+            </div>
+            
+            <!-- PDF preview placeholder -->
+            <div v-else-if="currentPreviewFile?.type === 'application/pdf'" class="text-center py-12">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-purple-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <p class="text-white font-medium">PDF Document</p>
+              <p class="text-gray-400 text-sm">{{ currentPreviewFile.name }}</p>
+              <p class="text-gray-400 text-xs mt-2">PDF preview not available in modal.<br>File will be attached to work order.</p>
+            </div>
+            
+            <!-- Other document types -->
+            <div v-else class="text-center py-12">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-purple-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p class="text-white font-medium">{{ getFileType(currentPreviewFile?.type || '') }}</p>
+              <p class="text-gray-400 text-sm">{{ currentPreviewFile?.name }}</p>
+              <p class="text-gray-400 text-xs mt-2">Document preview not available in modal.<br>File will be attached to work order.</p>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="flex justify-between items-center mt-6">
+            <button @click="removeFile(previewIndex)"
+                    class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 hover:border-red-400/50 text-red-400 hover:text-red-300 rounded-lg transition-all">
+              Remove File
+            </button>
+            
+            <div class="flex gap-2">
+              <button @click="closeFilePreview"
+                      class="px-6 py-2 bg-gray-500/20 hover:bg-gray-500/30 border border-gray-400/30 hover:border-gray-400/50 text-gray-400 hover:text-white rounded-lg transition-all">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup>
@@ -484,7 +1167,6 @@ import ApplicationMark from '@/Components/ApplicationMark.vue';
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 import { Popover, PopoverTrigger, PopoverContent } from '@/Components/ui/popover';
 import { format, isValid } from 'date-fns';
-import DatePicker from '@/Components/ui/calendar/DatePicker.vue';
 
 // Set up Axios to include CSRF token
 axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -659,6 +1341,7 @@ const form = useForm({
   hourlyRate: 120, // used for UI
   hourly_rate: 120, // add this for backend compatibility
   status: 'Scheduled',
+  priority: 'Normal', // Add priority field
   file_attachments: [],
   notes: '',
   progress: null,
@@ -713,6 +1396,61 @@ const totalPrice = computed(() => {
   const total = (parseFloat(laborCost.value) + parseFloat(travelCost.value)).toFixed(2);
   form.grand_total = total; // Ensure form field is updated
   return total;
+});
+
+// Date and time computed properties for the new inputs
+const todayString = computed(() => {
+  return format(new Date(), 'yyyy-MM-dd');
+});
+
+const selectedDateString = computed({
+  get() {
+    if (!form.date_time) return '';
+    try {
+      const date = form.date_time instanceof Date ? form.date_time : new Date(form.date_time);
+      return isValid(date) ? format(date, 'yyyy-MM-dd') : '';
+    } catch (e) {
+      return '';
+    }
+  },
+  set(value) {
+    if (!value) {
+      form.date_time = null;
+      return;
+    }
+    
+    // Keep existing time if we have one, otherwise default to 9:00 AM
+    const existingTime = form.date_time instanceof Date ? form.date_time : null;
+    const hours = existingTime ? existingTime.getHours() : 9;
+    const minutes = existingTime ? existingTime.getMinutes() : 0;
+    
+    const newDate = new Date(value);
+    newDate.setHours(hours, minutes, 0, 0);
+    form.date_time = newDate;
+  }
+});
+
+const selectedTimeString = computed({
+  get() {
+    if (!form.date_time) return '09:00';
+    try {
+      const date = form.date_time instanceof Date ? form.date_time : new Date(form.date_time);
+      return isValid(date) ? format(date, 'HH:mm') : '09:00';
+    } catch (e) {
+      return '09:00';
+    }
+  },
+  set(value) {
+    if (!value) return;
+    
+    // Keep existing date if we have one, otherwise use today
+    const existingDate = form.date_time instanceof Date ? form.date_time : new Date();
+    const [hours, minutes] = value.split(':').map(Number);
+    
+    const newDate = new Date(existingDate);
+    newDate.setHours(hours, minutes, 0, 0);
+    form.date_time = newDate;
+  }
 });
 
 const mapboxImageUrl = computed(() => {
@@ -770,6 +1508,45 @@ const safeCustomersArray = computed(() => {
 const safeTechniciansArray = computed(() => {
   return technicians.value.filter(technician => technician && technician.id);
 });
+
+// Validation computed properties for navigation
+const canProceedToNextStep = computed(() => {
+  return validateCurrentStep();
+});
+
+const canSubmitForm = computed(() => {
+  return validateCurrentStep() && currentStep.value === totalSteps;
+});
+
+// Helper computed property for step labels
+const getStepLabel = computed(() => {
+  return (step) => {
+    const labels = {
+      1: 'Customer & Technician',
+      2: 'Title & Work Order',
+      3: 'Service Description',
+      4: 'Date & Time',
+      5: 'Address & Location',
+      6: 'Hours & Duration',
+      7: 'Rates & Pricing',
+      8: 'Status & Priority',
+      9: 'Attachments & Files',
+      10: 'Review & Summary'
+    };
+    return labels[step] || `Step ${step}`;
+  };
+});
+
+// Helper function for priority descriptions
+const getPriorityDescription = (priority) => {
+  const descriptions = {
+    'Low': 'Standard timeline, can be scheduled flexibly',
+    'Normal': 'Regular priority, scheduled in normal queue',
+    'High': 'Important work, should be prioritized',
+    'Urgent': 'Critical issue, needs immediate attention'
+  };
+  return descriptions[priority] || '';
+};
 
 // Function to load customers from API
 const loadCustomers = async () => {
@@ -839,6 +1616,7 @@ const resetForm = () => {
   form.hourlyRate = 120;
   form.hourly_rate = 120;
   form.status = 'Scheduled';
+  form.priority = 'Normal'; // Reset priority field
   form.file_attachments = [];
   form.notes = '';
   form.progress = null;
@@ -849,6 +1627,8 @@ const resetForm = () => {
   form.includeTravel = false;
   form.travelMiles = 45;
   form.mileageRate = 1.00;
+  form.technician_id = '';
+  form.grand_total = '';
   // Reset other component state
   workType.value = '';
   workOrderNumber.value = '';
@@ -872,12 +1652,13 @@ const validateCurrentStep = () => {
     case 4:
       return !!form.date_time;
     case 5:
+      return !!form.address && form.address.trim() !== '';
     case 6:
       return form.hours >= 2 && form.hours <= 16;
     case 7:
       return !!form.hourlyRate && form.hourlyRate >= 55;
     case 8:
-      return !!form.status;
+      return !!form.status && !!form.priority;
     case 9:
       return true; // Files are optional
     case 10:
@@ -929,6 +1710,9 @@ const prevStep = async () => {
     isLoading.value = false;
   }
 };
+
+// Alias for template compatibility
+const previousStep = prevStep;
 
 // Geocode the address to get lat/lon from Mapbox
 const geocodeAddress = async (address) => {
@@ -1653,20 +2437,312 @@ const handleFileUpload = (event) => {
   }
 };
 
-// Remove a file from attachments
-const removeFile = (index) => {
-  if (form.file_attachments && index >= 0 && index < form.file_attachments.length) {
-    form.file_attachments.splice(index, 1);
-    console.log('File removed at index:', index, 'Remaining attachments:', form.file_attachments.length);
-  }
-};
-
 // Get object URL for file preview
 const getFileObjectURL = (file) => {
   if (file && file instanceof File) {
     return URL.createObjectURL(file);
   }
   return '';
+};
+
+// File handling methods for Step 9
+const handleFileDrop = (event) => {
+  const files = Array.from(event.dataTransfer.files);
+  processFiles(files);
+};
+
+const handleFileSelect = (event) => {
+  const files = Array.from(event.target.files);
+  processFiles(files);
+};
+
+const processFiles = (files) => {
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf', 
+                     'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                     'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+
+  files.forEach(file => {
+    if (!validTypes.includes(file.type)) {
+      alert(`File type ${file.type} is not supported. Please use JPG, PNG, PDF, DOC, or XLS files.`);
+      return;
+    }
+    
+    if (file.size > maxSize) {
+      alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+      return;
+    }
+
+    // Add preview URL for images
+    if (file.type.startsWith('image/')) {
+      file.preview = URL.createObjectURL(file);
+    }
+
+    form.file_attachments.push(file);
+  });
+};
+
+// Remove file from attachments
+const removeFile = (index) => {
+  const file = form.file_attachments[index];
+  if (file && file.preview) {
+    URL.revokeObjectURL(file.preview);
+  }
+  form.file_attachments.splice(index, 1);
+};
+
+// File utility functions
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getFileType = (mimeType) => {
+  const typeMap = {
+    'image/jpeg': 'JPEG Image',
+    'image/jpg': 'JPG Image', 
+    'image/png': 'PNG Image',
+    'image/gif': 'GIF Image',
+    'application/pdf': 'PDF Document',
+    'application/msword': 'Word Document',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+    'application/vnd.ms-excel': 'Excel Spreadsheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet'
+  };
+  return typeMap[mimeType] || 'Unknown';
+};
+
+const getImageCount = () => {
+  return form.file_attachments.filter(file => file.type.startsWith('image/')).length;
+};
+
+const getDocumentCount = () => {
+  return form.file_attachments.filter(file => !file.type.startsWith('image/')).length;
+};
+
+const getTotalSize = () => {
+  return form.file_attachments.reduce((total, file) => total + file.size, 0);
+};
+
+// File preview modal state and methods
+const filePreviewModal = ref(false);
+const currentPreviewFile = ref(null);
+const previewIndex = ref(-1);
+
+const showFilePreview = (file, index) => {
+  currentPreviewFile.value = file;
+  previewIndex.value = index;
+  filePreviewModal.value = true;
+};
+
+const closeFilePreview = () => {
+  filePreviewModal.value = false;
+  currentPreviewFile.value = null;
+  previewIndex.value = -1;
+};
+
+const nextFilePreview = () => {
+  if (previewIndex.value < form.file_attachments.length - 1) {
+    previewIndex.value++;
+    currentPreviewFile.value = form.file_attachments[previewIndex.value];
+  }
+};
+
+const previousFilePreview = () => {
+  if (previewIndex.value > 0) {
+    previewIndex.value--;
+    currentPreviewFile.value = form.file_attachments[previewIndex.value];
+  }
+};
+
+// QR Code generation and management for Step 10
+const qrCodeElement = ref(null);
+const generateWorkOrderId = () => {
+  return Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+};
+
+const workOrderQRValue = computed(() => {
+  const workOrderId = `WO-${generateWorkOrderId()}`;
+  const baseUrl = window.location.origin;
+  const mobileUrl = `${baseUrl}/mobile/work-orders/${workOrderId}`;
+  
+  // Use simple URL format for better QR code compatibility
+  return mobileUrl;
+});
+
+// Generate QR code when step 10 is reached
+watch(currentStep, async (newStep) => {
+  if (newStep === 10) {
+    // Use nextTick to ensure the DOM element is ready
+    await nextTick();
+    if (qrCodeElement.value) {
+      await generateQRCode();
+    }
+  }
+});
+
+// Also generate QR code on component mount if already on step 10
+onMounted(async () => {
+  if (currentStep.value === 10) {
+    await nextTick();
+    if (qrCodeElement.value) {
+      await generateQRCode();
+    }
+  }
+});
+
+const generateQRCode = async () => {
+  console.log('Generating QR code, element exists:', !!qrCodeElement.value);
+  
+  if (!qrCodeElement.value) {
+    console.warn('QR code element not found');
+    return;
+  }
+  
+  try {
+    // Clear existing QR code
+    qrCodeElement.value.innerHTML = '';
+    
+    console.log('QR code value:', workOrderQRValue.value);
+    
+    // Generate QR code as data URL first, then create img element
+    const qrDataUrl = await QRCode.toDataURL(workOrderQRValue.value, {
+      width: 192,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+    
+    console.log('QR code generated successfully as data URL');
+    
+    // Create an image element instead of canvas
+    const img = document.createElement('img');
+    img.src = qrDataUrl;
+    img.alt = 'Work Order QR Code';
+    img.style.width = '192px';
+    img.style.height = '192px';
+    img.style.display = 'block';
+    
+    // Append the image to the container
+    qrCodeElement.value.appendChild(img);
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    // Show a fallback message
+    qrCodeElement.value.innerHTML = `
+      <div class="text-white text-sm text-center p-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p>QR code will be generated</p>
+        <p>when work order is created</p>
+      </div>
+    `;
+  }
+};
+
+const downloadQRCode = async () => {
+  try {
+    let dataUrl = null;
+    
+    // Try to get data URL from existing image element
+    const img = qrCodeElement.value?.querySelector('img');
+    if (img && img.src.startsWith('data:')) {
+      dataUrl = img.src;
+    } else {
+      // Generate QR code as data URL
+      dataUrl = await QRCode.toDataURL(workOrderQRValue.value, {
+        width: 300,
+        margin: 2,
+        errorCorrectionLevel: 'M',
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+    }
+    
+    const link = document.createElement('a');
+    link.download = `WorkOrder-QR-${generateWorkOrderId()}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Error downloading QR code:', error);
+    alert('Error downloading QR code: ' + error.message);
+  }
+};
+
+const printQRCode = async () => {
+  try {
+    let dataUrl = null;
+    
+    // Try to get data URL from existing image element
+    const img = qrCodeElement.value?.querySelector('img');
+    if (img && img.src.startsWith('data:')) {
+      dataUrl = img.src;
+    } else {
+      // Generate QR code as data URL
+      dataUrl = await QRCode.toDataURL(workOrderQRValue.value, {
+        width: 400,
+        margin: 2,
+        errorCorrectionLevel: 'M',
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+    }
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the QR code');
+      return;
+    }
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Work Order QR Code</title>
+          <style>
+            body { 
+              display: flex; 
+              justify-content: center; 
+              align-items: center; 
+              height: 100vh; 
+              margin: 0;
+              font-family: Arial, sans-serif;
+            }
+            .container { text-align: center; }
+            h2 { margin-bottom: 20px; }
+            img { border: 1px solid #ddd; padding: 10px; }
+            p { margin-top: 15px; font-size: 14px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Work Order QR Code</h2>
+            <img src="${dataUrl}" style="width: 300px; height: 300px;">
+            <p>WO-${generateWorkOrderId()}</p>
+            <p>Scan to access mobile work order</p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 100);
+  } catch (error) {
+    console.error('Error printing QR code:', error);
+    alert('Error printing QR code: ' + error.message);
+  }
 };
 </script>
 
@@ -2323,5 +3399,78 @@ progress::-moz-progress-bar {
   .scrollable-modal-content {
     max-height: calc(90vh - 180px);
   }
+}
+
+/* Custom range slider styles for glass morphism */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  outline: none;
+  border-radius: 8px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eab308, #f59e0b);
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eab308, #f59e0b);
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
+}
+
+.slider::-webkit-slider-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  height: 8px;
+}
+
+.slider::-moz-range-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  height: 8px;
+}
+
+/* Priority indicator styles */
+.priority-low { color: #4ade80; }
+.priority-normal { color: #60a5fa; }
+.priority-high { color: #facc15; }
+.priority-urgent { color: #f87171; }
+
+/* File upload styles */
+.file-drop-zone:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  background-color: rgba(168, 85, 247, 0.05);
+}
+
+/* Step transition animations */
+.step-enter-active,
+.step-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+
+.step-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.step-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
 }
 </style>

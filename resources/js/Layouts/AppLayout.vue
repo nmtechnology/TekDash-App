@@ -540,53 +540,53 @@ function logout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
+  <div class="h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
     <ToastContainer class="fixed top-0 left-0 w-full z-[99999] pointer-events-none" />
     <Head :title="title" />
     <Banner />
     
     <!-- Animated Background Elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute top-20 left-20 w-96 h-96 bg-lime-400/8 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-      <div class="absolute top-40 right-20 w-80 h-80 bg-cyan-400/8 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-      <div class="absolute bottom-20 left-1/3 w-72 h-72 bg-purple-400/8 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+      <div class="absolute top-10 left-10 w-64 h-64 bg-lime-400/6 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-blob"></div>
+      <div class="absolute top-20 right-10 w-48 h-48 bg-cyan-400/6 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-blob animation-delay-2000"></div>
+      <div class="absolute bottom-10 left-1/3 w-56 h-56 bg-purple-400/6 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-blob animation-delay-4000"></div>
     </div>
 
-    <div class="relative z-10 min-h-screen flex">
-      <!-- Modern Glass Sidebar -->
+    <div class="relative z-10 h-full flex">
+      <!-- Compact Glass Sidebar -->
       <aside :class="[
-        'fixed top-0 left-0 z-50 h-full w-72 transition-all duration-300 ease-in-out transform',
+        'fixed top-0 left-0 z-50 h-full w-64 transition-all duration-300 ease-in-out transform',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         'lg:translate-x-0 lg:static lg:inset-0'
       ]">
         <div class="h-full bg-white/5 backdrop-blur-xl border-r border-white/10 shadow-2xl flex flex-col">
-          <!-- Sidebar Header -->
-          <div class="flex items-center justify-between p-6 border-b border-white/10">
-            <Link href="/dashboard" class="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent hover:scale-105 transition-transform">
-              <ApplicationMark class="h-8 w-8" />
+          <!-- Compact Sidebar Header -->
+          <div class="flex items-center justify-between p-4 border-b border-white/10">
+            <Link href="/dashboard" class="flex items-center gap-2 text-lg font-bold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent hover:scale-105 transition-transform">
+              <ApplicationMark class="h-6 w-6" />
               TekDash
             </Link>
             <button 
-              class="lg:hidden text-gray-400 hover:text-lime-400 p-2 rounded-lg hover:bg-white/10 transition-all" 
+              class="lg:hidden text-gray-400 hover:text-lime-400 p-1 rounded-lg hover:bg-white/10 transition-all" 
               @click="sidebarOpen = false"
               aria-label="Close sidebar"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
           
-          <!-- Navigation Menu -->
-          <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <!-- Compact Navigation Menu -->
+          <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             <Link href="/dashboard" 
               :class="[
-                'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
+                'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group text-sm',
                 $page.url === '/dashboard' 
                   ? 'bg-lime-400/20 text-lime-400 border border-lime-400/30' 
                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
               ]">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0v6m0 0H7m6 0h6" />
               </svg>
               <span class="font-medium">Dashboard</span>
@@ -594,25 +594,25 @@ function logout() {
             
             <Link href="/work-orders" 
               :class="[
-                'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
+                'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group text-sm',
                 $page.url.startsWith('/work-orders') 
                   ? 'bg-purple-400/20 text-purple-400 border border-purple-400/30' 
                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
               ]">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 0h6m-6 0a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2m-6 0v2a2 2 0 002 2h2a2 2 0 002-2v-2" />
               </svg>
               <span class="font-medium">Work Orders</span>
             </Link>
             
-            <!-- Customers with modern dropdown -->
+            <!-- Compact Customers with dropdown -->
             <div class="relative">
               <button 
                 @click="toggleCustomerDropdown"
                 @keydown.enter.prevent="toggleCustomerDropdown"
                 @keydown.space.prevent="toggleCustomerDropdown"
                 :class="[
-                  'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
+                  'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg transition-all duration-200 group text-sm',
                   showCustomerDropdown || $page.url.startsWith('/customers')
                     ? 'bg-cyan-400/20 text-cyan-400 border border-cyan-400/30' 
                     : 'text-gray-300 hover:bg-white/10 hover:text-white'
@@ -621,13 +621,13 @@ function logout() {
                 :aria-expanded="showCustomerDropdown"
               >
                 <div class="flex items-center gap-3">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" />
                   </svg>
                   <span class="font-medium">Customers</span>
                 </div>
                 <svg 
-                  class="w-4 h-4 transition-transform duration-200" 
+                  class="w-3 h-3 transition-transform duration-200" 
                   :class="showCustomerDropdown ? 'rotate-180' : ''" 
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
@@ -635,74 +635,52 @@ function logout() {
                 </svg>
               </button>
               
-              <!-- Modern Glass Dropdown -->
+              <!-- Compact Glass Dropdown -->
               <div 
                 v-show="showCustomerDropdown" 
-                class="mt-2 ml-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl"
+                class="mt-1 ml-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-3 shadow-2xl max-h-48 overflow-y-auto"
                 style="transition: all 0.2s ease-in-out;"
               >
                 <!-- Loading State -->
-                <div v-if="isLoadingCustomers" class="flex flex-col items-center justify-center py-8">
-                  <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-400"></div>
-                  <span class="text-sm text-cyan-400 mt-2">Loading customers...</span>
+                <div v-if="isLoadingCustomers" class="flex flex-col items-center justify-center py-4">
+                  <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-cyan-400"></div>
+                  <span class="text-xs text-cyan-400 mt-1">Loading...</span>
                 </div>
                 
                 <!-- Error State -->
-                <div v-else-if="customerError" class="text-center py-6">
-                  <svg class="w-12 h-12 text-red-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                <div v-else-if="customerError" class="flex flex-col items-center justify-center py-4 text-center">
+                  <svg class="w-6 h-6 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p class="text-sm text-gray-300 font-medium mb-3">Unable to load customers</p>
-                  <button @click="retryFetchCustomers" 
-                          class="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-400 rounded-lg transition-all text-sm">
-                    Try again
+                  <span class="text-xs text-red-400 mb-2">Failed to load</span>
+                  <button @click="retryFetchCustomers" class="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-400 rounded text-xs transition-all">
+                    Retry
                   </button>
                 </div>
                 
-                <!-- Empty State -->
-                <div v-else-if="customers.length === 0" class="text-center py-6">
-                  <svg class="w-12 h-12 text-gray-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                  </svg>
-                  <p class="text-sm text-gray-400">No customers found</p>
-                </div>
-                
-                <!-- Customer Grid -->
-                <div v-else class="space-y-2 max-h-64 overflow-y-auto">
-                  <Link 
-                    v-for="(customer, index) in customers.slice(0, 8)" 
-                    :key="customer?.id || index"
-                    :href="customer?.id ? `/customers/${customer.id}` : '/customers'"
-                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-all group border border-transparent hover:border-white/20"
+                <!-- Customer List (Compact) -->
+                <div v-else-if="customers.length > 0" class="space-y-1">
+                  <Link v-for="(customer, index) in customers.slice(0, 8)" :key="customer.id" 
+                    :href="`/customers/${customer.id}`"
+                    :class="[
+                      'flex items-center gap-2 p-2 rounded text-xs hover:bg-white/10 transition-all group',
+                      customerColors[index % customerColors.length].replace('bg-', 'hover:bg-').replace('500', '500/20')
+                    ]"
                   >
-                    <div 
-                      class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-lg" 
-                      :class="getCustomerColor(customer?.id)"
-                    >
-                      {{ getCustomerInitials(customer) }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-gray-200 group-hover:text-white transition-colors truncate">
-                        {{ customer?.business_name || customer?.poc_name || 'Customer' }}
-                      </p>
-                      <p v-if="customer?.business_name && customer?.poc_name" 
-                         class="text-xs text-gray-400 group-hover:text-gray-300 transition-colors truncate">
-                        {{ customer.poc_name }}
-                      </p>
-                    </div>
+                    <div :class="['w-2 h-2 rounded-full', customerColors[index % customerColors.length]]"></div>
+                    <span class="text-gray-300 group-hover:text-white truncate">
+                      {{ customer.business_name || customer.poc_name || `Customer ${customer.id}` }}
+                    </span>
+                  </Link>
+                  <Link href="/customers" 
+                    class="flex items-center justify-between gap-2 p-2 mt-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-400 rounded text-xs transition-all"
+                  >
+                    <span>View All</span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
                   </Link>
                 </div>
-                
-                <!-- View All Link -->
-                <Link 
-                  href="/customers" 
-                  class="mt-4 flex items-center justify-center gap-2 py-3 w-full rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 hover:border-cyan-400/50 text-cyan-400 text-sm font-medium transition-all"
-                >
-                  <span>View All Customers</span>
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                  </svg>
-                </Link>
               </div>
             </div>
             
@@ -800,19 +778,19 @@ function logout() {
         </svg>
       </button>
 
-      <!-- Main Content Area -->
-      <div class="flex-1 flex flex-col min-h-screen transition-all duration-300 lg:ml-72">
+      <!-- Compact Main Content Area -->
+      <div class="flex-1 flex flex-col h-full transition-all duration-300 lg:ml-64">
         
-        <!-- Modern Glass Header -->
-        <header class="fixed top-0 right-0 left-0 lg:left-72 z-30 bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-2xl transition-all duration-300"
+        <!-- Compact Glass Header -->
+        <header class="fixed top-0 right-0 left-0 lg:left-64 z-30 bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-2xl transition-all duration-300 h-14"
                 :class="{ 'shadow-2xl border-white/20': isScrolled }">
-          <div class="flex items-center justify-between px-6 py-4">
+          <div class="flex items-center justify-between px-4 py-3 h-full">
             <!-- Left: Mobile menu space / Desktop breadcrumbs -->
-            <div class="flex items-center gap-4">
-              <div class="w-12 lg:hidden"></div> <!-- Space for mobile toggle -->
-              <div class="hidden lg:flex items-center gap-2 text-sm text-gray-400">
+            <div class="flex items-center gap-3">
+              <div class="w-10 lg:hidden"></div> <!-- Space for mobile toggle -->
+              <div class="hidden lg:flex items-center gap-2 text-xs text-gray-400">
                 <Link href="/dashboard" class="hover:text-lime-400 transition-colors">Dashboard</Link>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
                 <span class="text-white font-medium">{{ title || 'Page' }}</span>
@@ -821,29 +799,29 @@ function logout() {
             
             <!-- Center: Brand (mobile only) -->
             <div class="lg:hidden">
-              <Link href="/dashboard" class="flex items-center gap-2 text-lg font-bold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent">
-                <ApplicationMark class="h-7 w-7" />
+              <Link href="/dashboard" class="flex items-center gap-2 text-base font-bold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent">
+                <ApplicationMark class="h-5 w-5" />
                 TekDash
               </Link>
             </div>
             
             <!-- Right: Search and user actions -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
               <!-- Search will go here -->
-              <div class="w-12"></div> <!-- Placeholder for balance -->
+              <div class="w-10"></div> <!-- Placeholder for balance -->
             </div>
           </div>
         </header>
 
-        <!-- Page Header -->
-        <div v-if="$slots.header" class="pt-20 pb-6 px-6">
-          <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
+        <!-- Compact Page Header -->
+        <div v-if="$slots.header" class="pt-14 pb-3 px-4">
+          <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10 shadow-2xl">
             <slot name="header" />
           </div>
         </div>
 
-        <!-- Main Content -->
-        <main class="flex-1 px-6 pb-6" :class="{ 'pt-20': !$slots.header, 'pt-6': $slots.header }">
+        <!-- Compact Main Content -->
+        <main class="flex-1 px-4 pb-3 overflow-hidden" :class="{ 'pt-14': !$slots.header, 'pt-3': $slots.header }">
           <slot />
         </main>
       </div>
@@ -901,9 +879,9 @@ a:hover, button:hover {
   transform: translateY(-1px);
 }
 
-/* Sidebar responsive behavior */
+/* Compact sidebar responsive behavior */
 @media (max-width: 1024px) {
-  .lg\:ml-72 {
+  .lg\:ml-64 {
     margin-left: 0 !important;
   }
 }
@@ -911,11 +889,11 @@ a:hover, button:hover {
 /* Mobile adjustments */
 @media (max-width: 640px) {
   .sidebar {
-    width: 280px;
+    width: 240px;
   }
 }
 
-/* Enhanced glass card styling */
+/* Compact glass card styling */
 .bg-white\/5 {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
@@ -929,7 +907,7 @@ a:hover, button:hover {
   transition: all 0.3s ease;
 }
 
-/* Navigation link active states */
+/* Compact navigation link active states */
 .bg-lime-400\/20 {
   background: rgba(163, 230, 53, 0.2);
   border-color: rgba(163, 230, 53, 0.3);
@@ -955,18 +933,15 @@ a:hover, button:hover {
   border-color: rgba(244, 114, 182, 0.3);
 }
 
-/* Smooth scrolling and layout */
-html {
-  scroll-behavior: smooth;
-}
-
-body {
+/* No scrolling layout - Fixed viewport */
+html, body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100vh;
 }
 
-/* Header scroll effects */
+/* Compact header scroll effects */
 .header-scrolled {
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
@@ -974,27 +949,27 @@ body {
   border-bottom-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Dropdown animation */
+/* Compact dropdown animation */
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-10px) scale(0.95);
+  transform: translateY(-5px) scale(0.98);
 }
 
-/* Focus styles for accessibility */
+/* Compact focus styles for accessibility */
 button:focus,
 a:focus {
-  outline: 2px solid #a3e635;
-  outline-offset: 2px;
-  border-radius: 8px;
+  outline: 1px solid #a3e635;
+  outline-offset: 1px;
+  border-radius: 6px;
 }
 
-/* Loading spinner */
+/* Compact loading spinner */
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -1004,31 +979,35 @@ a:focus {
   100% { transform: rotate(360deg); }
 }
 
-/* Touch-friendly adjustments for mobile */
+/* Compact touch-friendly adjustments for mobile */
 @media (pointer: coarse) {
   button, 
   a[role="button"] {
-    min-height: 44px;
+    min-height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 }
 
-/* Responsive text sizing */
+/* Compact responsive text sizing */
 @media (max-width: 480px) {
-  .text-xl {
-    font-size: 1rem;
+  .text-lg {
+    font-size: 0.875rem;
   }
   
-  .text-lg {
-    font-size: 0.9rem;
+  .text-base {
+    font-size: 0.8rem;
+  }
+  
+  .text-sm {
+    font-size: 0.75rem;
   }
 }
 
-/* Sidebar toggle animation */
+/* Compact sidebar toggle animation */
 .sidebar-toggle {
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .sidebar-open .sidebar-toggle {
