@@ -2,18 +2,18 @@
   <!-- Removed ToastContainer from here; it should only be rendered at the app root (AppLayout.vue) -->
   <div v-if="props.showModal">
     <!-- Background overlay -->
-    <div @click="emit('close')" class="fixed inset-0 bg-black bg-opacity-50 z-[60]"></div>
+    <div @click="emit('close')" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"></div>
 
-    <!-- Work Order Modal (center position, slightly narrower) -->
-    <div class="fixed inset-0 flex items-start justify-center z-[70] pointer-events-none">
-      <div
-        class="relative z-[80] w-full max-w-3xl h-[70vh] mt-60 rounded-lg overflow-hidden shadow-xl transform transition-all glossy-card pointer-events-auto flex flex-col">
+    <!-- Consolidated Work Order Modal -->
+    <div class="fixed inset-0 flex items-center justify-center z-[70] p-4 pointer-events-none">
+      <div class="relative z-[80] w-full max-w-6xl h-[90vh] rounded-2xl overflow-hidden shadow-2xl transform transition-all bg-white/5 backdrop-blur-xl border border-white/10 pointer-events-auto flex flex-col">
+        
         <!-- Header section -->
-        <div class="glossy-header p-4 border-b border-gray-700">
-          <div class="flex items-center justify-between">
+        <div class="bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-xl border-b border-white/20 p-6">
+          <div class="flex items-center justify-between mb-6">
             <div class="flex-grow relative group">
               <div v-if="!editingField.title" @click="startEditing('title')"
-                class="text-xl font-semibold text-gray-100 cursor-pointer hover:text-indigo-400 flex items-center">
+                class="text-xl font-bold cursor-pointer hover:text-lime-400 flex items-center bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent">
                 <span>{{ form.title || 'Untitled Work Order' }}</span>
                 <svg xmlns="http://www.w3.org/2000/svg"
                   class="h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" fill="none"
@@ -24,153 +24,281 @@
               </div>
               <div v-else class="w-full max-w-xl">
                 <input type="text" v-model="form.title" @blur="saveField('title')"
-                  class="block w-full px-3 py-1 text-xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  class="block w-full px-3 py-2 text-xl font-bold bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50"
                   ref="titleInput" @keyup.enter="saveField('title')" placeholder="Enter work order title" autofocus />
               </div>
             </div>
             <div class="flex space-x-2 items-center">
               <button v-if="isAnyFieldBeingEdited" @click="saveAllChanges"
-                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-amber-400 font-bold hover:bg-amber-400 hover:text-black z-50 relative mr-2"
+                class="px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/30 hover:border-amber-400/50 text-amber-400 hover:text-amber-300 font-semibold transition-all duration-200"
                 :class="{ 'animate-pulse': hasChanges }">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 inline" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                 </svg>
-                Save All Changes
-              </button>
-              <button @click="toggleTimelineModal"
-                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 font-bold hover:bg-lime-400 hover:text-black z-50 relative"
-                title="Toggle Timeline">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 17l-6-6m0 0l6-6m-6 6h14" />
-                </svg>
-              </button>
-              <button @click="toggleMessengerModal"
-                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-lime-400 font-bold hover:bg-lime-400 hover:text-black z-50 relative"
-                title="Toggle Messages">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
+                Save Changes
               </button>
               <button @click="emit('close')"
-                class="glossy-btn btn inline-flex justify-center rounded-md border shadow-sm px-3 py-1.5 text-red-400 font-bold hover:bg-red-600 hover:text-black z-50 relative">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                class="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 hover:border-red-400/50 text-red-400 hover:text-red-300 font-semibold transition-all">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
+
+          <!-- Tab Navigation -->
+          <div class="flex space-x-1 bg-white/5 p-1 rounded-xl">
+            <button
+              @click="activeTab = 'details'"
+              :class="[
+                'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200',
+                activeTab === 'details' 
+                  ? 'bg-lime-400/20 text-lime-400 border border-lime-400/30' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/10'
+              ]">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Details
+            </button>
+            <button
+              @click="activeTab = 'timeline'"
+              :class="[
+                'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200',
+                activeTab === 'timeline' 
+                  ? 'bg-cyan-400/20 text-cyan-400 border border-cyan-400/30' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/10'
+              ]">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Timeline
+            </button>
+            <button
+              @click="activeTab = 'notes'"
+              :class="[
+                'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200',
+                activeTab === 'notes' 
+                  ? 'bg-purple-400/20 text-purple-400 border border-purple-400/30' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/10'
+              ]">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              Notes & Messages
+            </button>
+          </div>
         </div>
 
-        <!-- Content section -->
-        <div class="flex-1 p-5 pb-8 overflow-y-auto timeline-container">
-          <!-- Work Order Status and Time -->
-          <div class="mb-4 flex flex-wrap justify-between items-center">
-            <div>
-              <template v-if="!editingField.status">
-                <Badge :variant="statusBadgeVariant.variant"
-                  :class="statusBadgeVariant.class + ' cursor-pointer ring-1 ring-inset mr-2'" @click="updateStatus">
-                  {{ props.workOrder.status }}
-                </Badge>
-              </template>
-              <div v-else class="inline-block">
-                <select v-model="form.status" @blur="saveField('status')" @change="saveField('status')"
-                  class="bg-gray-800 border border-gray-600 rounded-md text-white px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                  <option v-for="status in VALID_STATUSES" :key="status" :value="status">{{ status }}</option>
-                </select>
+        <!-- Content Area -->
+        <div class="flex-1 overflow-hidden">
+          <!-- Details Tab -->
+          <div v-show="activeTab === 'details'" class="h-full p-6 overflow-y-auto">
+            <!-- Work Order Status and Time -->
+            <div class="mb-6 flex flex-wrap justify-between items-center">
+              <div class="flex items-center gap-3">
+                <template v-if="!editingField.status">
+                  <Badge :variant="statusBadgeVariant.variant"
+                    :class="statusBadgeVariant.class + ' cursor-pointer ring-1 ring-inset'" @click="updateStatus">
+                    {{ props.workOrder.status }}
+                  </Badge>
+                </template>
+                <div v-else class="inline-block">
+                  <select v-model="form.status" @blur="saveField('status')" @change="saveField('status')"
+                    class="bg-white/10 border border-white/20 rounded-xl text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-400/50">
+                    <option v-for="status in VALID_STATUSES" :key="status" :value="status">{{ status }}</option>
+                  </select>
+                </div>
+                <span class="text-xs text-gray-400">ID: #{{ props.workOrder.id }}</span>
+              </div>
+              <div class="text-gray-300 text-sm">
+                Created: {{ formatDate(props.workOrder.created_at) }}
               </div>
             </div>
-            <div class="text-gray-300 text-sm">
-              Created: {{ formatDate(props.workOrder.created_at) }}
+
+            <!-- Work Order Details Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="space-y-6">
+                <!-- Scheduled Date -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                  <label class="block text-sm font-medium text-gray-300 mb-3">Scheduled Date</label>
+                  <div v-if="!editingField.date_time">
+                    <Button variant="outline" class="w-full justify-start text-left font-normal bg-white/10 border-white/20 text-white hover:bg-white/20"
+                      @click="startEditing('date_time')">
+                      <CalendarIcon class="mr-2 h-4 w-4 text-lime-400" />
+                      <span v-if="calendarValue">
+                        {{ calendarDateFormatter.format(calendarValue.toDate(getLocalTimeZone())) }}
+                      </span>
+                      <span v-else class="text-gray-400">Pick a date</span>
+                    </Button>
+                  </div>
+                  <div v-else>
+                    <Popover open>
+                      <PopoverTrigger as-child>
+                        <Button variant="outline" class="w-full justify-start text-left font-normal bg-white/10 border-white/20 text-white">
+                          <CalendarIcon class="mr-2 h-4 w-4 text-lime-400" />
+                          <span v-if="calendarValue">
+                            {{ calendarDateFormatter.format(calendarValue.toDate(getLocalTimeZone())) }}
+                          </span>
+                          <span v-else class="text-gray-400">Pick a date</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent class="w-auto p-0">
+                        <RangeCalendar v-model="calendarValue" :number-of-months="2" :initial-focus="true"
+                          @update:start-value="handleCalendarSelect" />
+                        <div class="flex justify-end mt-2 p-2">
+                          <Button size="sm" variant="ghost" @click="editingField.date_time = false">Cancel</Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                <!-- Description -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                  <label class="block text-sm font-medium text-gray-300 mb-3">Description</label>
+                  <div v-if="!editingField.description" @click="startEditing('description')" 
+                    class="text-white cursor-pointer hover:text-lime-400 transition-colors min-h-[3rem] flex items-center">
+                    {{ form.description || 'Click to add description...' }}
+                  </div>
+                  <div v-else>
+                    <textarea v-model="form.description" @blur="saveField('description')"
+                      class="block w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50 resize-none"
+                      rows="4" placeholder="Enter work order description..."></textarea>
+                  </div>
+                </div>
+
+                <!-- Address -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                  <label class="block text-sm font-medium text-gray-300 mb-3">Address</label>
+                  <div v-if="!editingField.address" @click="startEditing('address')" 
+                    class="text-white cursor-pointer hover:text-lime-400 transition-colors min-h-[2rem] flex items-center">
+                    {{ form.address || 'Click to add address...' }}
+                  </div>
+                  <div v-else>
+                    <input type="text" v-model="form.address" @blur="saveField('address')"
+                      class="block w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50"
+                      placeholder="Enter work order address..." />
+                  </div>
+                  <!-- Mapbox Static Map Preview -->
+                  <div v-if="mapboxImageUrl" class="mt-4">
+                    <a :href="mapboxMapsLink" target="_blank" rel="noopener" title="Open in Map App">
+                      <img :src="mapboxImageUrl" alt="Map snapshot"
+                        class="w-full rounded-lg shadow-md border border-white/10 hover:opacity-90 transition-opacity cursor-pointer max-h-32 object-cover" />
+                    </a>
+                    <div v-if="mapboxLoading" class="text-xs text-gray-400 mt-1">Loading map...</div>
+                    <div v-if="mapboxError" class="text-xs text-red-400 mt-1">{{ mapboxError }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <!-- Hours -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                  <label class="block text-sm font-medium text-gray-300 mb-3">Hours</label>
+                  <div v-if="!editingField.hours" @click="startEditing('hours')" 
+                    class="text-white cursor-pointer hover:text-lime-400 transition-colors min-h-[2rem] flex items-center">
+                    {{ form.hours || 'Click to set hours...' }}
+                  </div>
+                  <div v-else>
+                    <input type="number" v-model="form.hours" @blur="saveField('hours')"
+                      class="block w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50"
+                      placeholder="Hours required..." />
+                  </div>
+                </div>
+
+                <!-- Assigned User -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                  <label class="block text-sm font-medium text-gray-300 mb-3">Assigned To</label>
+                  <div v-if="!editingField.user_id" @click="startEditing('user_id')" 
+                    class="text-white cursor-pointer hover:text-lime-400 transition-colors min-h-[2rem] flex items-center">
+                    {{ getUserName(form.user_id) || 'Click to assign technician...' }}
+                  </div>
+                  <div v-else>
+                    <select v-model="form.user_id" @blur="saveField('user_id')" @change="saveField('user_id')"
+                      class="block w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50">
+                      <option value="">Unassigned</option>
+                      <option v-for="user in props.users" :key="user.id" :value="user.id">{{ user.name }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+                  <label class="block text-sm font-medium text-gray-300 mb-3">Priority</label>
+                  <div v-if="!editingField.priority" @click="startEditing('priority')" 
+                    class="text-white cursor-pointer hover:text-lime-400 transition-colors min-h-[2rem] flex items-center">
+                    {{ form.priority || 'Normal' }}
+                  </div>
+                  <div v-else>
+                    <select v-model="form.priority" @blur="saveField('priority')" @change="saveField('priority')"
+                      class="block w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-lime-400/50">
+                      <option value="Low">Low</option>
+                      <option value="Normal">Normal</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add a quick actions section -->
+            <div class="mt-8 flex flex-wrap gap-3">
+              <button @click="activeTab = 'timeline'" class="px-4 py-2 bg-cyan-400/20 hover:bg-cyan-400/30 border border-cyan-400/30 hover:border-cyan-400/50 text-cyan-400 rounded-xl transition-all">
+                View Timeline
+              </button>
+              <button @click="activeTab = 'notes'" class="px-4 py-2 bg-purple-400/20 hover:bg-purple-400/30 border border-purple-400/30 hover:border-purple-400/50 text-purple-400 rounded-xl transition-all">
+                Add Note
+              </button>
+              <button @click="toggleMessengerModal"
+                class="px-4 py-2 bg-green-400/20 hover:bg-green-400/30 border border-green-400/30 hover:border-green-400/50 text-green-400 rounded-xl transition-all">
+                Send Message
+              </button>
             </div>
           </div>
 
-          <!-- Work Order Details -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div class="space-y-4">
-              <!-- Scheduled Date (Calendar Picker) -->
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Scheduled Date</label>
-                <div v-if="!editingField.date_time">
-                  <Button variant="outline" class="w-full justify-start text-left font-normal"
-                    @click="startEditing('date_time')">
-                    <CalendarIcon class="mr-2 h-5 w-5 text-indigo-400" />
-                    <span v-if="calendarValue">
-                      {{ calendarDateFormatter.format(calendarValue.toDate(getLocalTimeZone())) }}
-                    </span>
-                    <span v-else class="text-gray-400">Pick a date</span>
-                  </Button>
-                </div>
-                <div v-else>
-                  <Popover open>
-                    <PopoverTrigger as-child>
-                      <Button variant="outline" class="w-full justify-start text-left font-normal">
-                        <CalendarIcon class="mr-2 h-5 w-5 text-indigo-400" />
-                        <span v-if="calendarValue">
-                          {{ calendarDateFormatter.format(calendarValue.toDate(getLocalTimeZone())) }}
-                        </span>
-                        <span v-else class="text-gray-400">Pick a date</span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent class="w-auto p-0">
-                      <RangeCalendar v-model="calendarValue" :number-of-months="2" :initial-focus="true"
-                        @update:start-value="handleCalendarSelect" />
-                      <div class="flex justify-end mt-2">
-                        <Button size="sm" variant="ghost" @click="editingField.date_time = false">Cancel</Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              <!-- Description -->
-              <div>
-                <label class="block text-sm font-medium text-gray-300">Description</label>
-                <div v-if="!editingField.description" @click="startEditing('description')" class="text-gray-100">
-                  {{ form.description }}
-                </div>
-                <div v-else class="mt-1">
-                  <textarea v-model="form.description" @blur="saveField('description')"
-                    class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    rows="3"></textarea>
-                </div>
-              </div>
-
-              <!-- Address -->
-              <div>
-                <label class="block text-sm font-medium text-gray-300">Address</label>
-                <div v-if="!editingField.address" @click="startEditing('address')" class="text-gray-100">
-                  {{ form.address }}
-                </div>
-                <div v-else class="mt-1">
-                  <input type="text" v-model="form.address" @blur="saveField('address')"
-                    class="block w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                </div>
-                <!-- Mapbox Static Map Preview -->
-                <div v-if="mapboxImageUrl" class="mt-2">
-                  <a :href="mapboxMapsLink" target="_blank" rel="noopener" title="Open in Map App">
-                    <img :src="mapboxImageUrl" alt="Map snapshot"
-                      class="rounded-lg shadow-md border border-gray-700 hover:opacity-90 transition-opacity cursor-pointer"
-                      style="width: 100%; max-width: 600px; min-height: 120px; background: #222;" />
-                  </a>
-                  <div v-if="mapboxLoading" class="text-xs text-gray-400 mt-1">Loading map...</div>
-                  <div v-if="mapboxError" class="text-xs text-red-400 mt-1">{{ mapboxError }}</div>
-                </div>
+          <!-- Timeline Tab -->
+          <div v-show="activeTab === 'timeline'" class="h-full p-6 overflow-y-auto">
+            <div class="mb-6">
+              <h3 class="text-xl font-semibold text-white mb-2">Work Order Timeline</h3>
+              <p class="text-gray-400">Track all activities and changes for this work order</p>
+            </div>
+            <!-- Timeline content will go here - copying from existing timeline modal -->
+            <div class="timeline-content">
+              <!-- Timeline entries would be rendered here -->
+              <div class="text-center text-gray-400 py-8">
+                <svg class="h-12 w-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Timeline functionality will be integrated here
               </div>
             </div>
+          </div>
 
-            <div class="space-y-4">
-              <!-- Hours -->
-              <div>
-                <label class="block text-sm font-medium text-gray-300">Hours</label>
-                <div v-if="!editingField.hours" @click="startEditing('hours')" class="text-gray-100">
-                  {{ form.hours }}
+          <!-- Notes Tab -->
+          <div v-show="activeTab === 'notes'" class="h-full p-6 overflow-y-auto">
+            <div class="mb-6">
+              <h3 class="text-xl font-semibold text-white mb-2">Notes & Messages</h3>
+              <p class="text-gray-400">Add notes and send messages related to this work order</p>
+            </div>
+            <!-- Notes and messenger content will go here -->
+            <div class="notes-content">
+              <div class="text-center text-gray-400 py-8">
+                <svg class="h-12 w-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                Notes and messaging functionality will be integrated here
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
                 </div>
                 <div v-else class="mt-1">
                   <input type="number" v-model="form.hours" @blur="saveField('hours')"

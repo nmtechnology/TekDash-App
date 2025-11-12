@@ -4,7 +4,7 @@ import format from 'date-fns/format';
 import { usePage, router } from '@inertiajs/vue3';
 import AddWorkOrder from '@/Pages/WorkOrders/AddWorkOrder.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import WorkOrder from './WorkOrder.vue';
+import WorkOrderConsolidated from './WorkOrderConsolidated.vue';
 import axios from 'axios';
 import CurrentTime from '@/Components/CurrentTime.vue';
 import TeamDropdown from '@/Components/TeamDropdown.vue';
@@ -483,7 +483,7 @@ function showWorkOrderCreatedToast(workOrder) {
       </div>
 
       <!-- Fixed Header -->
-      <div class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-gray-900/90 border-b border-white/10">
+      <div class="fixed top-14 left-0 right-0 lg:left-64 z-40 backdrop-blur-xl bg-gray-900/90 border-b border-white/10">
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -510,8 +510,8 @@ function showWorkOrderCreatedToast(workOrder) {
       </div>
 
       <!-- Content Area -->
-      <div class="relative z-10 pt-24 px-4 sm:px-6 lg:px-8 pb-8">
-        <div class="max-w-7xl mx-auto">
+      <div class="relative z-10 pt-32 lg:pt-36 px-4 sm:px-6 lg:px-8 pb-8">
+        <div class="max-w-7xl mx-auto lg:ml-0">
           <!-- Search and Filters Section -->
           <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-white/10 shadow-2xl mb-6">
             <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4">
@@ -759,7 +759,7 @@ function showWorkOrderCreatedToast(workOrder) {
     </div>
 
     <!-- Modals -->
-    <WorkOrder 
+    <WorkOrderConsolidated 
       v-if="selectedWorkOrder" 
       :workOrder="selectedWorkOrder" 
       :showModal="showWorkOrderModal" 

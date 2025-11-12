@@ -123,55 +123,6 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
 
-// Define reactive state
-const statsData = ref([]);
-const isLoading = ref(true);
-const filteredData = ref([]);
-
-// Fetch stats from the backend
-async function fetchStats() {
-  try {
-    isLoading.value = true;
-    const response = await axios.get('/work-order-stats');
-    
-    // Check that the data is valid
-    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-      statsData.value = response.data;
-      filteredData.value = response.data;
-      console.log('Stats data loaded successfully:', response.data);
-    } else {
-      console.error('Stats data format is incorrect:', response.data);
-      // Use fallback data
-      const fallback = getFallbackStats();
-      statsData.value = fallback;
-      filteredData.value = fallback;
-    }
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    // Provide fallback data if there's an error
-    const fallback = getFallbackStats();
-    statsData.value = fallback;
-    filteredData.value = fallback;
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Function to provide fallback stats data
-function getFallbackStats() {
-  return [
-    { name: 'Total Revenue', value: '$0.00', change: '0%', changeType: 'neutral' },
-    { name: 'Completed Orders', value: '0', change: '0%', changeType: 'neutral' },
-    { name: 'Pending Orders', value: '0', change: '0%', changeType: 'neutral' },
-    { name: 'Average Price', value: '$0.00', change: '0%', changeType: 'neutral' },
-  ];
-}
-
-// Load stats when component mounts
-onMounted(() => {
-  fetchStats();
-});
-
 // User role-based actions
 const user = usePage().props.auth.user;
 
@@ -181,6 +132,29 @@ const canUpdateWorkOrders = computed(() => user.isAdmin || user.isTech);
 // Add navigation methods
 const navigateToWorkOrders = () => {
     router.visit(route('work-orders.index'))
+}
+
+const navigateToInvoices = () => {
+    router.visit(route('invoices.index'))
+}
+
+const navigateToSchedule = () => {
+    router.visit(route('schedule.index'))
+}
+
+const navigateToReports = () => {
+    router.visit(route('reports.index'))
+}
+
+const focusSearch = () => {
+    // Focus the search input if it exists
+    const searchInput = document.querySelector('input[type="search"]');
+    if (searchInput) {
+        searchInput.focus();
+    } else {
+        // Show the search results area if no input field found
+        showSearchResults.value = true;
+    }
 }
 
 // Update button click handlers
@@ -228,6 +202,56 @@ watch(() => addWorkOrderRef.value?.showModal, (newValue) => {
               <AddWorkOrder ref="addWorkOrderRef" />
               <AddCustomerButton />
               <AddTechnicianButton />
+              
+              <!-- All Work Orders Button -->
+              <button @click="navigateToWorkOrders"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-400/20 hover:bg-cyan-400/30 border border-cyan-400/30 hover:border-cyan-400/50 text-cyan-400 hover:text-cyan-300 font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-cyan-400/25">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <span class="hidden sm:inline">All Work Orders</span>
+                <span class="sm:hidden">WO List</span>
+              </button>
+              
+              <!-- Invoice Management Button -->
+              <button @click="navigateToInvoices"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-400/20 hover:bg-green-400/30 border border-green-400/30 hover:border-green-400/50 text-green-400 hover:text-green-300 font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span class="hidden sm:inline">Invoices</span>
+                <span class="sm:hidden">Bills</span>
+              </button>
+              
+              <!-- Calendar/Schedule Button -->
+              <button @click="navigateToSchedule"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-400/20 hover:bg-purple-400/30 border border-purple-400/30 hover:border-purple-400/50 text-purple-400 hover:text-purple-300 font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-purple-400/25">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="hidden sm:inline">Schedule</span>
+                <span class="sm:hidden">Cal</span>
+              </button>
+              
+              <!-- Quick Search Button -->
+              <button @click="focusSearch"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/30 hover:border-amber-400/50 text-amber-400 hover:text-amber-300 font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-amber-400/25">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span class="hidden sm:inline">Search</span>
+                <span class="sm:hidden">Find</span>
+              </button>
+              
+              <!-- Reports/Analytics Button -->
+              <button @click="navigateToReports"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-400/20 hover:bg-indigo-400/30 border border-indigo-400/30 hover:border-indigo-400/50 text-indigo-400 hover:text-indigo-300 font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-indigo-400/25">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span class="hidden sm:inline">Reports</span>
+                <span class="sm:hidden">Stats</span>
+              </button>
             </div>
           </div>
         </div>
@@ -243,62 +267,68 @@ watch(() => addWorkOrderRef.value?.showModal, (newValue) => {
         <div class="absolute bottom-20 left-1/3 w-72 h-72 bg-purple-400/8 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div class="relative z-10 py-6 sm:py-12 mt-[80px] sm:mt-[100px]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <!-- Modern Glass Cards Layout -->
-          <div class="grid gap-6 lg:gap-8">
+      <div class="relative z-10 py-4 sm:py-6 mt-[80px] sm:mt-[100px]">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <!-- Compact All-in-One Dashboard Layout -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             
-            <!-- Stats Section -->
-            <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-              <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent">
-                  Revenue Dashboard
-                </h3>
-                <p class="text-gray-300 mt-2">Real-time business metrics and insights</p>
+            <!-- Left Column: Welcome + Revenue Stats -->
+            <div class="lg:col-span-2 space-y-4">
+              <!-- Compact Welcome Section -->
+              <div class="bg-white/5 backdrop-blur-xl rounded-xl overflow-hidden border border-white/10 shadow-2xl">
+                <div class="relative">
+                  <div class="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-gray-800/60 to-black/80"></div>
+                  <div class="relative z-10 p-4">
+                    <Welcome />
+                  </div>
+                </div>
               </div>
-              
-              <!-- Loading state -->
-              <div v-if="isLoading" class="flex justify-center items-center py-12">
-                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400"></div>
-              </div>
-              
-              <!-- Stats component -->
-              <div v-else class="flex justify-center">
-                <RevenueStats />
-              </div>
-            </div>
 
-            <!-- Welcome Section -->
-            <div class="bg-white/5 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-              <div class="relative">
-                <!-- Background image with overlay -->
-                <div class="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-gray-800/60 to-black/80"></div>
-                <div class="relative z-10 p-6">
-                  <Welcome />
+              <!-- Compact Stats Section -->
+              <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10 shadow-2xl">
+                <div class="text-center mb-3">
+                  <h3 class="text-lg font-bold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent">
+                    Revenue Dashboard
+                  </h3>
+                  <p class="text-gray-300 text-sm">Real-time business metrics</p>
+                </div>
+                
+                <!-- Stats component - let it handle its own loading -->
+                <div class="flex justify-center">
+                  <RevenueStats />
                 </div>
               </div>
             </div>
 
-            <!-- Action Buttons Section -->
-            <div class="grid md:grid-cols-2 gap-6">
+            <!-- Right Column: Action Controls -->
+            <div class="space-y-4">
+              
+              <!-- Search Component -->
+              <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10 shadow-2xl">
+                <div class="text-center mb-3">
+                  <h4 class="text-lg font-semibold text-white">Quick Search</h4>
+                  <p class="text-gray-300 text-sm">Find work orders instantly</p>
+                </div>
+                <Search />
+              </div>
               
               <!-- Admin Actions -->
-              <div v-if="$page.props.auth.user.isAdmin" class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-                <div class="text-center mb-4">
-                  <h4 class="text-xl font-semibold text-white">Admin Controls</h4>
-                  <p class="text-gray-300 text-sm mt-1">Manage work orders and system</p>
+              <div v-if="$page.props.auth.user.isAdmin" class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10 shadow-2xl">
+                <div class="text-center mb-3">
+                  <h4 class="text-lg font-semibold text-white">Admin Controls</h4>
+                  <p class="text-gray-300 text-sm">Manage work orders</p>
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-2">
                   <button @click="createWorkOrder" 
-                    class="w-full bg-gradient-to-r from-lime-400 to-lime-500 hover:from-lime-500 hover:to-lime-600 text-black font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg">
-                    <svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="w-full bg-gradient-to-r from-lime-400 to-lime-500 hover:from-lime-500 hover:to-lime-600 text-black font-semibold py-2.5 px-3 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg text-sm">
+                    <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                     </svg>
                     Create Work Order
                   </button>
                   <button @click="navigateToWorkOrders" 
-                    class="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-4 rounded-lg border border-white/20 hover:border-white/30 transition-all duration-200">
-                    <svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-2.5 px-3 rounded-lg border border-white/20 hover:border-white/30 transition-all duration-200 text-sm">
+                    <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
                     View All Orders
@@ -306,35 +336,97 @@ watch(() => addWorkOrderRef.value?.showModal, (newValue) => {
                 </div>
               </div>
 
-              <!-- Technician Actions -->
-              <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-                <div class="text-center mb-4">
-                  <h4 class="text-xl font-semibold text-white">Quick Actions</h4>
-                  <p class="text-gray-300 text-sm mt-1">Essential tools and functions</p>
+              <!-- Quick Actions -->
+              <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10 shadow-2xl">
+                <div class="text-center mb-3">
+                  <h4 class="text-lg font-semibold text-white">Quick Actions</h4>
+                  <p class="text-gray-300 text-sm">Essential tools</p>
                 </div>
-                <div class="grid grid-cols-1 gap-3">
+                <div class="grid grid-cols-1 gap-2">
                   <button @click="updateStatus" 
-                    class="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 hover:border-purple-400/50 text-purple-200 font-medium py-2.5 px-4 rounded-lg transition-all duration-200">
+                    class="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 hover:border-purple-400/50 text-purple-200 font-medium py-2 px-3 rounded-lg transition-all duration-200 text-sm">
                     <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     Update Status
                   </button>
                   <button @click="uploadImage" 
-                    class="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-200 font-medium py-2.5 px-4 rounded-lg transition-all duration-200">
+                    class="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 hover:border-blue-400/50 text-blue-200 font-medium py-2 px-3 rounded-lg transition-all duration-200 text-sm">
                     <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
                     Upload Image
                   </button>
                   <button @click="getSignature" 
-                    class="bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 hover:border-orange-400/50 text-orange-200 font-medium py-2.5 px-4 rounded-lg transition-all duration-200">
+                    class="bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 hover:border-orange-400/50 text-orange-200 font-medium py-2 px-3 rounded-lg transition-all duration-200 text-sm">
                     <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                     </svg>
                     Get Signature
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Navigation Quick Access -->
+          <div class="mt-4 lg:mt-6">
+            <div class="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/10 shadow-2xl">
+              <div class="text-center mb-3">
+                <h4 class="text-lg font-semibold bg-gradient-to-r from-lime-400 to-cyan-400 bg-clip-text text-transparent">
+                  Quick Navigation
+                </h4>
+                <p class="text-gray-300 text-sm">Access key areas of the system</p>
+              </div>
+              
+              <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <button @click="navigateToWorkOrders"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/20 hover:border-cyan-400/40 text-cyan-400 hover:text-cyan-300 transition-all duration-200 hover:scale-105">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                  <span class="text-xs font-medium">Work Orders</span>
+                </button>
+                
+                <button @click="navigateToInvoices"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg bg-green-400/10 hover:bg-green-400/20 border border-green-400/20 hover:border-green-400/40 text-green-400 hover:text-green-300 transition-all duration-200 hover:scale-105">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                  <span class="text-xs font-medium">Invoices</span>
+                </button>
+                
+                <button @click="navigateToSchedule"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg bg-purple-400/10 hover:bg-purple-400/20 border border-purple-400/20 hover:border-purple-400/40 text-purple-400 hover:text-purple-300 transition-all duration-200 hover:scale-105">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <span class="text-xs font-medium">Schedule</span>
+                </button>
+                
+                <button @click="focusSearch"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 hover:border-amber-400/40 text-amber-400 hover:text-amber-300 transition-all duration-200 hover:scale-105">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  <span class="text-xs font-medium">Search</span>
+                </button>
+                
+                <button @click="navigateToReports"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg bg-indigo-400/10 hover:bg-indigo-400/20 border border-indigo-400/20 hover:border-indigo-400/40 text-indigo-400 hover:text-indigo-300 transition-all duration-200 hover:scale-105">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                  <span class="text-xs font-medium">Reports</span>
+                </button>
+                
+                <button @click="openArchivedModal"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg bg-gray-400/10 hover:bg-gray-400/20 border border-gray-400/20 hover:border-gray-400/40 text-gray-400 hover:text-gray-300 transition-all duration-200 hover:scale-105">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6 6-6"/>
+                  </svg>
+                  <span class="text-xs font-medium">Archive</span>
+                </button>
               </div>
             </div>
           </div>
@@ -577,7 +669,7 @@ button:hover {
     }
 }
 
-/* Enhanced glass card styling */
+/* Enhanced glass card styling for compact layout */
 .bg-white\/5 {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
@@ -590,4 +682,85 @@ button:hover {
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
     transition: all 0.3s ease;
+}
+
+/* Compact layout responsive adjustments */
+@media (max-width: 1024px) {
+    .grid.lg\:grid-cols-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .lg\:col-span-2 {
+        grid-column: span 1;
+    }
+}
+
+/* Enhanced mobile responsiveness for compact dashboard */
+@media (max-width: 768px) {
+    .grid.md\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .grid.lg\:grid-cols-6 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .grid.grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .p-4 {
+        padding: 0.75rem;
+    }
+    
+    .p-3 {
+        padding: 0.5rem;
+    }
+    
+    .gap-3 {
+        gap: 0.5rem;
+    }
+    
+    .space-y-4 > * + * {
+        margin-top: 0.75rem;
+    }
+    
+    /* Adjust font sizes for mobile */
+    .text-lg {
+        font-size: 1rem;
+    }
+    
+    .text-sm {
+        font-size: 0.75rem;
+    }
+    
+    .text-xs {
+        font-size: 0.625rem;
+    }
+}
+
+/* Quick navigation card specific styling */
+.grid.grid-cols-2.md\:grid-cols-4.lg\:grid-cols-6 button {
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .grid.grid-cols-2.md\:grid-cols-4.lg\:grid-cols-6 button {
+        min-height: 50px;
+    }
+}
+
+/* Ensure compact action buttons are touch-friendly */
+@media (pointer: coarse) {
+    .space-y-2 button {
+        min-height: 40px;
+        padding: 0.625rem 0.75rem;
+    }
 }</style>

@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
-import WorkOrder from '@/Pages/WorkOrders/WorkOrder.vue';
+import WorkOrderConsolidated from '@/Pages/WorkOrders/WorkOrderConsolidated.vue';
 
 defineProps({
     canLogin: {
@@ -388,9 +388,9 @@ html {
 
         <!-- Work Order Modal -->
         <div v-if="selectedWorkOrder">
-            <WorkOrder
-                :work-order="selectedWorkOrder"
-                :show-modal="showWorkOrderModal"
+            <WorkOrderConsolidated
+                :workOrder="selectedWorkOrder"
+                :showModal="showWorkOrderModal"
                 :users="$page.props.users || []"
                 @close="closeWorkOrderModal"
             />

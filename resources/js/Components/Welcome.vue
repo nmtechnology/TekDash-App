@@ -6,7 +6,7 @@
             </h1>
             <p class="mt-6 mb-10 text-lime-400 leading-relaxed">
                <Calendar @workOrderSelected="openWorkOrderModal" />
-               <WorkOrder 
+               <WorkOrderConsolidated 
       v-if="selectedWorkOrder" 
       :workOrder="selectedWorkOrder" 
       :showModal="showWorkOrderModal"
@@ -28,7 +28,7 @@ import GroqQuery from '@/Pages/GroqQuery.vue';
 import Calendar from './Calendar.vue';
 import CurrentTime from '@/Components/CurrentTime.vue';
 import { usePage } from '@inertiajs/vue3';
-import WorkOrder from '@/Pages/WorkOrders/WorkOrder.vue';
+import WorkOrderConsolidated from '@/Pages/WorkOrders/WorkOrderConsolidated.vue';
 import axios from 'axios';
 
 // State for the work order modal

@@ -319,67 +319,162 @@
 
               <!-- Step 4: Date & Time -->
               <div v-show="currentStep === 4" class="space-y-6">
-                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
-                  <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-400/20 border border-emerald-400/30 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <!-- Enhanced Glass Morphism Calendar Container -->
+                <div class="relative bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 overflow-hidden">
+                  <!-- Gradient Overlay -->
+                  <div class="absolute inset-0 bg-gradient-to-br from-emerald-400/5 via-transparent to-teal-400/5 pointer-events-none"></div>
+                  
+                  <!-- Header with Glass Effect -->
+                  <div class="relative flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-400/20 backdrop-blur-lg border border-emerald-400/30 flex items-center justify-center shadow-lg shadow-emerald-400/25">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div>
-                      <h4 class="text-lg font-semibold text-white">Schedule Date & Time</h4>
+                      <h4 class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                        Schedule Date & Time
+                      </h4>
                       <p class="text-gray-400 text-sm">Select when this work will be performed</p>
                     </div>
                   </div>
                   
-                  <!-- Quick Select Buttons -->
-                  <div class="flex flex-wrap gap-2 mb-6">
-                    <button type="button" @click="quickSelectDate('today')"
-                            class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 hover:border-emerald-400/50 text-emerald-400 rounded-lg transition-all">
-                      Today
-                    </button>
-                    <button type="button" @click="quickSelectDate('tomorrow')"
-                            class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 hover:border-emerald-400/50 text-emerald-400 rounded-lg transition-all">
-                      Tomorrow
-                    </button>
-                    <button type="button" @click="quickSelectDate('nextWeek')"
-                            class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 hover:border-emerald-400/50 text-emerald-400 rounded-lg transition-all">
-                      Next Week
+                  <!-- Enhanced Quick Select Buttons with Glass Morphism -->
+                  <div class="flex flex-wrap gap-3 mb-8">
+                    <button 
+                      v-for="quickOption in [
+                        { key: 'today', label: 'Today', icon: 'M12 3v18m9-9H3' },
+                        { key: 'tomorrow', label: 'Tomorrow', icon: 'M13 7l5 5-5 5M6 12h12' },
+                        { key: 'nextWeek', label: 'Next Week', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' }
+                      ]"
+                      :key="quickOption.key"
+                      type="button" 
+                      @click="quickSelectDate(quickOption.key)"
+                      class="group relative px-6 py-3 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl text-emerald-400 hover:bg-emerald-400/20 hover:border-emerald-400/40 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/25">
+                      <!-- Button Content -->
+                      <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="quickOption.icon" />
+                        </svg>
+                        {{ quickOption.label }}
+                      </div>
+                      <!-- Glass reflection effect -->
+                      <div class="absolute inset-0 rounded-xl bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                     </button>
                   </div>
                   
-                  <!-- Glass Morphism Date/Time Inputs -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Date Input -->
-                    <div>
-                      <label class="block text-emerald-400 text-sm font-semibold mb-2">Select Date</label>
-                      <input
-                        v-model="selectedDateString"
-                        type="date"
-                        :min="todayString"
-                        class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/25 transition-all [color-scheme:dark]"
-                        required
-                      />
+                  <!-- Enhanced Glass Morphism Date/Time Inputs -->
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Enhanced Date Input with Glass Container -->
+                    <div class="relative">
+                      <label class="flex items-center gap-2 text-emerald-400 text-sm font-bold mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Select Date
+                      </label>
+                      <div class="relative group">
+                        <input
+                          v-model="selectedDateString"
+                          type="date"
+                          :min="todayString"
+                          class="glass-date-input w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/30 focus:bg-white/15 transition-all duration-300 [color-scheme:dark] hover:bg-white/15 hover:border-emerald-400/40"
+                          required
+                        />
+                        <!-- Focus Glow Effect -->
+                        <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-emerald-400/20 blur-sm opacity-0 group-focus-within:opacity-100 transition-all duration-500 pointer-events-none -z-10"></div>
+                        <!-- Glass reflection -->
+                        <div class="absolute top-2 left-2 right-2 h-8 bg-gradient-to-br from-white/20 via-white/5 to-transparent rounded-lg opacity-60 pointer-events-none"></div>
+                      </div>
                     </div>
                     
-                    <!-- Time Input -->
-                    <div>
-                      <label class="block text-emerald-400 text-sm font-semibold mb-2">Select Time</label>
-                      <input
-                        v-model="selectedTimeString"
-                        type="time"
-                        class="w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/25 transition-all [color-scheme:dark]"
-                        required
-                      />
+                    <!-- Enhanced Time Input with Glass Container -->
+                    <div class="relative">
+                      <label class="flex items-center gap-2 text-emerald-400 text-sm font-bold mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Select Time
+                      </label>
+                      <div class="relative group">
+                        <input
+                          v-model="selectedTimeString"
+                          type="time"
+                          class="glass-time-input w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/30 focus:bg-white/15 transition-all duration-300 [color-scheme:dark] hover:bg-white/15 hover:border-emerald-400/40"
+                          required
+                        />
+                        <!-- Focus Glow Effect -->
+                        <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-emerald-400/20 blur-sm opacity-0 group-focus-within:opacity-100 transition-all duration-500 pointer-events-none -z-10"></div>
+                        <!-- Glass reflection -->
+                        <div class="absolute top-2 left-2 right-2 h-8 bg-gradient-to-br from-white/20 via-white/5 to-transparent rounded-lg opacity-60 pointer-events-none"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Common Time Presets with Glass Morphism -->
+                  <div class="mt-6">
+                    <label class="flex items-center gap-2 text-emerald-400 text-sm font-bold mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Quick Time Selection
+                    </label>
+                    <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+                      <button 
+                        v-for="timePreset in ['08:00', '09:00', '10:00', '13:00', '14:00', '15:00']"
+                        :key="timePreset"
+                        type="button"
+                        @click="selectedTimeString = timePreset"
+                        :class="[
+                          'group relative px-3 py-2 rounded-lg backdrop-blur-lg border transition-all duration-300 hover:scale-105 text-sm font-semibold',
+                          selectedTimeString === timePreset
+                            ? 'bg-emerald-400/30 border-emerald-400/60 text-emerald-300 shadow-lg shadow-emerald-400/25'
+                            : 'bg-white/10 border-white/20 text-gray-300 hover:bg-white/20 hover:border-emerald-400/30 hover:text-emerald-400'
+                        ]">
+                        {{ timePreset }}
+                        <!-- Glass reflection effect -->
+                        <div class="absolute inset-0 rounded-lg bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                <!-- Selected DateTime Preview -->
-                <div class="bg-gradient-to-r from-emerald-400/10 to-teal-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <h5 class="text-lg font-semibold text-white mb-4">Scheduled For</h5>
-                  <div class="text-center p-6 rounded-xl bg-white/5">
-                    <p class="text-emerald-400 font-bold text-2xl">{{ formattedDateTime }}</p>
+                <!-- Enhanced DateTime Preview with Glass Morphism -->
+                <div class="relative bg-gradient-to-br from-emerald-400/10 via-white/5 to-teal-400/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 overflow-hidden">
+                  <!-- Animated Background Elements -->
+                  <div class="absolute top-4 right-4 w-16 h-16 bg-emerald-400/10 rounded-full blur-xl animate-pulse"></div>
+                  <div class="absolute bottom-4 left-4 w-12 h-12 bg-teal-400/10 rounded-full blur-lg animate-pulse animation-delay-1000"></div>
+                  
+                  <div class="relative">
+                    <h5 class="flex items-center gap-2 text-lg font-bold text-white mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Scheduled For
+                    </h5>
+                    <div class="relative p-6 rounded-xl bg-white/10 backdrop-blur-lg border border-white/20 text-center overflow-hidden">
+                      <!-- Content gradient background -->
+                      <div class="absolute inset-0 bg-gradient-to-br from-emerald-400/5 via-transparent to-teal-400/5"></div>
+                      <div class="relative">
+                        <p class="text-emerald-400 font-bold text-3xl mb-2 tracking-wide">{{ formattedDateTime || 'Select date and time' }}</p>
+                        <div v-if="formattedDateTime" class="flex items-center justify-center gap-4 text-sm text-gray-300">
+                          <span class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {{ selectedDateString }}
+                          </span>
+                          <span class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {{ selectedTimeString }}
+                          </span>
+                        </div>
+                      </div>
+                      <!-- Glass shine effect -->
+                      <div class="absolute top-2 left-2 right-2 h-6 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-lg opacity-60 pointer-events-none"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1390,6 +1485,16 @@ const checkExistingWorkOrder = async () => {
     checkingWorkOrder.value = false;
     return;
   }
+  
+  // Temporarily disable API checking until backend route is implemented
+  console.log('Work order number check disabled - assuming number is available:', number);
+  checkingWorkOrder.value = false;
+  duplicateWorkOrderFound.value = false;
+  workOrderVerified.value = true;
+  return;
+  
+  // TODO: Re-enable when backend API route /api/work-orders/check-number is implemented
+  /*
   checkingWorkOrder.value = true;
   duplicateWorkOrderFound.value = false;
   workOrderVerified.value = false;
@@ -1413,6 +1518,7 @@ const checkExistingWorkOrder = async () => {
   } finally {
     checkingWorkOrder.value = false;
   }
+  */
 };
 
 const technicians = ref([]);
@@ -3267,64 +3373,216 @@ const printQRLabel = async () => {
 </script>
 
 <style scoped>
+/* Enhanced Glass Morphism Calendar Styles */
+.glass-date-input, .glass-time-input {
+  position: relative;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-date-input:focus, .glass-time-input:focus {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 8px 32px 0 rgba(16, 185, 129, 0.25),
+    0 0 0 1px rgba(16, 185, 129, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.glass-date-input:hover, .glass-time-input:hover {
+  background: rgba(255, 255, 255, 0.125);
+  box-shadow: 
+    0 8px 32px 0 rgba(31, 38, 135, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Enhanced Calendar Input Styling */
+.glass-date-input::-webkit-calendar-picker-indicator,
+.glass-time-input::-webkit-calendar-picker-indicator {
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%2310b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>') no-repeat center;
+  background-size: 20px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.2));
+}
+
+.glass-time-input::-webkit-calendar-picker-indicator {
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%2310b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>') no-repeat center;
+  background-size: 20px;
+}
+
+.glass-date-input::-webkit-calendar-picker-indicator:hover,
+.glass-time-input::-webkit-calendar-picker-indicator:hover {
+  background-color: rgba(16, 185, 129, 0.1);
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(16, 185, 129, 0.3));
+}
+
+/* Date/Time Input Text Styling */
+.glass-date-input::-webkit-datetime-edit,
+.glass-time-input::-webkit-datetime-edit {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.glass-date-input::-webkit-datetime-edit-fields-wrapper,
+.glass-time-input::-webkit-datetime-edit-fields-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.glass-date-input::-webkit-datetime-edit-year-field,
+.glass-date-input::-webkit-datetime-edit-month-field,
+.glass-date-input::-webkit-datetime-edit-day-field,
+.glass-time-input::-webkit-datetime-edit-hour-field,
+.glass-time-input::-webkit-datetime-edit-minute-field {
+  color: #10b981;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 4px;
+  padding: 2px 4px;
+  transition: all 0.3s ease;
+}
+
+.glass-date-input::-webkit-datetime-edit-text,
+.glass-time-input::-webkit-datetime-edit-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+}
+
+/* Animation classes */
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+/* Glass morphism button enhancements */
+.group:hover .bg-gradient-to-br {
+  opacity: 1;
+}
+
+/* Focus glow animation */
+@keyframes focus-glow {
+  0%, 100% { opacity: 0; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.group:focus-within .absolute.inset-0.rounded-xl.bg-gradient-to-r {
+  animation: focus-glow 2s ease-in-out infinite;
+}
+
+/* Pulse animation for background elements */
+@keyframes pulse-gentle {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+.animate-pulse {
+  animation: pulse-gentle 3s ease-in-out infinite;
+}
+
+/* Enhanced glass reflection effects */
+.group:hover .bg-gradient-to-br {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+}
+
+/* Existing calendar styles */
 .calendar-day-button {
   font-size: 1rem;
   min-height: 40px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .calendar-day-button:hover {
-  background-color: rgba(55, 65, 81, 0.5);
-  /* bg-gray-700/50 */
+  background: rgba(55, 65, 81, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
 }
 
 .calendar-day-selected {
-  border: 2px solid #a3e635;
-  /* border-lime-400 */
-  background-color: rgba(63, 98, 18, 0.4);
-  /* bg-lime-900/40 */
-  color: #bef264;
-  /* text-lime-300 */
+  border: 2px solid #10b981;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 
+    0 4px 16px rgba(16, 185, 129, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .calendar-day-today {
-  border: 1px solid #a3e635;
-  /* border-lime-400 */
-  background-color: rgba(63, 98, 18, 0.3);
-  /* bg-lime-800/30 */
+  border: 1px solid #10b981;
+  background: rgba(16, 185, 129, 0.15);
   color: #fff;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .date-picker-container {
-  background-color: #1f2937;
-  /* bg-gray-800 */
+  background: rgba(31, 41, 55, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 0.75rem;
-  /* rounded-xl */
   padding: 1.5rem;
-  /* p-6 */
-  border: 2px solid rgba(0, 232, 77, 0.962);
-  /* border-lime-400/50 */
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Existing styles... */
-
+/* Enhanced existing styles with glass morphism */
 .btn {
   padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  border-radius: 0.75rem;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
-  background-color: hsl(262, 69%, 44%);
+  background: linear-gradient(135deg, rgba(139, 69, 197, 0.8), rgba(124, 58, 237, 0.8));
   color: white;
+  border-color: rgba(139, 69, 197, 0.3);
 }
 
 .btn-secondary {
-  background-color: #e5e7eb;
-  color: #374151;
+  background: rgba(229, 231, 235, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* Rest of existing styles... */
 .fixed {
   position: fixed;
   top: 0;
@@ -3335,10 +3593,14 @@ const printQRLabel = async () => {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .bg-white {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .p-6 {
@@ -3350,7 +3612,7 @@ const printQRLabel = async () => {
 }
 
 .shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05);
 }
 
 .mb-4 {
@@ -3378,7 +3640,7 @@ const printQRLabel = async () => {
 }
 
 .text-gray-700 {
-  color: #000000;
+  color: #374151;
 }
 
 .mt-1 {
