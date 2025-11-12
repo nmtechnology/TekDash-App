@@ -848,23 +848,6 @@
                         <p class="text-white font-medium">WO-{{ generateWorkOrderId() }}</p>
                         <p class="text-gray-400 text-sm">Scan for mobile access</p>
                       </div>
-                      <div class="flex gap-2 mt-3">
-                        <button type="button" 
-                                @click="generateQRCode"
-                                class="px-4 py-2 bg-indigo-400/20 hover:bg-indigo-400/30 border border-indigo-400/30 hover:border-indigo-400/50 text-indigo-400 rounded-lg transition-all text-sm">
-                          Generate QR
-                        </button>
-                        <button type="button" 
-                                @click="downloadQRCode"
-                                class="px-4 py-2 bg-lime-400/20 hover:bg-lime-400/30 border border-lime-400/30 hover:border-lime-400/50 text-lime-400 rounded-lg transition-all text-sm">
-                          Download QR
-                        </button>
-                        <button type="button" 
-                                @click="printQRCode"
-                                class="px-4 py-2 bg-cyan-400/20 hover:bg-cyan-400/30 border border-cyan-400/30 hover:border-cyan-400/50 text-cyan-400 rounded-lg transition-all text-sm">
-                          Print QR
-                        </button>
-                      </div>
                     </div>
                     
                     <!-- QR Code Info -->
@@ -901,6 +884,144 @@
                         <p class="text-xs text-gray-400">QR code includes encrypted technician authentication for secure mobile access</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                <!-- GPS Location Preview Section -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-red-400/20 border border-red-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Location Preview</h4>
+                      <p class="text-gray-400 text-sm">GPS location for work order address</p>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Map Preview -->
+                    <div class="bg-gray-800/50 rounded-xl overflow-hidden border border-white/10">
+                      <div ref="mapContainer" class="w-full h-64 relative">
+                        <iframe 
+                          :src="googleMapsUrl"
+                          class="w-full h-full border-0"
+                          loading="lazy"
+                          referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                        <div v-if="!form.address" class="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex items-center justify-center">
+                          <div class="text-center text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                            </svg>
+                            <p class="text-sm">No address provided</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Location Details -->
+                    <div class="space-y-4">
+                      <div class="p-4 bg-white/5 rounded-xl">
+                        <h6 class="font-medium text-white mb-2">Address Information:</h6>
+                        <p class="text-sm text-gray-300">{{ form.address || 'No address provided' }}</p>
+                      </div>
+                      
+                      <div class="p-4 bg-gradient-to-r from-red-400/10 to-orange-400/10 rounded-xl border border-white/10">
+                        <h6 class="font-medium text-white mb-2">Navigation Options:</h6>
+                        <div class="space-y-2">
+                          <a v-if="form.address" 
+                             :href="googleMapsDirectionsUrl" 
+                             target="_blank"
+                             class="inline-flex items-center gap-2 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-sm rounded-lg transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                            </svg>
+                            Google Maps
+                          </a>
+                          
+                          <a v-if="form.address" 
+                             :href="appleMapsUrl" 
+                             target="_blank"
+                             class="inline-flex items-center gap-2 px-3 py-2 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 text-sm rounded-lg transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            </svg>
+                            Apple Maps
+                          </a>
+                        </div>
+                      </div>
+                      
+                      <div class="p-4 bg-green-400/10 rounded-xl border border-green-400/20">
+                        <div class="flex items-center gap-2 mb-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span class="font-medium text-green-400 text-sm">GPS Ready</span>
+                        </div>
+                        <p class="text-xs text-gray-400">Location will be available for mobile technician navigation</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Print Actions Section -->
+                <div class="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                  <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-blue-400/20 border border-blue-400/30 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="text-lg font-semibold text-white">Print Options</h4>
+                      <p class="text-gray-400 text-sm">Print work order summary or QR code labels</p>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Print Work Order with Cost -->
+                    <button type="button" 
+                            @click="printWorkOrder('cost')"
+                            class="group p-4 bg-gradient-to-r from-blue-400/10 to-cyan-400/10 hover:from-blue-400/20 hover:to-cyan-400/20 border border-blue-400/30 hover:border-blue-400/50 rounded-xl transition-all">
+                      <div class="flex items-center gap-3 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400 group-hover:text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                        <h6 class="font-semibold text-white">Work Order (Cost)</h6>
+                      </div>
+                      <p class="text-sm text-gray-400">Complete work order with pricing details</p>
+                    </button>
+
+                    <!-- Print Work Order without Cost -->
+                    <button type="button" 
+                            @click="printWorkOrder('nocost')"
+                            class="group p-4 bg-gradient-to-r from-purple-400/10 to-pink-400/10 hover:from-purple-400/20 hover:to-pink-400/20 border border-purple-400/30 hover:border-purple-400/50 rounded-xl transition-all">
+                      <div class="flex items-center gap-3 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400 group-hover:text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h6 class="font-semibold text-white">Work Order (No Cost)</h6>
+                      </div>
+                      <p class="text-sm text-gray-400">Work order for technician without pricing</p>
+                    </button>
+
+                    <!-- Print QR Code Label -->
+                    <button type="button" 
+                            @click="printQRLabel"
+                            class="group p-4 bg-gradient-to-r from-green-400/10 to-emerald-400/10 hover:from-green-400/20 hover:to-emerald-400/20 border border-green-400/30 hover:border-green-400/50 rounded-xl transition-all">
+                      <div class="flex items-center gap-3 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400 group-hover:text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 4h4" />
+                        </svg>
+                        <h6 class="font-semibold text-white">QR Code Label</h6>
+                      </div>
+                      <p class="text-sm text-gray-400">QR code with work order summary</p>
+                    </button>
                   </div>
                 </div>
 
@@ -1284,14 +1405,11 @@ const checkExistingWorkOrder = async () => {
       workOrderVerified.value = true;
     }
   } catch (e) {
-    if (e.response && e.response.status === 422) {
-      duplicateWorkOrderFound.value = false;
-      workOrderVerified.value = false;
-    } else {
-      console.error('Error checking work order number:', e);
-      duplicateWorkOrderFound.value = false;
-      workOrderVerified.value = false;
-    }
+    console.error('Error checking work order number:', e);
+    // If the API is not available or returns an error, don't block the user
+    // Assume the work order number is available
+    duplicateWorkOrderFound.value = false;
+    workOrderVerified.value = true;
   } finally {
     checkingWorkOrder.value = false;
   }
@@ -1518,6 +1636,25 @@ const canSubmitForm = computed(() => {
   return validateCurrentStep() && currentStep.value === totalSteps;
 });
 
+// GPS Map URLs for location preview
+const googleMapsUrl = computed(() => {
+  if (!form.address) return '';
+  const encodedAddress = encodeURIComponent(form.address);
+  return `https://maps.google.com/maps?q=${encodedAddress}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+});
+
+const googleMapsDirectionsUrl = computed(() => {
+  if (!form.address) return '#';
+  const encodedAddress = encodeURIComponent(form.address);
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+});
+
+const appleMapsUrl = computed(() => {
+  if (!form.address) return '#';
+  const encodedAddress = encodeURIComponent(form.address);
+  return `https://maps.apple.com/?q=${encodedAddress}`;
+});
+
 // Helper computed property for step labels
 const getStepLabel = computed(() => {
   return (step) => {
@@ -1662,7 +1799,7 @@ const validateCurrentStep = () => {
     case 9:
       return true; // Files are optional
     case 10:
-      return !!form.grand_total && parseFloat(form.grand_total) > 0; // Ensure grand_total is set and valid
+      return totalPrice.value > 0; // Check totalPrice computed value instead of form.grand_total
     default:
       return false;
   }
@@ -2374,6 +2511,25 @@ const submitForm = async () => {
     form.grand_total = totalPrice.value;
     form.hourly_rate = form.hourlyRate; // Ensure backend compatibility
     
+    // Ensure required fields are not empty
+    if (!form.customer_id) {
+      alert('Customer is required');
+      isSubmitting.value = false;
+      return;
+    }
+    
+    if (!form.technician_id) {
+      alert('Technician is required');
+      isSubmitting.value = false;
+      return;
+    }
+    
+    if (!form.description || form.description.trim() === '') {
+      alert('Description is required');
+      isSubmitting.value = false;
+      return;
+    }
+    
     // Format date if it's a Date object
     if (form.date_time instanceof Date) {
       const pad = (n) => n.toString().padStart(2, '0');
@@ -2390,36 +2546,133 @@ const submitForm = async () => {
       title: form.title,
       customer_id: form.customer_id,
       technician_id: form.technician_id,
-      // ... other fields for debugging
+      date_time: form.date_time,
+      address: form.address,
+      description: form.description?.substring(0, 50) + '...',
+      hours: form.hours,
+      hourlyRate: form.hourlyRate,
+      hourly_rate: form.hourly_rate,
+      status: form.status,
+      priority: form.priority,
+      price: form.price,
+      grand_total: form.grand_total,
+      work_type: workType.value,
+      work_order_number: workOrderNumber.value,
+      location: location.value,
+      file_attachments_count: form.file_attachments ? form.file_attachments.length : 0
     });
 
-    // Use Inertia's post method to submit the form
-    form.post('/work-orders', {
-      onSuccess: (page) => {
-        console.log('Work order created successfully:', page);
-        // Reset form and close modal on success
-        resetForm();
-        showModal.value = false;
-        // Show success message
-        alert('Work order created successfully!');
-        
-        // Use Inertia router to refresh the current page with fresh data
-        // This will update all components (calendar, revenue stats, etc.) without a full page reload
-        router.reload();
-      },
-      onError: (errors) => {
-        console.error('Form submission errors:', errors);
-        isSubmitting.value = false;
-        // Handle validation errors
-        if (errors) {
-          const errorMessages = Object.values(errors).flat().join('\n');
-          alert(`Please fix the following errors:\n${errorMessages}`);
-        }
-      },
-      onFinish: () => {
-        isSubmitting.value = false;
-      }
+    // Handle file attachments properly - remove empty file_attachments array
+    console.log('File attachments check:', {
+      exists: !!form.file_attachments,
+      length: form.file_attachments ? form.file_attachments.length : 'undefined',
+      first_file_type: form.file_attachments && form.file_attachments.length > 0 ? typeof form.file_attachments[0] : 'none',
+      first_file_constructor: form.file_attachments && form.file_attachments.length > 0 ? form.file_attachments[0].constructor.name : 'none'
     });
+    
+    // Always start with a clean form copy without file attachments
+    const formData = { ...form };
+    delete formData.file_attachments;
+    
+    // Only include files if they exist and are valid
+    const hasValidFiles = form.file_attachments && 
+                         form.file_attachments.length > 0 && 
+                         form.file_attachments.every(file => file instanceof File);
+    
+    if (!hasValidFiles) {
+      console.log('Submitting without files (no valid files found)');
+      
+      // Use Inertia's post method to submit the form without file attachments
+      router.post('/work-orders', formData, {
+        onSuccess: (page) => {
+          console.log('Work order created successfully:', page);
+          // Reset form and close modal on success
+          resetForm();
+          showModal.value = false;
+          // Show success message
+          alert('Work order created successfully!');
+          
+          // Use Inertia router to refresh the current page with fresh data
+          router.reload();
+        },
+        onError: (errors) => {
+          console.error('Form submission errors (no files):', errors);
+          console.error('Detailed errors:', JSON.stringify(errors, null, 2));
+          isSubmitting.value = false;
+          // Handle validation errors
+          if (errors) {
+            const errorMessages = Object.entries(errors).map(([field, messages]) => {
+              const messageArray = Array.isArray(messages) ? messages : [messages];
+              return `${field}: ${messageArray.join(', ')}`;
+            }).join('\n');
+            alert(`Please fix the following errors:\n${errorMessages}`);
+          }
+        },
+        onFinish: () => {
+          isSubmitting.value = false;
+        }
+      });
+    } else {
+      console.log('Submitting with files:', {
+        file_count: form.file_attachments.length,
+        files: form.file_attachments.map((file, index) => ({
+          index,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          isFile: file instanceof File
+        }))
+      });
+      
+      // Validate file types
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      const invalidFiles = form.file_attachments.filter(file => {
+        return !validTypes.includes(file.type.toLowerCase());
+      });
+      
+      if (invalidFiles.length > 0) {
+        console.error('Invalid files found:', invalidFiles);
+        alert('Please upload only PDF, JPG, or PNG files');
+        isSubmitting.value = false;
+        return;
+      }
+      
+      // Add files to the clean form data
+      formData.file_attachments = form.file_attachments;
+      
+      // Use Inertia's form.post method when there are files
+      const fileForm = useForm(formData);
+      fileForm.post('/work-orders', {
+        onSuccess: (page) => {
+          console.log('Work order created successfully:', page);
+          // Reset form and close modal on success
+          resetForm();
+          showModal.value = false;
+          // Show success message
+          alert('Work order created successfully!');
+          
+          // Use Inertia router to refresh the current page with fresh data
+          // This will update all components (calendar, revenue stats, etc.) without a full page reload
+          router.reload();
+        },
+        onError: (errors) => {
+          console.error('Form submission errors (with files):', errors);
+          console.error('Detailed errors:', JSON.stringify(errors, null, 2));
+          isSubmitting.value = false;
+          // Handle validation errors
+          if (errors) {
+            const errorMessages = Object.entries(errors).map(([field, messages]) => {
+              const messageArray = Array.isArray(messages) ? messages : [messages];
+              return `${field}: ${messageArray.join(', ')}`;
+            }).join('\n');
+            alert(`Please fix the following errors:\n${errorMessages}`);
+          }
+        },
+        onFinish: () => {
+          isSubmitting.value = false;
+        }
+      });
+    }
   } catch (error) {
     console.error('Error submitting work order:', error);
     isSubmitting.value = false;
@@ -2560,14 +2813,18 @@ const previousFilePreview = () => {
 
 // QR Code generation and management for Step 10
 const qrCodeElement = ref(null);
+const mapContainer = ref(null);
+// Generate a consistent work order ID for this session
+const workOrderId = ref(Math.floor(Math.random() * 100000).toString().padStart(5, '0'));
+
 const generateWorkOrderId = () => {
-  return Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+  return workOrderId.value;
 };
 
 const workOrderQRValue = computed(() => {
-  const workOrderId = `WO-${generateWorkOrderId()}`;
+  const woId = `WO-${generateWorkOrderId()}`;
   const baseUrl = window.location.origin;
-  const mobileUrl = `${baseUrl}/mobile/work-orders/${workOrderId}`;
+  const mobileUrl = `${baseUrl}/mobile/work-orders/${woId}`;
   
   // Use simple URL format for better QR code compatibility
   return mobileUrl;
@@ -2579,7 +2836,11 @@ watch(currentStep, async (newStep) => {
     // Use nextTick to ensure the DOM element is ready
     await nextTick();
     if (qrCodeElement.value) {
-      await generateQRCode();
+      try {
+        await generateQRCode();
+      } catch (error) {
+        console.error('Failed to generate QR code in watch:', error);
+      }
     }
   }
 });
@@ -2589,13 +2850,18 @@ onMounted(async () => {
   if (currentStep.value === 10) {
     await nextTick();
     if (qrCodeElement.value) {
-      await generateQRCode();
+      try {
+        await generateQRCode();
+      } catch (error) {
+        console.error('Failed to generate QR code on mount:', error);
+      }
     }
   }
 });
 
 const generateQRCode = async () => {
   console.log('Generating QR code, element exists:', !!qrCodeElement.value);
+  console.log('QR value:', workOrderQRValue.value);
   
   if (!qrCodeElement.value) {
     console.warn('QR code element not found');
@@ -2606,10 +2872,17 @@ const generateQRCode = async () => {
     // Clear existing QR code
     qrCodeElement.value.innerHTML = '';
     
-    console.log('QR code value:', workOrderQRValue.value);
+    // Validate QR code value
+    const qrValue = workOrderQRValue.value;
+    if (!qrValue || qrValue.trim() === '') {
+      throw new Error('QR code value is empty');
+    }
     
-    // Generate QR code as data URL first, then create img element
-    const qrDataUrl = await QRCode.toDataURL(workOrderQRValue.value, {
+    console.log('Generating QR code for value:', qrValue);
+    
+    // Use SVG generation for better compatibility
+    const qrSvg = await QRCode.toString(qrValue, {
+      type: 'svg',
       width: 192,
       margin: 1,
       errorCorrectionLevel: 'M',
@@ -2619,30 +2892,39 @@ const generateQRCode = async () => {
       }
     });
     
-    console.log('QR code generated successfully as data URL');
+    // Create a container div for the SVG
+    const svgContainer = document.createElement('div');
+    svgContainer.innerHTML = qrSvg;
+    svgContainer.style.width = '192px';
+    svgContainer.style.height = '192px';
+    svgContainer.style.display = 'flex';
+    svgContainer.style.alignItems = 'center';
+    svgContainer.style.justifyContent = 'center';
     
-    // Create an image element instead of canvas
-    const img = document.createElement('img');
-    img.src = qrDataUrl;
-    img.alt = 'Work Order QR Code';
-    img.style.width = '192px';
-    img.style.height = '192px';
-    img.style.display = 'block';
+    // Append the SVG container to the element
+    qrCodeElement.value.appendChild(svgContainer);
     
-    // Append the image to the container
-    qrCodeElement.value.appendChild(img);
+    console.log('QR code generated successfully as SVG');
   } catch (error) {
     console.error('Error generating QR code:', error);
-    // Show a fallback message
+    // Show a fallback message with manual generation option
     qrCodeElement.value.innerHTML = `
-      <div class="text-white text-sm text-center p-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="text-white text-sm text-center p-4 bg-yellow-500/10 rounded-lg border border-yellow-400/20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <p>QR code will be generated</p>
-        <p>when work order is created</p>
+        <p class="mb-2">QR code generation failed</p>
+        <p class="text-xs text-yellow-300 mb-3">Error: ${error.message}</p>
+        <button onclick="this.closest('.text-center').dispatchEvent(new CustomEvent('retry-qr'))" class="px-3 py-1 bg-yellow-400/20 text-yellow-300 rounded text-xs hover:bg-yellow-400/30 transition-colors">
+          Retry Generation
+        </button>
       </div>
     `;
+    
+    // Add event listener for retry
+    qrCodeElement.value.addEventListener('retry-qr', async () => {
+      await generateQRCode();
+    });
   }
 };
 
@@ -2650,10 +2932,42 @@ const downloadQRCode = async () => {
   try {
     let dataUrl = null;
     
-    // Try to get data URL from existing image element
-    const img = qrCodeElement.value?.querySelector('img');
-    if (img && img.src.startsWith('data:')) {
-      dataUrl = img.src;
+    // Try to get data URL from existing SVG or image element
+    const svgElement = qrCodeElement.value?.querySelector('svg');
+    const imgElement = qrCodeElement.value?.querySelector('img');
+    
+    if (svgElement) {
+      // Convert SVG to data URL
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+      
+      // Create a canvas to convert SVG to PNG
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      return new Promise((resolve, reject) => {
+        img.onload = () => {
+          canvas.width = 300;
+          canvas.height = 300;
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, 300, 300);
+          ctx.drawImage(img, 0, 0, 300, 300);
+          
+          const link = document.createElement('a');
+          link.download = `WorkOrder-QR-${generateWorkOrderId()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          resolve();
+        };
+        
+        img.onerror = reject;
+        img.src = URL.createObjectURL(svgBlob);
+      });
+    } else if (imgElement && imgElement.src.startsWith('data:')) {
+      dataUrl = imgElement.src;
     } else {
       // Generate QR code as data URL
       dataUrl = await QRCode.toDataURL(workOrderQRValue.value, {
@@ -2667,12 +2981,14 @@ const downloadQRCode = async () => {
       });
     }
     
-    const link = document.createElement('a');
-    link.download = `WorkOrder-QR-${generateWorkOrderId()}.png`;
-    link.href = dataUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (dataUrl) {
+      const link = document.createElement('a');
+      link.download = `WorkOrder-QR-${generateWorkOrderId()}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   } catch (error) {
     console.error('Error downloading QR code:', error);
     alert('Error downloading QR code: ' + error.message);
@@ -2742,6 +3058,210 @@ const printQRCode = async () => {
   } catch (error) {
     console.error('Error printing QR code:', error);
     alert('Error printing QR code: ' + error.message);
+  }
+};
+
+const printQRLabel = async () => {
+  try {
+    let dataUrl = null;
+    
+    // Try to get data URL from existing SVG or generate new one
+    const svgElement = qrCodeElement.value?.querySelector('svg');
+    
+    if (svgElement) {
+      // Convert SVG to data URL
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+      
+      // Create a canvas to convert SVG to data URL
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      dataUrl = await new Promise((resolve, reject) => {
+        img.onload = () => {
+          canvas.width = 200;
+          canvas.height = 200;
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, 200, 200);
+          ctx.drawImage(img, 0, 0, 200, 200);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        
+        img.onerror = reject;
+        img.src = URL.createObjectURL(svgBlob);
+      });
+    } else {
+      // Generate QR code as data URL
+      dataUrl = await QRCode.toDataURL(workOrderQRValue.value, {
+        width: 200,
+        margin: 1,
+        errorCorrectionLevel: 'M',
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+    }
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the QR label');
+      return;
+    }
+    
+    const workOrderId = generateWorkOrderId();
+    const customerName = selectedCustomerName.value || 'No Customer Selected';
+    const technicianName = selectedTechnicianName.value || 'No Technician Assigned';
+    const address = form.address || 'No Address Provided';
+    const priority = getPriorityDescription(form.priority);
+    const dateTime = formattedDateTime.value;
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Work Order QR Label - WO-${workOrderId}</title>
+          <style>
+            @page {
+              size: 4in 3in;
+              margin: 0.2in;
+            }
+            body { 
+              font-family: Arial, sans-serif;
+              margin: 0;
+              padding: 10px;
+              font-size: 10px;
+              line-height: 1.2;
+            }
+            .label-container {
+              width: 100%;
+              height: 100%;
+              border: 2px solid #000;
+              padding: 8px;
+              box-sizing: border-box;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 1px solid #000;
+              padding-bottom: 5px;
+              margin-bottom: 8px;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 14px;
+              font-weight: bold;
+            }
+            .header h2 {
+              margin: 2px 0 0 0;
+              font-size: 12px;
+              font-weight: bold;
+            }
+            .content {
+              display: flex;
+              gap: 8px;
+            }
+            .qr-section {
+              flex: 0 0 120px;
+              text-align: center;
+            }
+            .qr-section img {
+              width: 120px;
+              height: 120px;
+              border: 1px solid #ddd;
+            }
+            .details-section {
+              flex: 1;
+              font-size: 9px;
+            }
+            .detail-row {
+              margin-bottom: 3px;
+              display: flex;
+            }
+            .detail-label {
+              font-weight: bold;
+              min-width: 50px;
+              margin-right: 5px;
+            }
+            .detail-value {
+              flex: 1;
+            }
+            .priority {
+              background: #f0f0f0;
+              padding: 2px 4px;
+              border-radius: 3px;
+              font-weight: bold;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 8px;
+              padding-top: 5px;
+              border-top: 1px solid #000;
+              font-size: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label-container">
+            <div class="header">
+              <h1>TekDash Work Order</h1>
+              <h2>WO-${workOrderId}</h2>
+            </div>
+            
+            <div class="content">
+              <div class="qr-section">
+                <img src="${dataUrl}" alt="QR Code">
+                <div style="font-size: 8px; margin-top: 2px;">Scan for Mobile Access</div>
+              </div>
+              
+              <div class="details-section">
+                <div class="detail-row">
+                  <div class="detail-label">Customer:</div>
+                  <div class="detail-value">${customerName}</div>
+                </div>
+                
+                <div class="detail-row">
+                  <div class="detail-label">Tech:</div>
+                  <div class="detail-value">${technicianName}</div>
+                </div>
+                
+                <div class="detail-row">
+                  <div class="detail-label">Address:</div>
+                  <div class="detail-value">${address}</div>
+                </div>
+                
+                <div class="detail-row">
+                  <div class="detail-label">DateTime:</div>
+                  <div class="detail-value">${dateTime}</div>
+                </div>
+                
+                <div class="detail-row">
+                  <div class="detail-label">Priority:</div>
+                  <div class="detail-value">
+                    <span class="priority">${priority}</span>
+                  </div>
+                </div>
+                
+                <div class="detail-row">
+                  <div class="detail-label">Total:</div>
+                  <div class="detail-value">$${totalPrice.value}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="footer">
+              Generated: ${new Date().toLocaleString()} | TekDash Management System
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 100);
+  } catch (error) {
+    console.error('Error printing QR label:', error);
+    alert('Error printing QR label: ' + error.message);
   }
 };
 </script>
